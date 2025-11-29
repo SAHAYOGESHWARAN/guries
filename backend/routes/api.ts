@@ -1,0 +1,272 @@
+
+import { Router } from 'express';
+import * as campaignController from '../controllers/campaignController';
+import * as projectController from '../controllers/projectController';
+import * as analyticsController from '../controllers/analyticsController';
+import * as configController from '../controllers/configurationController';
+import * as benchmarkController from '../controllers/benchmarkController';
+import * as competitorController from '../controllers/competitorController';
+import * as serviceController from '../controllers/serviceController';
+import * as resourceController from '../controllers/resourceController';
+import * as userController from '../controllers/userController';
+import * as teamController from '../controllers/teamController';
+import * as qcController from '../controllers/qcController';
+import * as taskController from '../controllers/taskController';
+import * as assetController from '../controllers/assetController';
+import * as contentController from '../controllers/contentController';
+import * as smmController from '../controllers/smmController';
+import * as servicePageController from '../controllers/servicePageController';
+import * as backlinkSubmissionController from '../controllers/backlinkSubmissionController';
+import * as toxicBacklinkController from '../controllers/toxicBacklinkController';
+import * as uxController from '../controllers/uxController';
+import * as promotionController from '../controllers/promotionController';
+import * as graphicAssetController from '../controllers/graphicAssetController';
+import * as urlErrorController from '../controllers/urlErrorController';
+import * as hrController from '../controllers/hrController';
+import * as aiController from '../controllers/aiController';
+import * as authController from '../controllers/authController';
+import * as integrationsController from '../controllers/integrationsController';
+import * as settingsController from '../controllers/settingsController';
+import * as dashboardController from '../controllers/dashboardController';
+import * as notificationController from '../controllers/notificationController';
+import * as communicationController from '../controllers/communicationController';
+import * as knowledgeController from '../controllers/knowledgeController';
+import * as complianceController from '../controllers/complianceController';
+
+const router = Router();
+
+// --- Auth ---
+router.post('/auth/send-otp', authController.sendOtp as any);
+router.post('/auth/verify-otp', authController.verifyOtp as any);
+
+// --- Dashboard & Notifications ---
+router.get('/dashboard/stats', dashboardController.getDashboardStats);
+router.get('/notifications', notificationController.getNotifications);
+router.post('/notifications', notificationController.createNotification);
+router.put('/notifications/:id/read', notificationController.markAsRead);
+router.put('/notifications/read-all', notificationController.markAllAsRead);
+router.delete('/notifications/:id', notificationController.deleteNotification);
+
+// --- Campaigns ---
+router.get('/campaigns', campaignController.getCampaigns);
+router.get('/campaigns/:id', campaignController.getCampaignById);
+router.post('/campaigns', campaignController.createCampaign);
+router.put('/campaigns/:id', campaignController.updateCampaign);
+router.delete('/campaigns/:id', campaignController.deleteCampaign);
+
+// --- Projects ---
+router.get('/projects', projectController.getProjects);
+router.get('/projects/:id', projectController.getProjectById);
+router.post('/projects', projectController.createProject);
+router.put('/projects/:id', projectController.updateProject);
+router.delete('/projects/:id', projectController.deleteProject);
+
+// --- Tasks ---
+router.get('/tasks', taskController.getTasks);
+router.post('/tasks', taskController.createTask);
+router.put('/tasks/:id', taskController.updateTask);
+router.delete('/tasks/:id', taskController.deleteTask);
+
+// --- Assets ---
+router.get('/assets', assetController.getAssets);
+router.post('/assets', assetController.createAsset);
+router.put('/assets/:id', assetController.updateAsset);
+router.delete('/assets/:id', assetController.deleteAsset);
+
+// --- Content Repository ---
+router.get('/content', contentController.getContent);
+router.post('/content', contentController.createContent);
+router.put('/content/:id', contentController.updateContent);
+router.delete('/content/:id', contentController.deleteContent);
+router.post('/content/draft-from-service', contentController.createDraftFromService);
+router.post('/content/publish-to-service/:id', contentController.publishToService);
+
+// --- Service Page Repository ---
+router.get('/service-pages', servicePageController.getServicePages);
+router.post('/service-pages', servicePageController.createServicePage);
+router.put('/service-pages/:id', servicePageController.updateServicePage);
+router.delete('/service-pages/:id', servicePageController.deleteServicePage);
+
+// --- SMM ---
+router.get('/smm', smmController.getSmmPosts);
+router.post('/smm', smmController.createSmmPost);
+router.put('/smm/:id', smmController.updateSmmPost);
+router.delete('/smm/:id', smmController.deleteSmmPost);
+
+// --- Graphics Plan ---
+router.get('/graphics', graphicAssetController.getGraphicAssets);
+router.post('/graphics', graphicAssetController.createGraphicAsset);
+router.put('/graphics/:id', graphicAssetController.updateGraphicAsset);
+router.delete('/graphics/:id', graphicAssetController.deleteGraphicAsset);
+
+// --- Teams ---
+router.get('/teams', teamController.getTeams);
+router.post('/teams', teamController.createTeam);
+router.put('/teams/:id', teamController.updateTeam);
+router.delete('/teams/:id', teamController.deleteTeam);
+
+// --- Analytics ---
+router.get('/analytics/traffic', analyticsController.getTrafficData);
+router.get('/analytics/kpi', analyticsController.getKPISummary);
+router.get('/analytics/dashboard-metrics', analyticsController.getDashboardMetrics);
+
+// --- Promotion & Errors ---
+router.get('/promotion-items', promotionController.getPromotionItems);
+router.get('/url-errors', urlErrorController.getUrlErrors);
+router.post('/url-errors', urlErrorController.createUrlError);
+router.put('/url-errors/:id', urlErrorController.updateUrlError);
+router.delete('/url-errors/:id', urlErrorController.deleteUrlError);
+
+// --- Benchmarks & Competitors ---
+router.get('/okrs', benchmarkController.getOkrs);
+router.post('/okrs', benchmarkController.createOkr);
+router.put('/okrs/:id', benchmarkController.updateOkr);
+router.delete('/okrs/:id', benchmarkController.deleteOkr);
+
+router.get('/competitors', competitorController.getCompetitors);
+router.post('/competitors', competitorController.createCompetitor);
+router.put('/competitors/:id', competitorController.updateCompetitor);
+router.delete('/competitors/:id', competitorController.deleteCompetitor);
+
+router.get('/gold-standards', benchmarkController.getGoldStandards);
+router.post('/gold-standards', benchmarkController.createGoldStandard);
+router.put('/gold-standards/:id', benchmarkController.updateGoldStandard);
+router.delete('/gold-standards/:id', benchmarkController.deleteGoldStandard);
+
+router.get('/effort-targets', benchmarkController.getEffortTargets);
+router.post('/effort-targets', benchmarkController.createEffortTarget);
+router.put('/effort-targets/:id', benchmarkController.updateEffortTarget);
+router.delete('/effort-targets/:id', benchmarkController.deleteEffortTarget);
+
+// --- Services Master ---
+router.get('/services', serviceController.getServices);
+router.post('/services', serviceController.createService);
+router.put('/services/:id', serviceController.updateService);
+router.delete('/services/:id', serviceController.deleteService);
+
+router.get('/sub-services', serviceController.getSubServices);
+router.post('/sub-services', serviceController.createSubService);
+router.put('/sub-services/:id', serviceController.updateSubService);
+router.delete('/sub-services/:id', serviceController.deleteSubService);
+
+// --- Resources (Keywords, Backlinks) ---
+router.get('/keywords', resourceController.getKeywords);
+router.post('/keywords', resourceController.createKeyword);
+router.put('/keywords/:id', resourceController.updateKeyword);
+router.delete('/keywords/:id', resourceController.deleteKeyword);
+
+router.get('/backlinks', resourceController.getBacklinks);
+router.post('/backlinks', resourceController.createBacklink);
+router.put('/backlinks/:id', resourceController.updateBacklink);
+router.delete('/backlinks/:id', resourceController.deleteBacklink);
+
+router.get('/submissions', backlinkSubmissionController.getSubmissions);
+router.post('/submissions', backlinkSubmissionController.createSubmission);
+router.put('/submissions/:id', backlinkSubmissionController.updateSubmission);
+router.delete('/submissions/:id', backlinkSubmissionController.deleteSubmission);
+
+// --- Users & QC ---
+router.get('/users', userController.getUsers);
+router.post('/users', userController.createUser);
+router.put('/users/:id', userController.updateUser);
+router.delete('/users/:id', userController.deleteUser);
+
+router.get('/qc-runs', qcController.getQcRuns);
+router.post('/qc-runs', qcController.createQcRun);
+router.put('/qc-runs/:id', qcController.updateQcRun);
+router.delete('/qc-runs/:id', qcController.deleteQcRun);
+
+router.get('/qc-checklists', qcController.getChecklists);
+router.post('/qc-checklists', qcController.createChecklist);
+router.put('/qc-checklists/:id', qcController.updateChecklist);
+router.delete('/qc-checklists/:id', qcController.deleteChecklist);
+
+router.get('/qc-versions', qcController.getChecklistVersions);
+router.get('/qc-weightage-configs', qcController.getWeightageConfigs);
+router.put('/qc-weightage-configs/:id', qcController.updateWeightageConfig);
+
+// --- Configuration Masters ---
+router.get('/industry-sectors', configController.getIndustries);
+router.post('/industry-sectors', configController.createIndustry);
+router.put('/industry-sectors/:id', configController.updateIndustry);
+router.delete('/industry-sectors/:id', configController.deleteIndustry);
+
+router.get('/content-types', configController.getContentTypes);
+router.post('/content-types', configController.createContentType);
+router.put('/content-types/:id', configController.updateContentType);
+router.delete('/content-types/:id', configController.deleteContentType);
+
+router.get('/asset-types', configController.getAssetTypes);
+router.post('/asset-types', configController.createAssetType);
+router.put('/asset-types/:id', configController.updateAssetType);
+router.delete('/asset-types/:id', configController.deleteAssetType);
+
+router.get('/platforms', configController.getPlatforms);
+router.post('/platforms', configController.createPlatform);
+router.put('/platforms/:id', configController.updatePlatform);
+router.delete('/platforms/:id', configController.deletePlatform);
+
+router.get('/countries', configController.getCountries);
+router.post('/countries', configController.createCountry);
+router.put('/countries/:id', configController.updateCountry);
+router.delete('/countries/:id', configController.deleteCountry);
+
+router.get('/seo-errors', configController.getSeoErrors);
+router.post('/seo-errors', configController.createSeoError);
+router.put('/seo-errors/:id', configController.updateSeoError);
+router.delete('/seo-errors/:id', configController.deleteSeoError);
+
+router.get('/workflow-stages', configController.getWorkflowStages);
+router.post('/workflow-stages', configController.createWorkflowStage);
+router.put('/workflow-stages/:id', configController.updateWorkflowStage);
+router.delete('/workflow-stages/:id', configController.deleteWorkflowStage);
+
+// --- Toxic Links & UX ---
+router.get('/toxic-backlinks', toxicBacklinkController.getToxicBacklinks);
+router.post('/toxic-backlinks', toxicBacklinkController.createToxicBacklink);
+router.put('/toxic-backlinks/:id', toxicBacklinkController.updateToxicBacklink);
+router.delete('/toxic-backlinks/:id', toxicBacklinkController.deleteToxicBacklink);
+
+router.get('/ux-issues', uxController.getUxIssues);
+router.post('/ux-issues', uxController.createUxIssue);
+router.put('/ux-issues/:id', uxController.updateUxIssue);
+router.delete('/ux-issues/:id', uxController.deleteUxIssue);
+
+// --- HR & AI ---
+router.get('/hr/workload', hrController.getWorkloadForecast);
+router.get('/hr/rewards', hrController.getRewardRecommendations);
+router.get('/hr/rankings', hrController.getEmployeeRankings);
+router.get('/hr/skills', hrController.getEmployeeSkills);
+router.get('/hr/achievements', hrController.getEmployeeAchievements);
+router.post('/ai/evaluations', aiController.generateEvaluation);
+
+// --- Integrations & Settings ---
+router.get('/integrations', integrationsController.getIntegrations);
+router.put('/integrations/:id', integrationsController.updateIntegration);
+router.get('/logs', integrationsController.getIntegrationLogs);
+router.post('/logs', integrationsController.createLog);
+
+router.get('/settings', settingsController.getSettings);
+router.put('/settings/:key', settingsController.updateSetting);
+router.post('/settings/maintenance', settingsController.runMaintenance);
+
+// --- Communication & Knowledge ---
+router.get('/communication/emails', communicationController.getEmails);
+router.post('/communication/emails', communicationController.createEmail);
+router.get('/communication/voice-profiles', communicationController.getVoiceProfiles);
+router.post('/communication/voice-profiles', communicationController.createVoiceProfile);
+router.get('/communication/calls', communicationController.getCallLogs);
+router.post('/communication/calls', communicationController.logCall);
+
+router.get('/knowledge/articles', knowledgeController.getArticles);
+router.post('/knowledge/articles', knowledgeController.createArticle);
+router.put('/knowledge/articles/:id', knowledgeController.updateArticle);
+router.delete('/knowledge/articles/:id', knowledgeController.deleteArticle);
+
+// --- Compliance ---
+router.get('/compliance/rules', complianceController.getRules);
+router.post('/compliance/rules', complianceController.createRule);
+router.get('/compliance/audits', complianceController.getAudits);
+router.post('/compliance/audits', complianceController.logAudit);
+
+export default router;

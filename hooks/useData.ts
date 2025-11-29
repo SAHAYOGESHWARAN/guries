@@ -1,0 +1,264 @@
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { db } from '../utils/storage';
+
+const API_BASE_URL = 'http://localhost:3001/api/v1';
+
+// Map frontend collection names to API endpoints and socket events
+const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
+    tasks: { endpoint: 'tasks', event: 'task' },
+    projects: { endpoint: 'projects', event: 'project' },
+    campaigns: { endpoint: 'campaigns', event: 'campaign' },
+    assetLibrary: { endpoint: 'assets', event: 'asset' },
+    content: { endpoint: 'content', event: 'content' },
+    smm: { endpoint: 'smm', event: 'smm_post' },
+    graphics: { endpoint: 'graphics', event: 'graphic' },
+    users: { endpoint: 'users', event: 'user' },
+    teams: { endpoint: 'teams', event: 'team' },
+    teamMembers: { endpoint: 'team-members', event: 'team_member' },
+    services: { endpoint: 'services', event: 'service' },
+    subServices: { endpoint: 'sub-services', event: 'sub_service' },
+    servicePages: { endpoint: 'service-pages', event: 'service_page' },
+    keywords: { endpoint: 'keywords', event: 'keyword' },
+    backlinks: { endpoint: 'backlinks', event: 'backlink' },
+    submissions: { endpoint: 'submissions', event: 'submission' },
+    okrs: { endpoint: 'okrs', event: 'okr' },
+    competitors: { endpoint: 'competitors', event: 'competitor' },
+    urlErrors: { endpoint: 'url-errors', event: 'url_error' },
+    toxicUrls: { endpoint: 'toxic-backlinks', event: 'toxic_backlink' },
+    uxIssues: { endpoint: 'ux-issues', event: 'ux_issue' },
+    qc: { endpoint: 'qc-runs', event: 'qc_run' },
+    // Read-only view or filtered
+    promotionItems: { endpoint: 'promotion-items', event: 'content' }, 
+    // Configs & Masters
+    effortTargets: { endpoint: 'effort-targets', event: 'effort_target' },
+    goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
+    industrySectors: { endpoint: 'industry-sectors', event: 'industry_sector' },
+    contentTypes: { endpoint: 'content-types', event: 'content_type' },
+    assetTypes: { endpoint: 'asset-types', event: 'asset_type' },
+    platforms: { endpoint: 'platforms', event: 'platform' },
+    countries: { endpoint: 'countries', event: 'country' },
+    seoErrors: { endpoint: 'seo-errors', event: 'seo_error' },
+    workflowStages: { endpoint: 'workflow-stages', event: 'workflow_stage' },
+    qcChecklists: { endpoint: 'qc-checklists', event: 'qc_checklist' },
+    qcVersions: { endpoint: 'qc-versions', event: 'qc_version' },
+    integrations: { endpoint: 'integrations', event: 'integration' },
+    logs: { endpoint: 'logs', event: 'log' },
+    // HR & AI
+    workload: { endpoint: 'hr/workload', event: 'workload' },
+    rewards: { endpoint: 'hr/rewards', event: 'reward' },
+    evaluations: { endpoint: 'ai/evaluations', event: 'evaluation' },
+    dashboardMetrics: { endpoint: 'analytics/dashboard-metrics', event: 'metric' },
+    employeeRankings: { endpoint: 'hr/rankings', event: 'ranking' },
+    // New Traffic Endpoint
+    traffic: { endpoint: 'analytics/traffic', event: 'traffic_update' },
+    // Communication
+    emails: { endpoint: 'communication/emails', event: 'email' },
+    voiceProfiles: { endpoint: 'communication/voice-profiles', event: 'voice_profile' },
+    callLogs: { endpoint: 'communication/calls', event: 'call_log' },
+    // Knowledge Base
+    articles: { endpoint: 'knowledge/articles', event: 'article' },
+    // Compliance
+    complianceRules: { endpoint: 'compliance/rules', event: 'compliance_rule' },
+    complianceAudits: { endpoint: 'compliance/audits', event: 'compliance_audit' }
+};
+
+// Singleton socket instance to manage connection
+let socketInstance: Socket | null = null;
+
+const getSocket = () => {
+    if (!socketInstance) {
+        try {
+            socketInstance = io('http://localhost:3001', {
+                reconnectionAttempts: 2,
+                timeout: 2000,
+                autoConnect: false
+            });
+        } catch (e) {
+            console.warn("Socket.io client initialization failed, running in offline mode.");
+        }
+    }
+    return socketInstance;
+};
+
+export function useData<T>(collection: string) {
+    // Initialize with local storage data immediately if available (Optimistic UI)
+    const getInitialData = () => {
+        try {
+            if (collection === 'promotionItems') {
+                const allContent = (db as any)['content']?.getAll() || [];
+                return allContent.filter((i: any) => ['qc_passed', 'updated', 'ready_to_publish', 'published'].includes(i.status));
+            } else if ((db as any)[collection]) {
+                return (db as any)[collection].getAll() || [];
+            }
+        } catch (e) {
+            return [];
+        }
+        return [];
+    };
+
+    const [data, setData] = useState<T[]>(getInitialData);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isOffline, setIsOffline] = useState(false);
+
+    const resource = RESOURCE_MAP[collection];
+
+    // Load data from local storage (Synchronous helper)
+    const loadLocal = useCallback(() => {
+        try {
+            if (collection === 'promotionItems') {
+                const allContent = (db as any)['content']?.getAll() || [];
+                const filtered = allContent.filter((i: any) => 
+                    ['qc_passed', 'updated', 'ready_to_publish', 'published'].includes(i.status)
+                );
+                setData(filtered);
+            } else if ((db as any)[collection]) {
+                const localData = (db as any)[collection].getAll() || [];
+                setData(localData);
+            }
+        } catch (e) {
+            console.warn(`Local load failed for ${collection}`);
+        }
+    }, [collection]);
+
+    const fetchData = useCallback(async () => {
+        // If no endpoint (local only) or known offline, just ensure loading is false
+        if (!resource) {
+            loadLocal();
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // Very short timeout for initial fetch to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 500); // 500ms max wait
+
+            const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+
+            if (!response.ok) throw new Error('API Error');
+            const result = await response.json();
+            setData(result); // Update with server data
+            setIsOffline(false);
+        } catch (err: any) {
+            // If fetch fails or times out, we are effectively "offline" or backend is down.
+            // We silently fall back to the local data we already loaded in state initialization.
+            // Only log if it's not an abort error
+            if (err.name !== 'AbortError') {
+               setIsOffline(true);
+            }
+            loadLocal(); // Ensure state is consistent with local storage
+        } finally {
+            setLoading(false);
+        }
+    }, [collection, resource, loadLocal]);
+
+    useEffect(() => {
+        fetchData();
+
+        const socket = getSocket();
+        
+        if (resource && socket) {
+            if (!socket.connected) socket.connect();
+
+            const handleCreate = (newItem: T) => {
+                setData(prev => [newItem, ...prev]);
+            };
+            
+            const handleUpdate = (updatedItem: T & { id: number | string }) => {
+                setData(prev => prev.map(item => (item as any).id === updatedItem.id ? updatedItem : item));
+            };
+
+            const handleDelete = ({ id }: { id: number | string }) => {
+                setData(prev => prev.filter(item => (item as any).id !== id));
+            };
+
+            socket.on(`${resource.event}_created`, handleCreate);
+            socket.on(`${resource.event}_updated`, handleUpdate);
+            socket.on(`${resource.event}_deleted`, handleDelete);
+            socket.on('connect_error', () => setIsOffline(true));
+
+            return () => {
+                socket.off(`${resource.event}_created`, handleCreate);
+                socket.off(`${resource.event}_updated`, handleUpdate);
+                socket.off(`${resource.event}_deleted`, handleDelete);
+            };
+        }
+
+        // Always listen to local storage events for optimistic UI / offline updates
+        const handleStorageChange = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const targetKey = collection === 'promotionItems' ? (db as any)['content']?.key : (db as any)[collection]?.key;
+            
+            if (targetKey && customEvent.detail?.key === targetKey) {
+                loadLocal();
+            }
+        };
+        window.addEventListener('local-storage-update', handleStorageChange);
+        return () => window.removeEventListener('local-storage-update', handleStorageChange);
+
+    }, [collection, resource, fetchData, loadLocal]);
+
+    const create = async (item: any) => {
+        // 1. Optimistic Local Update
+        let newItem = item;
+        if ((db as any)[collection]) {
+             newItem = (db as any)[collection].create(item);
+        }
+        
+        // 2. Try Backend Sync and return server response if available (for real ID)
+        let serverItem = null;
+        if (resource && !isOffline) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item),
+                });
+                if (response.ok) {
+                    serverItem = await response.json();
+                }
+            } catch (e) {
+                setIsOffline(true);
+            }
+        }
+        return serverItem || newItem;
+    };
+
+    const update = async (id: number | string, updates: any) => {
+        let updatedItem = null;
+        if ((db as any)[collection]) {
+            updatedItem = (db as any)[collection].update(id, updates);
+        }
+        
+        if (resource && !isOffline) {
+            fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
+            }).catch(() => setIsOffline(true));
+        }
+        return updatedItem;
+    };
+
+    const remove = async (id: number | string) => {
+        if ((db as any)[collection]) {
+            (db as any)[collection].delete(id);
+        }
+        
+        if (resource && !isOffline) {
+            fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
+                method: 'DELETE',
+            }).catch(() => setIsOffline(true));
+        }
+    };
+
+    // Added refresh method explicitly exposing fetch
+    return { data, loading, error: isOffline ? null : error, create, update, remove, refresh: fetchData };
+}
