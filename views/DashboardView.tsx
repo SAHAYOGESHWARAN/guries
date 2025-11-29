@@ -19,7 +19,7 @@ const StatCard: React.FC<{ label: string; value: string | number; trend?: string
             )}
         </div>
         <div className={`p-2.5 rounded-lg ${colorClass} bg-opacity-10 group-hover:bg-opacity-20 transition-all`}>
-            {React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${colorClass.replace('bg-', 'text-')}` })}
+            {React.cloneElement(icon as React.ReactElement<any>, { className: `w-4 h-4 ${colorClass.replace('bg-', 'text-')}` })}
         </div>
     </div>
 );
@@ -44,7 +44,7 @@ const GlassCard: React.FC<{ title: string; subtitle?: string; children: React.Re
 const QuickAction: React.FC<{ label: string; icon: React.ReactNode; color: string; onClick: () => void }> = ({ label, icon, color, onClick }) => (
     <button onClick={onClick} className="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 hover:bg-white border border-slate-200 hover:border-brand-200 hover:shadow-sm transition-all group h-full">
         <div className={`p-2 rounded-full ${color} bg-opacity-10 text-opacity-100 group-hover:scale-110 transition-transform mb-1.5`}>
-            {React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${color.replace('bg-', 'text-')}` })}
+            {React.cloneElement(icon as React.ReactElement<any>, { className: `w-4 h-4 ${color.replace('bg-', 'text-')}` })}
         </div>
         <span className="font-semibold text-[10px] text-slate-600 group-hover:text-slate-900 text-center">{label}</span>
     </button>

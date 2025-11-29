@@ -25,7 +25,7 @@ const NavLink: React.FC<{ item: NavItem, isChild?: boolean, currentView: string,
     <a onClick={(e) => { e.preventDefault(); setCurrentView(item.id); }} className={`${baseClasses} ${childClasses} ${isActive ? activeClasses : inactiveClasses}`}>
       <span className={`flex-shrink-0 transition-colors duration-200 ${isChild ? '' : 'mr-3'}`}>
           {/* Icons are slightly dimmed when inactive */}
-          {React.cloneElement(item.icon as React.ReactElement, { 
+          {React.cloneElement(item.icon as React.ReactElement<any>, { 
               className: `w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}` 
           })}
       </span>

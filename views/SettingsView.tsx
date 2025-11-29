@@ -196,7 +196,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
                     {activeTab === 'profile' && <ProfileTab user={currentUser} />}
                     {activeTab === 'security' && <SecurityTab />}
                     {activeTab === 'notifications' && <NotificationsTab />}
-                    {activeTab === 'admin' && <AdminConsole onNavigate={onNavigate || (() => {})} />}
+                    {activeTab === 'admin' && <AdminConsole onNavigate={(view) => onNavigate && onNavigate(view, null)} />}
                 </div>
             </div>
         </div>

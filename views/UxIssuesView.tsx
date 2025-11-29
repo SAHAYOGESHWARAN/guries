@@ -54,7 +54,7 @@ const UxIssuesView: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Severity</label>
-                                    <select className="block w-full px-4 py-3 border border-slate-300 rounded-xl" value={newIssue.severity} onChange={e => setNewIssue({...newIssue, severity: e.target.value})}>
+                                    <select className="block w-full px-4 py-3 border border-slate-300 rounded-xl" value={newIssue.severity} onChange={e => setNewIssue({...newIssue, severity: e.target.value as any})}>
                                         <option>High</option><option>Medium</option><option>Low</option>
                                     </select>
                                 </div>

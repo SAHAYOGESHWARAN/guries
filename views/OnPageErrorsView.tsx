@@ -115,7 +115,7 @@ const OnPageErrorsView: React.FC = () => {
                                     <select 
                                         className="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-red-500 focus:border-red-500 bg-white" 
                                         value={newError.severity} 
-                                        onChange={e => setNewError({...newError, severity: e.target.value})}
+                                        onChange={e => setNewError({...newError, severity: e.target.value as any})}
                                     >
                                         <option>High</option>
                                         <option>Medium</option>

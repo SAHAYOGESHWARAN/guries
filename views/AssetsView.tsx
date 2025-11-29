@@ -83,7 +83,7 @@ const AssetsView: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                                        <select value={newAsset.usage_status} onChange={(e) => setNewAsset({...newAsset, usage_status: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                        <select value={newAsset.usage_status} onChange={(e) => setNewAsset({...newAsset, usage_status: e.target.value as any})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
                                             <option>Available</option>
                                             <option>In Use</option>
                                             <option>Archived</option>
