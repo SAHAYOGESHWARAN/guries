@@ -5,9 +5,9 @@
 1.  **Database Setup:**
     *   Ensure PostgreSQL is running.
     *   Create a database named `mcc_db`.
-    *   Run the schema script:
+    *   Run the unified schema script to create all tables and seeds:
         ```bash
-        psql -U postgres -d mcc_db -f backend/db/schema.sql
+        psql -U postgres -d mcc_db -f backend/db/full_schema.sql
         ```
 
 2.  **Environment Variables:**

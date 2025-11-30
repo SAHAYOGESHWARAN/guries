@@ -6,6 +6,7 @@ import * as analyticsController from '../controllers/analyticsController';
 import * as configController from '../controllers/configurationController';
 import * as benchmarkController from '../controllers/benchmarkController';
 import * as competitorController from '../controllers/competitorController';
+import * as competitorBacklinkController from '../controllers/competitorBacklinkController';
 import * as serviceController from '../controllers/serviceController';
 import * as resourceController from '../controllers/resourceController';
 import * as userController from '../controllers/userController';
@@ -32,10 +33,12 @@ import * as notificationController from '../controllers/notificationController';
 import * as communicationController from '../controllers/communicationController';
 import * as knowledgeController from '../controllers/knowledgeController';
 import * as complianceController from '../controllers/complianceController';
+import * as systemController from '../controllers/systemController';
 
 const router = Router();
 
-// --- Auth ---
+// --- System & Auth ---
+router.get('/system/stats', systemController.getSystemStats);
 router.post('/auth/send-otp', authController.sendOtp as any);
 router.post('/auth/verify-otp', authController.verifyOtp as any);
 
@@ -128,6 +131,11 @@ router.post('/competitors', competitorController.createCompetitor);
 router.put('/competitors/:id', competitorController.updateCompetitor);
 router.delete('/competitors/:id', competitorController.deleteCompetitor);
 
+router.get('/competitor-backlinks', competitorBacklinkController.getCompetitorBacklinks);
+router.post('/competitor-backlinks', competitorBacklinkController.createCompetitorBacklink);
+router.put('/competitor-backlinks/:id', competitorBacklinkController.updateCompetitorBacklink);
+router.delete('/competitor-backlinks/:id', competitorBacklinkController.deleteCompetitorBacklink);
+
 router.get('/gold-standards', benchmarkController.getGoldStandards);
 router.post('/gold-standards', benchmarkController.createGoldStandard);
 router.put('/gold-standards/:id', benchmarkController.updateGoldStandard);
@@ -165,12 +173,18 @@ router.post('/submissions', backlinkSubmissionController.createSubmission);
 router.put('/submissions/:id', backlinkSubmissionController.updateSubmission);
 router.delete('/submissions/:id', backlinkSubmissionController.deleteSubmission);
 
-// --- Users & QC ---
+// --- Users & Roles ---
 router.get('/users', userController.getUsers);
 router.post('/users', userController.createUser);
 router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
 
+router.get('/roles', userController.getRoles);
+router.post('/roles', userController.createRole);
+router.put('/roles/:id', userController.updateRole);
+router.delete('/roles/:id', userController.deleteRole);
+
+// --- QC ---
 router.get('/qc-runs', qcController.getQcRuns);
 router.post('/qc-runs', qcController.createQcRun);
 router.put('/qc-runs/:id', qcController.updateQcRun);
@@ -183,7 +197,9 @@ router.delete('/qc-checklists/:id', qcController.deleteChecklist);
 
 router.get('/qc-versions', qcController.getChecklistVersions);
 router.get('/qc-weightage-configs', qcController.getWeightageConfigs);
+router.post('/qc-weightage-configs', qcController.createWeightageConfig); 
 router.put('/qc-weightage-configs/:id', qcController.updateWeightageConfig);
+router.delete('/qc-weightage-configs/:id', qcController.deleteWeightageConfig);
 
 // --- Configuration Masters ---
 router.get('/industry-sectors', configController.getIndustries);
@@ -235,6 +251,7 @@ router.delete('/ux-issues/:id', uxController.deleteUxIssue);
 // --- HR & AI ---
 router.get('/hr/workload', hrController.getWorkloadForecast);
 router.get('/hr/rewards', hrController.getRewardRecommendations);
+router.put('/hr/rewards/:id', hrController.updateRewardStatus);
 router.get('/hr/rankings', hrController.getEmployeeRankings);
 router.get('/hr/skills', hrController.getEmployeeSkills);
 router.get('/hr/achievements', hrController.getEmployeeAchievements);

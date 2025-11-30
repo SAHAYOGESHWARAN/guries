@@ -1,40 +1,75 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import type { User, IntegrationLog } from '../types';
 
 // --- Sub-Components ---
 
-const ProfileTab: React.FC<{ user: User }> = ({ user }) => (
-    <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center space-x-6">
-            <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-600 border-4 border-white shadow-md overflow-hidden">
-                    {user?.avatar_url ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" /> : user?.name?.charAt(0)}
+const ProfileTab: React.FC<{ user: User | null; refresh: () => void }> = ({ user, refresh }) => {
+    const { update } = useData<User>('users');
+    const [formData, setFormData] = useState<Partial<User>>({});
+
+    useEffect(() => {
+        if (user) {
+            setFormData({ name: user.name, email: user.email, role: user.role, department: user.department });
+        }
+    }, [user]);
+
+    const handleSave = async () => {
+        if (!user) return;
+        await update(user.id, formData);
+        alert('Profile updated successfully');
+        refresh(); // Refresh parent data
+    };
+
+    if (!user) return <div className="p-4 text-slate-500">Loading user profile...</div>;
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center space-x-6">
+                <div className="relative">
+                    <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-600 border-4 border-white shadow-md overflow-hidden">
+                        {user.avatar_url ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" /> : user.name?.charAt(0)}
+                    </div>
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-slate-800">{user.name}</h3>
+                    <p className="text-xs text-slate-500">{user.role} • {user.department}</p>
+                    <div className="mt-2 flex space-x-2">
+                        <span className={`px-2 py-0.5 text-[10px] rounded-full font-medium border ${user.status === 'active' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                            {user.status}
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div>
-                <h3 className="text-lg font-bold text-slate-800">{user?.name}</h3>
-                <p className="text-xs text-slate-500">{user?.role} • {user?.department}</p>
-                <div className="mt-2 flex space-x-2">
-                    <span className="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] rounded-full font-medium border border-green-100">Active</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
+                    <input 
+                        type="text" 
+                        value={formData.name || ''} 
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" 
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+                    <input 
+                        type="email" 
+                        value={formData.email || ''} 
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" 
+                    />
                 </div>
             </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
-                <input type="text" defaultValue={user?.name} className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-            </div>
-            <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
-                <input type="email" defaultValue={user?.email} className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button onClick={handleSave} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
+                    Save Changes
+                </button>
             </div>
         </div>
-        <div className="pt-4 border-t border-slate-100 flex justify-end">
-            <button className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm">Save Changes</button>
-        </div>
-    </div>
-);
+    );
+};
 
 const SecurityTab: React.FC = () => (
     <div className="space-y-6 animate-fade-in">
@@ -142,8 +177,8 @@ interface SettingsViewProps {
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
-    const { data: users } = useData<User>('users');
-    const currentUser = users[0]; // Mock current user
+    const { data: users, refresh } = useData<User>('users');
+    const currentUser = users[0] || null; // Safely get first user (typically logged in user)
 
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications' | 'admin'>('profile');
 
@@ -193,7 +228,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
 
                 {/* Main Panel */}
                 <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm p-6 overflow-y-auto">
-                    {activeTab === 'profile' && <ProfileTab user={currentUser} />}
+                    {activeTab === 'profile' && <ProfileTab user={currentUser} refresh={refresh} />}
                     {activeTab === 'security' && <SecurityTab />}
                     {activeTab === 'notifications' && <NotificationsTab />}
                     {activeTab === 'admin' && <AdminConsole onNavigate={(view) => onNavigate && onNavigate(view, null)} />}

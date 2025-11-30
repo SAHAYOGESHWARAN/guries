@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { getStatusBadge } from '../constants';
+import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
 
 interface ChecklistConfig {
@@ -9,17 +10,20 @@ interface ChecklistConfig {
     weight: number;
     mandatory: boolean;
     stage: string;
+    asset_type?: string;
 }
 
 const ASSET_TYPES = ['Service Page', 'Blog Post', 'Landing Page', 'Whitepaper', 'SMM Post'];
 const STAGES = ['Draft', 'Review', 'Pre-Publish', 'Post-Publish'];
 
 const QcWeightageConfigView: React.FC = () => {
-    // ... (logic kept same) ...
+    const { data: allConfigs, create, update, remove } = useData<ChecklistConfig>('qcWeightageConfigs');
+    
     const [selectedAssetType, setSelectedAssetType] = useState('Service Page');
-    const [checklists, setChecklists] = useState<ChecklistConfig[]>([]);
     const [totalWeight, setTotalWeight] = useState(0);
     const [isValid, setIsValid] = useState(true);
+
+    const checklists = allConfigs.filter(c => c.asset_type === selectedAssetType);
 
     useEffect(() => {
         const total = checklists.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
@@ -27,53 +31,36 @@ const QcWeightageConfigView: React.FC = () => {
         setIsValid(total === 100);
     }, [checklists]);
 
-    const handleWeightChange = (id: number, val: string) => {
+    const handleWeightChange = async (id: number, val: string) => {
         const newWeight = parseInt(val) || 0;
-        setChecklists(prev => prev.map(item => item.id === id ? { ...item, weight: newWeight } : item));
+        await update(id, { weight: newWeight });
     };
 
-    const handleMandatoryToggle = (id: number) => {
-        setChecklists(prev => prev.map(item => item.id === id ? { ...item, mandatory: !item.mandatory } : item));
+    const handleMandatoryToggle = async (item: ChecklistConfig) => {
+        await update(item.id, { mandatory: !item.mandatory });
     };
 
-    const handleStageChange = (id: number, val: string) => {
-        setChecklists(prev => prev.map(item => item.id === id ? { ...item, stage: val } : item));
+    const handleStageChange = async (id: number, val: string) => {
+        await update(id, { stage: val });
     };
 
-    const handleDelete = (id: number) => {
-        setChecklists(prev => prev.filter(item => item.id !== id));
+    const handleDelete = async (id: number) => {
+        if(confirm("Remove this checklist from weightage?")) await remove(id);
     };
 
-    const handleAddChecklist = () => {
-        const newId = checklists.length > 0 ? Math.max(...checklists.map(c => c.id)) + 1 : 1;
-        setChecklists([...checklists, {
-            id: newId,
-            name: 'New Checklist',
+    const handleAddChecklist = async () => {
+        await create({
+            name: 'New Checklist Item',
             type: 'Content',
             weight: 0,
             mandatory: false,
-            stage: 'Draft'
-        }]);
-    };
-
-    const handleReset = () => {
-        setChecklists([]);
-    };
-
-    const handleSave = () => {
-        if (!isValid && checklists.length > 0) {
-            alert('Total weight must equal 100% before saving.');
-            return;
-        }
-        alert(`Configuration saved for ${selectedAssetType}!`);
+            stage: 'Draft',
+            asset_type: selectedAssetType
+        } as any);
     };
 
     const handleExport = () => {
-        const exportData = checklists.map(item => ({
-            ...item,
-            assetType: selectedAssetType
-        }));
-        exportToCSV(exportData, `qc_weightage_${selectedAssetType.replace(/\s+/g, '_')}`);
+        exportToCSV(checklists, `qc_weightage_${selectedAssetType.replace(/\s+/g, '_')}`);
     };
 
     return (
@@ -89,12 +76,6 @@ const QcWeightageConfigView: React.FC = () => {
                         className="text-slate-600 hover:text-indigo-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors"
                     >
                         Export
-                    </button>
-                    <button onClick={handleReset} className="text-slate-600 hover:text-red-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors">
-                        Reset
-                    </button>
-                    <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 shadow-sm transition-colors">
-                        Save Configuration
                     </button>
                 </div>
             </div>
@@ -156,14 +137,14 @@ const QcWeightageConfigView: React.FC = () => {
                                         <input 
                                             type="text" 
                                             value={item.name}
-                                            onChange={(e) => setChecklists(prev => prev.map(c => c.id === item.id ? { ...c, name: e.target.value } : c))}
+                                            onChange={(e) => update(item.id, { name: e.target.value })}
                                             className="text-sm font-medium text-slate-900 border-none bg-transparent focus:ring-0 w-full"
                                         />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <select 
                                             value={item.type}
-                                            onChange={(e) => setChecklists(prev => prev.map(c => c.id === item.id ? { ...c, type: e.target.value } : c))}
+                                            onChange={(e) => update(item.id, { type: e.target.value })}
                                             className="text-xs px-2 py-1 rounded font-medium border-none bg-transparent"
                                         >
                                             <option value="Content">Content</option>
@@ -189,7 +170,7 @@ const QcWeightageConfigView: React.FC = () => {
                                         <input 
                                             type="checkbox" 
                                             checked={item.mandatory} 
-                                            onChange={() => handleMandatoryToggle(item.id)}
+                                            onChange={() => handleMandatoryToggle(item)}
                                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                                         />
                                     </td>

@@ -85,61 +85,39 @@ const CodeBlock: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const SystemMonitor: React.FC = () => {
-    const [metrics, setMetrics] = useState({
-        cpu: 45,
-        memory: 62,
-        dbConnections: 124,
-        kafkaLag: 0,
-        apiLatency: 120,
-        errorRate: 0.01
+    const [metrics, setMetrics] = useState<any>({
+        cpu: 0,
+        memory: 0,
+        dbLatency: 0,
+        status: 'Checking...',
+        uptime: 0
     });
 
-    const [stressMode, setStressMode] = useState(false);
-
     useEffect(() => {
-        const interval = setInterval(() => {
-            setStressMode(prev => {
-                // 5% chance to enter stress mode, 20% chance to exit
-                if (!prev) return Math.random() > 0.95;
-                return Math.random() > 0.2;
-            });
-
-            setMetrics(prev => {
-                const isStressed = stressMode;
-                
-                // Base fluctuations
-                let newCpu = prev.cpu + (Math.random() * 6 - 3);
-                let newMem = prev.memory + (Math.random() * 4 - 2);
-                let newLatency = prev.apiLatency + (Math.random() * 10 - 5);
-                let newLag = Math.max(0, prev.kafkaLag + (Math.random() * 10 - 5));
-                let newErrors = Math.max(0, prev.errorRate + (Math.random() * 0.02 - 0.01));
-
-                // Apply stress factors
-                if (isStressed) {
-                    newCpu += Math.random() * 15;
-                    newLatency += Math.random() * 50;
-                    newLag += Math.random() * 20;
-                    newErrors += Math.random() * 0.1;
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/api/v1/system/stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    setMetrics({
+                        cpu: data.resources.cpu.percentage,
+                        memory: data.resources.memory.percentage,
+                        dbLatency: data.health.dbLatency,
+                        status: data.health.apiStatus,
+                        uptime: Math.floor(data.uptime / 60)
+                    });
                 } else {
-                    // Recovery
-                    newCpu = newCpu * 0.95;
-                    newLatency = Math.max(80, newLatency * 0.95);
-                    newLag = Math.max(0, newLag * 0.8);
-                    newErrors = Math.max(0.01, newErrors * 0.9);
+                    setMetrics(prev => ({ ...prev, status: 'Error' }));
                 }
+            } catch (e) {
+                setMetrics(prev => ({ ...prev, status: 'Offline' }));
+            }
+        };
 
-                return {
-                    cpu: Math.min(100, Math.max(10, newCpu)),
-                    memory: Math.min(98, Math.max(30, newMem)),
-                    dbConnections: Math.floor(Math.max(50, 120 + (Math.sin(Date.now() / 1000) * 30))),
-                    kafkaLag: Math.floor(newLag),
-                    apiLatency: Math.floor(newLatency),
-                    errorRate: parseFloat(newErrors.toFixed(2))
-                };
-            });
-        }, 1000);
+        fetchStats();
+        const interval = setInterval(fetchStats, 3000); // Poll every 3s
         return () => clearInterval(interval);
-    }, [stressMode]);
+    }, []);
 
     const MetricCard = ({ label, value, unit, color, alertCondition }: any) => {
         const isAlert = alertCondition ? alertCondition(value) : false;
@@ -162,57 +140,43 @@ const SystemMonitor: React.FC = () => {
         <div className="bg-gray-900 p-4 rounded-lg mb-8 shadow-xl border border-gray-800">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white font-bold flex items-center">
-                    <span className={`w-3 h-3 rounded-full mr-2 ${stressMode ? 'bg-red-500 animate-ping' : 'bg-green-500 animate-pulse'}`}></span>
-                    Live System Monitor (Production)
+                    <span className={`w-3 h-3 rounded-full mr-2 ${metrics.status === 'Operational' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                    Live System Monitor
                 </h3>
                 <div className="flex items-center space-x-4">
-                    <span className={`text-xs font-mono px-2 py-1 rounded ${stressMode ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
-                        Status: {stressMode ? 'HIGH LOAD' : 'HEALTHY'}
+                    <span className={`text-xs font-mono px-2 py-1 rounded ${metrics.status === 'Operational' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                        Status: {metrics.status.toUpperCase()}
                     </span>
-                    <span className="text-xs text-gray-500 font-mono">us-east-1a</span>
+                    <span className="text-xs text-gray-500 font-mono">Backend</span>
                 </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricCard 
-                    label="CPU Load" 
-                    value={Math.round(metrics.cpu)} 
+                    label="Server CPU" 
+                    value={metrics.cpu} 
                     unit="%" 
                     color="text-blue-400" 
                     alertCondition={(v: number) => v > 85}
                 />
                 <MetricCard 
-                    label="Memory" 
-                    value={Math.round(metrics.memory)} 
+                    label="Memory Usage" 
+                    value={metrics.memory} 
                     unit="%" 
                     color="text-purple-400" 
                     alertCondition={(v: number) => v > 90}
                 />
                 <MetricCard 
-                    label="DB Conns" 
-                    value={metrics.dbConnections} 
-                    unit="" 
-                    color="text-yellow-400" 
-                />
-                <MetricCard 
-                    label="Kafka Lag" 
-                    value={metrics.kafkaLag} 
+                    label="DB Latency" 
+                    value={metrics.dbLatency} 
                     unit="ms" 
-                    color="text-green-400" 
+                    color="text-teal-400" 
                     alertCondition={(v: number) => v > 100}
                 />
                 <MetricCard 
-                    label="API Latency" 
-                    value={metrics.apiLatency} 
-                    unit="ms" 
-                    color="text-teal-400" 
-                    alertCondition={(v: number) => v > 300}
-                />
-                <MetricCard 
-                    label="Error Rate" 
-                    value={metrics.errorRate} 
-                    unit="%" 
-                    color="text-orange-400" 
-                    alertCondition={(v: number) => v > 1.0}
+                    label="Uptime" 
+                    value={metrics.uptime} 
+                    unit=" min" 
+                    color="text-green-400" 
                 />
             </div>
         </div>
@@ -324,8 +288,8 @@ const DeveloperNotesView: React.FC = () => {
                     <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
                         <h3 className="font-bold text-lg text-gray-800 mb-4">Server Health</h3>
                         <ul className="space-y-3 text-sm text-gray-600">
-                            <li className="flex items-center"><svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path></svg>Uptime: 14d 2h 12m</li>
-                            <li className="flex items-center"><svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path></svg>Last Backup: 2 hours ago</li>
+                            <li className="flex items-center"><svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path></svg>Environment: Production</li>
+                            <li className="flex items-center"><svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path></svg>Socket.IO: Active</li>
                         </ul>
                     </div>
                 </div>

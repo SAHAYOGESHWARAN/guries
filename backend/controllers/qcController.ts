@@ -126,15 +126,42 @@ export const getWeightageConfigs = async (req: any, res: any) => {
     }
 };
 
-export const updateWeightageConfig = async (req: any, res: any) => {
-    const { id } = req.params;
-    const { weight, mandatory, stage } = req.body;
+export const createWeightageConfig = async (req: any, res: any) => {
+    const { name, type, weight, mandatory, stage, asset_type } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE qc_weightage_configs SET weight=$1, mandatory=$2, stage=$3 WHERE id=$4 RETURNING *',
-            [weight, mandatory, stage, id]
+            'INSERT INTO qc_weightage_configs (name, type, weight, mandatory, stage, asset_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [name, type, weight, mandatory, stage, asset_type]
         );
-        res.status(200).json(result.rows[0]);
+        const newItem = result.rows[0];
+        getSocket().emit('qc_weightage_created', newItem);
+        res.status(201).json(newItem);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const updateWeightageConfig = async (req: any, res: any) => {
+    const { id } = req.params;
+    const { weight, mandatory, stage, name, type } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE qc_weightage_configs SET weight=COALESCE($1,weight), mandatory=COALESCE($2,mandatory), stage=COALESCE($3,stage), name=COALESCE($4,name), type=COALESCE($5,type) WHERE id=$6 RETURNING *',
+            [weight, mandatory, stage, name, type, id]
+        );
+        const updatedItem = result.rows[0];
+        getSocket().emit('qc_weightage_updated', updatedItem);
+        res.status(200).json(updatedItem);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const deleteWeightageConfig = async (req: any, res: any) => {
+    try {
+        await pool.query('DELETE FROM qc_weightage_configs WHERE id = $1', [req.params.id]);
+        getSocket().emit('qc_weightage_deleted', { id: req.params.id });
+        res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

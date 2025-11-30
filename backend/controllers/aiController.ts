@@ -1,28 +1,26 @@
 
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
+import { getSocket } from '../socket';
 
 export const generateEvaluation = async (req: any, res: any) => {
     const { userId, type, summary, strengths, weaknesses, recommendations } = req.body;
     
     try {
-        // In a real application, this would save the AI-generated evaluation 
-        // to an 'evaluations' table linked to the user.
-        
-        /* 
-        await pool.query(
-            'INSERT INTO employee_evaluations (user_id, evaluation_type, summary, created_at) VALUES ($1, $2, $3, NOW())',
-            [userId, type, summary]
+        const result = await pool.query(
+            `INSERT INTO employee_evaluations (
+                user_id, evaluation_type, summary, strengths, weaknesses, recommendations, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
+            [userId, type || 'Automated', summary, strengths || [], weaknesses || [], recommendations || []]
         );
-        */
         
-        console.log(`[AI Controller] Evaluation generated/saved for User ID: ${userId}`);
+        const newEval = result.rows[0];
+        getSocket().emit('evaluation_created', newEval);
         
-        // Return success to frontend
         res.status(200).json({ 
             status: 'success', 
-            message: 'Evaluation generated and saved successfully.', 
-            data: { userId, type, timestamp: new Date() } 
+            message: 'Evaluation generated and saved.', 
+            data: newEval
         });
     } catch (error: any) {
         console.error('AI Evaluation Error:', error);

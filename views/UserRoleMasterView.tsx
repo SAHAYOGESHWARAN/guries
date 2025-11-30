@@ -1,35 +1,72 @@
+
 import React, { useState } from 'react';
 import Table from '../components/Table';
+import Modal from '../components/Modal';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
 import type { User } from '../types';
+
+interface Role {
+    id: number;
+    role_name: string;
+    permissions: any;
+    status: string;
+}
 
 const ROLES = ['All Roles', 'Admin', 'SEO', 'Content', 'Developer', 'SMM', 'Manager', 'QC'];
 const DEPARTMENTS = ['All Departments', 'Management', 'Marketing', 'Content', 'Technology', 'Quality'];
 
 const UserRoleMasterView: React.FC = () => {
-    // ... (logic kept same) ...
     const { data: users } = useData<User>('users');
+    const { data: roles, create: createRole, update: updateRole, remove: deleteRole } = useData<Role>('roles');
     
     const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('All Roles');
     const [deptFilter, setDeptFilter] = useState('All Departments');
 
-    const filteredData = users.filter(item => {
+    // Role Form State
+    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+    const [editingRole, setEditingRole] = useState<Role | null>(null);
+    const [roleForm, setRoleForm] = useState<Partial<Role>>({ role_name: '', status: 'Active', permissions: { read: true, write: false, delete: false } });
+
+    const filteredUsers = users.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                               item.email.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesRole = roleFilter === 'All Roles' || item.role === roleFilter;
         const matchesDept = deptFilter === 'All Departments' || item.department === deptFilter;
-        
         return matchesSearch && matchesRole && matchesDept;
     });
 
+    const filteredRoles = roles.filter(r => r.role_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
     const handleExport = () => {
-        exportToCSV(filteredData, 'users_export');
+        exportToCSV(activeTab === 'users' ? filteredUsers : filteredRoles, `${activeTab}_export`);
     };
 
-    const columns = [
+    // Role Actions
+    const handleSaveRole = async () => {
+        if (editingRole) {
+            await updateRole(editingRole.id, roleForm);
+        } else {
+            await createRole(roleForm as any);
+        }
+        setIsRoleModalOpen(false);
+        setEditingRole(null);
+        setRoleForm({ role_name: '', status: 'Active', permissions: { read: true, write: false, delete: false } });
+    };
+
+    const handleDeleteRole = async (id: number) => {
+        if(confirm("Delete this role?")) await deleteRole(id);
+    };
+
+    const handleEditRole = (role: Role) => {
+        setEditingRole(role);
+        setRoleForm(role);
+        setIsRoleModalOpen(true);
+    };
+
+    const userColumns = [
         { 
             header: 'Name', 
             accessor: (item: User) => (
@@ -66,6 +103,30 @@ const UserRoleMasterView: React.FC = () => {
         { header: 'Last Login', accessor: 'last_login' as keyof User, className: 'text-xs text-slate-500' },
     ];
 
+    const roleColumns = [
+        { header: 'Role Name', accessor: 'role_name' as keyof Role, className: 'font-bold' },
+        { header: 'Status', accessor: 'status' as keyof Role },
+        { 
+            header: 'Permissions', 
+            accessor: (item: Role) => (
+                <div className="flex gap-2 text-xs">
+                    {item.permissions?.read && <span className="bg-blue-50 text-blue-600 px-2 rounded">Read</span>}
+                    {item.permissions?.write && <span className="bg-green-50 text-green-600 px-2 rounded">Write</span>}
+                    {item.permissions?.delete && <span className="bg-red-50 text-red-600 px-2 rounded">Delete</span>}
+                </div>
+            )
+        },
+        {
+            header: 'Actions',
+            accessor: (item: Role) => (
+                <div className="flex space-x-2">
+                    <button onClick={() => handleEditRole(item)} className="text-blue-600 text-xs font-bold">Edit</button>
+                    <button onClick={() => handleDeleteRole(item.id)} className="text-red-600 text-xs font-bold">Del</button>
+                </div>
+            )
+        }
+    ];
+
     return (
         <div className="space-y-6 h-full overflow-y-auto w-full pr-1">
             <div className="flex justify-between items-start">
@@ -80,6 +141,14 @@ const UserRoleMasterView: React.FC = () => {
                     >
                         Export
                     </button>
+                    {activeTab === 'roles' && (
+                        <button 
+                            onClick={() => { setEditingRole(null); setRoleForm({role_name: '', status: 'Active', permissions: {read: true, write: false, delete: false}}); setIsRoleModalOpen(true); }}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
+                        >
+                            + Add Role
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -102,13 +171,41 @@ const UserRoleMasterView: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <Table columns={columns} data={filteredData} title="User Registry" />
+                    <Table columns={userColumns} data={filteredUsers} title="User Registry" />
                 </>
             ) : (
-                <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
-                    <p className="text-slate-500">Role configuration interface placeholder</p>
-                </div>
+                <>
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
+                        <input type="search" className="block w-full p-2.5 border border-gray-300 rounded-lg" placeholder="Search roles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
+                    <Table columns={roleColumns} data={filteredRoles} title="System Roles" />
+                </>
             )}
+
+            <Modal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} title={editingRole ? "Edit Role" : "Create Role"}>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Role Name</label>
+                        <input type="text" value={roleForm.role_name} onChange={(e) => setRoleForm({...roleForm, role_name: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.read} onChange={(e) => setRoleForm({...roleForm, permissions: {...roleForm.permissions, read: e.target.checked}})} className="mr-2"/> Read</label>
+                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.write} onChange={(e) => setRoleForm({...roleForm, permissions: {...roleForm.permissions, write: e.target.checked}})} className="mr-2"/> Write</label>
+                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.delete} onChange={(e) => setRoleForm({...roleForm, permissions: {...roleForm.permissions, delete: e.target.checked}})} className="mr-2"/> Delete</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Status</label>
+                        <select value={roleForm.status} onChange={(e) => setRoleForm({...roleForm, status: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                            <option>Active</option>
+                            <option>Inactive</option>
+                        </select>
+                    </div>
+                    <div className="flex justify-end pt-4"><button onClick={handleSaveRole} className="bg-blue-600 text-white px-4 py-2 rounded-md">Save</button></div>
+                </div>
+            </Modal>
         </div>
     );
 };

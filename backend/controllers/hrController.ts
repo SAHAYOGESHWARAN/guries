@@ -1,19 +1,19 @@
 
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
+import { getSocket } from '../socket';
 
 // Get calculated workload forecast based on active tasks
 export const getWorkloadForecast = async (req: any, res: any) => {
     try {
-        // Advanced SQL query to calculate workload based on assigned tasks
         const result = await pool.query(`
             SELECT 
                 u.id, 
                 u.name, 
                 u.role,
                 COUNT(t.id) as current_load,
-                -- Simulate predictive load based on historical averages (randomized for demo)
-                (COUNT(t.id) + CAST(FLOOR(RANDOM() * 5) AS INT)) as predicted_load,
+                -- Predictive load logic
+                (COUNT(t.id) + 2) as predicted_load,
                 25 as capacity
             FROM users u
             LEFT JOIN tasks t ON u.id = t.primary_owner_id AND t.status IN ('active', 'in_progress', 'pending')
@@ -41,25 +41,47 @@ export const getWorkloadForecast = async (req: any, res: any) => {
 
 export const getRewardRecommendations = async (req: any, res: any) => {
     try {
-        // In a production system, this would run complex logic over the 'qc_runs' and 'tasks' tables
-        // to calculate performance scores. For this view, we return structured data.
+        const result = await pool.query(`
+            SELECT r.*, u.name, u.role 
+            FROM reward_recommendations r
+            JOIN users u ON r.user_id = u.id
+            ORDER BY r.created_at DESC
+        `);
         
-        const users = await pool.query("SELECT id, name, role FROM users WHERE status = 'active' LIMIT 5");
-        
-        const recommendations = users.rows.map((u: any, idx: number) => ({
-            id: idx + 1,
-            userId: u.id,
-            name: u.name,
-            role: u.role,
-            tier: idx === 0 ? 'Tier 1 (Top 5%)' : idx === 1 ? 'Tier 2 (Top 10%)' : 'Tier 3 (Standard)',
-            rank: idx + 1,
-            score: 95 - (idx * 5),
-            recommendedBonus: 15000 - (idx * 2500),
-            status: 'Pending',
-            achievements: idx === 0 ? ['Perfect QC Streak', 'Project Lead'] : ['Consistent Output']
+        const formatted = result.rows.map((row: any) => ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            role: row.role,
+            tier: row.tier,
+            rank: 0, // Calculated frontend side or add ranking logic
+            score: row.performance_score,
+            recommendedBonus: parseFloat(row.recommended_bonus),
+            status: row.status,
+            achievements: row.achievements_summary ? row.achievements_summary.split(',') : []
         }));
 
-        res.status(200).json(recommendations);
+        res.status(200).json(formatted);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const updateRewardStatus = async (req: any, res: any) => {
+    const { id } = req.params;
+    const { status } = req.body; // 'Approved' or 'Rejected'
+
+    try {
+        const result = await pool.query(
+            'UPDATE reward_recommendations SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+            [status, id]
+        );
+        
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Reward not found' });
+
+        const updatedReward = result.rows[0];
+        getSocket().emit('reward_updated', updatedReward);
+        res.status(200).json(updatedReward);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -67,38 +89,36 @@ export const getRewardRecommendations = async (req: any, res: any) => {
 
 export const getEmployeeRankings = async (req: any, res: any) => {
     try {
+        // Complex query to aggregate performance data
         const query = `
             SELECT 
                 u.id, 
                 u.name, 
                 u.role, 
-                u.department
+                u.department,
+                (SELECT COUNT(*) FROM tasks t WHERE t.primary_owner_id = u.id AND t.status = 'completed') as tasks_completed,
+                (SELECT AVG(final_score_percentage) FROM qc_runs qc WHERE qc.qc_owner_id = u.id) as avg_qc
             FROM users u
             WHERE u.status = 'active'
         `;
         const result = await pool.query(query);
         
-        // Simulate composite scoring logic
         const rankings = result.rows.map((u: any, idx: number) => {
-            // Generate deterministic pseudo-random scores based on ID for consistency during demo
-            const seed = u.id * 13;
-            const baseScore = 70 + (seed % 25); 
+            const baseScore = 70 + (parseInt(u.tasks_completed || 0) * 2); 
             
             return {
-                rank: 0, // Assigned after sort
+                rank: 0, 
                 id: u.id,
                 name: u.name,
                 role: u.role,
                 department: u.department || 'Marketing',
-                composite_score: baseScore,
-                qc_score: Math.min(100, baseScore + (seed % 10)),
-                effort_score: Math.min(100, baseScore - (seed % 5)),
-                performance_score: Math.min(100, baseScore + (seed % 8)),
-                trend: baseScore > 85 ? 'Up' : baseScore < 75 ? 'Down' : 'Flat'
+                composite_score: Math.min(100, baseScore),
+                qc_score: Math.round(u.avg_qc || 75),
+                performance_score: Math.min(100, baseScore + 5),
+                trend: baseScore > 85 ? 'Up' : 'Flat'
             };
         }).sort((a: any, b: any) => b.composite_score - a.composite_score);
 
-        // Assign ranks
         rankings.forEach((r: any, i: number) => r.rank = i + 1);
 
         res.status(200).json(rankings);
@@ -108,22 +128,23 @@ export const getEmployeeRankings = async (req: any, res: any) => {
 };
 
 export const getEmployeeSkills = async (req: any, res: any) => {
-    // Returns skills for the employee scorecard
-    const skills = [
-        { name: 'Content Strategy', score: 92, category: 'Strategy' },
-        { name: 'SEO Optimization', score: 88, category: 'Technical' },
-        { name: 'Data Analytics', score: 75, category: 'Data' },
-        { name: 'Project Mgmt', score: 85, category: 'Soft Skills' },
-        { name: 'Copywriting', score: 95, category: 'Content' }
-    ];
-    res.status(200).json(skills);
+    try {
+        const result = await pool.query('SELECT * FROM employee_skills ORDER BY score DESC');
+        res.status(200).json(result.rows.map((r:any) => ({
+            name: r.skill_name,
+            score: r.score,
+            category: r.category
+        })));
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
 export const getEmployeeAchievements = async (req: any, res: any) => {
-    const achievements = [
-        { id: 1, title: 'Top Performer Q1', date: '2025-03-15', icon: '🏆', description: 'Highest composite score in Q1' },
-        { id: 2, title: 'Bug Squasher', date: '2025-02-10', icon: '🐛', description: 'Resolved 50+ UX issues' },
-        { id: 3, title: 'Viral Campaign', date: '2025-01-20', icon: '🚀', description: 'Campaign reached 1M+ views' }
-    ];
-    res.status(200).json(achievements);
+    try {
+        const result = await pool.query('SELECT * FROM employee_achievements ORDER BY date_awarded DESC');
+        res.status(200).json(result.rows);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
 };

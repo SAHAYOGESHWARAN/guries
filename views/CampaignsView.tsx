@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
+import Tooltip from '../components/Tooltip';
 import type { Campaign, User } from '../types';
 
 interface CampaignsViewProps {
@@ -88,35 +90,43 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                               <h4 className="font-bold text-slate-800 text-xs uppercase mb-3 border-b border-slate-100 pb-2">Campaign Basics</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                   <div className="space-y-3">
-                                      <div>
-                                          <label className="block text-xs font-bold text-slate-700 mb-1">Campaign Name</label>
-                                          <input type="text" value={formCampaign.campaign_name} onChange={(e) => setFormCampaign({...formCampaign, campaign_name: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="e.g. Summer Sale Promo" />
-                                      </div>
-                                      <div>
-                                          <label className="block text-xs font-bold text-slate-700 mb-1">Campaign Type</label>
-                                          <select value={formCampaign.campaign_type} onChange={(e) => setFormCampaign({...formCampaign, campaign_type: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
-                                              <option value="Content">Content Marketing</option>
-                                              <option value="SEO">SEO / Link Building</option>
-                                              <option value="SMM">Social Media</option>
-                                              <option value="Web">Website Dev</option>
-                                              <option value="Analytics">Analytics Audit</option>
-                                          </select>
-                                      </div>
+                                      <Tooltip content="The official name of the campaign.">
+                                          <div>
+                                              <label className="block text-xs font-bold text-slate-700 mb-1">Campaign Name</label>
+                                              <input type="text" value={formCampaign.campaign_name} onChange={(e) => setFormCampaign({...formCampaign, campaign_name: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="e.g. Summer Sale Promo" />
+                                          </div>
+                                      </Tooltip>
+                                      <Tooltip content="Type of campaign to categorize metrics.">
+                                          <div>
+                                              <label className="block text-xs font-bold text-slate-700 mb-1">Campaign Type</label>
+                                              <select value={formCampaign.campaign_type} onChange={(e) => setFormCampaign({...formCampaign, campaign_type: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
+                                                  <option value="Content">Content Marketing</option>
+                                                  <option value="SEO">SEO / Link Building</option>
+                                                  <option value="SMM">Social Media</option>
+                                                  <option value="Web">Website Dev</option>
+                                                  <option value="Analytics">Analytics Audit</option>
+                                              </select>
+                                          </div>
+                                      </Tooltip>
                                   </div>
                                   <div className="space-y-3">
-                                      <div>
-                                          <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                                          <select value={formCampaign.campaign_status} onChange={(e) => setFormCampaign({...formCampaign, campaign_status: e.target.value as any})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
-                                              <option value="planning">Planned</option>
-                                              <option value="active">Active</option>
-                                              <option value="on_hold">On Hold</option>
-                                              <option value="completed">Completed</option>
-                                          </select>
-                                      </div>
-                                      <div>
-                                          <label className="block text-xs font-bold text-slate-700 mb-1">Target URL</label>
-                                          <input type="text" value={formCampaign.target_url} onChange={(e) => setFormCampaign({...formCampaign, target_url: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="https://..." />
-                                      </div>
+                                      <Tooltip content="Current operational status.">
+                                          <div>
+                                              <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
+                                              <select value={formCampaign.campaign_status} onChange={(e) => setFormCampaign({...formCampaign, campaign_status: e.target.value as any})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
+                                                  <option value="planning">Planned</option>
+                                                  <option value="active">Active</option>
+                                                  <option value="on_hold">On Hold</option>
+                                                  <option value="completed">Completed</option>
+                                              </select>
+                                          </div>
+                                      </Tooltip>
+                                      <Tooltip content="The main URL this campaign is driving traffic to.">
+                                          <div>
+                                              <label className="block text-xs font-bold text-slate-700 mb-1">Target URL</label>
+                                              <input type="text" value={formCampaign.target_url} onChange={(e) => setFormCampaign({...formCampaign, target_url: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="https://..." />
+                                          </div>
+                                      </Tooltip>
                                   </div>
                               </div>
                           </div>
@@ -124,14 +134,18 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm w-full">
                               <h4 className="font-bold text-slate-800 text-xs uppercase mb-3 border-b border-slate-100 pb-2">Schedule</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                                  <div>
-                                      <label className="block text-xs font-bold text-slate-700 mb-1">Start Date</label>
-                                      <input type="date" value={formCampaign.campaign_start_date} onChange={(e) => setFormCampaign({...formCampaign, campaign_start_date: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
-                                  </div>
-                                  <div>
-                                      <label className="block text-xs font-bold text-slate-700 mb-1">End Date</label>
-                                      <input type="date" value={formCampaign.campaign_end_date} onChange={(e) => setFormCampaign({...formCampaign, campaign_end_date: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
-                                  </div>
+                                  <Tooltip content="Date the campaign officially begins.">
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Start Date</label>
+                                          <input type="date" value={formCampaign.campaign_start_date} onChange={(e) => setFormCampaign({...formCampaign, campaign_start_date: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
+                                      </div>
+                                  </Tooltip>
+                                  <Tooltip content="Projected completion date.">
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">End Date</label>
+                                          <input type="date" value={formCampaign.campaign_end_date} onChange={(e) => setFormCampaign({...formCampaign, campaign_end_date: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
+                                      </div>
+                                  </Tooltip>
                               </div>
                           </div>
                       </div>

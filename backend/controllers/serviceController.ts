@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
+import { getSocket } from '../socket';
 
 // --- Services ---
 export const getServices = async (req: any, res: any) => {
@@ -94,8 +95,11 @@ export const createService = async (req: any, res: any) => {
                 brand_id, business_unit, content_owner_id, created_by, created_at || 'NOW()', version_number || 1, change_log_link
             ]
         );
-        res.status(201).json(result.rows[0]);
+        const newItem = result.rows[0];
+        getSocket().emit('service_created', newItem);
+        res.status(201).json(newItem);
     } catch (error: any) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -173,7 +177,9 @@ export const updateService = async (req: any, res: any) => {
                 brand_id, business_unit, content_owner_id, updated_by, version_number, change_log_link, id
             ]
         );
-        res.status(200).json(result.rows[0]);
+        const updatedItem = result.rows[0];
+        getSocket().emit('service_updated', updatedItem);
+        res.status(200).json(updatedItem);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -182,6 +188,7 @@ export const updateService = async (req: any, res: any) => {
 export const deleteService = async (req: any, res: any) => {
     try {
         await pool.query('DELETE FROM services WHERE id = $1', [req.params.id]);
+        getSocket().emit('service_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -204,7 +211,12 @@ export const createSubService = async (req: any, res: any) => {
         h1, h2_list, h3_list, body_content,
         meta_title, meta_description, focus_keywords,
         og_title, og_description, og_image_url,
-        assets_linked
+        assets_linked,
+        // Extended Fields
+        menu_position, breadcrumb_label, include_in_xml_sitemap,
+        content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
+        robots_index, robots_follow, canonical_url, schema_type_id,
+        brand_id, content_owner_id
     } = req.body;
 
     try {
@@ -214,23 +226,54 @@ export const createSubService = async (req: any, res: any) => {
                 h1, h2_list, h3_list, body_content,
                 meta_title, meta_description, focus_keywords,
                 og_title, og_description, og_image_url,
-                assets_linked, updated_at
+                assets_linked,
+                menu_position, breadcrumb_label, include_in_xml_sitemap,
+                content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
+                robots_index, robots_follow, canonical_url, schema_type_id,
+                brand_id, content_owner_id,
+                updated_at
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, 
                 $7, $8, $9, $10,
                 $11, $12, $13,
                 $14, $15, $16,
-                $17, NOW()
+                $17,
+                $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+                NOW()
             ) RETURNING *`,
             [
                 sub_service_name, parent_service_id, slug, full_url, description, status,
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), body_content,
                 meta_title, meta_description, JSON.stringify(focus_keywords || []),
                 og_title, og_description, og_image_url,
-                assets_linked || 0
+                assets_linked || 0,
+                menu_position || 0, breadcrumb_label, include_in_xml_sitemap ?? true,
+                content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
+                robots_index || 'index', robots_follow || 'follow', canonical_url, schema_type_id || 'Service',
+                brand_id || 0, content_owner_id || 0
             ]
         );
-        res.status(201).json(result.rows[0]);
+        
+        const newItem = result.rows[0];
+        getSocket().emit('sub_service_created', newItem);
+
+        // --- Auto-Update Parent Service Count ---
+        if (parent_service_id) {
+            await pool.query(
+                `UPDATE services 
+                 SET subservice_count = (SELECT COUNT(*) FROM sub_services WHERE parent_service_id = $1),
+                     has_subservices = true,
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [parent_service_id]
+            );
+            const parentResult = await pool.query('SELECT * FROM services WHERE id = $1', [parent_service_id]);
+            if (parentResult.rows.length > 0) {
+                getSocket().emit('service_updated', parentResult.rows[0]);
+            }
+        }
+
+        res.status(201).json(newItem);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -243,27 +286,56 @@ export const updateSubService = async (req: any, res: any) => {
         h1, h2_list, h3_list, body_content,
         meta_title, meta_description, focus_keywords,
         og_title, og_description, og_image_url,
-        assets_linked
+        assets_linked,
+        // Extended Fields
+        menu_position, breadcrumb_label, include_in_xml_sitemap,
+        content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
+        robots_index, robots_follow, canonical_url, schema_type_id,
+        brand_id, content_owner_id
     } = req.body;
 
     try {
         const result = await pool.query(
             `UPDATE sub_services SET 
-                sub_service_name=$1, parent_service_id=$2, slug=$3, full_url=$4, description=$5, status=$6,
-                h1=$7, h2_list=$8, h3_list=$9, body_content=$10,
-                meta_title=$11, meta_description=$12, focus_keywords=$13,
-                og_title=$14, og_description=$15, og_image_url=$16,
-                assets_linked=$17, updated_at=NOW() 
-            WHERE id=$18 RETURNING *`,
+                sub_service_name=COALESCE($1, sub_service_name), parent_service_id=COALESCE($2, parent_service_id), 
+                slug=COALESCE($3, slug), full_url=COALESCE($4, full_url), description=COALESCE($5, description), status=COALESCE($6, status),
+                h1=COALESCE($7, h1), h2_list=COALESCE($8, h2_list), h3_list=COALESCE($9, h3_list), body_content=COALESCE($10, body_content),
+                meta_title=COALESCE($11, meta_title), meta_description=COALESCE($12, meta_description), focus_keywords=COALESCE($13, focus_keywords),
+                og_title=COALESCE($14, og_title), og_description=COALESCE($15, og_description), og_image_url=COALESCE($16, og_image_url),
+                assets_linked=COALESCE($17, assets_linked),
+                menu_position=COALESCE($18, menu_position), breadcrumb_label=COALESCE($19, breadcrumb_label), include_in_xml_sitemap=COALESCE($20, include_in_xml_sitemap),
+                content_type=COALESCE($21, content_type), buyer_journey_stage=COALESCE($22, buyer_journey_stage), primary_cta_label=COALESCE($23, primary_cta_label), primary_cta_url=COALESCE($24, primary_cta_url),
+                robots_index=COALESCE($25, robots_index), robots_follow=COALESCE($26, robots_follow), canonical_url=COALESCE($27, canonical_url), schema_type_id=COALESCE($28, schema_type_id),
+                brand_id=COALESCE($29, brand_id), content_owner_id=COALESCE($30, content_owner_id),
+                updated_at=NOW() 
+            WHERE id=$31 RETURNING *`,
             [
                 sub_service_name, parent_service_id, slug, full_url, description, status,
-                h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), body_content,
-                meta_title, meta_description, JSON.stringify(focus_keywords || []),
+                h1, JSON.stringify(h2_list), JSON.stringify(h3_list), body_content,
+                meta_title, meta_description, JSON.stringify(focus_keywords),
                 og_title, og_description, og_image_url,
-                assets_linked || 0, id
+                assets_linked,
+                menu_position, breadcrumb_label, include_in_xml_sitemap,
+                content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
+                robots_index, robots_follow, canonical_url, schema_type_id,
+                brand_id, content_owner_id,
+                id
             ]
         );
-        res.status(200).json(result.rows[0]);
+        
+        const updatedItem = result.rows[0];
+        getSocket().emit('sub_service_updated', updatedItem);
+        
+        if (updatedItem.parent_service_id) {
+             await pool.query(
+                `UPDATE services 
+                 SET subservice_count = (SELECT COUNT(*) FROM sub_services WHERE parent_service_id = $1)
+                 WHERE id = $1`,
+                [updatedItem.parent_service_id]
+            );
+        }
+
+        res.status(200).json(updatedItem);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -271,7 +343,29 @@ export const updateSubService = async (req: any, res: any) => {
 
 export const deleteSubService = async (req: any, res: any) => {
     try {
+        // Get parent ID before deleting
+        const check = await pool.query('SELECT parent_service_id FROM sub_services WHERE id = $1', [req.params.id]);
+        const parentId = check.rows[0]?.parent_service_id;
+
         await pool.query('DELETE FROM sub_services WHERE id = $1', [req.params.id]);
+        getSocket().emit('sub_service_deleted', { id: req.params.id });
+
+        // Update Parent Count
+        if (parentId) {
+            await pool.query(
+                `UPDATE services 
+                 SET subservice_count = (SELECT COUNT(*) FROM sub_services WHERE parent_service_id = $1),
+                     has_subservices = (SELECT COUNT(*) > 0 FROM sub_services WHERE parent_service_id = $1),
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [parentId]
+            );
+            const parentResult = await pool.query('SELECT * FROM services WHERE id = $1', [parentId]);
+            if (parentResult.rows.length > 0) {
+                getSocket().emit('service_updated', parentResult.rows[0]);
+            }
+        }
+
         res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: error.message });

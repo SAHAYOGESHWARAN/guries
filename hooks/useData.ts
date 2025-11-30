@@ -15,6 +15,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     smm: { endpoint: 'smm', event: 'smm_post' },
     graphics: { endpoint: 'graphics', event: 'graphic' },
     users: { endpoint: 'users', event: 'user' },
+    roles: { endpoint: 'roles', event: 'role' }, // Added Role
     teams: { endpoint: 'teams', event: 'team' },
     teamMembers: { endpoint: 'team-members', event: 'team_member' },
     services: { endpoint: 'services', event: 'service' },
@@ -25,6 +26,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     submissions: { endpoint: 'submissions', event: 'submission' },
     okrs: { endpoint: 'okrs', event: 'okr' },
     competitors: { endpoint: 'competitors', event: 'competitor' },
+    competitorBacklinks: { endpoint: 'competitor-backlinks', event: 'competitor_backlink' },
     urlErrors: { endpoint: 'url-errors', event: 'url_error' },
     toxicUrls: { endpoint: 'toxic-backlinks', event: 'toxic_backlink' },
     uxIssues: { endpoint: 'ux-issues', event: 'ux_issue' },
@@ -43,6 +45,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     workflowStages: { endpoint: 'workflow-stages', event: 'workflow_stage' },
     qcChecklists: { endpoint: 'qc-checklists', event: 'qc_checklist' },
     qcVersions: { endpoint: 'qc-versions', event: 'qc_version' },
+    qcWeightageConfigs: { endpoint: 'qc-weightage-configs', event: 'qc_weightage' }, // Added Weightage
     integrations: { endpoint: 'integrations', event: 'integration' },
     logs: { endpoint: 'logs', event: 'log' },
     // HR & AI

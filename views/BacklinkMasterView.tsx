@@ -58,6 +58,14 @@ const BacklinkMasterView: React.FC = () => {
     };
 
     const handleSave = async () => {
+        // Domain Validation Regex
+        const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+        
+        if (!formData.domain || !domainRegex.test(formData.domain)) {
+            alert("Please enter a valid domain name (e.g., example.com)");
+            return;
+        }
+
         if (editingItem) {
             await update(editingItem.id, { ...formData, updated_at: new Date().toISOString() });
         } else {
@@ -109,7 +117,7 @@ const BacklinkMasterView: React.FC = () => {
                     <div className="w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Domain</label>
-                            <input type="text" value={formData.domain} onChange={(e) => setFormData({...formData, domain: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                            <input type="text" value={formData.domain} onChange={(e) => setFormData({...formData, domain: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. example.com" />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
