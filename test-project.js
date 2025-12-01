@@ -3,8 +3,8 @@
  * Tests all API endpoints, pages, and realtime functionality
  */
 
-const http = require('http');
-const { io } = require('socket.io-client');
+import http from 'node:http';
+import { io } from 'socket.io-client';
 
 const API_BASE = 'http://localhost:3001/api/v1';
 const SOCKET_URL = 'http://localhost:3001';

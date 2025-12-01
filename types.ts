@@ -213,6 +213,17 @@ export interface SubServiceItem {
     description: string;
     status: 'Draft' | 'Published' | 'Archived';
     
+    // Navigation
+    menu_position?: number;
+    breadcrumb_label?: string;
+    include_in_xml_sitemap?: boolean;
+    
+    // Strategic
+    content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page' | string;
+    buyer_journey_stage?: 'Awareness' | 'Consideration' | 'Decision' | 'Retention' | string;
+    primary_cta_label?: string;
+    primary_cta_url?: string;
+    
     // Content Block
     h1?: string;
     h2_list?: string[];
@@ -223,11 +234,22 @@ export interface SubServiceItem {
     meta_title?: string;
     meta_description?: string;
     focus_keywords?: string[];
+    schema_type_id?: string;
+    canonical_url?: string;
+    robots_index?: 'index' | 'noindex';
+    robots_follow?: 'follow' | 'nofollow';
     
     // SMM Block
     og_title?: string;
     og_description?: string;
     og_image_url?: string;
+    twitter_title?: string;
+    twitter_description?: string;
+    twitter_image_url?: string;
+    
+    // Governance
+    brand_id?: number;
+    content_owner_id?: number;
 
     assets_linked?: number;
     updated_at?: string;
