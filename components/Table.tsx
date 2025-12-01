@@ -28,11 +28,11 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full w-full">
+    <div className="bg-white/95 rounded-xl shadow-card border border-slate-200 overflow-hidden flex flex-col h-full w-full ui-surface">
       {/* Table Header */}
       {title && (
-        <div className="px-6 py-3 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-20">
-            <h2 className="text-sm font-bold text-slate-800 tracking-tight">{title}</h2>
+        <div className="px-6 py-3 border-b border-slate-200 flex justify-between items-center bg-white/90 sticky top-0 z-20 backdrop-blur">
+            <h2 className="text-sm font-semibold text-slate-900 tracking-tight">{title}</h2>
             {actionButton}
         </div>
       )}

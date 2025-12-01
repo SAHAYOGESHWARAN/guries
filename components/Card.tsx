@@ -16,13 +16,13 @@ const Card: React.FC<CardProps> = ({ title, value, icon, change, changeType, sub
   const changeIcon = isIncrease ? '↑' : '↓';
 
   return (
-    <div className={`bg-white p-5 rounded-xl border border-slate-200 shadow-card hover:shadow-lg transition-all duration-300 group ${className}`}>
+    <div className={`bg-white/95 p-5 rounded-xl border border-slate-200 shadow-card hover:shadow-glow transition-all duration-300 group ui-surface ${className}`}>
       <div className="flex justify-between items-start mb-3">
         <div>
            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{title}</p>
-           <h3 className="text-2xl font-bold text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors">{value}</h3>
+           <h3 className="text-2xl font-bold text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors leading-tight">{value}</h3>
         </div>
-        <div className="p-2.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100 group-hover:border-brand-100">
+        <div className="p-2.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100 group-hover:border-brand-100 shadow-subtle">
           {icon}
         </div>
       </div>
