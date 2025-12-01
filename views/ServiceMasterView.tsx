@@ -53,6 +53,7 @@ const ServiceMasterView: React.FC = () => {
     // Helper inputs
     const [tempH2, setTempH2] = useState('');
     const [tempKeyword, setTempKeyword] = useState('');
+    const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
     const [tempRedirect, setTempRedirect] = useState('');
 
     // Computed Data
@@ -186,6 +187,9 @@ const ServiceMasterView: React.FC = () => {
 
         return `Vol: ${vol} | Comp: ${comp}`;
     };
+
+    const handleKeywordSuggest = () => alert('AI keyword suggestion coming soon.');
+    const handleSecondaryKeywordSuggest = () => alert('AI keyword suggestion coming soon.');
 
     const handleExport = () => exportToCSV(filteredData, 'services_master_export');
 
@@ -529,91 +533,176 @@ const ServiceMasterView: React.FC = () => {
 
                         {/* --- TAB: SEO --- */}
                         {activeTab === 'SEO' && (
-                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6 tracking-wider flex items-center">
-                                    <span className="bg-green-100 text-green-600 p-1.5 rounded mr-2">🔍</span> Search Engine Optimization
-                                </h3>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                                    {/* Left Column: Meta Data */}
-                                    <div className="flex flex-col gap-6">
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">Meta Title</label>
-                                                <span className={`text-[10px] font-mono font-bold ${(formData.meta_title?.length || 0) > 60 ? 'text-red-500' : 'text-green-600'}`}>
-                                                    {formData.meta_title?.length || 0}/60
-                                                </span>
+                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
+                                <header className="flex flex-col gap-1">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Search Engine Optimization</p>
+                                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                        <span className="text-green-600">🔍</span> Organic Visibility Controls
+                                    </h3>
+                                </header>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <div className="p-5 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-green-50 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold uppercase tracking-wide text-green-600">Meta Title</span>
+                                            <span className={`text-[10px] font-mono px-2 py-1 rounded-full ${((formData.meta_title?.length || 0) > 60) ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                                {formData.meta_title?.length || 0}/60
+                                            </span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={formData.meta_title}
+                                            onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                                            className="w-full p-3 border border-green-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-slate-300"
+                                            placeholder="e.g. Enterprise Marketing Solutions"
+                                        />
+                                    </div>
+
+                                    <div className="p-5 rounded-xl border border-slate-200 bg-white space-y-3 lg:col-span-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-600">Meta Description</span>
+                                            <span className={`text-[10px] font-mono px-2 py-1 rounded-full ${((formData.meta_description?.length || 0) > 160) ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700'}`}>
+                                                {formData.meta_description?.length || 0}/160
+                                            </span>
+                                        </div>
+                                        <textarea
+                                            value={formData.meta_description}
+                                            onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                                            className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none placeholder:text-slate-400 leading-relaxed h-28"
+                                            placeholder="High-level promise plus differentiator for this service..."
+                                        />
+                                    </div>
+
+                                    <div className="p-5 rounded-xl border border-slate-200 bg-slate-50 space-y-4 lg:col-span-3">
+                                        <div className="flex items-center justify-between flex-wrap gap-3">
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">Focus Keywords</p>
+                                                <p className="text-xs text-slate-500">Primary phrases we actively monitor</p>
                                             </div>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={handleKeywordSuggest} className="text-[11px] font-bold px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-white transition">AI Suggest</button>
+                                                <span className="text-[10px] font-mono text-slate-400">{formData.focus_keywords?.length || 0} tracked</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
                                             <input
                                                 type="text"
-                                                value={formData.meta_title}
-                                                onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all placeholder:text-slate-300"
-                                                placeholder="e.g. Service Name - Brand"
+                                                value={tempKeyword}
+                                                onChange={(e) => setTempKeyword(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && addToList('focus_keywords', tempKeyword, setTempKeyword)}
+                                                className="flex-1 p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                                placeholder="Add focus keyword..."
                                             />
+                                            <button
+                                                onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)}
+                                                className="bg-green-600 text-white px-4 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center shrink-0"
+                                            >
+                                                +
+                                            </button>
                                         </div>
+                                        <div className="bg-white border border-slate-200 rounded-lg p-4 min-h-[160px] grid gap-3 lg:grid-cols-2">
+                                            {formData.focus_keywords && formData.focus_keywords.length > 0 ? (
+                                                formData.focus_keywords.map((k, idx) => (
+                                                    <div key={`${k}-${idx}`} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-green-200 transition-colors">
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-slate-800">{k}</p>
+                                                            <p className="text-[11px] text-slate-500 font-mono">{getKeywordMetric(k)}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => removeFromList('focus_keywords', idx)}
+                                                            className="text-slate-300 hover:text-red-500 transition-colors font-bold"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="lg:col-span-2 h-full flex flex-col items-center justify-center text-slate-400 text-sm italic min-h-[120px]">
+                                                    <span className="opacity-50 text-4xl mb-2">🏷️</span>
+                                                    No keywords added.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
 
-                                        <div className="space-y-1 flex-1 flex flex-col">
-                                            <div className="flex justify-between items-center">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">Meta Description</label>
-                                                <span className={`text-[10px] font-mono font-bold ${(formData.meta_description?.length || 0) > 160 ? 'text-red-500' : 'text-green-600'}`}>
-                                                    {formData.meta_description?.length || 0}/160
-                                                </span>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="p-5 rounded-xl border border-slate-200 bg-white space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">Secondary Keywords</p>
+                                                <p className="text-xs text-slate-500">Semantic helpers & support terms</p>
                                             </div>
-                                            <textarea
-                                                value={formData.meta_description}
-                                                onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none transition-all placeholder:text-slate-300 leading-relaxed flex-1 min-h-[140px]"
-                                                placeholder="Brief summary of the page content for search results..."
+                                            <button onClick={handleSecondaryKeywordSuggest} className="text-[11px] font-bold px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 transition">AI Suggest</button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={tempSecondaryKeyword}
+                                                onChange={(e) => setTempSecondaryKeyword(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)}
+                                                className="flex-1 p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Add supporting keyword..."
                                             />
+                                            <button
+                                                onClick={() => addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)}
+                                                className="bg-indigo-600 text-white px-4 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center shrink-0"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 min-h-[140px] overflow-y-auto space-y-2">
+                                            {formData.secondary_keywords && formData.secondary_keywords.length > 0 ? (
+                                                formData.secondary_keywords.map((k, idx) => (
+                                                    <div key={`${k}-${idx}`} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-100">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-slate-700">{k}</p>
+                                                            <p className="text-[11px] text-slate-400 font-mono">{getKeywordMetric(k)}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => removeFromList('secondary_keywords', idx)}
+                                                            className="text-slate-300 hover:text-red-500 transition-colors font-bold"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-xs text-slate-500 text-center py-6">No secondary keywords yet.</p>
+                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Right Column: Keywords */}
-                                    <div className="flex flex-col gap-2 h-full">
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">Focus Keywords</label>
-                                                <span className="text-[10px] font-mono font-bold text-slate-400">{formData.focus_keywords?.length || 0} tracked</span>
-                                            </div>
-                                            <div className="flex gap-2">
+                                    <div className="p-5 rounded-xl border border-slate-200 bg-white space-y-5">
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">SEO Score</p>
+                                            <div className="flex items-center gap-4 mt-2">
                                                 <input
-                                                    type="text"
-                                                    value={tempKeyword}
-                                                    onChange={(e) => setTempKeyword(e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && addToList('focus_keywords', tempKeyword, setTempKeyword)}
-                                                    className="flex-1 p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all shadow-sm"
-                                                    placeholder="Add keyword..."
+                                                    type="range"
+                                                    min={0}
+                                                    max={100}
+                                                    value={formData.seo_score ?? 0}
+                                                    onChange={(e) => setFormData({ ...formData, seo_score: parseInt(e.target.value) })}
+                                                    className="flex-1 accent-green-500"
                                                 />
-                                                <button
-                                                    onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)}
-                                                    className="bg-green-600 text-white px-4 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center shrink-0 w-[50px]"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
-                                                </button>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={100}
+                                                    value={formData.seo_score ?? 0}
+                                                    onChange={(e) => setFormData({ ...formData, seo_score: parseInt(e.target.value) })}
+                                                    className="w-16 p-2 border border-slate-200 rounded text-center font-mono text-sm"
+                                                />
                                             </div>
                                         </div>
-
-                                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-y-auto shadow-inner mt-4 min-h-[180px]">
-                                            {formData.focus_keywords && formData.focus_keywords.length > 0 ? (
-                                                <div className="flex flex-wrap gap-2">
-                                                    {formData.focus_keywords.map((k, idx) => (
-                                                        <div key={idx} className="group bg-white border border-slate-200 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-lg shadow-sm flex items-center transition-all hover:border-green-300 hover:shadow-md">
-                                                            <span className="mr-2">{k}</span>
-                                                            <button
-                                                                onClick={() => removeFromList('focus_keywords', idx)}
-                                                                className="text-slate-300 hover:text-red-500 transition-colors"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm italic">
-                                                    <span className="opacity-50 text-4xl mb-2">🏷️</span>
-                                                    No focus keywords defined
-                                                </div>
-                                            )}
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600 mb-2">Ranking Summary</p>
+                                            <textarea
+                                                value={formData.ranking_summary}
+                                                onChange={(e) => setFormData({ ...formData, ranking_summary: e.target.value })}
+                                                className="w-full p-3 border border-slate-200 rounded-lg text-sm h-32 resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Capture SERP positions, rich snippets, competitive notes..."
+                                            />
                                         </div>
                                     </div>
                                 </div>
