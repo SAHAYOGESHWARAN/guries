@@ -74,6 +74,24 @@ const ServiceMasterView: React.FC = () => {
     const [tempExternalLink, setTempExternalLink] = useState({ url: '', anchor_text: '', rel: 'nofollow' });
     const [tempImageAlt, setTempImageAlt] = useState({ image_id: '', alt_text: '', context: '' });
     const [tempFAQ, setTempFAQ] = useState({ question: '', answer: '' });
+    const metaTitleCount = formData.meta_title?.length || 0;
+    const metaDescriptionCount = formData.meta_description?.length || 0;
+    const focusKeywordCount = formData.focus_keywords?.length || 0;
+    const secondaryKeywordCount = formData.secondary_keywords?.length || 0;
+    const headingCounts = {
+        h2: formData.h2_list?.length || 0,
+        h3: formData.h3_list?.length || 0,
+        h4: formData.h4_list?.length || 0,
+        h5: formData.h5_list?.length || 0
+    };
+    const totalHeadings = headingCounts.h2 + headingCounts.h3 + headingCounts.h4 + headingCounts.h5;
+    const contentWordCount = formData.word_count || formData.body_content?.split(/\s+/).filter(Boolean).length || 0;
+    const readingMinutes = formData.reading_time_minutes || Math.ceil(contentWordCount / 200);
+    const internalLinkCount = formData.internal_links?.length || 0;
+    const externalLinkCount = formData.external_links?.length || 0;
+    const imageAltCount = formData.image_alt_texts?.length || 0;
+    const socialPreviewReady = !!(formData.og_title && formData.og_description && formData.og_image_url);
+    const twitterPreviewReady = !!(formData.twitter_title && formData.twitter_description);
 
     // Computed Data
     const filteredData = services.filter(item => {
@@ -674,12 +692,46 @@ Return as JSON: [{"url": "/services/slug", "anchor_text": "...", "target_type": 
                         {activeTab === 'Content' && (
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-10">
                                 <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Page Content Structure</h3>
-                                <div className="space-y-8">
-                                    <Tooltip content="The main H1 tag for the page. Essential for SEO.">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">H1 Heading</label>
-                                                <button onClick={async () => {
+
+                                {/* Content snapshot */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Word Count</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-slate-900">{contentWordCount}</span>
+                                            <span className="text-xs font-semibold text-slate-500">~{readingMinutes} min read</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Structured Headings</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-slate-900">{totalHeadings}</span>
+                                            <span className="text-xs font-semibold text-slate-500">H2:{headingCounts.h2} / H3:{headingCounts.h3}</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Internal Links</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-slate-900">{internalLinkCount}</span>
+                                            <span className="text-xs font-semibold text-slate-500">{externalLinkCount} external</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-indigo-50">
+                                        <p className="text-[11px] uppercase font-bold text-indigo-600 tracking-widest">Media Alt Coverage</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-indigo-700">{imageAltCount}</span>
+                                            <span className="text-xs font-semibold text-indigo-500">Alt tags</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-10">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <Tooltip content="The main H1 tag for the page. Essential for SEO.">
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase">H1 Heading</label>
+                                                    <button onClick={async () => {
                                                     if (!formData.service_description && !formData.body_content) {
                                                         alert('Please add service description or body content first');
                                                         return;
@@ -699,15 +751,14 @@ Return just the H1 text, optimized for SEO with focus keywords.`;
                                                     {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest'}
                                                 </button>
                                             </div>
-                                            <input type="text" value={formData.h1} onChange={(e) => setFormData({...formData, h1: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
-                                        </div>
-                                    </Tooltip>
-                                    
-                                    <Tooltip content="List of H2 subheadings. Defines the document outline.">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">H2 Headings</label>
-                                                <button onClick={async () => {
+                                                <input type="text" value={formData.h1} onChange={(e) => setFormData({...formData, h1: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="Craft a compelling primary headline" />
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="List of H2 subheadings. Defines the document outline.">
+                                            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.25)]">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase">H2 Headings</label>
+                                                    <button onClick={async () => {
                                                     if (!formData.service_description && !formData.body_content) {
                                                         alert('Please add service description or body content first');
                                                         return;
@@ -736,7 +787,7 @@ Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
                                             </div>
                                             <div className="flex gap-3 mb-3">
                                                 <input type="text" value={tempH2} onChange={(e) => setTempH2(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H2..." />
-                                                <button onClick={() => addToList('h2_list', tempH2, setTempH2)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                                <button onClick={() => addToList('h2_list', tempH2, setTempH2)} className="bg-slate-900 text-white px-5 py-2 rounded-lg font-bold text-xs shadow hover:bg-slate-800">Add</button>
                                             </div>
                                             <ul className="space-y-3">
                                                 {formData.h2_list?.map((h, i) => (
@@ -748,15 +799,20 @@ Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
                                                     </li>
                                                 ))}
                                             </ul>
+                                            {(!formData.h2_list || formData.h2_list.length === 0) && (
+                                                <div className="text-xs text-slate-400 italic text-center py-3 border border-dashed border-slate-200 rounded-lg mt-3">No H2 headings yet. Add at least three for readability.</div>
+                                            )}
                                         </div>
                                     </Tooltip>
+                                    </div>
 
-                                    <Tooltip content="List of H3 subheadings.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">H3 Headings</label>
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        <Tooltip content="List of H3 subheadings.">
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-3">H3 Headings</label>
                                             <div className="flex gap-3 mb-3">
                                                 <input type="text" value={tempH3} onChange={(e) => setTempH3(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H3..." />
-                                                <button onClick={() => addToList('h3_list', tempH3, setTempH3)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                                    <button onClick={() => addToList('h3_list', tempH3, setTempH3)} className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs">Add</button>
                                             </div>
                                             <ul className="space-y-3">
                                                 {formData.h3_list?.map((h, i) => (
@@ -770,10 +826,9 @@ Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
                                             </ul>
                                         </div>
                                     </Tooltip>
-
                                     <Tooltip content="List of H4 subheadings.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">H4 Headings</label>
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-3">H4 Headings</label>
                                             <div className="flex gap-3 mb-3">
                                                 <input type="text" value={tempH4} onChange={(e) => setTempH4(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H4..." />
                                                 <button onClick={() => addToList('h4_list', tempH4, setTempH4)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
@@ -790,10 +845,9 @@ Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
                                             </ul>
                                         </div>
                                     </Tooltip>
-
                                     <Tooltip content="List of H5 subheadings.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">H5 Headings</label>
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-3">H5 Headings</label>
                                             <div className="flex gap-3 mb-3">
                                                 <input type="text" value={tempH5} onChange={(e) => setTempH5(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H5..." />
                                                 <button onClick={() => addToList('h5_list', tempH5, setTempH5)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
@@ -810,94 +864,115 @@ Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
                                             </ul>
                                         </div>
                                     </Tooltip>
+                                    </div>
 
                                     <Tooltip content="Main body copy. Supports Markdown formatting. Word count and reading time are auto-calculated.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">
-                                                Body Content
-                                                {formData.word_count > 0 && (
-                                                    <span className="ml-2 text-xs font-normal text-slate-400">
-                                                        ({formData.word_count} words, ~{formData.reading_time_minutes} min read)
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <textarea value={formData.body_content} onChange={(e) => setFormData({...formData, body_content: e.target.value})} className="w-full p-4 border border-slate-300 rounded-lg h-96 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500" placeholder="# Write content here..." />
+                                        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-inner">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase">Body Content</label>
+                                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                    <span>{contentWordCount} words</span>
+                                                    <span>•</span>
+                                                    <span>~{readingMinutes} min read</span>
+                                                </div>
+                                            </div>
+                                            <textarea value={formData.body_content} onChange={(e) => setFormData({...formData, body_content: e.target.value})} className="w-full p-4 border border-slate-200 rounded-xl h-96 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 bg-slate-50" placeholder="# Write content here..." />
                                         </div>
                                     </Tooltip>
 
-                                    {/* Internal Links */}
-                                    <div>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase">Internal Links</label>
-                                            <button onClick={suggestInternalLinks} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                                                {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest'}
-                                            </button>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Internal Links */}
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase">Internal Links</label>
+                                                    <p className="text-[12px] text-slate-500">{internalLinkCount} contextual links added</p>
+                                                </div>
+                                                <button onClick={suggestInternalLinks} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                    {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest'}
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-3 mb-3">
+                                                <input type="text" value={tempInternalLink.url} onChange={(e) => setTempInternalLink({...tempInternalLink, url: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-white" placeholder="URL" />
+                                                <input type="text" value={tempInternalLink.anchor_text} onChange={(e) => setTempInternalLink({...tempInternalLink, anchor_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-white" placeholder="Anchor Text" />
+                                                <select value={tempInternalLink.target_type} onChange={(e) => setTempInternalLink({...tempInternalLink, target_type: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-white">
+                                                    <option value="service">Service</option>
+                                                    <option value="subservice">Sub-service</option>
+                                                    <option value="asset">Asset</option>
+                                                </select>
+                                            </div>
+                                            <button onClick={addInternalLink} className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 mb-3">+ Add Link</button>
+                                            <ul className="space-y-3">
+                                                {formData.internal_links?.map((link: any, i: number) => (
+                                                    <li key={i} className="flex justify-between items-center text-sm bg-white p-3 rounded-lg border border-slate-200">
+                                                        <div>
+                                                            <p className="font-semibold text-slate-800">{link.anchor_text}</p>
+                                                            <p className="text-[12px] text-slate-500">{link.url}</p>
+                                                        </div>
+                                                        <button onClick={() => removeFromList('internal_links', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                                {internalLinkCount === 0 && (
+                                                    <p className="text-xs text-slate-400 italic text-center">No internal links yet.</p>
+                                                )}
+                                            </ul>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-3 mb-3">
-                                            <input type="text" value={tempInternalLink.url} onChange={(e) => setTempInternalLink({...tempInternalLink, url: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="URL" />
-                                            <input type="text" value={tempInternalLink.anchor_text} onChange={(e) => setTempInternalLink({...tempInternalLink, anchor_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Anchor Text" />
-                                            <select value={tempInternalLink.target_type} onChange={(e) => setTempInternalLink({...tempInternalLink, target_type: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm">
-                                                <option value="service">Service</option>
-                                                <option value="subservice">Sub-service</option>
-                                                <option value="asset">Asset</option>
-                                            </select>
-                                        </div>
-                                        <button onClick={addInternalLink} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 mb-3">+ Add Link</button>
-                                        <ul className="space-y-3">
-                                            {formData.internal_links?.map((link: any, i: number) => (
-                                                <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                    <span className="font-medium text-slate-700">{link.anchor_text} → {link.url}</span>
-                                                    <button onClick={() => removeFromList('internal_links', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
 
-                                    {/* External Links */}
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-4">External Links</label>
-                                        <div className="grid grid-cols-3 gap-3 mb-3">
-                                            <input type="text" value={tempExternalLink.url} onChange={(e) => setTempExternalLink({...tempExternalLink, url: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="URL" />
-                                            <input type="text" value={tempExternalLink.anchor_text} onChange={(e) => setTempExternalLink({...tempExternalLink, anchor_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Anchor Text" />
-                                            <select value={tempExternalLink.rel} onChange={(e) => setTempExternalLink({...tempExternalLink, rel: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm">
-                                                <option value="nofollow">nofollow</option>
-                                                <option value="follow">follow</option>
-                                                <option value="noopener">noopener</option>
-                                            </select>
+                                        {/* External Links */}
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-4">External Links</label>
+                                            <div className="grid grid-cols-3 gap-3 mb-3">
+                                                <input type="text" value={tempExternalLink.url} onChange={(e) => setTempExternalLink({...tempExternalLink, url: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-white" placeholder="URL" />
+                                                <input type="text" value={tempExternalLink.anchor_text} onChange={(e) => setTempExternalLink({...tempExternalLink, anchor_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-white" placeholder="Anchor Text" />
+                                                <select value={tempExternalLink.rel} onChange={(e) => setTempExternalLink({...tempExternalLink, rel: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-white">
+                                                    <option value="nofollow">nofollow</option>
+                                                    <option value="follow">follow</option>
+                                                    <option value="noopener">noopener</option>
+                                                </select>
+                                            </div>
+                                            <button onClick={addExternalLink} className="bg-white text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-200 hover:bg-indigo-50 mb-3">+ Add Link</button>
+                                            <ul className="space-y-3">
+                                                {formData.external_links?.map((link: any, i: number) => (
+                                                    <li key={i} className="flex justify-between items-center text-sm bg-white p-3 rounded-lg border border-slate-200">
+                                                        <div>
+                                                            <p className="font-semibold text-slate-800">{link.anchor_text}</p>
+                                                            <p className="text-[12px] text-slate-500">{link.url} ({link.rel})</p>
+                                                        </div>
+                                                        <button onClick={() => removeFromList('external_links', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
-                                        <button onClick={addExternalLink} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 mb-3">+ Add Link</button>
-                                        <ul className="space-y-3">
-                                            {formData.external_links?.map((link: any, i: number) => (
-                                                <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                    <span className="font-medium text-slate-700">{link.anchor_text} → {link.url} ({link.rel})</span>
-                                                    <button onClick={() => removeFromList('external_links', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
                                     </div>
 
                                     {/* Image Alt Texts */}
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-4">Image Alt Texts</label>
-                                        <div className="grid grid-cols-3 gap-3 mb-3">
-                                            <input type="text" value={tempImageAlt.image_id} onChange={(e) => setTempImageAlt({...tempImageAlt, image_id: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Image ID/URL" />
-                                            <input type="text" value={tempImageAlt.alt_text} onChange={(e) => setTempImageAlt({...tempImageAlt, alt_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Alt Text" />
-                                            <input type="text" value={tempImageAlt.context} onChange={(e) => setTempImageAlt({...tempImageAlt, context: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Context" />
+                                    <div className="bg-white border border-slate-200 rounded-xl p-5">
+                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-4">Image Alt Texts</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                            <input type="text" value={tempImageAlt.image_id} onChange={(e) => setTempImageAlt({...tempImageAlt, image_id: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-slate-50" placeholder="Image ID/URL" />
+                                            <input type="text" value={tempImageAlt.alt_text} onChange={(e) => setTempImageAlt({...tempImageAlt, alt_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-slate-50" placeholder="Alt Text" />
+                                            <input type="text" value={tempImageAlt.context} onChange={(e) => setTempImageAlt({...tempImageAlt, context: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm bg-slate-50" placeholder="Context" />
                                         </div>
-                                        <button onClick={addImageAlt} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 mb-3">+ Add Alt Text</button>
+                                        <button onClick={addImageAlt} className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 mb-3">+ Add Alt Text</button>
                                         <ul className="space-y-3">
                                             {formData.image_alt_texts?.map((img: any, i: number) => (
                                                 <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                    <span className="font-medium text-slate-700">{img.image_id}: {img.alt_text}</span>
+                                                    <div>
+                                                        <p className="font-semibold text-slate-800">{img.image_id}</p>
+                                                        <p className="text-[12px] text-slate-500">{img.alt_text} – {img.context}</p>
+                                                    </div>
                                                     <button onClick={() => removeFromList('image_alt_texts', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                                     </button>
                                                 </li>
                                             ))}
+                                            {imageAltCount === 0 && (
+                                                <p className="text-xs text-slate-400 italic text-center">No media assets documented yet.</p>
+                                            )}
                                         </ul>
                                     </div>
                                 </div>
@@ -908,31 +983,77 @@ Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
                         {activeTab === 'SEO' && (
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
                                 <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Search Engine Optimization</h3>
+
+                                {/* Snapshot cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Meta Title</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-slate-900">{metaTitleCount}/60</span>
+                                            <span className={`text-xs font-semibold ${metaTitleCount > 60 ? 'text-red-500' : metaTitleCount >= 50 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                {metaTitleCount > 60 ? 'Trim it' : metaTitleCount >= 50 ? 'Perfect' : 'Add more'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Meta Description</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-slate-900">{metaDescriptionCount}/160</span>
+                                            <span className={`text-xs font-semibold ${metaDescriptionCount > 160 ? 'text-red-500' : metaDescriptionCount >= 140 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                {metaDescriptionCount > 160 ? 'Trim it' : metaDescriptionCount >= 140 ? 'Perfect' : 'Add more'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Focus Keywords</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-slate-900">{focusKeywordCount}</span>
+                                            <span className="text-xs font-semibold text-slate-500">{secondaryKeywordCount} secondary</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-indigo-50">
+                                        <p className="text-[11px] uppercase font-bold text-indigo-600 tracking-widest">SEO Score</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-2xl font-bold text-indigo-700">{formData.seo_score ?? 0}</span>
+                                            <span className="text-xs font-semibold text-indigo-500">/100</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="space-y-6">
                                     <Tooltip content="The <title> tag. Optimal length: 50-60 characters.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Meta Title</label>
-                                            <div className="relative">
-                                                <input type="text" value={formData.meta_title} onChange={(e) => setFormData({...formData, meta_title: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm pr-16 focus:ring-2 focus:ring-indigo-500" />
-                                                <span className={`absolute right-3 top-3 text-xs font-mono ${formData.meta_title?.length || 0 > 60 ? 'text-red-500' : 'text-slate-400'}`}>{formData.meta_title?.length || 0}/60</span>
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-600 uppercase">Meta Title</p>
+                                                    <p className="text-[12px] text-slate-500">Displayed in SERP headline</p>
+                                                </div>
+                                                <span className={`text-xs font-mono px-3 py-1 rounded-full ${metaTitleCount > 60 ? 'bg-red-50 text-red-600' : 'bg-slate-200 text-slate-600'}`}>{metaTitleCount}/60</span>
                                             </div>
+                                            <input type="text" value={formData.meta_title} onChange={(e) => setFormData({...formData, meta_title: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="e.g. Technical SEO Audit & Optimization Services" />
                                         </div>
                                     </Tooltip>
                                     <Tooltip content="The meta description tag. Optimal length: 150-160 characters.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Meta Description</label>
-                                            <div className="relative">
-                                                <textarea value={formData.meta_description} onChange={(e) => setFormData({...formData, meta_description: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg h-28 text-sm focus:ring-2 focus:ring-indigo-500" />
-                                                <span className={`absolute right-3 bottom-3 text-xs font-mono ${formData.meta_description?.length || 0 > 160 ? 'text-red-500' : 'text-slate-400'}`}>{formData.meta_description?.length || 0}/160</span>
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-600 uppercase">Meta Description</p>
+                                                    <p className="text-[12px] text-slate-500">Persuasive summary for SERP</p>
+                                                </div>
+                                                <span className={`text-xs font-mono px-3 py-1 rounded-full ${metaDescriptionCount > 160 ? 'bg-red-50 text-red-600' : 'bg-slate-200 text-slate-600'}`}>{metaDescriptionCount}/160</span>
                                             </div>
+                                            <textarea value={formData.meta_description} onChange={(e) => setFormData({...formData, meta_description: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg h-28 text-sm focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="Summarize the value prop, include CTA & brand mention." />
                                         </div>
                                     </Tooltip>
                                     
                                     {/* Keyword Manager with Metrics */}
                                     <Tooltip content="Primary keywords. Automatically calculates usage count from system data.">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">Focus Keywords (with Usage Metrics)</label>
+                                        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.25)]">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-600 uppercase">Focus Keywords</p>
+                                                    <p className="text-[12px] text-slate-500">Include product/service + intent keywords</p>
+                                                </div>
                                                 <button onClick={async () => {
                                                     if (!formData.service_description && !formData.service_name) {
                                                         alert('Please add service name or description first');
@@ -962,13 +1083,13 @@ Return as JSON array: ["keyword1", "keyword2", ...]`;
                                             </div>
                                             <div className="flex gap-3 mb-4">
                                                 <input type="text" value={tempKeyword} onChange={(e) => setTempKeyword(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add Keyword..." />
-                                                <button onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg font-bold border border-indigo-100 hover:bg-indigo-100">+</button>
+                                                <button onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)} className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700">Add</button>
                                             </div>
                                             <div className="flex flex-wrap gap-3">
                                                 {formData.focus_keywords?.map((k, idx) => (
-                                                    <div key={idx} className="bg-white border border-slate-200 rounded-lg pl-3 pr-2 py-1.5 flex items-center shadow-sm">
+                                                    <div key={idx} className="bg-indigo-50 border border-indigo-100 rounded-lg pl-3 pr-2 py-1.5 flex items-center shadow-sm">
                                                         <div className="flex flex-col mr-3">
-                                                            <span className="text-sm font-medium text-slate-700">{k}</span>
+                                                            <span className="text-sm font-semibold text-indigo-900">{k}</span>
                                                             <span className="text-[10px] text-indigo-500 font-mono tracking-wide">{getKeywordMetric(k)}</span>
                                                         </div>
                                                         <button onClick={() => removeFromList('focus_keywords', idx)} className="text-slate-400 hover:text-red-500 p-1">
@@ -985,9 +1106,12 @@ Return as JSON array: ["keyword1", "keyword2", ...]`;
 
                                     {/* Secondary Keywords */}
                                     <Tooltip content="Supporting/secondary keywords for this service.">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase">Secondary Keywords</label>
+                                        <div className="bg-white border border-slate-200 rounded-xl p-5">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase">Secondary Keywords</label>
+                                                    <p className="text-[12px] text-slate-500">Semantic and long-tail variants</p>
+                                                </div>
                                                 <button onClick={async () => {
                                                     if (!formData.service_description && !formData.service_name) {
                                                         alert('Please add service name or description first');
@@ -1017,7 +1141,7 @@ Return as JSON array: ["keyword1", "keyword2", ...]`;
                                             </div>
                                             <div className="flex gap-2 mb-3">
                                                 <input type="text" value={tempSecondaryKeyword} onChange={(e) => setTempSecondaryKeyword(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Add Secondary Keyword..." />
-                                                <button onClick={() => addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)} className="bg-slate-50 text-slate-600 px-4 rounded-lg font-bold border border-slate-200 hover:bg-slate-100">+</button>
+                                                <button onClick={() => addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)} className="bg-slate-900 text-white px-4 rounded-lg text-xs font-bold border border-slate-900 hover:bg-slate-800">Add</button>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
                                                 {formData.secondary_keywords?.map((k, idx) => (
@@ -1034,15 +1158,15 @@ Return as JSON array: ["keyword1", "keyword2", ...]`;
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <Tooltip content="SEO score from internal scoring tool (0-100).">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">SEO Score</label>
-                                                <input type="number" min="0" max="100" value={formData.seo_score || 0} onChange={(e) => setFormData({...formData, seo_score: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" />
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">SEO Score</label>
+                                                <input type="number" min="0" max="100" value={formData.seo_score || 0} onChange={(e) => setFormData({...formData, seo_score: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Notes on top 3-5 keyword rankings or comments.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ranking Summary</label>
-                                                <textarea value={formData.ranking_summary} onChange={(e) => setFormData({...formData, ranking_summary: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-20 text-sm" placeholder="Top keyword rankings..." />
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Ranking Summary</label>
+                                                <textarea value={formData.ranking_summary} onChange={(e) => setFormData({...formData, ranking_summary: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-20 text-sm bg-white" placeholder="Top keyword rankings, SERP notes, cannibalization warnings..." />
                                             </div>
                                         </Tooltip>
                                     </div>
@@ -1052,43 +1176,84 @@ Return as JSON array: ["keyword1", "keyword2", ...]`;
 
                         {/* --- TAB: SMM --- */}
                         {activeTab === 'SMM' && (
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Social Media Metadata</h3>
+                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Social Media Metadata</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">OG Preview</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className={`text-sm font-semibold ${socialPreviewReady ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                {socialPreviewReady ? 'Ready for share' : 'Incomplete'}
+                                            </span>
+                                            <span className="text-xs text-slate-500">Title + Desc + Image</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                                        <p className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">Twitter Card</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className={`text-sm font-semibold ${twitterPreviewReady ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                {twitterPreviewReady ? 'Ready' : 'Needs copy'}
+                                            </span>
+                                            <span className="text-xs text-slate-500">Title + Desc</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-4 bg-indigo-50">
+                                        <p className="text-[11px] uppercase font-bold text-indigo-600 tracking-widest">Share Image</p>
+                                        <div className="flex items-end justify-between mt-3">
+                                            <span className="text-sm font-semibold text-indigo-700">{formData.og_image_url ? 'Set' : 'Missing'}</span>
+                                            <span className="text-xs text-indigo-500 break-all truncate max-w-[120px]">{formData.og_image_url || 'Add URL'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <Tooltip content="Open Graph Title (Facebook, LinkedIn). Defaults to SEO Title if empty.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">OG Title</label>
-                                                <input type="text" value={formData.og_title} onChange={(e) => setFormData({...formData, og_title: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" />
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">OG Title</label>
+                                                <input type="text" value={formData.og_title} onChange={(e) => setFormData({...formData, og_title: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white" placeholder="e.g. Technical SEO Services – Brand Name" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Twitter Card Title. Defaults to OG Title if empty.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Twitter Title</label>
-                                                <input type="text" value={formData.twitter_title} onChange={(e) => setFormData({...formData, twitter_title: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" />
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Twitter Title</label>
+                                                <input type="text" value={formData.twitter_title} onChange={(e) => setFormData({...formData, twitter_title: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white" placeholder="Shorter title for X/Twitter" />
                                             </div>
                                         </Tooltip>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <Tooltip content="Open Graph Description.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">OG Description</label>
-                                                <textarea value={formData.og_description} onChange={(e) => setFormData({...formData,og_description: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-20 text-sm" />
+                                            <div className="bg-white border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">OG Description</label>
+                                                <textarea value={formData.og_description} onChange={(e) => setFormData({...formData,og_description: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg h-24 text-sm" placeholder="Add persuasive copy for LinkedIn/Facebook preview" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Twitter Card Description.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Twitter Description</label>
-                                                <textarea value={formData.twitter_description} onChange={(e) => setFormData({...formData, twitter_description: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-20 text-sm" />
+                                            <div className="bg-white border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Twitter Description</label>
+                                                <textarea value={formData.twitter_description} onChange={(e) => setFormData({...formData, twitter_description: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg h-24 text-sm" placeholder="125 char limit recommended" />
                                             </div>
                                         </Tooltip>
                                     </div>
-                                    <Tooltip content="URL of the image to display on social shares.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Social Share Image URL</label>
-                                            <input type="text" value={formData.og_image_url} onChange={(e) => setFormData({...formData, og_image_url: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="https://..." />
-                                        </div>
-                                    </Tooltip>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Tooltip content="URL of the image to display on social shares.">
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Social Share Image URL</label>
+                                                <input type="text" value={formData.og_image_url} onChange={(e) => setFormData({...formData, og_image_url: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white" placeholder="https://..." />
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="Open Graph type to control render.">
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">OG Type</label>
+                                                <select value={formData.og_type || 'website'} onChange={(e) => setFormData({...formData, og_type: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                    <option value="website">Website</option>
+                                                    <option value="article">Article</option>
+                                                    <option value="product">Product</option>
+                                                </select>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             </div>
                         )}
