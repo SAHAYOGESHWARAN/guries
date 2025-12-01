@@ -1,14 +1,16 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
-import { getStatusBadge } from '../constants';
+import { getStatusBadge, SparkIcon } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
-import type { Service, ContentRepositoryItem, User, Brand, Campaign, IndustrySectorItem, CountryMasterItem, Keyword, ContentTypeItem } from '../types';
+import { runQuery } from '../utils/gemini';
+import type { Service, ContentRepositoryItem, User, Brand, Campaign, IndustrySectorItem, CountryMasterItem, Keyword, ContentTypeItem, SubServiceItem } from '../types';
 
 const ServiceMasterView: React.FC = () => {
     const { data: services, create, update, remove } = useData<Service>('services');
+    const { data: subServices } = useData<SubServiceItem>('subServices');
     const { data: contentAssets, update: updateContentAsset } = useData<ContentRepositoryItem>('content');
     const { data: keywordsMaster } = useData<Keyword>('keywords');
     
@@ -19,6 +21,9 @@ const ServiceMasterView: React.FC = () => {
     const { data: industrySectors } = useData<IndustrySectorItem>('industrySectors');
     const { data: countries } = useData<CountryMasterItem>('countries');
     const { data: contentTypes } = useData<ContentTypeItem>('contentTypes');
+    
+    // AI State
+    const [isAiSuggesting, setIsAiSuggesting] = useState(false);
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
@@ -33,7 +38,7 @@ const ServiceMasterView: React.FC = () => {
     // Form State
     const [formData, setFormData] = useState<Partial<Service>>({
         service_name: '', service_code: '', slug: '', full_url: '',
-        service_description: '', status: 'Draft', language: 'en',
+        menu_heading: '', short_tagline: '', service_description: '', status: 'Draft', language: 'en',
         industry_ids: [], country_ids: [],
         h1: '', h2_list: [], h3_list: [], h4_list: [], h5_list: [], body_content: '',
         internal_links: [], external_links: [], image_alt_texts: [],
@@ -47,13 +52,23 @@ const ServiceMasterView: React.FC = () => {
         core_web_vitals_status: 'Good', tech_seo_status: 'Ok',
         sitemap_priority: 0.8, sitemap_changefreq: 'monthly', faq_section_enabled: false, faq_content: [],
         show_in_main_menu: false, show_in_footer_menu: false, menu_position: 0,
-        linked_campaign_ids: [], secondary_persona_ids: []
+        linked_campaign_ids: [], secondary_persona_ids: [], primary_persona_id: 0,
+        form_id: 0, knowledge_topic_id: 0, featured_asset_id: 0, primary_subservice_id: 0,
+        robots_custom: '', hreflang_group_id: 0
     });
 
     // Helper inputs
     const [tempH2, setTempH2] = useState('');
+    const [tempH3, setTempH3] = useState('');
+    const [tempH4, setTempH4] = useState('');
+    const [tempH5, setTempH5] = useState('');
     const [tempKeyword, setTempKeyword] = useState('');
+    const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
     const [tempRedirect, setTempRedirect] = useState('');
+    const [tempInternalLink, setTempInternalLink] = useState({ url: '', anchor_text: '', target_type: 'service' });
+    const [tempExternalLink, setTempExternalLink] = useState({ url: '', anchor_text: '', rel: 'nofollow' });
+    const [tempImageAlt, setTempImageAlt] = useState({ image_id: '', alt_text: '', context: '' });
+    const [tempFAQ, setTempFAQ] = useState({ question: '', answer: '' });
 
     // Computed Data
     const filteredData = services.filter(item => {
@@ -68,6 +83,20 @@ const ServiceMasterView: React.FC = () => {
         return contentAssets.filter(a => a.linked_service_ids?.includes(editingItem.id));
     }, [contentAssets, editingItem]);
 
+    const linkedSubServices = useMemo(() => {
+        if (!editingItem) return [];
+        return subServices.filter(s => s.parent_service_id === editingItem.id);
+    }, [subServices, editingItem]);
+
+    // Auto-calculate word count and reading time
+    useEffect(() => {
+        if (formData.body_content) {
+            const words = formData.body_content.trim().split(/\s+/).filter(w => w.length > 0).length;
+            const readingTime = Math.ceil(words / 200); // Average reading speed: 200 words/min
+            setFormData(prev => ({ ...prev, word_count: words, reading_time_minutes: readingTime }));
+        }
+    }, [formData.body_content]);
+
     const availableAssets = useMemo(() => {
         if (!editingItem) return [];
         return contentAssets
@@ -81,11 +110,13 @@ const ServiceMasterView: React.FC = () => {
         setEditingItem(null);
         setFormData({ 
             service_name: '', service_code: '', slug: '', full_url: '', 
-            service_description: '', status: 'Draft', language: 'en', content_type: 'Pillar',
+            menu_heading: '', short_tagline: '', service_description: '', status: 'Draft', language: 'en', content_type: 'Pillar',
             h1: '', h2_list: [], h3_list: [], h4_list: [], h5_list: [], body_content: '',
+            internal_links: [], external_links: [], image_alt_texts: [],
             meta_title: '', meta_description: '', focus_keywords: [], secondary_keywords: [],
             industry_ids: [], country_ids: [], linked_campaign_ids: [],
-            redirect_from_urls: [], faq_content: []
+            redirect_from_urls: [], faq_content: [], faq_section_enabled: false,
+            primary_persona_id: 0, secondary_persona_ids: []
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -105,7 +136,13 @@ const ServiceMasterView: React.FC = () => {
             country_ids: item.country_ids || [],   
             linked_campaign_ids: item.linked_campaign_ids || [],
             faq_content: item.faq_content || [],
-            redirect_from_urls: item.redirect_from_urls || []
+            redirect_from_urls: item.redirect_from_urls || [],
+            internal_links: item.internal_links || [],
+            external_links: item.external_links || [],
+            image_alt_texts: item.image_alt_texts || [],
+            secondary_persona_ids: item.secondary_persona_ids || [],
+            menu_heading: item.menu_heading || '',
+            short_tagline: item.short_tagline || ''
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -122,6 +159,23 @@ const ServiceMasterView: React.FC = () => {
         if (formData.slug && !formData.full_url) {
             payload.full_url = `/services/${formData.slug}`;
         }
+
+        // Ensure arrays are properly formatted
+        payload.h2_list = formData.h2_list || [];
+        payload.h3_list = formData.h3_list || [];
+        payload.h4_list = formData.h4_list || [];
+        payload.h5_list = formData.h5_list || [];
+        payload.focus_keywords = formData.focus_keywords || [];
+        payload.secondary_keywords = formData.secondary_keywords || [];
+        payload.internal_links = formData.internal_links || [];
+        payload.external_links = formData.external_links || [];
+        payload.image_alt_texts = formData.image_alt_texts || [];
+        payload.faq_content = formData.faq_content || [];
+        payload.industry_ids = formData.industry_ids || [];
+        payload.country_ids = formData.country_ids || [];
+        payload.linked_campaign_ids = formData.linked_campaign_ids || [];
+        payload.secondary_persona_ids = formData.secondary_persona_ids || [];
+        payload.redirect_from_urls = formData.redirect_from_urls || [];
 
         if (editingItem) {
             await update(editingItem.id, payload);
@@ -151,6 +205,98 @@ const ServiceMasterView: React.FC = () => {
             ...prev,
             [field]: (prev[field] as any[]).filter((_, i) => i !== index)
         }));
+    };
+
+    const addInternalLink = () => {
+        if (!tempInternalLink.url || !tempInternalLink.anchor_text) return;
+        setFormData(prev => ({
+            ...prev,
+            internal_links: [...(prev.internal_links || []), { ...tempInternalLink }]
+        }));
+        setTempInternalLink({ url: '', anchor_text: '', target_type: 'service' });
+    };
+
+    const addExternalLink = () => {
+        if (!tempExternalLink.url || !tempExternalLink.anchor_text) return;
+        setFormData(prev => ({
+            ...prev,
+            external_links: [...(prev.external_links || []), { ...tempExternalLink }]
+        }));
+        setTempExternalLink({ url: '', anchor_text: '', rel: 'nofollow' });
+    };
+
+    const addImageAlt = () => {
+        if (!tempImageAlt.image_id || !tempImageAlt.alt_text) return;
+        setFormData(prev => ({
+            ...prev,
+            image_alt_texts: [...(prev.image_alt_texts || []), { ...tempImageAlt }]
+        }));
+        setTempImageAlt({ image_id: '', alt_text: '', context: '' });
+    };
+
+    const addFAQ = () => {
+        if (!tempFAQ.question || !tempFAQ.answer) return;
+        setFormData(prev => ({
+            ...prev,
+            faq_content: [...(prev.faq_content || []), { ...tempFAQ }]
+        }));
+        setTempFAQ({ question: '', answer: '' });
+    };
+
+    const generateFAQs = async () => {
+        if (!formData.service_description && !formData.body_content) {
+            alert('Please add service description or body content first');
+            return;
+        }
+        setIsAiSuggesting(true);
+        try {
+            const prompt = `Generate 5-7 relevant FAQ questions and answers for a service with this description: "${formData.service_description || formData.body_content}". 
+Return as JSON array: [{"question": "...", "answer": "..."}, ...]`;
+            const result = await runQuery(prompt);
+            try {
+                const faqs = JSON.parse(result.text);
+                if (Array.isArray(faqs)) {
+                    setFormData(prev => ({
+                        ...prev,
+                        faq_content: [...(prev.faq_content || []), ...faqs]
+                    }));
+                }
+            } catch (e) {
+                console.error('Failed to parse FAQ JSON', e);
+            }
+        } catch (error) {
+            console.error('FAQ generation failed', error);
+        } finally {
+            setIsAiSuggesting(false);
+        }
+    };
+
+
+    const suggestInternalLinks = async () => {
+        if (!formData.body_content) return;
+        setIsAiSuggesting(true);
+        try {
+            const prompt = `Analyze this content and suggest 3-5 internal linking opportunities to other services. 
+Content: "${formData.body_content.substring(0, 1000)}"
+Available services: ${services.map(s => s.service_name).join(', ')}
+Return as JSON: [{"url": "/services/slug", "anchor_text": "...", "target_type": "service"}, ...]`;
+            const result = await runQuery(prompt);
+            try {
+                const links = JSON.parse(result.text);
+                if (Array.isArray(links)) {
+                    setFormData(prev => ({
+                        ...prev,
+                        internal_links: [...(prev.internal_links || []), ...links]
+                    }));
+                }
+            } catch (e) {
+                console.error('Failed to parse links JSON', e);
+            }
+        } catch (error) {
+            console.error('Link suggestion failed', error);
+        } finally {
+            setIsAiSuggesting(false);
+        }
     };
 
     const toggleSelection = (field: 'industry_ids' | 'country_ids' | 'linked_campaign_ids', id: string | number) => {
@@ -236,59 +382,71 @@ const ServiceMasterView: React.FC = () => {
 
                 {/* Form Body */}
                 <div className="flex-1 overflow-y-auto p-8">
-                    <div className="max-w-6xl mx-auto space-y-8 pb-20">
+                    <div className="max-w-6xl mx-auto space-y-12 pb-20">
                         
                         {/* --- TAB: CORE --- */}
                         {activeTab === 'Core' && (
-                            <div className="space-y-6">
-                                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Identity & Taxonomy</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-10">
+                                <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                                    <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Identity & Taxonomy</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <Tooltip content="The primary name displayed to users in menus and headers.">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Service Name *</label>
-                                                <input type="text" value={formData.service_name} onChange={(e) => { setFormData({...formData, service_name: e.target.value}); if(!editingItem && !formData.slug) handleSlugChange(e.target.value); }} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Service Name *</label>
+                                                <input type="text" value={formData.service_name} onChange={(e) => { setFormData({...formData, service_name: e.target.value}); if(!editingItem && !formData.slug) handleSlugChange(e.target.value); }} className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Unique internal identifier (e.g., SRV-001) for system referencing.">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Service Code</label>
-                                                <input type="text" value={formData.service_code} onChange={(e) => setFormData({...formData, service_code: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="SRV-XXX" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Service Code</label>
+                                                <input type="text" value={formData.service_code} onChange={(e) => setFormData({...formData, service_code: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="SRV-XXX" />
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="Shorter text used in navigation menus (can be different from service name).">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Menu Heading</label>
+                                                <input type="text" value={formData.menu_heading} onChange={(e) => setFormData({...formData, menu_heading: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="Short menu text" />
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="One-line pitch used in cards and listings.">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Short Tagline</label>
+                                                <input type="text" value={formData.short_tagline} onChange={(e) => setFormData({...formData, short_tagline: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="One-line description" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="URL-friendly identifier. Auto-generated from name if empty.">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Slug</label>
-                                                <input type="text" value={formData.slug} onChange={(e) => handleSlugChange(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Slug</label>
+                                                <input type="text" value={formData.slug} onChange={(e) => handleSlugChange(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-50" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Language code for this specific service version (e.g., en, es).">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Language</label>
-                                                <select value={formData.language} onChange={(e) => setFormData({...formData, language: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Language</label>
+                                                <select value={formData.language} onChange={(e) => setFormData({...formData, language: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
                                                     <option value="en">English</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option>
                                                 </select>
                                             </div>
                                         </Tooltip>
                                     </div>
-                                    <div className="mt-4">
+                                    <div className="mt-8">
                                         <Tooltip content="A detailed description of the service offering used for internal reference and summaries.">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
-                                                <textarea value={formData.service_description} onChange={(e) => setFormData({...formData, service_description: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-24 text-sm focus:ring-2 focus:ring-indigo-500" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
+                                                <textarea value={formData.service_description} onChange={(e) => setFormData({...formData, service_description: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg h-32 text-sm focus:ring-2 focus:ring-indigo-500" />
                                             </div>
                                         </Tooltip>
                                     </div>
                                 </div>
 
                                 {/* Master Integrations */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                                    <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                                         <Tooltip content="Select relevant industries from the Industry Master table. Used for filtering and personalization.">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target Industries (Master Linked)</label>
-                                            <div className="border border-slate-200 rounded-lg p-2 max-h-48 overflow-y-auto bg-slate-50 grid grid-cols-1 gap-1">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-4">Target Industries (Master Linked)</label>
+                                            <div className="border border-slate-200 rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50 grid grid-cols-1 gap-2">
                                                 {industrySectors.map(ind => (
-                                                    <label key={ind.id} className="flex items-center space-x-2 cursor-pointer p-1.5 hover:bg-white rounded transition-colors">
+                                                    <label key={ind.id} className="flex items-center space-x-3 cursor-pointer p-2.5 hover:bg-white rounded transition-colors">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={formData.industry_ids?.includes(ind.industry)}
@@ -301,12 +459,12 @@ const ServiceMasterView: React.FC = () => {
                                             </div>
                                         </Tooltip>
                                     </div>
-                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                                    <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                                         <Tooltip content="Select target countries from the Country Master table. Determines regional availability.">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target Countries (Master Linked)</label>
-                                            <div className="border border-slate-200 rounded-lg p-2 max-h-48 overflow-y-auto bg-slate-50 grid grid-cols-1 gap-1">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-4">Target Countries (Master Linked)</label>
+                                            <div className="border border-slate-200 rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50 grid grid-cols-1 gap-2">
                                                 {countries.map(c => (
-                                                    <label key={c.id} className="flex items-center space-x-2 cursor-pointer p-1.5 hover:bg-white rounded transition-colors">
+                                                    <label key={c.id} className="flex items-center space-x-3 cursor-pointer p-2.5 hover:bg-white rounded transition-colors">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={formData.country_ids?.includes(c.code)}
@@ -325,55 +483,55 @@ const ServiceMasterView: React.FC = () => {
 
                         {/* --- TAB: NAVIGATION --- */}
                         {activeTab === 'Navigation' && (
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Menu & Sitemap Configuration</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
+                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Menu & Sitemap Configuration</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-6">
                                         <Tooltip content="Toggle if this page should appear in the primary navigation menu.">
-                                            <label className="flex items-center space-x-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                            <label className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
                                                 <input type="checkbox" checked={formData.show_in_main_menu} onChange={(e) => setFormData({...formData, show_in_main_menu: e.target.checked})} className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500" />
                                                 <span className="text-sm font-bold text-slate-700">Show in Main Menu</span>
                                             </label>
                                         </Tooltip>
                                         <Tooltip content="Toggle if this page should appear in the footer links.">
-                                            <label className="flex items-center space-x-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                            <label className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
                                                 <input type="checkbox" checked={formData.show_in_footer_menu} onChange={(e) => setFormData({...formData, show_in_footer_menu: e.target.checked})} className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500" />
                                                 <span className="text-sm font-bold text-slate-700">Show in Footer</span>
                                             </label>
                                         </Tooltip>
                                         <Tooltip content="Include this page in the auto-generated XML sitemap for search engines.">
-                                            <label className="flex items-center space-x-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                            <label className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
                                                 <input type="checkbox" checked={formData.include_in_xml_sitemap} onChange={(e) => setFormData({...formData, include_in_xml_sitemap: e.target.checked})} className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500" />
                                                 <span className="text-sm font-bold text-slate-700">Include in XML Sitemap</span>
                                             </label>
                                         </Tooltip>
                                     </div>
-                                    <div className="space-y-4">
+                                    <div className="space-y-6">
                                         <Tooltip content="Grouping label for nested menus (e.g. 'Consulting Services').">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Menu Group</label>
-                                                <input type="text" value={formData.menu_group} onChange={(e) => setFormData({...formData, menu_group: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Products" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Menu Group</label>
+                                                <input type="text" value={formData.menu_group} onChange={(e) => setFormData({...formData, menu_group: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Products" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Numeric order for sorting within the menu group.">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Menu Position Order</label>
-                                                <input type="number" value={formData.menu_position} onChange={(e) => setFormData({...formData, menu_position: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Menu Position Order</label>
+                                                <input type="number" value={formData.menu_position} onChange={(e) => setFormData({...formData, menu_position: parseInt(e.target.value)})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
                                             </div>
                                         </Tooltip>
                                         <Tooltip content="Label used in breadcrumb navigation trail.">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Breadcrumb Label</label>
-                                                <input type="text" value={formData.breadcrumb_label} onChange={(e) => setFormData({...formData, breadcrumb_label: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" />
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Breadcrumb Label</label>
+                                                <input type="text" value={formData.breadcrumb_label} onChange={(e) => setFormData({...formData, breadcrumb_label: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
                                             </div>
                                         </Tooltip>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
                                     <Tooltip content="Priority hint for search engine crawlers (0.0 to 1.0).">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Sitemap Priority</label>
-                                            <select value={formData.sitemap_priority} onChange={(e) => setFormData({...formData, sitemap_priority: parseFloat(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Sitemap Priority</label>
+                                            <select value={formData.sitemap_priority} onChange={(e) => setFormData({...formData, sitemap_priority: parseFloat(e.target.value)})} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
                                                 <option value={1.0}>1.0 (Highest)</option>
                                                 <option value={0.8}>0.8 (High)</option>
                                                 <option value={0.5}>0.5 (Medium)</option>
@@ -383,8 +541,8 @@ const ServiceMasterView: React.FC = () => {
                                     </Tooltip>
                                     <Tooltip content="Expected frequency of page updates.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Change Frequency</label>
-                                            <select value={formData.sitemap_changefreq} onChange={(e) => setFormData({...formData, sitemap_changefreq: e.target.value as any})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Change Frequency</label>
+                                            <select value={formData.sitemap_changefreq} onChange={(e) => setFormData({...formData, sitemap_changefreq: e.target.value as any})} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
                                                 <option value="daily">Daily</option>
                                                 <option value="weekly">Weekly</option>
                                                 <option value="monthly">Monthly</option>
@@ -398,13 +556,13 @@ const ServiceMasterView: React.FC = () => {
 
                         {/* --- TAB: STRATEGIC --- */}
                         {activeTab === 'Strategic' && (
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Strategy & Targeting</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Strategy & Targeting</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <Tooltip content="Defines the editorial structure of the page (Linked to Content Type Master).">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Content Type</label>
-                                            <select value={formData.content_type} onChange={(e) => setFormData({...formData, content_type: e.target.value as any})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Content Type</label>
+                                            <select value={formData.content_type} onChange={(e) => setFormData({...formData, content_type: e.target.value as any})} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
                                                 {contentTypes.map(ct => (
                                                     <option key={ct.id} value={ct.content_type}>{ct.content_type}</option>
                                                 ))}
@@ -413,8 +571,8 @@ const ServiceMasterView: React.FC = () => {
                                     </Tooltip>
                                     <Tooltip content="Target stage in the customer funnel.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Buyer Journey Stage</label>
-                                            <select value={formData.buyer_journey_stage} onChange={(e) => setFormData({...formData, buyer_journey_stage: e.target.value as any})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Buyer Journey Stage</label>
+                                            <select value={formData.buyer_journey_stage} onChange={(e) => setFormData({...formData, buyer_journey_stage: e.target.value as any})} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
                                                 <option>Awareness</option>
                                                 <option>Consideration</option>
                                                 <option>Decision</option>
@@ -422,26 +580,53 @@ const ServiceMasterView: React.FC = () => {
                                             </select>
                                         </div>
                                     </Tooltip>
+                                    <Tooltip content="Primary persona for this service (from Persona Master).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Primary Persona ID</label>
+                                            <input type="number" value={formData.primary_persona_id || 0} onChange={(e) => setFormData({...formData, primary_persona_id: parseInt(e.target.value) || 0})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="Persona ID" />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Secondary personas (multi-select).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Secondary Persona IDs</label>
+                                            <input type="text" value={formData.secondary_persona_ids?.join(', ') || ''} onChange={(e) => setFormData({...formData, secondary_persona_ids: e.target.value.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="Comma-separated IDs" />
+                                        </div>
+                                    </Tooltip>
                                     <Tooltip content="Primary Call-to-Action text.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Primary CTA Label</label>
-                                            <input type="text" value={formData.primary_cta_label} onChange={(e) => setFormData({...formData, primary_cta_label: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Get Started" />
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Primary CTA Label</label>
+                                            <input type="text" value={formData.primary_cta_label} onChange={(e) => setFormData({...formData, primary_cta_label: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Get Started" />
                                         </div>
                                     </Tooltip>
                                     <Tooltip content="Destination URL for the primary CTA.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Primary CTA URL</label>
-                                            <input type="text" value={formData.primary_cta_url} onChange={(e) => setFormData({...formData, primary_cta_url: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="https://..." />
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Primary CTA URL</label>
+                                            <input type="text" value={formData.primary_cta_url} onChange={(e) => setFormData({...formData, primary_cta_url: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="https://..." />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Linked Form ID (Zoho/HubSpot/internal).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Form ID</label>
+                                            <input type="number" value={formData.form_id || 0} onChange={(e) => setFormData({...formData, form_id: parseInt(e.target.value) || 0})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="Form ID" />
                                         </div>
                                     </Tooltip>
                                 </div>
                                 
-                                <div className="mt-4">
+                                <div className="mt-8">
+                                    <Tooltip content="Notes on target segment (industry size, geos, ticket size).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target Segment Notes</label>
+                                            <textarea value={formData.target_segment_notes} onChange={(e) => setFormData({...formData, target_segment_notes: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg h-32 text-sm" placeholder="ICP details..." />
+                                        </div>
+                                    </Tooltip>
+                                </div>
+                                
+                                <div className="mt-8">
                                     <Tooltip content="Associate this service with active marketing campaigns (Linked to Campaign Master).">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Linked Campaigns</label>
-                                        <div className="border border-slate-200 rounded-lg p-3 max-h-40 overflow-y-auto bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-4">Linked Campaigns</label>
+                                        <div className="border border-slate-200 rounded-lg p-4 max-h-40 overflow-y-auto bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-3">
                                             {campaigns.map(camp => (
-                                                <label key={camp.id} className="flex items-center space-x-2 cursor-pointer">
+                                                <label key={camp.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-white rounded transition-colors">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={formData.linked_campaign_ids?.includes(camp.id)}
@@ -459,28 +644,77 @@ const ServiceMasterView: React.FC = () => {
 
                         {/* --- TAB: CONTENT --- */}
                         {activeTab === 'Content' && (
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Page Content Structure</h3>
-                                <div className="space-y-6">
+                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-10">
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Page Content Structure</h3>
+                                <div className="space-y-8">
                                     <Tooltip content="The main H1 tag for the page. Essential for SEO.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">H1 Heading</label>
-                                            <input type="text" value={formData.h1} onChange={(e) => setFormData({...formData, h1: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase">H1 Heading</label>
+                                                <button onClick={async () => {
+                                                    if (!formData.service_description && !formData.body_content) {
+                                                        alert('Please add service description or body content first');
+                                                        return;
+                                                    }
+                                                    setIsAiSuggesting(true);
+                                                    try {
+                                                        const prompt = `Suggest an optimal H1 heading for SEO and clarity for this service: "${formData.service_description || formData.body_content?.substring(0, 500)}". 
+Return just the H1 text, optimized for SEO with focus keywords.`;
+                                                        const result = await runQuery(prompt);
+                                                        setFormData(prev => ({ ...prev, h1: result.text.trim().replace(/['"]/g, '') }));
+                                                    } catch (error) {
+                                                        console.error('H1 suggestion failed', error);
+                                                    } finally {
+                                                        setIsAiSuggesting(false);
+                                                    }
+                                                }} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                    {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest'}
+                                                </button>
+                                            </div>
+                                            <input type="text" value={formData.h1} onChange={(e) => setFormData({...formData, h1: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
                                         </div>
                                     </Tooltip>
                                     
                                     <Tooltip content="List of H2 subheadings. Defines the document outline.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">H2 Headings</label>
-                                            <div className="flex gap-2 mb-2">
-                                                <input type="text" value={tempH2} onChange={(e) => setTempH2(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Add H2..." />
-                                                <button onClick={() => addToList('h2_list', tempH2, setTempH2)} className="bg-slate-100 text-slate-600 px-4 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase">H2 Headings</label>
+                                                <button onClick={async () => {
+                                                    if (!formData.service_description && !formData.body_content) {
+                                                        alert('Please add service description or body content first');
+                                                        return;
+                                                    }
+                                                    setIsAiSuggesting(true);
+                                                    try {
+                                                        const prompt = `Suggest 5-7 optimal H2 headings for SEO and content structure for this service: "${formData.service_description || formData.body_content?.substring(0, 500)}". 
+Return as JSON array: ["H2 heading 1", "H2 heading 2", ...]`;
+                                                        const result = await runQuery(prompt);
+                                                        try {
+                                                            const h2s = JSON.parse(result.text);
+                                                            if (Array.isArray(h2s)) {
+                                                                setFormData(prev => ({ ...prev, h2_list: [...(prev.h2_list || []), ...h2s] }));
+                                                            }
+                                                        } catch (e) {
+                                                            console.error('Failed to parse H2 JSON', e);
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('H2 suggestion failed', error);
+                                                    } finally {
+                                                        setIsAiSuggesting(false);
+                                                    }
+                                                }} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                    {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest Structure'}
+                                                </button>
                                             </div>
-                                            <ul className="space-y-2">
+                                            <div className="flex gap-3 mb-3">
+                                                <input type="text" value={tempH2} onChange={(e) => setTempH2(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H2..." />
+                                                <button onClick={() => addToList('h2_list', tempH2, setTempH2)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                            </div>
+                                            <ul className="space-y-3">
                                                 {formData.h2_list?.map((h, i) => (
-                                                    <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-2.5 rounded border border-slate-200">
+                                                    <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
                                                         <span className="font-medium text-slate-700">{h}</span>
-                                                        <button onClick={() => removeFromList('h2_list', i)} className="text-slate-400 hover:text-red-500 font-bold p-1">
+                                                        <button onClick={() => removeFromList('h2_list', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                                         </button>
                                                     </li>
@@ -489,36 +723,179 @@ const ServiceMasterView: React.FC = () => {
                                         </div>
                                     </Tooltip>
 
-                                    <Tooltip content="Main body copy. Supports Markdown formatting.">
+                                    <Tooltip content="List of H3 subheadings.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Body Content</label>
-                                            <textarea value={formData.body_content} onChange={(e) => setFormData({...formData, body_content: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg h-96 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500" placeholder="# Write content here..." />
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">H3 Headings</label>
+                                            <div className="flex gap-3 mb-3">
+                                                <input type="text" value={tempH3} onChange={(e) => setTempH3(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H3..." />
+                                                <button onClick={() => addToList('h3_list', tempH3, setTempH3)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                            </div>
+                                            <ul className="space-y-3">
+                                                {formData.h3_list?.map((h, i) => (
+                                                    <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <span className="font-medium text-slate-700">{h}</span>
+                                                        <button onClick={() => removeFromList('h3_list', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
                                     </Tooltip>
+
+                                    <Tooltip content="List of H4 subheadings.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">H4 Headings</label>
+                                            <div className="flex gap-3 mb-3">
+                                                <input type="text" value={tempH4} onChange={(e) => setTempH4(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H4..." />
+                                                <button onClick={() => addToList('h4_list', tempH4, setTempH4)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                            </div>
+                                            <ul className="space-y-3">
+                                                {formData.h4_list?.map((h, i) => (
+                                                    <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <span className="font-medium text-slate-700">{h}</span>
+                                                        <button onClick={() => removeFromList('h4_list', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </Tooltip>
+
+                                    <Tooltip content="List of H5 subheadings.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">H5 Headings</label>
+                                            <div className="flex gap-3 mb-3">
+                                                <input type="text" value={tempH5} onChange={(e) => setTempH5(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add H5..." />
+                                                <button onClick={() => addToList('h5_list', tempH5, setTempH5)} className="bg-slate-100 text-slate-600 px-5 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200">+</button>
+                                            </div>
+                                            <ul className="space-y-3">
+                                                {formData.h5_list?.map((h, i) => (
+                                                    <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <span className="font-medium text-slate-700">{h}</span>
+                                                        <button onClick={() => removeFromList('h5_list', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </Tooltip>
+
+                                    <Tooltip content="Main body copy. Supports Markdown formatting. Word count and reading time are auto-calculated.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3">
+                                                Body Content
+                                                {formData.word_count > 0 && (
+                                                    <span className="ml-2 text-xs font-normal text-slate-400">
+                                                        ({formData.word_count} words, ~{formData.reading_time_minutes} min read)
+                                                    </span>
+                                                )}
+                                            </label>
+                                            <textarea value={formData.body_content} onChange={(e) => setFormData({...formData, body_content: e.target.value})} className="w-full p-4 border border-slate-300 rounded-lg h-96 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500" placeholder="# Write content here..." />
+                                        </div>
+                                    </Tooltip>
+
+                                    {/* Internal Links */}
+                                    <div>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase">Internal Links</label>
+                                            <button onClick={suggestInternalLinks} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest'}
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3 mb-3">
+                                            <input type="text" value={tempInternalLink.url} onChange={(e) => setTempInternalLink({...tempInternalLink, url: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="URL" />
+                                            <input type="text" value={tempInternalLink.anchor_text} onChange={(e) => setTempInternalLink({...tempInternalLink, anchor_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Anchor Text" />
+                                            <select value={tempInternalLink.target_type} onChange={(e) => setTempInternalLink({...tempInternalLink, target_type: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm">
+                                                <option value="service">Service</option>
+                                                <option value="subservice">Sub-service</option>
+                                                <option value="asset">Asset</option>
+                                            </select>
+                                        </div>
+                                        <button onClick={addInternalLink} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 mb-3">+ Add Link</button>
+                                        <ul className="space-y-3">
+                                            {formData.internal_links?.map((link: any, i: number) => (
+                                                <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                    <span className="font-medium text-slate-700">{link.anchor_text} → {link.url}</span>
+                                                    <button onClick={() => removeFromList('internal_links', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    {/* External Links */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-4">External Links</label>
+                                        <div className="grid grid-cols-3 gap-3 mb-3">
+                                            <input type="text" value={tempExternalLink.url} onChange={(e) => setTempExternalLink({...tempExternalLink, url: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="URL" />
+                                            <input type="text" value={tempExternalLink.anchor_text} onChange={(e) => setTempExternalLink({...tempExternalLink, anchor_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Anchor Text" />
+                                            <select value={tempExternalLink.rel} onChange={(e) => setTempExternalLink({...tempExternalLink, rel: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm">
+                                                <option value="nofollow">nofollow</option>
+                                                <option value="follow">follow</option>
+                                                <option value="noopener">noopener</option>
+                                            </select>
+                                        </div>
+                                        <button onClick={addExternalLink} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 mb-3">+ Add Link</button>
+                                        <ul className="space-y-3">
+                                            {formData.external_links?.map((link: any, i: number) => (
+                                                <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                    <span className="font-medium text-slate-700">{link.anchor_text} → {link.url} ({link.rel})</span>
+                                                    <button onClick={() => removeFromList('external_links', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    {/* Image Alt Texts */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-4">Image Alt Texts</label>
+                                        <div className="grid grid-cols-3 gap-3 mb-3">
+                                            <input type="text" value={tempImageAlt.image_id} onChange={(e) => setTempImageAlt({...tempImageAlt, image_id: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Image ID/URL" />
+                                            <input type="text" value={tempImageAlt.alt_text} onChange={(e) => setTempImageAlt({...tempImageAlt, alt_text: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Alt Text" />
+                                            <input type="text" value={tempImageAlt.context} onChange={(e) => setTempImageAlt({...tempImageAlt, context: e.target.value})} className="p-3 border border-slate-300 rounded-lg text-sm" placeholder="Context" />
+                                        </div>
+                                        <button onClick={addImageAlt} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 mb-3">+ Add Alt Text</button>
+                                        <ul className="space-y-3">
+                                            {formData.image_alt_texts?.map((img: any, i: number) => (
+                                                <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                    <span className="font-medium text-slate-700">{img.image_id}: {img.alt_text}</span>
+                                                    <button onClick={() => removeFromList('image_alt_texts', i)} className="text-slate-400 hover:text-red-500 font-bold p-1.5 hover:bg-red-50 rounded">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {/* --- TAB: SEO --- */}
                         {activeTab === 'SEO' && (
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Search Engine Optimization</h3>
-                                <div className="space-y-4">
+                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6">Search Engine Optimization</h3>
+                                <div className="space-y-6">
                                     <Tooltip content="The <title> tag. Optimal length: 50-60 characters.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Meta Title</label>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Meta Title</label>
                                             <div className="relative">
-                                                <input type="text" value={formData.meta_title} onChange={(e) => setFormData({...formData, meta_title: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm pr-16 focus:ring-2 focus:ring-indigo-500" />
-                                                <span className={`absolute right-3 top-2.5 text-xs font-mono ${formData.meta_title?.length || 0 > 60 ? 'text-red-500' : 'text-slate-400'}`}>{formData.meta_title?.length || 0}/60</span>
+                                                <input type="text" value={formData.meta_title} onChange={(e) => setFormData({...formData, meta_title: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm pr-16 focus:ring-2 focus:ring-indigo-500" />
+                                                <span className={`absolute right-3 top-3 text-xs font-mono ${formData.meta_title?.length || 0 > 60 ? 'text-red-500' : 'text-slate-400'}`}>{formData.meta_title?.length || 0}/60</span>
                                             </div>
                                         </div>
                                     </Tooltip>
                                     <Tooltip content="The meta description tag. Optimal length: 150-160 characters.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Meta Description</label>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Meta Description</label>
                                             <div className="relative">
-                                                <textarea value={formData.meta_description} onChange={(e) => setFormData({...formData, meta_description: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-24 text-sm focus:ring-2 focus:ring-indigo-500" />
-                                                <span className={`absolute right-3 bottom-2.5 text-xs font-mono ${formData.meta_description?.length || 0 > 160 ? 'text-red-500' : 'text-slate-400'}`}>{formData.meta_description?.length || 0}/160</span>
+                                                <textarea value={formData.meta_description} onChange={(e) => setFormData({...formData, meta_description: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg h-28 text-sm focus:ring-2 focus:ring-indigo-500" />
+                                                <span className={`absolute right-3 bottom-3 text-xs font-mono ${formData.meta_description?.length || 0 > 160 ? 'text-red-500' : 'text-slate-400'}`}>{formData.meta_description?.length || 0}/160</span>
                                             </div>
                                         </div>
                                     </Tooltip>
@@ -526,12 +903,40 @@ const ServiceMasterView: React.FC = () => {
                                     {/* Keyword Manager with Metrics */}
                                     <Tooltip content="Primary keywords. Automatically calculates usage count from system data.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Focus Keywords (with Usage Metrics)</label>
-                                            <div className="flex gap-2 mb-3">
-                                                <input type="text" value={tempKeyword} onChange={(e) => setTempKeyword(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Add Keyword..." />
-                                                <button onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)} className="bg-indigo-50 text-indigo-600 px-4 rounded-lg font-bold border border-indigo-100 hover:bg-indigo-100">+</button>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase">Focus Keywords (with Usage Metrics)</label>
+                                                <button onClick={async () => {
+                                                    if (!formData.service_description && !formData.service_name) {
+                                                        alert('Please add service name or description first');
+                                                        return;
+                                                    }
+                                                    setIsAiSuggesting(true);
+                                                    try {
+                                                        const prompt = `Suggest 5-7 focus keywords for SEO for this service: "${formData.service_name}. ${formData.service_description || ''}". 
+Return as JSON array: ["keyword1", "keyword2", ...]`;
+                                                        const result = await runQuery(prompt);
+                                                        try {
+                                                            const keywords = JSON.parse(result.text);
+                                                            if (Array.isArray(keywords)) {
+                                                                setFormData(prev => ({ ...prev, focus_keywords: [...(prev.focus_keywords || []), ...keywords] }));
+                                                            }
+                                                        } catch (e) {
+                                                            console.error('Failed to parse keywords JSON', e);
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Keyword suggestion failed', error);
+                                                    } finally {
+                                                        setIsAiSuggesting(false);
+                                                    }
+                                                }} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                    {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest Keywords'}
+                                                </button>
                                             </div>
-                                            <div className="flex flex-wrap gap-2">
+                                            <div className="flex gap-3 mb-4">
+                                                <input type="text" value={tempKeyword} onChange={(e) => setTempKeyword(e.target.value)} className="flex-1 p-3 border border-slate-300 rounded-lg text-sm" placeholder="Add Keyword..." />
+                                                <button onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)} className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-lg font-bold border border-indigo-100 hover:bg-indigo-100">+</button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-3">
                                                 {formData.focus_keywords?.map((k, idx) => (
                                                     <div key={idx} className="bg-white border border-slate-200 rounded-lg pl-3 pr-2 py-1.5 flex items-center shadow-sm">
                                                         <div className="flex flex-col mr-3">
@@ -549,6 +954,70 @@ const ServiceMasterView: React.FC = () => {
                                             </div>
                                         </div>
                                     </Tooltip>
+
+                                    {/* Secondary Keywords */}
+                                    <Tooltip content="Supporting/secondary keywords for this service.">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase">Secondary Keywords</label>
+                                                <button onClick={async () => {
+                                                    if (!formData.service_description && !formData.service_name) {
+                                                        alert('Please add service name or description first');
+                                                        return;
+                                                    }
+                                                    setIsAiSuggesting(true);
+                                                    try {
+                                                        const prompt = `Suggest 5-7 secondary/supporting keywords for SEO for this service: "${formData.service_name}. ${formData.service_description || ''}". 
+Return as JSON array: ["keyword1", "keyword2", ...]`;
+                                                        const result = await runQuery(prompt);
+                                                        try {
+                                                            const keywords = JSON.parse(result.text);
+                                                            if (Array.isArray(keywords)) {
+                                                                setFormData(prev => ({ ...prev, secondary_keywords: [...(prev.secondary_keywords || []), ...keywords] }));
+                                                            }
+                                                        } catch (e) {
+                                                            console.error('Failed to parse keywords JSON', e);
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Keyword suggestion failed', error);
+                                                    } finally {
+                                                        setIsAiSuggesting(false);
+                                                    }
+                                                }} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                    {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest'}
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2 mb-3">
+                                                <input type="text" value={tempSecondaryKeyword} onChange={(e) => setTempSecondaryKeyword(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Add Secondary Keyword..." />
+                                                <button onClick={() => addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)} className="bg-slate-50 text-slate-600 px-4 rounded-lg font-bold border border-slate-200 hover:bg-slate-100">+</button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {formData.secondary_keywords?.map((k, idx) => (
+                                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-2 py-1.5 flex items-center">
+                                                        <span className="text-sm font-medium text-slate-600 mr-2">{k}</span>
+                                                        <button onClick={() => removeFromList('secondary_keywords', idx)} className="text-slate-400 hover:text-red-500 p-1">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </Tooltip>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Tooltip content="SEO score from internal scoring tool (0-100).">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">SEO Score</label>
+                                                <input type="number" min="0" max="100" value={formData.seo_score || 0} onChange={(e) => setFormData({...formData, seo_score: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" />
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="Notes on top 3-5 keyword rankings or comments.">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ranking Summary</label>
+                                                <textarea value={formData.ranking_summary} onChange={(e) => setFormData({...formData, ranking_summary: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg h-20 text-sm" placeholder="Top keyword rankings..." />
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -603,7 +1072,36 @@ const ServiceMasterView: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Tooltip content="Schema.org type (e.g. Service, Product, Article).">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Schema Type</label>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase">Schema Type</label>
+                                                <button onClick={async () => {
+                                                    if (!formData.service_description) return;
+                                                    setIsAiSuggesting(true);
+                                                    try {
+                                                        const prompt = `Suggest the best Schema.org type and required schema fields for this service: "${formData.service_description}". 
+Return JSON: {"type": "Service", "fields": ["name", "description", "provider", ...]}`;
+                                                        const result = await runQuery(prompt);
+                                                        try {
+                                                            const schema = JSON.parse(result.text);
+                                                            if (schema.type) {
+                                                                setFormData(prev => ({ ...prev, schema_type_id: schema.type }));
+                                                            }
+                                                            if (schema.fields && Array.isArray(schema.fields)) {
+                                                                alert(`Suggested Schema Type: ${schema.type}\nRecommended Fields: ${schema.fields.join(', ')}`);
+                                                            }
+                                                        } catch (e) {
+                                                            const suggestedType = result.text.trim().replace(/['"]/g, '');
+                                                            setFormData(prev => ({ ...prev, schema_type_id: suggestedType }));
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Schema suggestion failed', error);
+                                                    } finally {
+                                                        setIsAiSuggesting(false);
+                                                    }
+                                                }} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                    {SparkIcon} {isAiSuggesting ? 'Suggesting...' : 'AI Suggest Type & Fields'}
+                                                </button>
+                                            </div>
                                             <input type="text" value={formData.schema_type_id} onChange={(e) => setFormData({...formData, schema_type_id: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Service" />
                                         </div>
                                     </Tooltip>
@@ -631,6 +1129,38 @@ const ServiceMasterView: React.FC = () => {
                                             </select>
                                         </div>
                                     </Tooltip>
+                                    <Tooltip content="Custom robots meta tag if needed (e.g., noindex, nofollow, noarchive).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Robots Custom</label>
+                                            <input type="text" value={formData.robots_custom} onChange={(e) => setFormData({...formData, robots_custom: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="e.g. noindex, nofollow" />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Hreflang group ID for multi-language/country variants.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Hreflang Group ID</label>
+                                            <input type="number" value={formData.hreflang_group_id || 0} onChange={(e) => setFormData({...formData, hreflang_group_id: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Group ID" />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Core Web Vitals status.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Core Web Vitals Status</label>
+                                            <select value={formData.core_web_vitals_status} onChange={(e) => setFormData({...formData, core_web_vitals_status: e.target.value as any})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <option value="Good">Good</option>
+                                                <option value="Needs Improvement">Needs Improvement</option>
+                                                <option value="Poor">Poor</option>
+                                            </select>
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Technical SEO status.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tech SEO Status</label>
+                                            <select value={formData.tech_seo_status} onChange={(e) => setFormData({...formData, tech_seo_status: e.target.value as any})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <option value="Ok">Ok</option>
+                                                <option value="Warning">Warning</option>
+                                                <option value="Critical">Critical</option>
+                                            </select>
+                                        </div>
+                                    </Tooltip>
                                 </div>
                                 
                                 <div className="mt-4">
@@ -652,14 +1182,97 @@ const ServiceMasterView: React.FC = () => {
                                         </ul>
                                     </Tooltip>
                                 </div>
+
+                                {/* FAQ Section */}
+                                <div className="mt-6 border-t border-slate-200 pt-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <Tooltip content="Enable FAQ section for this service page.">
+                                                <label className="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="checkbox" checked={formData.faq_section_enabled} onChange={(e) => setFormData({...formData, faq_section_enabled: e.target.checked})} className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500" />
+                                                    <span className="text-sm font-bold text-slate-700">Enable FAQ Section</span>
+                                                </label>
+                                            </Tooltip>
+                                        </div>
+                                        {formData.faq_section_enabled && (
+                                            <button onClick={generateFAQs} disabled={isAiSuggesting} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                {SparkIcon} {isAiSuggesting ? 'Generating...' : 'AI Generate FAQs'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {formData.faq_section_enabled && (
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input type="text" value={tempFAQ.question} onChange={(e) => setTempFAQ({...tempFAQ, question: e.target.value})} className="p-2 border border-slate-300 rounded-lg text-sm" placeholder="Question" />
+                                                <input type="text" value={tempFAQ.answer} onChange={(e) => setTempFAQ({...tempFAQ, answer: e.target.value})} className="p-2 border border-slate-300 rounded-lg text-sm" placeholder="Answer" />
+                                            </div>
+                                            <button onClick={addFAQ} className="bg-indigo-50 text-indigo-600 px-4 py-1 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100">+ Add FAQ</button>
+                                            <ul className="space-y-2">
+                                                {formData.faq_content?.map((faq: any, i: number) => (
+                                                    <li key={i} className="bg-slate-50 p-3 rounded border border-slate-200">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <span className="font-bold text-sm text-slate-800">{faq.question}</span>
+                                                            <button onClick={() => removeFromList('faq_content', i)} className="text-slate-400 hover:text-red-500 font-bold p-1">
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                            </button>
+                                                        </div>
+                                                        <p className="text-sm text-slate-600">{faq.answer}</p>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
-                        {/* --- TAB: LINKING (ASSETS) --- */}
+                        {/* --- TAB: LINKING (ASSETS & SUB-SERVICES) --- */}
                         {activeTab === 'Linking' && (
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Asset Management</h3>
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Sub-Services & Asset Management</h3>
                                 
+                                {/* Sub-Services Section */}
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="text-xs font-bold text-slate-500 uppercase">
+                                            Linked Sub-Services
+                                            <span className="ml-2 bg-indigo-100 text-indigo-700 px-2 rounded-full">{linkedSubServices.length}</span>
+                                        </h4>
+                                        <div className="text-xs text-slate-500">
+                                            {formData.has_subservices ? 'Has Sub-services' : 'No Sub-services'}
+                                            {formData.subservice_count > 0 && ` (${formData.subservice_count} total)`}
+                                        </div>
+                                    </div>
+                                    <div className="border border-slate-200 rounded-xl bg-slate-50 p-4 max-h-64 overflow-y-auto">
+                                        {linkedSubServices.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {linkedSubServices.map(sub => (
+                                                    <div key={sub.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                                        <div>
+                                                            <p className="font-medium text-sm text-slate-800">{sub.sub_service_name}</p>
+                                                            <p className="text-[10px] text-slate-500">{sub.full_url || sub.slug}</p>
+                                                        </div>
+                                                        <span className={`text-xs px-2 py-1 rounded-full ${sub.status === 'Published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                            {sub.status}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-slate-400 italic text-center py-4">No sub-services linked. Create sub-services in the Sub-Service Master view.</p>
+                                        )}
+                                    </div>
+                                    {formData.primary_subservice_id && (
+                                        <div className="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                            <p className="text-xs font-bold text-indigo-700 uppercase mb-1">Primary Sub-Service</p>
+                                            <p className="text-sm text-indigo-900">
+                                                {linkedSubServices.find(s => s.id === formData.primary_subservice_id)?.sub_service_name || `ID: ${formData.primary_subservice_id}`}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Assets Section */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     {/* Left: Linked Assets */}
                                     <div className="flex flex-col h-[500px]">
@@ -669,25 +1282,41 @@ const ServiceMasterView: React.FC = () => {
                                         </h4>
                                         <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 p-2 space-y-2">
                                             {linkedAssets.length > 0 ? linkedAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group">
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className={`w-8 h-8 flex-shrink-0 rounded-md flex items-center justify-center text-xs font-bold text-white uppercase ${
-                                                            asset.asset_type === 'image' ? 'bg-purple-500' : 'bg-blue-500'
-                                                        }`}>
-                                                            {asset.asset_type ? asset.asset_type.slice(0,2) : 'NA'}
+                                                <div key={asset.id} className="bg-white rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group p-3">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div className="flex items-center space-x-3 overflow-hidden flex-1">
+                                                            <div className={`w-8 h-8 flex-shrink-0 rounded-md flex items-center justify-center text-xs font-bold text-white uppercase ${
+                                                                asset.asset_type === 'image' ? 'bg-purple-500' : asset.asset_type === 'video' ? 'bg-red-500' : 'bg-blue-500'
+                                                            }`}>
+                                                                {asset.asset_type ? asset.asset_type.slice(0,2).toUpperCase() : 'NA'}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="font-medium text-sm text-slate-800 truncate" title={asset.content_title_clean}>{asset.content_title_clean}</p>
+                                                                <div className="flex flex-wrap gap-2 mt-1">
+                                                                    <span className="text-[10px] text-slate-500 uppercase bg-slate-100 px-1.5 rounded">{asset.status}</span>
+                                                                    {asset.asset_type && <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 rounded">{asset.asset_type}</span>}
+                                                                    {asset.asset_category && <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 rounded">{asset.asset_category}</span>}
+                                                                    {asset.asset_format && <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 rounded">{asset.asset_format}</span>}
+                                                                </div>
+                                                                {asset.full_url && (
+                                                                    <p className="text-[10px] text-slate-400 font-mono truncate mt-1" title={asset.full_url}>{asset.full_url}</p>
+                                                                )}
+                                                                {asset.id && (
+                                                                    <p className="text-[10px] text-slate-400 mt-0.5">ID: {asset.id}</p>
+                                                                )}
+                                                                {asset.ai_qc_report && (
+                                                                    <p className="text-[10px] text-indigo-600 mt-1">QC Score: {asset.ai_qc_report.score || 'N/A'}/100</p>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-medium text-sm text-slate-800 truncate" title={asset.content_title_clean}>{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-500 uppercase">{asset.status}</p>
-                                                        </div>
+                                                        <button 
+                                                            onClick={() => handleToggleAssetLink(asset)} 
+                                                            className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                                            title="Unlink Asset"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
                                                     </div>
-                                                    <button 
-                                                        onClick={() => handleToggleAssetLink(asset)} 
-                                                        className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Unlink Asset"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
                                                 </div>
                                             )) : (
                                                 <div className="h-full flex flex-col items-center justify-center text-slate-400">
@@ -731,6 +1360,49 @@ const ServiceMasterView: React.FC = () => {
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* Additional Linking Fields */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200">
+                                    <Tooltip content="Link to Knowledge Hub / Topic Master.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Knowledge Topic ID</label>
+                                            <input type="number" value={formData.knowledge_topic_id || 0} onChange={(e) => setFormData({...formData, knowledge_topic_id: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Knowledge Topic ID" />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Key article/video to feature on this service page.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Featured Asset ID</label>
+                                            <input type="number" value={formData.featured_asset_id || 0} onChange={(e) => setFormData({...formData, featured_asset_id: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="Asset ID" />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Highlighted sub-service on service page.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Primary Sub-Service ID</label>
+                                            <select value={formData.primary_subservice_id || 0} onChange={(e) => setFormData({...formData, primary_subservice_id: parseInt(e.target.value) || 0})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <option value={0}>None</option>
+                                                {linkedSubServices.map(sub => (
+                                                    <option key={sub.id} value={sub.id}>{sub.sub_service_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </Tooltip>
+                                </div>
+
+                                {/* Summary Stats */}
+                                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
+                                    <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                        <p className="text-xs font-bold text-slate-500 uppercase">Sub-Services</p>
+                                        <p className="text-2xl font-bold text-slate-800">{formData.subservice_count || 0}</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                        <p className="text-xs font-bold text-slate-500 uppercase">Assets</p>
+                                        <p className="text-2xl font-bold text-slate-800">{linkedAssets.length}</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                        <p className="text-xs font-bold text-slate-500 uppercase">Featured Asset</p>
+                                        <p className="text-sm font-medium text-slate-600">{formData.featured_asset_id ? `ID: ${formData.featured_asset_id}` : 'None'}</p>
                                     </div>
                                 </div>
                             </div>

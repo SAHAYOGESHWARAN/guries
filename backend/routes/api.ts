@@ -23,6 +23,7 @@ import * as uxController from '../controllers/uxController';
 import * as promotionController from '../controllers/promotionController';
 import * as graphicAssetController from '../controllers/graphicAssetController';
 import * as urlErrorController from '../controllers/urlErrorController';
+import * as onPageSeoAuditController from '../controllers/onPageSeoAuditController';
 import * as hrController from '../controllers/hrController';
 import * as aiController from '../controllers/aiController';
 import * as authController from '../controllers/authController';
@@ -34,6 +35,7 @@ import * as communicationController from '../controllers/communicationController
 import * as knowledgeController from '../controllers/knowledgeController';
 import * as complianceController from '../controllers/complianceController';
 import * as systemController from '../controllers/systemController';
+import * as reportController from '../controllers/reportController';
 
 const router = Router();
 
@@ -56,6 +58,8 @@ router.get('/campaigns/:id', campaignController.getCampaignById);
 router.post('/campaigns', campaignController.createCampaign);
 router.put('/campaigns/:id', campaignController.updateCampaign);
 router.delete('/campaigns/:id', campaignController.deleteCampaign);
+router.post('/campaigns/:campaignId/pull-service/:serviceId', campaignController.pullServiceWorkingCopy);
+router.post('/campaigns/approve-and-update-master', campaignController.approveAndUpdateServiceMaster);
 
 // --- Projects ---
 router.get('/projects', projectController.getProjects);
@@ -113,12 +117,23 @@ router.get('/analytics/traffic', analyticsController.getTrafficData);
 router.get('/analytics/kpi', analyticsController.getKPISummary);
 router.get('/analytics/dashboard-metrics', analyticsController.getDashboardMetrics);
 
+// --- Reports ---
+router.get('/reports/today', reportController.getTodayReport);
+
 // --- Promotion & Errors ---
 router.get('/promotion-items', promotionController.getPromotionItems);
 router.get('/url-errors', urlErrorController.getUrlErrors);
 router.post('/url-errors', urlErrorController.createUrlError);
 router.put('/url-errors/:id', urlErrorController.updateUrlError);
 router.delete('/url-errors/:id', urlErrorController.deleteUrlError);
+
+// --- On-page SEO Audits ---
+router.get('/on-page-seo-audits', onPageSeoAuditController.getOnPageSeoAudits);
+router.post('/on-page-seo-audits', onPageSeoAuditController.createOnPageSeoAudit);
+router.put('/on-page-seo-audits/:id', onPageSeoAuditController.updateOnPageSeoAudit);
+router.delete('/on-page-seo-audits/:id', onPageSeoAuditController.deleteOnPageSeoAudit);
+router.get('/on-page-seo-audits/service/:serviceId', onPageSeoAuditController.getAuditsByService);
+router.get('/on-page-seo-audits/sub-service/:subServiceId', onPageSeoAuditController.getAuditsBySubService);
 
 // --- Benchmarks & Competitors ---
 router.get('/okrs', benchmarkController.getOkrs);

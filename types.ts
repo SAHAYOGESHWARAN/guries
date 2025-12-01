@@ -363,6 +363,26 @@ export interface Notification {
     created_at?: string;
 }
 
+export interface OnPageSeoAudit {
+    id: number;
+    service_id?: number;
+    sub_service_id?: number;
+    error_type: string;
+    error_category: 'Content' | 'Technical' | 'Meta' | 'Links' | 'Images' | 'Schema';
+    severity: 'High' | 'Medium' | 'Low';
+    issue_description: string;
+    current_value?: string;
+    recommended_value?: string;
+    detected_at?: string;
+    linked_campaign_id?: number;
+    status: 'open' | 'in_progress' | 'resolved' | 'ignored';
+    resolved_at?: string;
+    resolution_notes?: string;
+    created_by?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface UrlError {
     id: number;
     url: string;

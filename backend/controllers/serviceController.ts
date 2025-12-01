@@ -3,11 +3,36 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db';
 import { getSocket } from '../socket';
 
+// Helper function to parse JSON fields
+const parseServiceRow = (row: any) => {
+    const jsonFields = [
+        'industry_ids', 'country_ids', 'secondary_persona_ids', 'linked_campaign_ids',
+        'h2_list', 'h3_list', 'h4_list', 'h5_list', 'internal_links', 'external_links',
+        'image_alt_texts', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls',
+        'faq_content'
+    ];
+    
+    const parsed = { ...row };
+    jsonFields.forEach(field => {
+        if (parsed[field] && typeof parsed[field] === 'string') {
+            try {
+                parsed[field] = JSON.parse(parsed[field]);
+            } catch (e) {
+                parsed[field] = [];
+            }
+        } else if (!parsed[field]) {
+            parsed[field] = [];
+        }
+    });
+    return parsed;
+};
+
 // --- Services ---
 export const getServices = async (req: any, res: any) => {
     try {
         const result = await pool.query('SELECT * FROM services ORDER BY id ASC');
-        res.status(200).json(result.rows);
+        const parsedRows = result.rows.map(parseServiceRow);
+        res.status(200).json(parsedRows);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -90,12 +115,12 @@ export const createService = async (req: any, res: any) => {
                 meta_title, meta_description, JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, JSON.stringify(redirect_from_urls || []),
-                hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled, JSON.stringify(faq_content || []),
+                hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled || false, JSON.stringify(faq_content || []),
                 has_subservices || false, subservice_count || 0, primary_subservice_id || 0, featured_asset_id || 0, asset_count || 0, knowledge_topic_id || 0,
                 brand_id, business_unit, content_owner_id, created_by, created_at || 'NOW()', version_number || 1, change_log_link
             ]
         );
-        const newItem = result.rows[0];
+        const newItem = parseServiceRow(result.rows[0]);
         getSocket().emit('service_created', newItem);
         res.status(201).json(newItem);
     } catch (error: any) {
@@ -177,7 +202,7 @@ export const updateService = async (req: any, res: any) => {
                 brand_id, business_unit, content_owner_id, updated_by, version_number, change_log_link, id
             ]
         );
-        const updatedItem = result.rows[0];
+        const updatedItem = parseServiceRow(result.rows[0]);
         getSocket().emit('service_updated', updatedItem);
         res.status(200).json(updatedItem);
     } catch (error: any) {

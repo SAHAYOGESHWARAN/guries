@@ -56,6 +56,7 @@ const STORAGE_KEYS = {
     CAMPAIGN_EFFORT: 'mcc_campaign_effort',
     TOXIC_URLS: 'mcc_toxic_urls',
     URL_ERRORS: 'mcc_url_errors',
+    ON_PAGE_SEO_AUDITS: 'mcc_on_page_seo_audits',
     ASSET_LIBRARY: 'mcc_asset_library',
     NOTIFICATIONS: 'mcc_notifications',
     // Misc
@@ -167,6 +168,7 @@ export const db = {
     // Analytics
     toxicUrls: new DataService<ToxicBacklink>(STORAGE_KEYS.TOXIC_URLS),
     urlErrors: new DataService<UrlError>(STORAGE_KEYS.URL_ERRORS),
+    onPageSeoAudits: new DataService<OnPageSeoAudit>(STORAGE_KEYS.ON_PAGE_SEO_AUDITS),
     assetLibrary: new DataService<AssetLibraryItem>(STORAGE_KEYS.ASSET_LIBRARY),
     notifications: new DataService<Notification>(STORAGE_KEYS.NOTIFICATIONS),
     campaignPerformance: new DataService<CampaignPerformanceKpi>(STORAGE_KEYS.CAMPAIGN_PERFORMANCE),

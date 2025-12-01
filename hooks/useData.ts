@@ -28,6 +28,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     competitors: { endpoint: 'competitors', event: 'competitor' },
     competitorBacklinks: { endpoint: 'competitor-backlinks', event: 'competitor_backlink' },
     urlErrors: { endpoint: 'url-errors', event: 'url_error' },
+    onPageSeoAudits: { endpoint: 'on-page-seo-audits', event: 'on_page_seo_audit' },
     toxicUrls: { endpoint: 'toxic-backlinks', event: 'toxic_backlink' },
     uxIssues: { endpoint: 'ux-issues', event: 'ux_issue' },
     qc: { endpoint: 'qc-runs', event: 'qc_run' },

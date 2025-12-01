@@ -474,6 +474,27 @@ CREATE TABLE IF NOT EXISTS seo_errors (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- On-page SEO Audit/Errors Table (Links to Services/Sub-services)
+CREATE TABLE IF NOT EXISTS on_page_seo_audits (
+    id SERIAL PRIMARY KEY,
+    service_id INTEGER REFERENCES services(id),
+    sub_service_id INTEGER REFERENCES sub_services(id),
+    error_type VARCHAR(255) NOT NULL,
+    error_category VARCHAR(100), -- 'Content', 'Technical', 'Meta', 'Links', 'Images', 'Schema'
+    severity VARCHAR(50) DEFAULT 'Medium', -- 'High', 'Medium', 'Low'
+    issue_description TEXT,
+    current_value TEXT, -- What is currently there
+    recommended_value TEXT, -- What it should be
+    detected_at TIMESTAMP DEFAULT NOW(),
+    linked_campaign_id INTEGER REFERENCES campaigns(id), -- Campaign where this will be fixed
+    status VARCHAR(50) DEFAULT 'open', -- 'open', 'in_progress', 'resolved', 'ignored'
+    resolved_at TIMESTAMP,
+    resolution_notes TEXT,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- =====================================================
 -- ANALYTICS & TRACKING
 -- =====================================================
