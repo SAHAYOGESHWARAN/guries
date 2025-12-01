@@ -51,10 +51,15 @@ const ServiceMasterView: React.FC = () => {
         canonical_url: '', redirect_from_urls: [], hreflang_group_id: 0,
         core_web_vitals_status: 'Good', tech_seo_status: 'Ok',
         sitemap_priority: 0.8, sitemap_changefreq: 'monthly', faq_section_enabled: false, faq_content: [],
-        show_in_main_menu: false, show_in_footer_menu: false, menu_position: 0,
+        show_in_main_menu: false, show_in_footer_menu: false, menu_position: 0, menu_group: '', 
+        parent_menu_section: '', breadcrumb_label: '', include_in_xml_sitemap: true,
+        content_type: 'Pillar', buyer_journey_stage: 'Awareness',
         linked_campaign_ids: [], secondary_persona_ids: [], primary_persona_id: 0,
-        form_id: 0, knowledge_topic_id: 0, featured_asset_id: 0, primary_subservice_id: 0,
-        robots_custom: '', hreflang_group_id: 0
+        target_segment_notes: '', primary_cta_label: '', primary_cta_url: '', form_id: 0,
+        knowledge_topic_id: 0, featured_asset_id: 0, primary_subservice_id: 0,
+        has_subservices: false, subservice_count: 0, asset_count: 0,
+        brand_id: 0, business_unit: '', content_owner_id: 0, created_by: 0, updated_by: 0,
+        version_number: 1, change_log_link: ''
     });
 
     // Helper inputs
@@ -116,7 +121,11 @@ const ServiceMasterView: React.FC = () => {
             meta_title: '', meta_description: '', focus_keywords: [], secondary_keywords: [],
             industry_ids: [], country_ids: [], linked_campaign_ids: [],
             redirect_from_urls: [], faq_content: [], faq_section_enabled: false,
-            primary_persona_id: 0, secondary_persona_ids: []
+            primary_persona_id: 0, secondary_persona_ids: [],
+            menu_group: '', parent_menu_section: '', breadcrumb_label: '', include_in_xml_sitemap: true,
+            buyer_journey_stage: 'Awareness', target_segment_notes: '', primary_cta_label: '', primary_cta_url: '', form_id: 0,
+            brand_id: 0, business_unit: '', content_owner_id: 0, created_by: 0, updated_by: 0,
+            version_number: 1, change_log_link: '', has_subservices: false, subservice_count: 0, asset_count: 0
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -142,7 +151,20 @@ const ServiceMasterView: React.FC = () => {
             image_alt_texts: item.image_alt_texts || [],
             secondary_persona_ids: item.secondary_persona_ids || [],
             menu_heading: item.menu_heading || '',
-            short_tagline: item.short_tagline || ''
+            short_tagline: item.short_tagline || '',
+            menu_group: item.menu_group || '',
+            parent_menu_section: item.parent_menu_section || '',
+            breadcrumb_label: item.breadcrumb_label || '',
+            include_in_xml_sitemap: item.include_in_xml_sitemap !== undefined ? item.include_in_xml_sitemap : true,
+            business_unit: item.business_unit || '',
+            created_by: item.created_by || 0,
+            updated_by: item.updated_by || 0,
+            version_number: item.version_number || 1,
+            change_log_link: item.change_log_link || '',
+            target_segment_notes: item.target_segment_notes || '',
+            primary_cta_label: item.primary_cta_label || '',
+            primary_cta_url: item.primary_cta_url || '',
+            form_id: item.form_id || 0
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -523,6 +545,12 @@ Return as JSON: [{"url": "/services/slug", "anchor_text": "...", "target_type": 
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Breadcrumb Label</label>
                                                 <input type="text" value={formData.breadcrumb_label} onChange={(e) => setFormData({...formData, breadcrumb_label: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="If nested under a mega-menu heading, specify the parent section name.">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Parent Menu Section</label>
+                                                <input type="text" value={formData.parent_menu_section || ''} onChange={(e) => setFormData({...formData, parent_menu_section: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Consulting Services" />
                                             </div>
                                         </Tooltip>
                                     </div>
@@ -1411,22 +1439,46 @@ Return JSON: {"type": "Service", "fields": ["name", "description", "provider", .
                         {/* --- TAB: GOVERNANCE --- */}
                         {activeTab === 'Governance' && (
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Ownership & Metadata</h3>
+                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-2 mb-4">Ownership, Governance & Versioning</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Tooltip content="Select the brand this service belongs to from the Brand Master.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Brand</label>
-                                            <select value={formData.brand_id} onChange={(e) => setFormData({...formData, brand_id: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <select value={formData.brand_id || 0} onChange={(e) => setFormData({...formData, brand_id: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
                                                 <option value={0}>Select Brand...</option>
                                                 {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                             </select>
                                         </div>
                                     </Tooltip>
+                                    <Tooltip content="Business unit or department (e.g., Marketing, R&D, Consulting).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Business Unit</label>
+                                            <input type="text" value={formData.business_unit || ''} onChange={(e) => setFormData({...formData, business_unit: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Marketing" />
+                                        </div>
+                                    </Tooltip>
                                     <Tooltip content="Person responsible for maintaining this service content.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Content Owner</label>
-                                            <select value={formData.content_owner_id} onChange={(e) => setFormData({...formData, content_owner_id: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <select value={formData.content_owner_id || 0} onChange={(e) => setFormData({...formData, content_owner_id: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
                                                 <option value={0}>Select Owner...</option>
+                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="User who created this service record.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Created By</label>
+                                            <select value={formData.created_by || 0} onChange={(e) => setFormData({...formData, created_by: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <option value={0}>Select User...</option>
+                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="User who last updated this service record.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Updated By</label>
+                                            <select value={formData.updated_by || 0} onChange={(e) => setFormData({...formData, updated_by: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <option value={0}>Select User...</option>
                                                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
                                         </div>
@@ -1435,13 +1487,29 @@ Return JSON: {"type": "Service", "fields": ["name", "description", "provider", .
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
                                             <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
-                                                <option>Draft</option><option>Published</option><option>Archived</option><option>In Progress</option>
+                                                <option>Draft</option><option>Published</option><option>Archived</option><option>In Progress</option><option>QC</option><option>Approved</option>
                                             </select>
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Version number for tracking content iterations.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Version Number</label>
+                                            <input type="number" value={formData.version_number || 1} onChange={(e) => setFormData({...formData, version_number: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" min="1" />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Link to change log document (Notion, Git, diff history, etc.).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Change Log Link</label>
+                                            <input type="url" value={formData.change_log_link || ''} onChange={(e) => setFormData({...formData, change_log_link: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="https://..." />
                                         </div>
                                     </Tooltip>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Created At</label>
-                                        <input type="text" value={formData.created_at ? new Date(formData.created_at).toLocaleDateString() : '-'} readOnly className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 text-sm" />
+                                        <input type="text" value={formData.created_at ? new Date(formData.created_at).toLocaleString() : '-'} readOnly className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Updated At</label>
+                                        <input type="text" value={formData.updated_at ? new Date(formData.updated_at).toLocaleString() : '-'} readOnly className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 text-sm" />
                                     </div>
                                 </div>
                             </div>
