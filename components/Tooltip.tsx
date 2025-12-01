@@ -37,7 +37,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top', 
   }, []);
 
   return (
-    <div 
+    <div
       className={`relative inline-block ${className}`}
       onMouseEnter={show}
       onMouseLeave={hide}
@@ -48,7 +48,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top', 
     >
       {children}
       {isVisible && (
-        <div 
+        <div
           id="tooltip"
           role="tooltip"
           className={`absolute z-50 w-max max-w-xs px-2.5 py-1.5 text-[11px] font-medium text-slate-50 bg-slate-900/95 rounded-md shadow-lg border border-slate-700/70 animate-fade-in backdrop-blur-sm ${positionClasses[position]}`}
