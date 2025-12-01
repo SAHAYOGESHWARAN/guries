@@ -4,6 +4,36 @@
 
 A comprehensive daily report feature has been added to the Marketing Control Center that provides a detailed summary of all activities, metrics, and status for the current day.
 
+## What you should do each day (quick checklist)
+
+1. **Start required services**
+   - Make sure **PostgreSQL** is running and reachable on the port configured in `backend/.env` (default `5432` and DB name `mcc_db`).
+   - Start the **backend API**:
+     ```bash
+     cd backend
+     npm run dev
+     ```
+   - (Optional, for UI usage) Start the **frontend**:
+     ```bash
+     npm run dev:client
+     ```
+
+2. **Verify the system is healthy**
+   - Open in browser or use curl:
+     - `http://localhost:3001/health` → should return status `OK`.
+     - `http://localhost:3001/api/v1/system/stats` → should return system + DB stats.
+
+3. **Run the automated project tests (optional but recommended)**
+   - From the project root:
+     ```bash
+     node test-project.js
+     ```
+   - Confirm that most/all tests are **Passed**. If they all fail with connection errors, fix DB/Backend first, then re-run.
+
+4. **Generate today's report**
+   - Use one of the options below (Node script, direct API, or frontend).
+
+
 ## API Endpoint
 
 **GET** `/api/v1/reports/today`
@@ -131,13 +161,6 @@ Unread: 1
    ○ [task] New task assigned to you
    ✓ [campaign] Campaign approved
    ✓ [content] Content published
-
-📊 CURRENT STATUS
---------------------------------------------------------------------------------
-Active Campaigns: 15
-Pending Tasks: 23
-Toxic Link Alerts: 2
-```
 
 ## Files Created
 
