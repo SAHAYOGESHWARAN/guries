@@ -71,26 +71,26 @@ const ContentRepositoryView: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 bg-slate-50 w-full">
-                      <div className="w-full space-y-4">
-                          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm w-full">
-                              <div className="grid grid-cols-2 gap-4 mb-4 w-full">
+                      <div className="w-full space-y-6">
+                          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm w-full space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4 w-full">
                                   <div>
-                                      <label className="block text-xs font-bold text-gray-700 mb-1">Title</label>
+                                      <label className="block text-xs font-bold text-gray-700 mb-2">Title</label>
                                       <input type="text" value={formData.content_title_clean} onChange={(e) => setFormData({...formData, content_title_clean: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm" />
                                   </div>
                                   <div>
-                                      <label className="block text-xs font-bold text-gray-700 mb-1">Status</label>
+                                      <label className="block text-xs font-bold text-gray-700 mb-2">Status</label>
                                       <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="w-full p-2 border border-slate-300 rounded-md text-sm">
                                           {PIPELINE_STAGES.filter(s => s !== 'All').map(s => <option key={s} value={s}>{s}</option>)}
                                       </select>
                                   </div>
                               </div>
                               <div className="mb-4">
-                                  <label className="block text-xs font-bold text-gray-700 mb-1">H1 Header</label>
+                                  <label className="block text-xs font-bold text-gray-700 mb-2">H1 Header</label>
                                   <input type="text" value={formData.h1} onChange={(e) => setFormData({...formData, h1: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm" />
                               </div>
                               <div>
-                                  <label className="block text-xs font-bold text-gray-700 mb-1">Body Content</label>
+                                  <label className="block text-xs font-bold text-gray-700 mb-2">Body Content</label>
                                   <textarea value={formData.body_content} onChange={(e) => setFormData({...formData, body_content: e.target.value})} className="w-full p-3 border border-slate-300 rounded-md h-64 font-mono text-sm leading-relaxed" />
                               </div>
                           </div>

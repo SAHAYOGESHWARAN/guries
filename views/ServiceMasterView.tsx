@@ -324,7 +324,7 @@ const ServiceMasterView: React.FC = () => {
 
     if (viewMode === 'form') {
         return (
-            <div className="fixed inset-0 z-[60] bg-white flex flex-col overflow-hidden animate-slide-up">
+            <div className="fixed inset-x-0 bottom-0 top-16 z-[60] bg-white flex flex-col overflow-hidden animate-slide-up">
                 {/* Full-Frame Header */}
                 <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-white shadow-sm z-40">
                     <div className="flex items-center gap-4">
