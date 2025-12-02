@@ -7,7 +7,7 @@ import type {
     AssetLibraryItem, Notification, Integration, IntegrationLog,
     EffortTarget, GoldStandardMetric, SubServiceItem, IndustrySectorItem, ContentTypeItem,
     AssetTypeItem, PlatformMasterItem, CountryMasterItem, SeoErrorTypeItem, WorkflowStageItem,
-    CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem
+    CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem, PersonaMasterItem, FormMasterItem
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -28,6 +28,8 @@ const STORAGE_KEYS = {
     SUB_SERVICES: 'mcc_sub_services',
     INDUSTRY_SECTORS: 'mcc_industry_sectors',
     CONTENT_TYPES: 'mcc_content_types',
+    PERSONAS: 'mcc_personas',
+    FORMS: 'mcc_forms',
     ASSET_TYPES: 'mcc_asset_types',
     PLATFORMS: 'mcc_platforms',
     COUNTRIES: 'mcc_countries',
@@ -142,6 +144,8 @@ export const db = {
     subServices: new DataService<SubServiceItem>(STORAGE_KEYS.SUB_SERVICES),
     industrySectors: new DataService<IndustrySectorItem>(STORAGE_KEYS.INDUSTRY_SECTORS),
     contentTypes: new DataService<ContentTypeItem>(STORAGE_KEYS.CONTENT_TYPES),
+    personas: new DataService<PersonaMasterItem>(STORAGE_KEYS.PERSONAS),
+    forms: new DataService<FormMasterItem>(STORAGE_KEYS.FORMS),
     assetTypes: new DataService<AssetTypeItem>(STORAGE_KEYS.ASSET_TYPES),
     platforms: new DataService<PlatformMasterItem>(STORAGE_KEYS.PLATFORMS),
     countries: new DataService<CountryMasterItem>(STORAGE_KEYS.COUNTRIES),

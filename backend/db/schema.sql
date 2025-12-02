@@ -836,6 +836,32 @@ CREATE TABLE IF NOT EXISTS countries (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Personas Table
+CREATE TABLE IF NOT EXISTS personas (
+    id SERIAL PRIMARY KEY,
+    persona_name VARCHAR(255) NOT NULL,
+    segment VARCHAR(255),
+    role VARCHAR(255),
+    funnel_stage VARCHAR(100),
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Forms Table
+CREATE TABLE IF NOT EXISTS forms (
+    id SERIAL PRIMARY KEY,
+    form_name VARCHAR(255) NOT NULL,
+    form_type VARCHAR(100),
+    data_source VARCHAR(255),
+    target_url VARCHAR(1000),
+    status VARCHAR(50) DEFAULT 'active',
+    owner_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Workflow Stages Table
 CREATE TABLE IF NOT EXISTS workflow_stages (
     id SERIAL PRIMARY KEY,

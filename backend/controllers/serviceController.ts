@@ -68,6 +68,10 @@ export const createService = async (req: any, res: any) => {
         brand_id, business_unit, content_owner_id, created_by, created_at, version_number, change_log_link
     } = req.body;
 
+    const normalizedParentMenuSection = typeof parent_menu_section === 'string'
+        ? parent_menu_section.trim()
+        : parent_menu_section;
+
     // --- URL Validation & Normalization ---
     let computedUrl = full_url;
     if (!computedUrl) {
@@ -106,7 +110,7 @@ export const createService = async (req: any, res: any) => {
             [
                 service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids || []), JSON.stringify(country_ids || []), language, status,
-                show_in_main_menu || false, show_in_footer_menu || false, menu_group, menu_position || 0, breadcrumb_label, parent_menu_section,
+                show_in_main_menu || false, show_in_footer_menu || false, menu_group, menu_position || 0, breadcrumb_label, normalizedParentMenuSection,
                 include_in_xml_sitemap || true, sitemap_priority || 0.8, sitemap_changefreq || 'monthly',
                 content_type, buyer_journey_stage, primary_persona_id, JSON.stringify(secondary_persona_ids || []), target_segment_notes,
                 primary_cta_label, primary_cta_url, form_id, JSON.stringify(linked_campaign_ids || []),
@@ -151,6 +155,10 @@ export const updateService = async (req: any, res: any) => {
         brand_id, business_unit, content_owner_id, updated_by, version_number, change_log_link
     } = req.body;
     
+    const normalizedParentMenuSection = typeof parent_menu_section === 'string'
+        ? parent_menu_section.trim()
+        : parent_menu_section;
+
     // --- URL Validation & Normalization for Update ---
     let computedUrl = full_url;
     if (computedUrl && !computedUrl.startsWith('/services/')) {
@@ -188,7 +196,7 @@ export const updateService = async (req: any, res: any) => {
             [
                 service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids), JSON.stringify(country_ids), language, status,
-                show_in_main_menu, show_in_footer_menu, menu_group, menu_position, breadcrumb_label, parent_menu_section,
+                show_in_main_menu, show_in_footer_menu, menu_group, menu_position, breadcrumb_label, normalizedParentMenuSection,
                 include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
                 content_type, buyer_journey_stage, primary_persona_id, JSON.stringify(secondary_persona_ids), target_segment_notes,
                 primary_cta_label, primary_cta_url, form_id, JSON.stringify(linked_campaign_ids),

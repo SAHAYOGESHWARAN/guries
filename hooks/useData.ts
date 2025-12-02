@@ -39,6 +39,8 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
     industrySectors: { endpoint: 'industry-sectors', event: 'industry_sector' },
     contentTypes: { endpoint: 'content-types', event: 'content_type' },
+    personas: { endpoint: 'personas', event: 'persona' },
+    forms: { endpoint: 'forms', event: 'form' },
     assetTypes: { endpoint: 'asset-types', event: 'asset_type' },
     platforms: { endpoint: 'platforms', event: 'platform' },
     countries: { endpoint: 'countries', event: 'country' },

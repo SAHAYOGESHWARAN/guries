@@ -619,6 +619,28 @@ export interface ContentTypeItem {
     status: string;
 }
 
+export interface PersonaMasterItem {
+    id: number;
+    persona_name: string;
+    segment?: string;
+    role?: string;
+    funnel_stage?: string;
+    description?: string;
+    status: string;
+    updated_at?: string;
+}
+
+export interface FormMasterItem {
+    id: number;
+    form_name: string;
+    form_type?: string;
+    data_source?: string;
+    target_url?: string;
+    status: string;
+    owner_id?: number;
+    updated_at?: string;
+}
+
 export interface AssetTypeItem {
     id: number;
     asset_type: string;

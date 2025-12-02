@@ -36,6 +36,8 @@ import * as knowledgeController from '../controllers/knowledgeController';
 import * as complianceController from '../controllers/complianceController';
 import * as systemController from '../controllers/systemController';
 import * as reportController from '../controllers/reportController';
+import * as personaController from '../controllers/personaController';
+import * as formController from '../controllers/formController';
 
 const router = Router();
 
@@ -160,6 +162,17 @@ router.get('/effort-targets', benchmarkController.getEffortTargets);
 router.post('/effort-targets', benchmarkController.createEffortTarget);
 router.put('/effort-targets/:id', benchmarkController.updateEffortTarget);
 router.delete('/effort-targets/:id', benchmarkController.deleteEffortTarget);
+
+// --- Personas & Forms ---
+router.get('/personas', personaController.getPersonas);
+router.post('/personas', personaController.createPersona);
+router.put('/personas/:id', personaController.updatePersona);
+router.delete('/personas/:id', personaController.deletePersona);
+
+router.get('/forms', formController.getForms);
+router.post('/forms', formController.createForm);
+router.put('/forms/:id', formController.updateForm);
+router.delete('/forms/:id', formController.deleteForm);
 
 // --- Services Master ---
 router.get('/services', serviceController.getServices);

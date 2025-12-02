@@ -7,7 +7,7 @@ import type {
     TeamPerformance, Notification, EffortTarget, GoldStandardMetric, SubServiceItem, IndustrySectorItem,
     ContentTypeItem, AssetTypeItem, PlatformMasterItem, CountryMasterItem, SeoErrorTypeItem, WorkflowStageItem,
     CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem, PerformanceMetric, ProjectImpact, AutoInsight,
-    EmployeeMetric, TaskHistory, EmployeeRanking, WeeklyPerformance
+    EmployeeMetric, TaskHistory, EmployeeRanking, WeeklyPerformance, PersonaMasterItem, FormMasterItem
 } from '../types';
 
 // --- PRODUCTION STATE: EMPTY INITIAL DATA ---
@@ -53,6 +53,8 @@ export const mockGoldStandards: GoldStandardMetric[] = [];
 export const mockSubServices: SubServiceItem[] = [];
 export const mockIndustrySectors: IndustrySectorItem[] = [];
 export const mockContentTypes: ContentTypeItem[] = [];
+export const mockPersonas: PersonaMasterItem[] = [];
+export const mockForms: FormMasterItem[] = [];
 export const mockAssetTypes: AssetTypeItem[] = [];
 export const mockPlatforms: PlatformMasterItem[] = [];
 export const mockCountries: CountryMasterItem[] = [];
