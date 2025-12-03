@@ -243,6 +243,8 @@ CREATE TABLE IF NOT EXISTS sub_services (
     menu_position INTEGER DEFAULT 0,
     breadcrumb_label VARCHAR(255),
     include_in_xml_sitemap BOOLEAN DEFAULT true,
+    sitemap_priority DECIMAL(3,2) DEFAULT 0.8,
+    sitemap_changefreq VARCHAR(50) DEFAULT 'monthly',
     content_type VARCHAR(100),
     buyer_journey_stage VARCHAR(100),
     primary_cta_label VARCHAR(255),

@@ -246,7 +246,7 @@ export const createSubService = async (req: any, res: any) => {
         og_title, og_description, og_image_url,
         assets_linked,
         // Extended Fields
-        menu_position, breadcrumb_label, include_in_xml_sitemap,
+        menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
         content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
         robots_index, robots_follow, canonical_url, schema_type_id,
         brand_id, content_owner_id
@@ -260,7 +260,7 @@ export const createSubService = async (req: any, res: any) => {
                 meta_title, meta_description, focus_keywords,
                 og_title, og_description, og_image_url,
                 assets_linked,
-                menu_position, breadcrumb_label, include_in_xml_sitemap,
+                menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
                 content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
                 robots_index, robots_follow, canonical_url, schema_type_id,
                 brand_id, content_owner_id,
@@ -271,7 +271,7 @@ export const createSubService = async (req: any, res: any) => {
                 $11, $12, $13,
                 $14, $15, $16,
                 $17,
-                $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+                $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
                 NOW()
             ) RETURNING *`,
             [
@@ -280,7 +280,7 @@ export const createSubService = async (req: any, res: any) => {
                 meta_title, meta_description, JSON.stringify(focus_keywords || []),
                 og_title, og_description, og_image_url,
                 assets_linked || 0,
-                menu_position || 0, breadcrumb_label, include_in_xml_sitemap ?? true,
+                menu_position || 0, breadcrumb_label, include_in_xml_sitemap ?? true, sitemap_priority || 0.8, sitemap_changefreq || 'monthly',
                 content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
                 robots_index || 'index', robots_follow || 'follow', canonical_url, schema_type_id || 'Service',
                 brand_id || 0, content_owner_id || 0
@@ -321,7 +321,7 @@ export const updateSubService = async (req: any, res: any) => {
         og_title, og_description, og_image_url,
         assets_linked,
         // Extended Fields
-        menu_position, breadcrumb_label, include_in_xml_sitemap,
+        menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
         content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
         robots_index, robots_follow, canonical_url, schema_type_id,
         brand_id, content_owner_id
@@ -336,19 +336,19 @@ export const updateSubService = async (req: any, res: any) => {
                 meta_title=COALESCE($11, meta_title), meta_description=COALESCE($12, meta_description), focus_keywords=COALESCE($13, focus_keywords),
                 og_title=COALESCE($14, og_title), og_description=COALESCE($15, og_description), og_image_url=COALESCE($16, og_image_url),
                 assets_linked=COALESCE($17, assets_linked),
-                menu_position=COALESCE($18, menu_position), breadcrumb_label=COALESCE($19, breadcrumb_label), include_in_xml_sitemap=COALESCE($20, include_in_xml_sitemap),
-                content_type=COALESCE($21, content_type), buyer_journey_stage=COALESCE($22, buyer_journey_stage), primary_cta_label=COALESCE($23, primary_cta_label), primary_cta_url=COALESCE($24, primary_cta_url),
-                robots_index=COALESCE($25, robots_index), robots_follow=COALESCE($26, robots_follow), canonical_url=COALESCE($27, canonical_url), schema_type_id=COALESCE($28, schema_type_id),
-                brand_id=COALESCE($29, brand_id), content_owner_id=COALESCE($30, content_owner_id),
+                menu_position=COALESCE($18, menu_position), breadcrumb_label=COALESCE($19, breadcrumb_label), include_in_xml_sitemap=COALESCE($20, include_in_xml_sitemap), sitemap_priority=COALESCE($21, sitemap_priority), sitemap_changefreq=COALESCE($22, sitemap_changefreq),
+                content_type=COALESCE($23, content_type), buyer_journey_stage=COALESCE($24, buyer_journey_stage), primary_cta_label=COALESCE($25, primary_cta_label), primary_cta_url=COALESCE($26, primary_cta_url),
+                robots_index=COALESCE($27, robots_index), robots_follow=COALESCE($28, robots_follow), canonical_url=COALESCE($29, canonical_url), schema_type_id=COALESCE($30, schema_type_id),
+                brand_id=COALESCE($31, brand_id), content_owner_id=COALESCE($32, content_owner_id),
                 updated_at=NOW() 
-            WHERE id=$31 RETURNING *`,
+            WHERE id=$33 RETURNING *`,
             [
                 sub_service_name, parent_service_id, slug, full_url, description, status,
                 h1, JSON.stringify(h2_list), JSON.stringify(h3_list), body_content,
                 meta_title, meta_description, JSON.stringify(focus_keywords),
                 og_title, og_description, og_image_url,
                 assets_linked,
-                menu_position, breadcrumb_label, include_in_xml_sitemap,
+                menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
                 content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
                 robots_index, robots_follow, canonical_url, schema_type_id,
                 brand_id, content_owner_id,

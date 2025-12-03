@@ -217,6 +217,8 @@ export interface SubServiceItem {
     menu_position?: number;
     breadcrumb_label?: string;
     include_in_xml_sitemap?: boolean;
+    sitemap_priority?: number;
+    sitemap_changefreq?: 'daily' | 'weekly' | 'monthly' | 'yearly';
     
     // Strategic
     content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page' | string;

@@ -39,7 +39,7 @@ const SubServiceMasterView: React.FC = () => {
         og_title: '', og_description: '', og_image_url: '',
         assets_linked: 0,
         // Extended fields
-        menu_position: 0, breadcrumb_label: '', include_in_xml_sitemap: true,
+        menu_position: 0, breadcrumb_label: '', include_in_xml_sitemap: true, sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
         content_type: 'Cluster', buyer_journey_stage: 'Consideration', primary_cta_label: '', primary_cta_url: '',
         robots_index: 'index', robots_follow: 'follow', canonical_url: '', schema_type_id: 'Service',
         brand_id: 0, content_owner_id: 0
@@ -87,6 +87,8 @@ const SubServiceMasterView: React.FC = () => {
             // Ensure extended fields have defaults if missing in older records
             menu_position: (item as any).menu_position || 0,
             include_in_xml_sitemap: (item as any).include_in_xml_sitemap ?? true,
+            sitemap_priority: (item as any).sitemap_priority ?? 0.8,
+            sitemap_changefreq: (item as any).sitemap_changefreq || 'monthly',
             robots_index: (item as any).robots_index || 'index'
         });
         setActiveTab('Core');
@@ -121,7 +123,7 @@ const SubServiceMasterView: React.FC = () => {
             h1: '', h2_list: [], h3_list: [], body_content: '',
             meta_title: '', meta_description: '', focus_keywords: [],
             og_title: '', og_description: '', og_image_url: '', assets_linked: 0,
-            menu_position: 0, breadcrumb_label: '', include_in_xml_sitemap: true,
+            menu_position: 0, breadcrumb_label: '', include_in_xml_sitemap: true, sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
             content_type: 'Cluster', buyer_journey_stage: 'Consideration', primary_cta_label: '', primary_cta_url: '',
             robots_index: 'index', robots_follow: 'follow', canonical_url: '', schema_type_id: 'Service',
             brand_id: 0, content_owner_id: 0
@@ -253,51 +255,95 @@ const SubServiceMasterView: React.FC = () => {
                                 <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
                                     <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded mr-2">💎</span> Core Identification
                                 </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-6">
-                                        <Tooltip content="Official name of the sub-service.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Sub-Service Name *</label>
-                                                <input type="text" value={formData.sub_service_name} onChange={(e) => { setFormData({ ...formData, sub_service_name: e.target.value }); handleSlugChange(e.target.value); }} className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-all" />
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip content="The parent service this belongs to. Linked to Service Master.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Parent Service *</label>
-                                                <select value={formData.parent_service_id} onChange={(e) => setFormData({ ...formData, parent_service_id: parseInt(e.target.value) })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
-                                                    <option value={0}>Select Parent...</option>
-                                                    {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
-                                                </select>
-                                            </div>
-                                        </Tooltip>
-                                    </div>
-                                    <div className="space-y-6">
-                                        <Tooltip content="URL Slug (auto-generated).">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Slug</label>
-                                                <input type="text" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-50 font-mono text-slate-600 transition-all" />
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip content="Full accessible URL path.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Full URL</label>
-                                                <input type="text" value={formData.full_url} readOnly className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono" />
-                                            </div>
-                                        </Tooltip>
-                                    </div>
+
+                                {/* Primary Fields: Service Code, Service Name, Slug */}
+                                <div className="space-y-6">
+                                    <Tooltip content="Parent service code reference.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Service Code</label>
+                                            <input
+                                                type="text"
+                                                value={services.find(s => s.id === formData.parent_service_id)?.service_code || ''}
+                                                readOnly
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono"
+                                                placeholder="Select parent service to see code"
+                                            />
+                                        </div>
+                                    </Tooltip>
+
+                                    <Tooltip content="Official name of the sub-service.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Sub-Service Name *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.sub_service_name}
+                                                onChange={(e) => { setFormData({ ...formData, sub_service_name: e.target.value }); handleSlugChange(e.target.value); }}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </Tooltip>
+
+                                    <Tooltip content="URL Slug (auto-generated).">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Slug</label>
+                                            <input
+                                                type="text"
+                                                value={formData.slug}
+                                                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-50 font-mono text-slate-600 transition-all"
+                                            />
+                                        </div>
+                                    </Tooltip>
                                 </div>
 
-                                <div className="space-y-6 pt-4">
+                                {/* Secondary Fields */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200">
+                                    <Tooltip content="The parent service this belongs to. Linked to Service Master.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Parent Service *</label>
+                                            <select
+                                                value={formData.parent_service_id}
+                                                onChange={(e) => setFormData({ ...formData, parent_service_id: parseInt(e.target.value) })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all"
+                                            >
+                                                <option value={0}>Select Parent...</option>
+                                                {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
+                                            </select>
+                                        </div>
+                                    </Tooltip>
+
+                                    <Tooltip content="Full accessible URL path.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Full URL</label>
+                                            <input
+                                                type="text"
+                                                value={formData.full_url}
+                                                readOnly
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono"
+                                            />
+                                        </div>
+                                    </Tooltip>
+                                </div>
+
+                                <div className="space-y-6 pt-4 border-t border-slate-200">
                                     <Tooltip content="Short summary for listings and internal reference.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Description</label>
-                                            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg h-24 text-sm focus:ring-2 focus:ring-indigo-500 resize-none transition-all" />
+                                            <textarea
+                                                value={formData.description}
+                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg h-24 text-sm focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
+                                            />
                                         </div>
                                     </Tooltip>
                                     <Tooltip content="Current publication status.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Status</label>
-                                            <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
+                                            <select
+                                                value={formData.status}
+                                                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all"
+                                            >
                                                 {STATUSES.filter(s => s !== 'All Status').map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
                                         </div>
@@ -311,27 +357,83 @@ const SubServiceMasterView: React.FC = () => {
                                 <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
                                     <span className="bg-blue-100 text-blue-600 p-1.5 rounded mr-2">🧭</span> Navigation Configuration
                                 </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                                {/* Navigation Fields */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Tooltip content="Breadcrumb label override.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Breadcrumb Label</label>
-                                            <input type="text" value={formData.breadcrumb_label} onChange={(e) => setFormData({ ...formData, breadcrumb_label: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm transition-all" />
+                                            <input
+                                                type="text"
+                                                value={formData.breadcrumb_label}
+                                                onChange={(e) => setFormData({ ...formData, breadcrumb_label: e.target.value })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500"
+                                            />
                                         </div>
                                     </Tooltip>
                                     <Tooltip content="Order in sub-menu list.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Menu Position</label>
-                                            <input type="number" value={formData.menu_position} onChange={(e) => setFormData({ ...formData, menu_position: parseInt(e.target.value) })} className="w-full p-3 border border-slate-300 rounded-lg text-sm transition-all" />
+                                            <input
+                                                type="number"
+                                                value={formData.menu_position}
+                                                onChange={(e) => setFormData({ ...formData, menu_position: parseInt(e.target.value) })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500"
+                                            />
                                         </div>
                                     </Tooltip>
                                 </div>
-                                <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                                    <Tooltip content="Include in XML Sitemap for indexing.">
-                                        <label className="flex items-center space-x-3 cursor-pointer group">
-                                            <input type="checkbox" checked={formData.include_in_xml_sitemap} onChange={(e) => setFormData({ ...formData, include_in_xml_sitemap: e.target.checked })} className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300" />
-                                            <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-700 transition-colors">Include in XML Sitemap</span>
-                                        </label>
-                                    </Tooltip>
+
+                                {/* Sitemap Configuration Section */}
+                                <div className="pt-4 border-t border-slate-200 space-y-6">
+                                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">Sitemap Configuration</h4>
+
+                                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                                        <Tooltip content="Include in XML Sitemap for indexing.">
+                                            <label className="flex items-center space-x-3 cursor-pointer group">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.include_in_xml_sitemap}
+                                                    onChange={(e) => setFormData({ ...formData, include_in_xml_sitemap: e.target.checked })}
+                                                    className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300"
+                                                />
+                                                <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-700 transition-colors">Include in XML Sitemap</span>
+                                            </label>
+                                        </Tooltip>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Tooltip content="Priority hint for search engine crawlers (0.0 to 1.0).">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Sitemap Priority</label>
+                                                <select
+                                                    value={formData.sitemap_priority ?? 0.8}
+                                                    onChange={(e) => setFormData({ ...formData, sitemap_priority: parseFloat(e.target.value) })}
+                                                    className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <option value={1.0}>1.0 (Highest)</option>
+                                                    <option value={0.8}>0.8 (High)</option>
+                                                    <option value={0.5}>0.5 (Medium)</option>
+                                                    <option value={0.3}>0.3 (Low)</option>
+                                                </select>
+                                            </div>
+                                        </Tooltip>
+                                        <Tooltip content="Expected frequency of updates for sitemap pinging.">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Sitemap Frequency</label>
+                                                <select
+                                                    value={formData.sitemap_changefreq || 'monthly'}
+                                                    onChange={(e) => setFormData({ ...formData, sitemap_changefreq: e.target.value as any })}
+                                                    className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <option value="daily">Daily</option>
+                                                    <option value="weekly">Weekly</option>
+                                                    <option value="monthly">Monthly</option>
+                                                    <option value="yearly">Yearly</option>
+                                                </select>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -413,7 +515,12 @@ const SubServiceMasterView: React.FC = () => {
                                 <Tooltip content="Main content body (Markdown supported).">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Body Content</label>
-                                        <textarea value={formData.body_content} onChange={(e) => setFormData({ ...formData, body_content: e.target.value })} className="w-full p-4 border border-slate-300 rounded-lg h-96 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                        <textarea
+                                            value={formData.body_content}
+                                            onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
+                                            className="w-full p-4 border border-slate-300 rounded-lg h-48 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 transition-all resize-y"
+                                            style={{ minHeight: '200px' }}
+                                        />
                                     </div>
                                 </Tooltip>
                             </div>
@@ -680,13 +787,19 @@ const SubServiceMasterView: React.FC = () => {
                         {activeTab === 'Governance' && (
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
                                 <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
-                                    <span className="bg-teal-100 text-teal-600 p-1.5 rounded mr-2">⚖️</span> Governance
+                                    <span className="bg-teal-100 text-teal-600 p-1.5 rounded mr-2">⚖️</span> Governance & Metadata
                                 </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                                {/* Governance Assignments */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Tooltip content="Brand Association.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Brand</label>
-                                            <select value={formData.brand_id} onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
+                                            <select
+                                                value={formData.brand_id}
+                                                onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-teal-500"
+                                            >
                                                 <option value={0}>Select Brand...</option>
                                                 {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                             </select>
@@ -694,13 +807,69 @@ const SubServiceMasterView: React.FC = () => {
                                     </Tooltip>
                                     <Tooltip content="Content Owner.">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Owner</label>
-                                            <select value={formData.content_owner_id} onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Content Owner</label>
+                                            <select
+                                                value={formData.content_owner_id}
+                                                onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) })}
+                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-teal-500"
+                                            >
                                                 <option value={0}>Select Owner...</option>
                                                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
                                         </div>
                                     </Tooltip>
+                                </div>
+
+                                {/* Auto-Generated Metadata */}
+                                <div className="pt-4 border-t border-slate-200">
+                                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">Auto-Generated Metadata</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Record ID</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem?.id || 'New Record'}
+                                                readOnly
+                                                className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Last Updated</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem?.updated_at ? new Date(editingItem.updated_at).toLocaleString() : (formData.updated_at ? new Date(formData.updated_at).toLocaleString() : 'Not saved yet')}
+                                                readOnly
+                                                className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-mono"
+                                            />
+                                        </div>
+                                        {editingItem && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Created At</label>
+                                                    <input
+                                                        type="text"
+                                                        value={(editingItem as any).created_at ? new Date((editingItem as any).created_at).toLocaleString() : 'N/A'}
+                                                        readOnly
+                                                        className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-mono"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Status</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingItem?.status || formData.status}
+                                                        readOnly
+                                                        className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-medium"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="mt-4 p-4 bg-teal-50 rounded-lg border border-teal-100">
+                                        <p className="text-xs text-teal-800 font-medium">
+                                            <span className="font-bold">Note:</span> Timestamps and record metadata are automatically generated by the system. These fields cannot be manually edited.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         )}
