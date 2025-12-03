@@ -87,8 +87,13 @@ export const createService = async (req: any, res: any) => {
         // Linking
         has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
         // Governance
-        brand_id, business_unit, content_owner_id, created_by, created_at, version_number, change_log_link
+        brand_id, business_unit, content_owner_id, created_by, version_number, change_log_link
     } = req.body;
+    
+    // AUTO-GENERATE: Timestamps and User Tracking
+    const generatedCreatedAt = new Date().toISOString();
+    const generatedCreatedBy = created_by || 1; // Fallback to admin user (ID 1) if not provided
+    const generatedVersionNumber = version_number || 1;
 
     const normalizedParentMenuSection = typeof parent_menu_section === 'string'
         ? parent_menu_section.trim()
@@ -123,11 +128,11 @@ export const createService = async (req: any, res: any) => {
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, redirect_from_urls,
                 hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled, faq_content,
                 has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
-                brand_id, business_unit, content_owner_id, created_by, created_at, version_number, change_log_link
+                brand_id, business_unit, content_owner_id, created_by, created_at, updated_by, updated_at, version_number, change_log_link
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, 
                 $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
-                $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77
+                $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79
             ) RETURNING *`,
             [
                 service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
@@ -143,7 +148,7 @@ export const createService = async (req: any, res: any) => {
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, JSON.stringify(redirect_from_urls || []),
                 hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled || false, JSON.stringify(faq_content || []),
                 has_subservices || false, subservice_count || 0, primary_subservice_id || 0, featured_asset_id || 0, asset_count || 0, knowledge_topic_id || 0,
-                brand_id, business_unit, content_owner_id, created_by, created_at || 'NOW()', version_number || 1, change_log_link
+                brand_id, business_unit, content_owner_id, generatedCreatedBy, generatedCreatedAt, generatedCreatedBy, generatedCreatedAt, generatedVersionNumber, change_log_link
             ]
         );
         const newItem = parseServiceRow(result.rows[0]);
@@ -176,6 +181,21 @@ export const updateService = async (req: any, res: any) => {
         has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
         brand_id, business_unit, content_owner_id, updated_by, version_number, change_log_link
     } = req.body;
+    
+    // AUTO-GENERATE: Updated timestamp and auto-increment version
+    const generatedUpdatedAt = new Date().toISOString();
+    const generatedUpdatedBy = updated_by || 1; // Fallback to admin user (ID 1)
+    
+    // Fetch current version to auto-increment
+    let newVersionNumber = version_number || 1;
+    try {
+        const versionResult = await pool.query('SELECT version_number FROM services WHERE id = $1', [id]);
+        if (versionResult.rows.length > 0 && versionResult.rows[0].version_number) {
+            newVersionNumber = (versionResult.rows[0].version_number || 1) + 1;
+        }
+    } catch (e) {
+        console.warn('Could not fetch current version, using provided or default');
+    }
     
     const normalizedParentMenuSection = typeof parent_menu_section === 'string'
         ? parent_menu_section.trim()
@@ -212,9 +232,9 @@ export const updateService = async (req: any, res: any) => {
                 faq_section_enabled=COALESCE($63, faq_section_enabled), faq_content=COALESCE($64, faq_content), has_subservices=COALESCE($65, has_subservices),
                 subservice_count=COALESCE($66, subservice_count), primary_subservice_id=COALESCE($67, primary_subservice_id), featured_asset_id=COALESCE($68, featured_asset_id),
                 asset_count=COALESCE($69, asset_count), knowledge_topic_id=COALESCE($70, knowledge_topic_id), brand_id=COALESCE($71, brand_id),
-                business_unit=COALESCE($72, business_unit), content_owner_id=COALESCE($73, content_owner_id), updated_by=COALESCE($74, updated_by),
-                version_number=COALESCE($75, version_number), change_log_link=COALESCE($76, change_log_link), updated_at=NOW()
-             WHERE id=$77 RETURNING *`,
+                business_unit=COALESCE($72, business_unit), content_owner_id=COALESCE($73, content_owner_id), updated_by=$74,
+                version_number=$75, change_log_link=COALESCE($76, change_log_link), updated_at=$77
+             WHERE id=$78 RETURNING *`,
             [
                 service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids), JSON.stringify(country_ids), language, status,
@@ -229,7 +249,7 @@ export const updateService = async (req: any, res: any) => {
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, JSON.stringify(redirect_from_urls),
                 hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled, JSON.stringify(faq_content),
                 has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
-                brand_id, business_unit, content_owner_id, updated_by, version_number, change_log_link, id
+                brand_id, business_unit, content_owner_id, generatedUpdatedBy, newVersionNumber, change_log_link, generatedUpdatedAt, id
             ]
         );
         const updatedItem = parseServiceRow(result.rows[0]);

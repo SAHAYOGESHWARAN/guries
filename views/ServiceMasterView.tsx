@@ -1743,71 +1743,254 @@ const ServiceMasterView: React.FC = () => {
 
                         {/* --- TAB: GOVERNANCE --- */}
                         {activeTab === 'Governance' && (
-                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
-                                    <span className="bg-teal-100 text-teal-600 p-1.5 rounded mr-2">⚖️</span> Governance & Metadata
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <Tooltip content="Select the brand this service belongs to from the Brand Master.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Brand</label>
-                                            <select value={formData.brand_id} onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
-                                                <option value={0}>Select Brand...</option>
-                                                {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                            </select>
+                            <div className="space-y-10">
+                                {/* 1. OWNERSHIP & METADATA CARD */}
+                                <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">⚖️</span>
                                         </div>
-                                    </Tooltip>
-                                    <Tooltip content="Person responsible for maintaining this service content.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Content Owner</label>
-                                            <select value={formData.content_owner_id} onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
-                                                <option value={0}>Select Owner...</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                            </select>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
+                                                <h3 className="text-2xl font-bold">Ownership & Governance</h3>
+                                            </div>
+                                            <p className="text-teal-100 text-sm">Manage content ownership and approval workflows</p>
                                         </div>
-                                    </Tooltip>
-                                    <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Business Unit</label>
-                                            <input
-                                                type="text"
-                                                value={formData.business_unit || ''}
-                                                onChange={(e) => setFormData({ ...formData, business_unit: e.target.value })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all"
-                                                placeholder="Growth Marketing"
-                                            />
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <div className="space-y-8">
+                                            {/* Row 1 - Brand & Content Owner */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="Select the brand this service belongs to from the Brand Master.">
+                                                    <div className="bg-white rounded-xl border-2 border-teal-100 p-6 hover:border-teal-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-teal-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🏢</span>
+                                                            Brand
+                                                        </label>
+                                                        <select
+                                                            value={formData.brand_id || 0}
+                                                            onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer"
+                                                        >
+                                                            <option value={0}>Select Brand...</option>
+                                                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Person responsible for maintaining this service content.">
+                                                    <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">👤</span>
+                                                            Content Owner
+                                                        </label>
+                                                        <select
+                                                            value={formData.content_owner_id || 0}
+                                                            onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer"
+                                                        >
+                                                            <option value={0}>Select Owner...</option>
+                                                            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+
+                                            {/* Row 2 - Business Unit & Version */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
+                                                    <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🏛️</span>
+                                                            Business Unit
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.business_unit || ''}
+                                                            onChange={(e) => setFormData({ ...formData, business_unit: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400"
+                                                            placeholder="Growth Marketing / SEO Team"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Auto-incremented version number for tracking major revisions.">
+                                                    <div className="bg-white rounded-xl border-2 border-purple-100 p-6 hover:border-purple-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📌</span>
+                                                            Version Number
+                                                        </label>
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="number"
+                                                                value={formData.version_number || 1}
+                                                                min={1}
+                                                                onChange={(e) => setFormData({ ...formData, version_number: parseInt(e.target.value || '1') })}
+                                                                className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-bold transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                            />
+                                                            <span className="text-xs text-slate-500 whitespace-nowrap">Auto-increments on save</span>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
                                         </div>
-                                    </Tooltip>
-                                    <Tooltip content="Record the user who originally created this service (for audit trails).">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Created By</label>
-                                            <select value={formData.created_by ?? ''} onChange={(e) => setFormData({ ...formData, created_by: e.target.value ? parseInt(e.target.value) : undefined })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
-                                                <option value="">Select user...</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                            </select>
+                                    </div>
+                                </div>
+
+                                {/* 2. AUDIT TRAIL & TIMESTAMPS CARD */}
+                                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">📋</span>
                                         </div>
-                                    </Tooltip>
-                                    <Tooltip content="Latest editor responsible for modifications.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Updated By</label>
-                                            <select value={formData.updated_by ?? ''} onChange={(e) => setFormData({ ...formData, updated_by: e.target.value ? parseInt(e.target.value) : undefined })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all">
-                                                <option value="">Select user...</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                            </select>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🕒</span>
+                                                <h3 className="text-2xl font-bold">Audit Trail & Timestamps</h3>
+                                            </div>
+                                            <p className="text-indigo-100 text-sm">Auto-generated creation and modification history</p>
                                         </div>
-                                    </Tooltip>
-                                    <Tooltip content="Versioning helps coordinate approvals and publishing.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Version Number</label>
-                                            <input type="number" value={formData.version_number ?? 1} min={1} onChange={(e) => setFormData({ ...formData, version_number: parseInt(e.target.value || '1') })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <div className="space-y-8">
+                                            {/* Row 1 - Created Info */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="User who originally created this service record. Auto-set on creation.">
+                                                    <div className="bg-white rounded-xl border-2 border-green-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">✅</span>
+                                                            Created By
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 flex items-center gap-2">
+                                                                <span className="text-base">👤</span>
+                                                                {editingItem && formData.created_by
+                                                                    ? users.find(u => u.id === formData.created_by)?.name || 'Unknown User'
+                                                                    : <span className="text-slate-500 italic">Auto-set on creation</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only field - set automatically when record is created</p>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Timestamp when this service was originally created. Auto-generated.">
+                                                    <div className="bg-white rounded-xl border-2 border-emerald-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📅</span>
+                                                            Created At
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200 break-all">
+                                                                {editingItem && formData.created_at
+                                                                    ? new Date(formData.created_at).toLocaleString('en-US', { 
+                                                                        year: 'numeric', month: 'short', day: '2-digit',
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                                                      })
+                                                                    : <span className="text-slate-500 italic">Auto-set on creation</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only field - set automatically when record is created</p>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+
+                                            {/* Row 2 - Updated Info */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="Latest user who modified this service record. Auto-updated on every save.">
+                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🔄</span>
+                                                            Updated By
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 flex items-center gap-2">
+                                                                <span className="text-base">👤</span>
+                                                                {editingItem && formData.updated_by
+                                                                    ? users.find(u => u.id === formData.updated_by)?.name || 'Unknown User'
+                                                                    : <span className="text-slate-500 italic">Auto-set on save</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only field - auto-updated each time the record is modified</p>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Timestamp when this service was last modified. Auto-updated on every save.">
+                                                    <div className="bg-white rounded-xl border-2 border-rose-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">⏰</span>
+                                                            Updated At
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-rose-50 rounded-lg border border-rose-200 break-all">
+                                                                {editingItem && formData.updated_at
+                                                                    ? new Date(formData.updated_at).toLocaleString('en-US', { 
+                                                                        year: 'numeric', month: 'short', day: '2-digit',
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                                                      })
+                                                                    : <span className="text-slate-500 italic">Auto-set on save</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only field - auto-updated each time the record is modified</p>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
                                         </div>
-                                    </Tooltip>
-                                    <Tooltip content="Link to release notes or Jira change request describing the last update.">
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Change Log Link</label>
-                                            <input type="text" value={formData.change_log_link || ''} onChange={(e) => setFormData({ ...formData, change_log_link: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono" placeholder="https://notion.so/changelog" />
+                                    </div>
+                                </div>
+
+                                {/* 3. CHANGE MANAGEMENT CARD */}
+                                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-slate-50 rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-amber-600 to-yellow-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">📝</span>
                                         </div>
-                                    </Tooltip>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
+                                                <h3 className="text-2xl font-bold">Change Management</h3>
+                                            </div>
+                                            <p className="text-amber-100 text-sm">Track release notes and approval workflows</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <Tooltip content="Link to release notes, Jira ticket, or change request documenting the last major update.">
+                                            <div className="space-y-3">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest">
+                                                    <span>🔗</span>
+                                                    Change Log / Release Notes Link
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={formData.change_log_link || ''}
+                                                    onChange={(e) => setFormData({ ...formData, change_log_link: e.target.value })}
+                                                    className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-sm font-mono transition-all focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white placeholder:text-slate-400"
+                                                    placeholder="https://notion.so/changelog or https://jira.company.com/browse/MARK-1234"
+                                                />
+                                                <div className="text-xs text-slate-600 space-y-1 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                                    <p className="font-semibold">📌 Quick Links:</p>
+                                                    <ul className="list-disc list-inside space-y-0.5 text-slate-600">
+                                                        <li>Notion Changelog: <code className="bg-white px-2 py-1 rounded text-xs">https://notion.so/changelog</code></li>
+                                                        <li>Jira Epic: <code className="bg-white px-2 py-1 rounded text-xs">https://jira.company.com/browse/MARK-XXX</code></li>
+                                                        <li>GitHub Release: <code className="bg-white px-2 py-1 rounded text-xs">https://github.com/repo/releases/tag/v1.0.0</code></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             </div>
                         )}
