@@ -229,33 +229,70 @@ CREATE TABLE IF NOT EXISTS sub_services (
     full_url VARCHAR(1000),
     description TEXT,
     status VARCHAR(50),
+    -- Core fields
+    menu_heading VARCHAR(255),
+    short_tagline VARCHAR(500),
+    language VARCHAR(50) DEFAULT 'en',
+    industry_ids TEXT, -- JSON array
+    country_ids TEXT, -- JSON array
+    -- Content
     h1 VARCHAR(500),
     h2_list TEXT, -- JSON array
     h3_list TEXT, -- JSON array
+    h4_list TEXT, -- JSON array
+    h5_list TEXT, -- JSON array
     body_content TEXT,
+    word_count INTEGER DEFAULT 0,
+    reading_time_minutes INTEGER DEFAULT 0,
+    -- SEO
     meta_title VARCHAR(500),
     meta_description TEXT,
     focus_keywords TEXT, -- JSON array
+    secondary_keywords TEXT, -- JSON array
+    seo_score DECIMAL(5,2) DEFAULT 0,
+    ranking_summary TEXT,
+    -- SMM
     og_title VARCHAR(500),
     og_description TEXT,
     og_image_url VARCHAR(1000),
-    assets_linked INTEGER DEFAULT 0,
+    og_type VARCHAR(100) DEFAULT 'website',
+    twitter_title VARCHAR(500),
+    twitter_description TEXT,
+    twitter_image_url VARCHAR(1000),
+    -- Navigation
     menu_position INTEGER DEFAULT 0,
     breadcrumb_label VARCHAR(255),
     include_in_xml_sitemap BOOLEAN DEFAULT true,
     sitemap_priority DECIMAL(3,2) DEFAULT 0.8,
     sitemap_changefreq VARCHAR(50) DEFAULT 'monthly',
+    -- Strategic
     content_type VARCHAR(100),
     buyer_journey_stage VARCHAR(100),
     primary_cta_label VARCHAR(255),
     primary_cta_url VARCHAR(1000),
+    -- Technical
     robots_index VARCHAR(50) DEFAULT 'index',
     robots_follow VARCHAR(50) DEFAULT 'follow',
+    robots_custom TEXT,
     canonical_url VARCHAR(1000),
     schema_type_id VARCHAR(100) DEFAULT 'Service',
+    redirect_from_urls TEXT, -- JSON array
+    hreflang_group_id INTEGER,
+    core_web_vitals_status VARCHAR(50),
+    tech_seo_status VARCHAR(50),
+    faq_section_enabled BOOLEAN DEFAULT false,
+    faq_content TEXT, -- JSON array
+    -- Governance
     brand_id INTEGER DEFAULT 0,
     content_owner_id INTEGER DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_by INTEGER REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    version_number INTEGER DEFAULT 1,
+    change_log_link VARCHAR(1000),
+    -- Linking
+    assets_linked INTEGER DEFAULT 0
 );
 
 -- Service Pages Table
