@@ -389,13 +389,16 @@ const ServiceMasterView: React.FC = () => {
 
                                     {/* Content */}
                                     <div className="p-8">
-                                        {/* Primary Fields Grid */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                                            {/* Column 1 */}
-                                            <div className="space-y-5">
+                                        {/* Primary Fields Grid - Improved Layout */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                                            {/* Column 1 - Core Identity */}
+                                            <div className="space-y-6">
                                                 <Tooltip content="The primary name displayed to users in menus and headers.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Service Name <span className="text-red-500">*</span></label>
+                                                    <div className="space-y-2">
+                                                        <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                                            <span>Service Name</span>
+                                                            <span className="text-red-500 font-bold">*</span>
+                                                        </label>
                                                         <input
                                                             type="text"
                                                             value={formData.service_name}
@@ -403,79 +406,100 @@ const ServiceMasterView: React.FC = () => {
                                                                 setFormData({ ...formData, service_name: e.target.value });
                                                                 if (!editingItem && !formData.slug) handleSlugChange(e.target.value);
                                                             }}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
+                                                            className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white placeholder:text-slate-400"
                                                             placeholder="Enter service name"
                                                         />
                                                     </div>
                                                 </Tooltip>
+
                                                 <Tooltip content="Unique internal identifier (e.g., SRV-001) for system referencing.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Service Code</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Service Code</label>
                                                         <input
                                                             type="text"
                                                             value={formData.service_code}
                                                             onChange={(e) => setFormData({ ...formData, service_code: e.target.value })}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                            className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-400"
                                                             placeholder="SRV-XXX"
                                                         />
                                                     </div>
                                                 </Tooltip>
+
                                                 <Tooltip content="Label used inside the navigation menu for this service.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Menu Heading</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Menu Heading</label>
                                                         <input
                                                             type="text"
                                                             value={formData.menu_heading}
                                                             onChange={(e) => setFormData({ ...formData, menu_heading: e.target.value })}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                            className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-400"
                                                             placeholder="Consulting & Advisory"
                                                         />
                                                     </div>
                                                 </Tooltip>
                                             </div>
 
-                                            {/* Column 2 */}
-                                            <div className="space-y-5">
+                                            {/* Column 2 - URL & Status */}
+                                            <div className="space-y-6">
                                                 <Tooltip content="URL-friendly identifier. Auto-generated from name if empty.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Slug</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Slug</label>
                                                         <input
                                                             type="text"
                                                             value={formData.slug}
                                                             onChange={(e) => handleSlugChange(e.target.value)}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-slate-50 transition-all font-mono text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-slate-50 transition-all font-mono text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white placeholder:text-slate-400"
                                                             placeholder="auto-generated-slug"
                                                         />
                                                     </div>
                                                 </Tooltip>
+
                                                 <Tooltip content="Canonical URL path used on Guires Marketing OS.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Full URL</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Full URL</label>
                                                         <div className="flex gap-2">
                                                             <input
                                                                 type="text"
                                                                 value={formData.full_url}
                                                                 onChange={(e) => setFormData({ ...formData, full_url: e.target.value })}
-                                                                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-sm bg-slate-50 font-mono text-slate-600"
+                                                                className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-slate-50 font-mono text-slate-700 transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white placeholder:text-slate-400"
                                                                 placeholder="/services/enterprise-marketing"
                                                             />
                                                             <button
                                                                 type="button"
                                                                 onClick={handleCopyFullUrl}
-                                                                className={`px-4 py-3 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap ${copiedUrl ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-slate-300 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-400'}`}
+                                                                className={`px-5 py-3 text-xs font-bold rounded-lg border-2 transition-all whitespace-nowrap flex items-center justify-center min-w-[90px] ${copiedUrl
+                                                                    ? 'border-emerald-400 text-emerald-700 bg-emerald-50 shadow-sm'
+                                                                    : 'border-slate-300 text-slate-700 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 shadow-sm'
+                                                                    }`}
                                                             >
-                                                                {copiedUrl ? '✓ Copied' : 'Copy'}
+                                                                {copiedUrl ? (
+                                                                    <>
+                                                                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                        Copied
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                                        </svg>
+                                                                        Copy
+                                                                    </>
+                                                                )}
                                                             </button>
                                                         </div>
                                                     </div>
                                                 </Tooltip>
+
                                                 <Tooltip content="Current lifecycle state used across dashboards and filters.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Status</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Status</label>
                                                         <select
                                                             value={formData.status}
                                                             onChange={(e) => setFormData({ ...formData, status: e.target.value as Service['status'] })}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                            className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
                                                         >
                                                             {SERVICE_STATUS_OPTIONS.map(status => (
                                                                 <option key={status} value={status}>{status}</option>
@@ -485,15 +509,15 @@ const ServiceMasterView: React.FC = () => {
                                                 </Tooltip>
                                             </div>
 
-                                            {/* Column 3 */}
-                                            <div className="space-y-5">
+                                            {/* Column 3 - Language & Tagline */}
+                                            <div className="space-y-6">
                                                 <Tooltip content="Language code for this specific service version (e.g., en, es).">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Language</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Language</label>
                                                         <select
                                                             value={formData.language}
                                                             onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                            className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
                                                         >
                                                             <option value="en">English</option>
                                                             <option value="es">Spanish</option>
@@ -502,14 +526,15 @@ const ServiceMasterView: React.FC = () => {
                                                         </select>
                                                     </div>
                                                 </Tooltip>
+
                                                 <Tooltip content="Concise positioning line used in hero sections and cards.">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Short Tagline</label>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Short Tagline</label>
                                                         <input
                                                             type="text"
                                                             value={formData.short_tagline}
                                                             onChange={(e) => setFormData({ ...formData, short_tagline: e.target.value })}
-                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                            className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-400"
                                                             placeholder="Full-funnel marketing acceleration"
                                                         />
                                                     </div>
@@ -517,15 +542,15 @@ const ServiceMasterView: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Service Description */}
-                                        <div className="border-t border-slate-200 pt-6">
+                                        {/* Service Description - Full Width Section */}
+                                        <div className="border-t-2 border-slate-200 pt-8 mt-8">
                                             <Tooltip content="A detailed description of the service offering used for internal reference and summaries.">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Service Description</label>
+                                                <div className="space-y-2">
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Service Description</label>
                                                     <textarea
                                                         value={formData.service_description}
                                                         onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg h-32 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all bg-white"
+                                                        className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg h-36 text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all bg-white placeholder:text-slate-400"
                                                         placeholder="Describe the intent, promise, and key differentiators..."
                                                     />
                                                 </div>
@@ -595,158 +620,221 @@ const ServiceMasterView: React.FC = () => {
                         {activeTab === 'Navigation' && (
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                 {/* Header */}
-                                <div className="bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 px-8 py-5">
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
-                                        <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3 text-base">🧭</span>
-                                        <span>Menu & Sitemap Configuration</span>
-                                    </h3>
+                                <div className="bg-gradient-to-r from-blue-50 via-blue-50 to-slate-50 border-b border-slate-200 px-8 py-6">
+                                    <div className="flex items-center gap-3">
+                                        <span className="bg-blue-100 text-blue-600 p-2.5 rounded-lg text-lg">🧭</span>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Menu & Sitemap Configuration</h3>
+                                            <p className="text-xs text-slate-500 mt-1">Control navigation visibility and search engine indexing settings</p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Content */}
                                 <div className="p-8">
-                                    <div className="space-y-8">
-                                        {/* Menu Settings Section */}
-                                        <div>
-                                            <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-5">Menu Settings</h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="space-y-5">
-                                                    <div className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 space-y-4">
-                                                        <Tooltip content="Toggle if this page should appear in the primary navigation menu.">
-                                                            <label className="flex items-center space-x-3 cursor-pointer group">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={formData.show_in_main_menu}
-                                                                    onChange={(e) => setFormData({ ...formData, show_in_main_menu: e.target.checked })}
-                                                                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-slate-300"
-                                                                />
-                                                                <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Show in Main Menu</span>
-                                                            </label>
-                                                        </Tooltip>
-                                                        <Tooltip content="Toggle if this page should appear in the footer links.">
-                                                            <label className="flex items-center space-x-3 cursor-pointer group">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={formData.show_in_footer_menu}
-                                                                    onChange={(e) => setFormData({ ...formData, show_in_footer_menu: e.target.checked })}
-                                                                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-slate-300"
-                                                                />
-                                                                <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Show in Footer</span>
-                                                            </label>
-                                                        </Tooltip>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-5">
-                                                    <Tooltip content="Grouping label for nested menus (e.g. 'Consulting Services').">
-                                                        <div>
-                                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Menu Group</label>
-                                                            <input
-                                                                type="text"
-                                                                value={formData.menu_group}
-                                                                onChange={(e) => setFormData({ ...formData, menu_group: e.target.value })}
-                                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                                                placeholder="e.g. Products"
-                                                            />
-                                                        </div>
-                                                    </Tooltip>
-                                                    <Tooltip content="Optional parent section this service nests under (e.g. 'Solutions').">
-                                                        <div>
-                                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Parent Menu Section</label>
-                                                            <input
-                                                                type="text"
-                                                                value={formData.parent_menu_section || ''}
-                                                                onChange={(e) => setFormData({ ...formData, parent_menu_section: e.target.value })}
-                                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                                                placeholder="e.g. Solutions"
-                                                            />
-                                                        </div>
-                                                    </Tooltip>
-                                                    <Tooltip content="Numeric order for sorting within the menu group.">
-                                                        <div>
-                                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Menu Position Order</label>
-                                                            <input
-                                                                type="number"
-                                                                value={formData.menu_position}
-                                                                onChange={(e) => setFormData({ ...formData, menu_position: parseInt(e.target.value) || 0 })}
-                                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                                                placeholder="0"
-                                                                min="0"
-                                                            />
-                                                        </div>
-                                                    </Tooltip>
-                                                    <Tooltip content="Label used in breadcrumb navigation trail.">
-                                                        <div>
-                                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Breadcrumb Label</label>
-                                                            <input
-                                                                type="text"
-                                                                value={formData.breadcrumb_label}
-                                                                onChange={(e) => setFormData({ ...formData, breadcrumb_label: e.target.value })}
-                                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                                                placeholder="Custom breadcrumb text"
-                                                            />
-                                                        </div>
-                                                    </Tooltip>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Sitemap Configuration Section */}
-                                        <div className="border-t border-slate-200 pt-8">
-                                            <div className="mb-6">
-                                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center">
-                                                    <span className="bg-blue-100 text-blue-600 p-1.5 rounded-lg mr-2.5 text-base">📋</span>
-                                                    <span>Sitemap Configuration</span>
-                                                </h4>
-                                                <p className="text-xs text-slate-500 ml-12 mt-1">Configure XML sitemap settings for search engine indexing</p>
+                                    <div className="space-y-10">
+                                        {/* MENU SETTINGS SECTION */}
+                                        <div className="space-y-5">
+                                            <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
+                                                <span className="text-base">📌</span>
+                                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Menu Settings</h4>
+                                                <span className="ml-auto text-xs text-slate-400 font-medium">Control menu placement</span>
                                             </div>
 
-                                            <div className="space-y-6">
-                                                {/* Include in Sitemap Checkbox */}
-                                                <div className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                                                    <Tooltip content="Include in XML Sitemap for search engine indexing.">
-                                                        <label className="flex items-center space-x-3 cursor-pointer group">
+                                            {/* Menu Visibility Toggle */}
+                                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-6 space-y-4">
+                                                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide px-1">Menu Visibility</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <Tooltip content="Include this page in the primary website navigation menu.">
+                                                        <label className="flex items-center space-x-3 cursor-pointer group p-3 rounded-lg hover:bg-white transition-colors">
                                                             <input
                                                                 type="checkbox"
-                                                                checked={formData.include_in_xml_sitemap}
-                                                                onChange={(e) => setFormData({ ...formData, include_in_xml_sitemap: e.target.checked })}
-                                                                className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-slate-300"
+                                                                checked={formData.show_in_main_menu}
+                                                                onChange={(e) => setFormData({ ...formData, show_in_main_menu: e.target.checked })}
+                                                                className="h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 border-slate-300 accent-blue-600"
                                                             />
-                                                            <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Include in XML Sitemap</span>
+                                                            <div className="flex-1">
+                                                                <span className="text-sm font-semibold text-slate-800 group-hover:text-blue-700 transition-colors">Show in Main Menu</span>
+                                                                <p className="text-xs text-slate-500 mt-0.5">Primary navigation</p>
+                                                            </div>
+                                                        </label>
+                                                    </Tooltip>
+                                                    <Tooltip content="Include this page in the website footer link section.">
+                                                        <label className="flex items-center space-x-3 cursor-pointer group p-3 rounded-lg hover:bg-white transition-colors">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.show_in_footer_menu}
+                                                                onChange={(e) => setFormData({ ...formData, show_in_footer_menu: e.target.checked })}
+                                                                className="h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 border-slate-300 accent-blue-600"
+                                                            />
+                                                            <div className="flex-1">
+                                                                <span className="text-sm font-semibold text-slate-800 group-hover:text-blue-700 transition-colors">Show in Footer</span>
+                                                                <p className="text-xs text-slate-500 mt-0.5">Footer links section</p>
+                                                            </div>
                                                         </label>
                                                     </Tooltip>
                                                 </div>
+                                            </div>
 
-                                                {/* Sitemap Settings Grid */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <Tooltip content="Priority hint for search engine crawlers (0.0 to 1.0). Higher values indicate more importance.">
-                                                        <div>
-                                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Sitemap Priority</label>
-                                                            <select
-                                                                value={formData.sitemap_priority ?? 0.8}
-                                                                onChange={(e) => setFormData({ ...formData, sitemap_priority: parseFloat(e.target.value) })}
-                                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                            >
-                                                                <option value={1.0}>1.0 (Highest)</option>
-                                                                <option value={0.8}>0.8 (High)</option>
-                                                                <option value={0.5}>0.5 (Medium)</option>
-                                                                <option value={0.3}>0.3 (Low)</option>
-                                                            </select>
+                                            {/* Menu Organization */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <Tooltip content="Grouping label for organizing nested menus (e.g. 'Consulting Services', 'Products').">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                                            <span className="text-sm">🏷️</span>
+                                                            <span>Menu Group</span>
+                                                            <span className="ml-auto text-slate-400 font-normal text-[10px]">Organize</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.menu_group}
+                                                            onChange={(e) => setFormData({ ...formData, menu_group: e.target.value })}
+                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                            placeholder="e.g. Products, Services"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Parent section this service nests under in the menu hierarchy (e.g. 'Solutions').">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                                            <span className="text-sm">🌳</span>
+                                                            <span>Parent Menu Section</span>
+                                                            <span className="ml-auto text-slate-400 font-normal text-[10px]">Hierarchy</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.parent_menu_section || ''}
+                                                            onChange={(e) => setFormData({ ...formData, parent_menu_section: e.target.value })}
+                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                            placeholder="e.g. Solutions, Main"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+
+                                            {/* Menu Positioning */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <Tooltip content="Numeric order for sorting items within the menu group. Lower numbers appear first.">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                                            <span className="text-sm">📊</span>
+                                                            <span>Menu Position</span>
+                                                            <span className="ml-auto text-slate-400 font-normal text-[10px]">Order</span>
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.menu_position}
+                                                            onChange={(e) => setFormData({ ...formData, menu_position: parseInt(e.target.value) || 0 })}
+                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                            placeholder="0"
+                                                            min="0"
+                                                        />
+                                                        <p className="text-xs text-slate-500">0 = first position</p>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Text label used in breadcrumb navigation trails for user orientation.">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                                            <span className="text-sm">🔗</span>
+                                                            <span>Breadcrumb Label</span>
+                                                            <span className="ml-auto text-slate-400 font-normal text-[10px]">Navigation</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.breadcrumb_label}
+                                                            onChange={(e) => setFormData({ ...formData, breadcrumb_label: e.target.value })}
+                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                            placeholder="e.g. Our Services, Consulting"
+                                                        />
+                                                        <p className="text-xs text-slate-500">Shown in: Home &gt; {formData.breadcrumb_label || 'Label'}</p>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+                                        </div>
+
+                                        {/* SITEMAP CONFIGURATION SECTION */}
+                                        <div className="space-y-5 border-t border-slate-200 pt-8">
+                                            <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
+                                                <span className="text-base">📋</span>
+                                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Sitemap Configuration</h4>
+                                                <span className="ml-auto text-xs text-slate-400 font-medium">Search engine settings</span>
+                                            </div>
+
+                                            {/* Include in Sitemap */}
+                                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
+                                                <Tooltip content="Include this page in the XML sitemap for search engine crawling and indexing.">
+                                                    <label className="flex items-center space-x-3 cursor-pointer group">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.include_in_xml_sitemap}
+                                                            onChange={(e) => setFormData({ ...formData, include_in_xml_sitemap: e.target.checked })}
+                                                            className="h-6 w-6 text-green-600 rounded focus:ring-2 focus:ring-green-500 border-slate-300 accent-green-600"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <span className="text-sm font-bold text-slate-800 group-hover:text-green-700 transition-colors">Include in XML Sitemap</span>
+                                                            <p className="text-xs text-slate-600 mt-1">Submit to search engines for indexing</p>
                                                         </div>
-                                                    </Tooltip>
-                                                    <Tooltip content="Expected frequency of updates for sitemap pinging. Helps search engines know how often to revisit.">
-                                                        <div>
-                                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2.5 tracking-wide">Sitemap Frequency</label>
-                                                            <select
-                                                                value={formData.sitemap_changefreq || 'monthly'}
-                                                                onChange={(e) => setFormData({ ...formData, sitemap_changefreq: e.target.value as any })}
-                                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                            >
-                                                                <option value="daily">Daily</option>
-                                                                <option value="weekly">Weekly</option>
-                                                                <option value="monthly">Monthly</option>
-                                                                <option value="yearly">Yearly</option>
-                                                            </select>
-                                                        </div>
-                                                    </Tooltip>
+                                                    </label>
+                                                </Tooltip>
+                                            </div>
+
+                                            {/* Sitemap Priority & Frequency */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <Tooltip content="Priority hint (0.0-1.0) for search engine crawlers. Higher values indicate greater importance for crawling frequency.">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                                            <span className="text-sm">⭐</span>
+                                                            <span>Sitemap Priority</span>
+                                                            <span className="ml-auto text-slate-400 font-normal text-[10px]">Importance</span>
+                                                        </label>
+                                                        <select
+                                                            value={formData.sitemap_priority ?? 0.8}
+                                                            onChange={(e) => setFormData({ ...formData, sitemap_priority: parseFloat(e.target.value) })}
+                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer"
+                                                        >
+                                                            <option value={1.0}>🔴 1.0 - Highest (Critical page)</option>
+                                                            <option value={0.8}>🟠 0.8 - High (Important page)</option>
+                                                            <option value={0.5}>🟡 0.5 - Medium (Standard page)</option>
+                                                            <option value={0.3}>🟢 0.3 - Low (Less important)</option>
+                                                        </select>
+                                                        <p className="text-xs text-slate-500">Affects crawler resource allocation</p>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Update frequency hint for search engines. Guides how often crawlers should check this page for changes.">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                                            <span className="text-sm">🔄</span>
+                                                            <span>Update Frequency</span>
+                                                            <span className="ml-auto text-slate-400 font-normal text-[10px]">Interval</span>
+                                                        </label>
+                                                        <select
+                                                            value={formData.sitemap_changefreq || 'monthly'}
+                                                            onChange={(e) => setFormData({ ...formData, sitemap_changefreq: e.target.value as any })}
+                                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer"
+                                                        >
+                                                            <option value="daily">📅 Daily (New content frequently)</option>
+                                                            <option value="weekly">📆 Weekly (Regular updates)</option>
+                                                            <option value="monthly">📊 Monthly (Occasional updates)</option>
+                                                            <option value="yearly">📈 Yearly (Minimal changes)</option>
+                                                        </select>
+                                                        <p className="text-xs text-slate-500">How often content is updated</p>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+
+                                            {/* Info Banner */}
+                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                                                <span className="text-lg flex-shrink-0">💡</span>
+                                                <div className="text-xs text-slate-700 space-y-1">
+                                                    <p className="font-semibold">Sitemap Tips:</p>
+                                                    <ul className="text-slate-600 space-y-1 ml-3 list-disc">
+                                                        <li>Set higher priority for pages that convert best</li>
+                                                        <li>Update frequency helps search engines allocate crawl budget</li>
+                                                        <li>All enabled pages are submitted to Google Search Console</li>
+                                                    </ul>
                                                 </div>
                                             </div>
                                         </div>
@@ -970,12 +1058,43 @@ const ServiceMasterView: React.FC = () => {
                                         </Tooltip>
                                     </div>
 
-                                    <Tooltip content="Main body copy. Supports Markdown formatting.">
-                                        <div className="w-full">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Body Content</label>
-                                            <textarea value={formData.body_content} onChange={(e) => setFormData({ ...formData, body_content: e.target.value })} className="w-full p-4 border border-slate-300 rounded-lg h-48 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500" placeholder="# Write content here..." />
-                                        </div>
-                                    </Tooltip>
+                                    {/* Body Content Section */}
+                                    <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-xl border-2 border-slate-200 p-6">
+                                        <Tooltip content="Main body copy. Supports Markdown formatting for rich text editing.">
+                                            <div className="space-y-3">
+                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-3 tracking-wider flex items-center gap-2">
+                                                    <span className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded text-[10px] font-mono font-bold">BODY</span>
+                                                    <span>Body Content</span>
+                                                </label>
+                                                <div className="relative">
+                                                    <textarea
+                                                        value={formData.body_content}
+                                                        onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
+                                                        className="w-full px-4 py-4 border-2 border-slate-300 rounded-lg h-64 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-y bg-white placeholder:text-slate-400 shadow-sm"
+                                                        placeholder="# Write your content here...&#10;&#10;Supports Markdown formatting:&#10;- **Bold**&#10;- *Italic*&#10;- Lists&#10;- Links&#10;- Headers"
+                                                        style={{ minHeight: '256px' }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
+                                                    <div className="flex items-center gap-4 text-slate-600">
+                                                        <span className="flex items-center gap-1.5">
+                                                            <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                            <span className="font-medium">Markdown supported</span>
+                                                        </span>
+                                                        <span className="text-slate-400">•</span>
+                                                        <span className="text-slate-500">
+                                                            {formData.body_content ? Math.ceil((formData.body_content.split(/\s+/).filter(Boolean).length || 0) / 200) : 0} min read
+                                                        </span>
+                                                    </div>
+                                                    <span className="font-mono text-slate-600 font-semibold">
+                                                        {formData.body_content?.length || 0} <span className="text-slate-400 font-normal">characters</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
 
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50">
