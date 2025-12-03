@@ -1754,34 +1754,17 @@ const ServiceMasterView: React.FC = () => {
                                         <div className="relative z-10">
                                             <div className="flex items-center gap-3 mb-2">
                                                 <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
-                                                <h3 className="text-2xl font-bold">Ownership & Governance</h3>
+                                                <h3 className="text-2xl font-bold">Ownership & Metadata</h3>
                                             </div>
-                                            <p className="text-teal-100 text-sm">Manage content ownership and approval workflows</p>
+                                            <p className="text-teal-100 text-sm">Manage content ownership and business unit assignment</p>
                                         </div>
                                     </div>
 
                                     {/* Content */}
                                     <div className="p-10">
                                         <div className="space-y-8">
-                                            {/* Row 1 - Brand & Content Owner */}
+                                            {/* Row 1 - Content Owner & Business Unit */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                <Tooltip content="Select the brand this service belongs to from the Brand Master.">
-                                                    <div className="bg-white rounded-xl border-2 border-teal-100 p-6 hover:border-teal-300 transition-colors">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-teal-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">🏢</span>
-                                                            Brand
-                                                        </label>
-                                                        <select
-                                                            value={formData.brand_id || 0}
-                                                            onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer"
-                                                        >
-                                                            <option value={0}>Select Brand...</option>
-                                                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                                        </select>
-                                                    </div>
-                                                </Tooltip>
-
                                                 <Tooltip content="Person responsible for maintaining this service content.">
                                                     <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
                                                         <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
@@ -1798,10 +1781,7 @@ const ServiceMasterView: React.FC = () => {
                                                         </select>
                                                     </div>
                                                 </Tooltip>
-                                            </div>
 
-                                            {/* Row 2 - Business Unit & Version */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
                                                     <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
                                                         <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
@@ -1815,25 +1795,6 @@ const ServiceMasterView: React.FC = () => {
                                                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400"
                                                             placeholder="Growth Marketing / SEO Team"
                                                         />
-                                                    </div>
-                                                </Tooltip>
-
-                                                <Tooltip content="Auto-incremented version number for tracking major revisions.">
-                                                    <div className="bg-white rounded-xl border-2 border-purple-100 p-6 hover:border-purple-300 transition-colors">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">📌</span>
-                                                            Version Number
-                                                        </label>
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="number"
-                                                                value={formData.version_number || 1}
-                                                                min={1}
-                                                                onChange={(e) => setFormData({ ...formData, version_number: parseInt(e.target.value || '1') })}
-                                                                className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-bold transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
-                                                            />
-                                                            <span className="text-xs text-slate-500 whitespace-nowrap">Auto-increments on save</span>
-                                                        </div>
                                                     </div>
                                                 </Tooltip>
                                             </div>
@@ -1860,88 +1821,82 @@ const ServiceMasterView: React.FC = () => {
                                     {/* Content */}
                                     <div className="p-10">
                                         <div className="space-y-8">
-                                            {/* Row 1 - Created Info */}
+                                            {/* Timestamps - Generated Automatically */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                <Tooltip content="User who originally created this service record. Auto-set on creation.">
+                                                <Tooltip content="Timestamp when this service was originally created. Auto-generated by system.">
                                                     <div className="bg-white rounded-xl border-2 border-green-100 p-6">
                                                         <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
                                                             <span className="text-sm">✅</span>
-                                                            Created By
+                                                            Created By (Timestamp)
                                                         </label>
                                                         <div className="space-y-2">
-                                                            <div className="text-sm font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 flex items-center gap-2">
-                                                                <span className="text-base">👤</span>
-                                                                {editingItem && formData.created_by
-                                                                    ? users.find(u => u.id === formData.created_by)?.name || 'Unknown User'
-                                                                    : <span className="text-slate-500 italic">Auto-set on creation</span>
-                                                                }
-                                                            </div>
-                                                            <p className="text-xs text-slate-500">Read-only field - set automatically when record is created</p>
-                                                        </div>
-                                                    </div>
-                                                </Tooltip>
-
-                                                <Tooltip content="Timestamp when this service was originally created. Auto-generated.">
-                                                    <div className="bg-white rounded-xl border-2 border-emerald-100 p-6">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">📅</span>
-                                                            Created At
-                                                        </label>
-                                                        <div className="space-y-2">
-                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200 break-all">
+                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 break-all">
                                                                 {editingItem && formData.created_at
                                                                     ? new Date(formData.created_at).toLocaleString('en-US', { 
                                                                         year: 'numeric', month: 'short', day: '2-digit',
-                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                                                                        timeZoneName: 'short'
                                                                       })
                                                                     : <span className="text-slate-500 italic">Auto-set on creation</span>
                                                                 }
                                                             </div>
-                                                            <p className="text-xs text-slate-500">Read-only field - set automatically when record is created</p>
+                                                            <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp</p>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Timestamp when this service was last modified. Auto-generated by system on every save.">
+                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🔄</span>
+                                                            Updated By (Timestamp)
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 break-all">
+                                                                {editingItem && formData.updated_at
+                                                                    ? new Date(formData.updated_at).toLocaleString('en-US', { 
+                                                                        year: 'numeric', month: 'short', day: '2-digit',
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit',
+                                                                        timeZoneName: 'short'
+                                                                      })
+                                                                    : <span className="text-slate-500 italic">Auto-set on save</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp on every update</p>
                                                         </div>
                                                     </div>
                                                 </Tooltip>
                                             </div>
 
-                                            {/* Row 2 - Updated Info */}
+                                            {/* Version & Brand Info */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                <Tooltip content="Latest user who modified this service record. Auto-updated on every save.">
-                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">🔄</span>
-                                                            Updated By
+                                                <Tooltip content="Auto-incremented version number tracking major revisions.">
+                                                    <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📌</span>
+                                                            Version Number
                                                         </label>
-                                                        <div className="space-y-2">
-                                                            <div className="text-sm font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 flex items-center gap-2">
-                                                                <span className="text-base">👤</span>
-                                                                {editingItem && formData.updated_by
-                                                                    ? users.find(u => u.id === formData.updated_by)?.name || 'Unknown User'
-                                                                    : <span className="text-slate-500 italic">Auto-set on save</span>
-                                                                }
-                                                            </div>
-                                                            <p className="text-xs text-slate-500">Read-only field - auto-updated each time the record is modified</p>
+                                                        <div className="text-sm font-mono font-bold text-slate-700 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
+                                                            v{formData.version_number || 1}
                                                         </div>
+                                                        <p className="text-xs text-slate-500 mt-2">Read-only - Auto-increments on each save</p>
                                                     </div>
                                                 </Tooltip>
 
-                                                <Tooltip content="Timestamp when this service was last modified. Auto-updated on every save.">
-                                                    <div className="bg-white rounded-xl border-2 border-rose-100 p-6">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">⏰</span>
-                                                            Updated At
+                                                <Tooltip content="Brand this service belongs to.">
+                                                    <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🏢</span>
+                                                            Brand
                                                         </label>
-                                                        <div className="space-y-2">
-                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-rose-50 rounded-lg border border-rose-200 break-all">
-                                                                {editingItem && formData.updated_at
-                                                                    ? new Date(formData.updated_at).toLocaleString('en-US', { 
-                                                                        year: 'numeric', month: 'short', day: '2-digit',
-                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit'
-                                                                      })
-                                                                    : <span className="text-slate-500 italic">Auto-set on save</span>
-                                                                }
-                                                            </div>
-                                                            <p className="text-xs text-slate-500">Read-only field - auto-updated each time the record is modified</p>
-                                                        </div>
+                                                        <select
+                                                            value={formData.brand_id || 0}
+                                                            onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                                                        >
+                                                            <option value={0}>Select Brand...</option>
+                                                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                        </select>
                                                     </div>
                                                 </Tooltip>
                                             </div>
