@@ -5,7 +5,7 @@ import Tooltip from '../components/Tooltip';
 import { getStatusBadge, SparkIcon } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
-import type { SubServiceItem, Service, ContentRepositoryItem, Keyword, ContentTypeItem, Brand, User } from '../types';
+import type { SubServiceItem, Service, ContentRepositoryItem, Keyword, ContentTypeItem, Brand, User, IndustrySectorItem, CountryMasterItem } from '../types';
 import { runQuery } from '../utils/gemini';
 
 const STATUSES = ['All Status', 'Published', 'Draft', 'Archived'];
@@ -18,6 +18,8 @@ const SubServiceMasterView: React.FC = () => {
     const { data: contentTypes } = useData<ContentTypeItem>('contentTypes');
     const { data: brands } = useData<Brand>('brands');
     const { data: users } = useData<User>('users');
+    const { data: industrySectors } = useData<IndustrySectorItem>('industrySectors');
+    const { data: countries } = useData<CountryMasterItem>('countries');
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
@@ -27,6 +29,7 @@ const SubServiceMasterView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'Core' | 'Navigation' | 'Strategic' | 'Content' | 'SEO' | 'SMM' | 'Technical' | 'Linking' | 'Governance'>('Core');
     const [editingItem, setEditingItem] = useState<SubServiceItem | null>(null);
     const [isAiSuggesting, setIsAiSuggesting] = useState(false);
+    const [copiedUrl, setCopiedUrl] = useState(false);
 
     // Asset Search
     const [assetSearch, setAssetSearch] = useState('');
@@ -42,7 +45,9 @@ const SubServiceMasterView: React.FC = () => {
         menu_position: 0, breadcrumb_label: '', include_in_xml_sitemap: true, sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
         content_type: 'Cluster', buyer_journey_stage: 'Consideration', primary_cta_label: '', primary_cta_url: '',
         robots_index: 'index', robots_follow: 'follow', canonical_url: '', schema_type_id: 'Service',
-        brand_id: 0, content_owner_id: 0
+        brand_id: 0, content_owner_id: 0,
+        // New Core fields
+        menu_heading: '', short_tagline: '', language: 'en', industry_ids: [], country_ids: []
     });
 
     // Helpers
@@ -89,7 +94,12 @@ const SubServiceMasterView: React.FC = () => {
             include_in_xml_sitemap: (item as any).include_in_xml_sitemap ?? true,
             sitemap_priority: (item as any).sitemap_priority ?? 0.8,
             sitemap_changefreq: (item as any).sitemap_changefreq || 'monthly',
-            robots_index: (item as any).robots_index || 'index'
+            robots_index: (item as any).robots_index || 'index',
+            menu_heading: (item as any).menu_heading || '',
+            short_tagline: (item as any).short_tagline || '',
+            language: (item as any).language || 'en',
+            industry_ids: (item as any).industry_ids || [],
+            country_ids: (item as any).country_ids || []
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -126,7 +136,8 @@ const SubServiceMasterView: React.FC = () => {
             menu_position: 0, breadcrumb_label: '', include_in_xml_sitemap: true, sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
             content_type: 'Cluster', buyer_journey_stage: 'Consideration', primary_cta_label: '', primary_cta_url: '',
             robots_index: 'index', robots_follow: 'follow', canonical_url: '', schema_type_id: 'Service',
-            brand_id: 0, content_owner_id: 0
+            brand_id: 0, content_owner_id: 0,
+            menu_heading: '', short_tagline: '', language: 'en', industry_ids: [], country_ids: []
         });
         setActiveTab('Core');
     };
@@ -136,6 +147,28 @@ const SubServiceMasterView: React.FC = () => {
         const parent = services.find(s => s.id === formData.parent_service_id);
         const parentSlug = parent ? parent.slug : 'service';
         setFormData((prev: any) => ({ ...prev, slug, full_url: `/services/${parentSlug}/${slug}` }));
+    };
+
+    const handleCopyFullUrl = () => {
+        if (!formData.full_url) return;
+        if (typeof navigator === 'undefined' || !navigator.clipboard) {
+            alert('Clipboard API unavailable in this environment.');
+            return;
+        }
+        navigator.clipboard.writeText(formData.full_url)
+            .then(() => {
+                setCopiedUrl(true);
+                setTimeout(() => setCopiedUrl(false), 1500);
+            })
+            .catch(() => alert('Unable to copy URL to clipboard.'));
+    };
+
+    const toggleSelection = (field: 'industry_ids' | 'country_ids', value: string) => {
+        const current = formData[field] || [];
+        const updated = current.includes(value)
+            ? current.filter((v: string) => v !== value)
+            : [...current, value];
+        setFormData({ ...formData, [field]: updated });
     };
 
     const addToList = (field: string, value: string, setter: any) => {
@@ -251,103 +284,185 @@ const SubServiceMasterView: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
                     <div className="max-w-7xl mx-auto space-y-8 pb-20">
                         {activeTab === 'Core' && (
-                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
-                                    <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded mr-2">💎</span> Core Identification
-                                </h3>
-
-                                {/* Primary Fields: Service Code, Service Name, Slug */}
-                                <div className="space-y-6">
-                                    <Tooltip content="Parent service code reference.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Service Code</label>
-                                            <input
-                                                type="text"
-                                                value={services.find(s => s.id === formData.parent_service_id)?.service_code || ''}
-                                                readOnly
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono"
-                                                placeholder="Select parent service to see code"
-                                            />
+                            <div className="space-y-6">
+                                <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                                    <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-6 tracking-wider flex items-center">
+                                        <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded mr-2">💎</span> Identity & Taxonomy
+                                    </h3>
+                                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                                        <div className="space-y-5">
+                                            <Tooltip content="The primary name displayed to users in menus and headers.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Service Name *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.sub_service_name}
+                                                        onChange={(e) => {
+                                                            setFormData({ ...formData, sub_service_name: e.target.value });
+                                                            handleSlugChange(e.target.value);
+                                                        }}
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Unique internal identifier from parent service.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Service Code</label>
+                                                    <input
+                                                        type="text"
+                                                        value={services.find(s => s.id === formData.parent_service_id)?.service_code || ''}
+                                                        readOnly
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono"
+                                                        placeholder="Select parent service"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Label used inside the navigation menu for this service.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Menu Heading</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.menu_heading}
+                                                        onChange={(e) => setFormData({ ...formData, menu_heading: e.target.value })}
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500"
+                                                        placeholder="Consulting & Advisory"
+                                                    />
+                                                </div>
+                                            </Tooltip>
                                         </div>
-                                    </Tooltip>
-
-                                    <Tooltip content="Official name of the sub-service.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Sub-Service Name *</label>
-                                            <input
-                                                type="text"
-                                                value={formData.sub_service_name}
-                                                onChange={(e) => { setFormData({ ...formData, sub_service_name: e.target.value }); handleSlugChange(e.target.value); }}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-all"
-                                            />
+                                        <div className="space-y-5">
+                                            <Tooltip content="URL-friendly identifier. Auto-generated from name if empty.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Slug</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.slug}
+                                                        onChange={(e) => handleSlugChange(e.target.value)}
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-50 transition-all font-mono text-slate-600 focus:ring-2 focus:ring-indigo-500"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Canonical URL path used on Guires Marketing OS.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Full URL</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={formData.full_url}
+                                                            readOnly
+                                                            className="flex-1 p-3 border border-slate-300 rounded-lg text-sm bg-slate-50 font-mono text-slate-600"
+                                                            placeholder="/services/enterprise-marketing"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleCopyFullUrl}
+                                                            className={`px-4 py-2 text-xs font-bold rounded-lg border transition-colors ${copiedUrl ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : 'border-slate-300 text-slate-600 bg-white hover:bg-slate-50'}`}
+                                                        >
+                                                            {copiedUrl ? 'Copied' : 'Copy'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Current lifecycle state used across dashboards and filters.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Status</label>
+                                                    <select
+                                                        value={formData.status}
+                                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-indigo-500"
+                                                    >
+                                                        {STATUSES.filter(s => s !== 'All Status').map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                </div>
+                                            </Tooltip>
                                         </div>
-                                    </Tooltip>
-
-                                    <Tooltip content="URL Slug (auto-generated).">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Slug</label>
-                                            <input
-                                                type="text"
-                                                value={formData.slug}
-                                                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-50 font-mono text-slate-600 transition-all"
-                                            />
+                                        <div className="space-y-5">
+                                            <Tooltip content="Language code for this specific service version (e.g., en, es).">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Language</label>
+                                                    <select
+                                                        value={formData.language}
+                                                        onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all focus:ring-2 focus:ring-indigo-500"
+                                                    >
+                                                        <option value="en">English</option>
+                                                        <option value="es">Spanish</option>
+                                                        <option value="fr">French</option>
+                                                        <option value="de">German</option>
+                                                    </select>
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Concise positioning line used in hero sections and cards.">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Short Tagline</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.short_tagline}
+                                                        onChange={(e) => setFormData({ ...formData, short_tagline: e.target.value })}
+                                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-indigo-500"
+                                                        placeholder="Full-funnel marketing acceleration"
+                                                    />
+                                                </div>
+                                            </Tooltip>
                                         </div>
-                                    </Tooltip>
+                                    </div>
+                                    <div className="mt-6 border-t border-slate-100 pt-6">
+                                        <Tooltip content="A detailed description of the service offering used for internal reference and summaries.">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Service Description</label>
+                                                <textarea
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    className="w-full p-4 border border-slate-300 rounded-lg h-32 text-sm focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
+                                                    placeholder="Describe the intent, promise, and key differentiators..."
+                                                />
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
 
-                                {/* Secondary Fields */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200">
-                                    <Tooltip content="The parent service this belongs to. Linked to Service Master.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Parent Service *</label>
-                                            <select
-                                                value={formData.parent_service_id}
-                                                onChange={(e) => setFormData({ ...formData, parent_service_id: parseInt(e.target.value) })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all"
-                                            >
-                                                <option value={0}>Select Parent...</option>
-                                                {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
-                                            </select>
-                                        </div>
-                                    </Tooltip>
-
-                                    <Tooltip content="Full accessible URL path.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Full URL</label>
-                                            <input
-                                                type="text"
-                                                value={formData.full_url}
-                                                readOnly
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono"
-                                            />
-                                        </div>
-                                    </Tooltip>
-                                </div>
-
-                                <div className="space-y-6 pt-4 border-t border-slate-200">
-                                    <Tooltip content="Short summary for listings and internal reference.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Description</label>
-                                            <textarea
-                                                value={formData.description}
-                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg h-24 text-sm focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
-                                            />
-                                        </div>
-                                    </Tooltip>
-                                    <Tooltip content="Current publication status.">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Status</label>
-                                            <select
-                                                value={formData.status}
-                                                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                                                className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white transition-all"
-                                            >
-                                                {STATUSES.filter(s => s !== 'All Status').map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
-                                        </div>
-                                    </Tooltip>
+                                {/* Master Integrations */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full">
+                                        <Tooltip content="Select relevant industries from the Industry Master table. Used for filtering and personalization.">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3 flex items-center">
+                                                <span className="bg-purple-100 text-purple-600 p-1 rounded mr-2">🏭</span> Target Industries
+                                            </label>
+                                            <div className="border border-slate-200 rounded-lg p-2 max-h-48 overflow-y-auto bg-slate-50 grid grid-cols-1 gap-1 flex-1">
+                                                {industrySectors.map(ind => (
+                                                    <label key={ind.id} className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-white rounded transition-colors group">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.industry_ids?.includes(ind.industry)}
+                                                            onChange={() => toggleSelection('industry_ids', ind.industry)}
+                                                            className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 border-slate-300"
+                                                        />
+                                                        <span className="text-sm text-slate-700 group-hover:text-indigo-700 transition-colors">{ind.industry}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </Tooltip>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full">
+                                        <Tooltip content="Select target countries from the Country Master table. Determines regional availability.">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-3 flex items-center">
+                                                <span className="bg-green-100 text-green-600 p-1 rounded mr-2">🌍</span> Target Countries
+                                            </label>
+                                            <div className="border border-slate-200 rounded-lg p-2 max-h-48 overflow-y-auto bg-slate-50 grid grid-cols-1 gap-1 flex-1">
+                                                {countries.map(c => (
+                                                    <label key={c.id} className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-white rounded transition-colors group">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.country_ids?.includes(c.code)}
+                                                            onChange={() => toggleSelection('country_ids', c.code)}
+                                                            className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 border-slate-300"
+                                                        />
+                                                        <span className="text-sm text-slate-700 group-hover:text-indigo-700 transition-colors">{c.country_name}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             </div>
                         )}
