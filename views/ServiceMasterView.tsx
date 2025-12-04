@@ -584,8 +584,8 @@ const ServiceMasterView: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* 3. DETAILED DESCRIPTION CARD - HERO SECTION */}
-                                <div className="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-50 rounded-3xl border-3 border-indigo-400 shadow-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 relative">
+                                {/* 3. DETAILED DESCRIPTION CARD - HERO SECTION (Full-page layout) */}
+                                <div className="col-span-full w-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-50 rounded-3xl border-3 border-indigo-400 shadow-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 relative min-h-[calc(100vh-6rem)]">
                                     {/* Animated Background Pattern */}
                                     <div className="absolute inset-0 opacity-30">
                                         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
@@ -608,8 +608,8 @@ const ServiceMasterView: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Content - Full Width */}
-                                    <div className="p-10 relative z-10">
+                                    {/* Content - Full Width & Flexible Height */}
+                                    <div className="p-10 relative z-10 h-full flex flex-col">
                                         <Tooltip content="Write a comprehensive service description used across marketing materials, dashboards, and client communications. Make it compelling, clear, and customer-focused.">
                                             <div className="space-y-6">
                                                 {/* Info Bar */}
@@ -627,13 +627,13 @@ const ServiceMasterView: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Large Textarea */}
-                                                <div className="relative flex justify-center">
+                                                {/* Large Textarea - fills remaining vertical space */}
+                                                <div className="relative flex-1 flex flex-col">
                                                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-3xl blur-xl opacity-20 -z-10"></div>
                                                     <textarea
                                                         value={formData.service_description}
                                                         onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                        className="w-full max-w-5xl px-10 py-12 bg-white text-slate-800 rounded-3xl min-h-[600px] lg:min-h-[700px] text-lg leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 resize-none transition-all shadow-2xl border-2 border-indigo-200 font-medium placeholder:text-slate-400 placeholder:font-normal"
+                                                        className="w-full px-8 py-6 bg-white text-slate-800 rounded-2xl min-h-0 h-full text-base leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 resize-none transition-all shadow-xl border-2 border-indigo-200 font-medium placeholder:text-slate-400 placeholder:font-normal overflow-auto"
                                                         placeholder="🎯 Begin with the core value proposition...&#10;&#10;📋 Outline key service benefits and deliverables...&#10;&#10;👥 Describe the ideal customer or use case...&#10;&#10;💡 Include unique differentiators or approach...&#10;&#10;✨ Keep it customer-focused and compelling!"
                                                         maxLength={2000}
                                                     />
