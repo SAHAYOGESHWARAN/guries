@@ -997,7 +997,6 @@ const SubServiceMasterView: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
-                        )}
 
                         {activeTab === 'Governance' && (
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
