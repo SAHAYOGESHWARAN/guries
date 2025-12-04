@@ -606,12 +606,15 @@ const ServiceMasterView: React.FC = () => {
                                                     <span>📝</span>
                                                     Description Content
                                                 </label>
-                                                <textarea
-                                                    value={formData.service_description}
-                                                    onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                    className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl h-40 text-sm leading-relaxed focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none transition-all bg-white placeholder:text-slate-400 font-medium"
-                                                    placeholder="Describe the intent, promise, and key differentiators..."
-                                                />
+                                                <div className="relative">
+                                                    <textarea
+                                                        value={formData.service_description}
+                                                        onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
+                                                        className="w-full px-6 py-5 border-2 border-slate-200 rounded-2xl h-56 text-sm leading-relaxed focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y transition-all bg-white placeholder:text-slate-400 font-medium shadow-sm"
+                                                        placeholder="Describe the intent, promise, and key differentiators... (long horizontal box)"
+                                                    />
+                                                    <div className="absolute right-4 bottom-3 text-[11px] text-slate-500 font-mono">{(formData.service_description?.length || 0)}/2000</div>
+                                                </div>
                                                 <p className="text-xs text-slate-500">Used in marketing materials, dashboards, and service listings</p>
                                             </div>
                                         </Tooltip>
