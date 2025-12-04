@@ -4,6 +4,7 @@ import * as campaignController from '../controllers/campaignController';
 import * as projectController from '../controllers/projectController';
 import * as analyticsController from '../controllers/analyticsController';
 import * as configController from '../controllers/configurationController';
+import * as brandController from '../controllers/brandController';
 import * as benchmarkController from '../controllers/benchmarkController';
 import * as competitorController from '../controllers/competitorController';
 import * as competitorBacklinkController from '../controllers/competitorBacklinkController';
@@ -260,6 +261,11 @@ router.put('/countries/:id', configController.updateCountry);
 router.delete('/countries/:id', configController.deleteCountry);
 
 router.get('/seo-errors', configController.getSeoErrors);
+// Brands (master data)
+router.get('/brands', brandController.getBrands);
+router.post('/brands', brandController.createBrand);
+router.put('/brands/:id', brandController.updateBrand);
+router.delete('/brands/:id', brandController.deleteBrand);
 router.post('/seo-errors', configController.createSeoError);
 router.put('/seo-errors/:id', configController.updateSeoError);
 router.delete('/seo-errors/:id', configController.deleteSeoError);

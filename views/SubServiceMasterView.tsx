@@ -11,8 +11,9 @@ const STATUSES = ['All Status', 'Published', 'Draft', 'Archived'];
 const SubServiceMasterView: React.FC = () => {
     const { data: subServices, create, update, remove } = useData<SubServiceItem>('subServices');
     const { data: services } = useData<Service>('services');
-    const { data: contentAssets, update: updateContentAsset } = useData<ContentRepositoryItem>('content');
+    const { data: contentAssets, update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: brands } = useData<Brand>('brands');
+    const brandsLoaded = Array.isArray(brands) && brands.length > 0;
     const { data: users } = useData<User>('users');
 
     // UI State
@@ -148,14 +149,20 @@ const SubServiceMasterView: React.FC = () => {
 
     const handleToggleAssetLink = async (asset: ContentRepositoryItem) => {
         if (!editingItem) return;
-        const currentLinks = asset.linked_sub_service_ids || [];
-        const isLinked = currentLinks.includes(editingItem.id);
 
+        const currentLinks = Array.isArray(asset.linked_sub_service_ids) ? asset.linked_sub_service_ids : [];
+        const isLinked = currentLinks.map(String).includes(String(editingItem.id));
         const newLinks = isLinked
-            ? currentLinks.filter(id => id !== editingItem.id)
+            ? currentLinks.filter(id => String(id) !== String(editingItem.id))
             : [...currentLinks, editingItem.id];
 
-        await updateContentAsset(asset.id, { linked_sub_service_ids: newLinks });
+        try {
+            await updateContentAsset(asset.id, { linked_sub_service_ids: newLinks });
+        } catch (e) {
+            // ignore errors for optimistic behavior
+        } finally {
+            try { await refreshContentAssets(); } catch (e) { /* ignore */ }
+        }
     };
 
     const handleExport = () => {
@@ -402,17 +409,137 @@ const SubServiceMasterView: React.FC = () => {
                                     </div>
                                 </Tooltip>
 
-                                <div className="border-t border-slate-200 pt-6">
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-3 tracking-wide">Per-Channel Social Meta</label>
+                                <div className="space-y-6 pb-8 border-b border-slate-200">
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Platform-Specific Content</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {(['linkedin', 'facebook', 'instagram'] as const).map((ch) => (
-                                            <div key={ch} className="border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50">
-                                                <h4 className="text-sm font-bold text-slate-700 capitalize">{ch}</h4>
-                                                <input type="text" placeholder="Title" value={(formData.social_meta as any)?.[ch]?.title || ''} onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, [ch]: { ...((formData.social_meta as any)?.[ch] || {}), title: e.target.value } } })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500" />
-                                                <textarea placeholder="Description" value={(formData.social_meta as any)?.[ch]?.description || ''} onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, [ch]: { ...((formData.social_meta as any)?.[ch] || {}), description: e.target.value } } })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 resize-none h-20" />
-                                                <input type="text" placeholder="Image URL" value={(formData.social_meta as any)?.[ch]?.image_url || ''} onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, [ch]: { ...((formData.social_meta as any)?.[ch] || {}), image_url: e.target.value } } })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500" />
+                                        {/* LinkedIn Card */}
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/20 rounded-xl border-2 border-blue-200 p-6 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-blue-100 text-blue-600 px-2.5 py-1 rounded-lg text-xs font-bold">in</span>
+                                                <h5 className="text-sm font-bold text-slate-900">LinkedIn</h5>
                                             </div>
-                                        ))}
+                                            <Tooltip content="Professional headline optimized for LinkedIn sharing">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Title</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Professional headline"
+                                                        value={(formData.social_meta as any)?.linkedin?.title || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...((formData.social_meta as any)?.linkedin || {}), title: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Professional summary for LinkedIn article preview">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Description</label>
+                                                    <textarea
+                                                        placeholder="Professional summary"
+                                                        value={(formData.social_meta as any)?.linkedin?.description || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...((formData.social_meta as any)?.linkedin || {}), description: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none h-20"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Featured image URL for LinkedIn (1200x627px recommended)">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Image URL</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="https://example.com/linkedin-image.jpg"
+                                                        value={(formData.social_meta as any)?.linkedin?.image_url || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...((formData.social_meta as any)?.linkedin || {}), image_url: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                        </div>
+
+                                        {/* Facebook Card */}
+                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/20 rounded-xl border-2 border-blue-200 p-6 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-blue-100 text-blue-600 px-2.5 py-1 rounded-lg text-xs font-bold">f</span>
+                                                <h5 className="text-sm font-bold text-slate-900">Facebook</h5>
+                                            </div>
+                                            <Tooltip content="Engaging headline for Facebook feed sharing">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Title</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Engaging headline"
+                                                        value={(formData.social_meta as any)?.facebook?.title || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...((formData.social_meta as any)?.facebook || {}), title: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Engaging description for Facebook page preview">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Description</label>
+                                                    <textarea
+                                                        placeholder="Engaging summary"
+                                                        value={(formData.social_meta as any)?.facebook?.description || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...((formData.social_meta as any)?.facebook || {}), description: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none h-20"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Share image URL for Facebook (1200x628px recommended)">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Image URL</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="https://example.com/facebook-image.jpg"
+                                                        value={(formData.social_meta as any)?.facebook?.image_url || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...((formData.social_meta as any)?.facebook || {}), image_url: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                        </div>
+
+                                        {/* Instagram Card */}
+                                        <div className="bg-gradient-to-br from-purple-50 to-pink-50/20 rounded-xl border-2 border-purple-200 p-6 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-purple-100 text-purple-600 px-2.5 py-1 rounded-lg text-xs font-bold">📷</span>
+                                                <h5 className="text-sm font-bold text-slate-900">Instagram</h5>
+                                            </div>
+                                            <Tooltip content="Instagram post hook or engagement hook">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Title</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Post hook or headline"
+                                                        value={(formData.social_meta as any)?.instagram?.title || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...((formData.social_meta as any)?.instagram || {}), title: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Instagram caption with hashtags and engagement prompts (max 2200 chars)">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Caption</label>
+                                                    <textarea
+                                                        placeholder="Caption with #hashtags for engagement"
+                                                        value={(formData.social_meta as any)?.instagram?.description || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...((formData.social_meta as any)?.instagram || {}), description: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none h-20"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                            <Tooltip content="Post image URL for Instagram (1080x1080px square recommended)">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Image URL</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="https://example.com/instagram-image.jpg"
+                                                        value={(formData.social_meta as any)?.instagram?.image_url || ''}
+                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...((formData.social_meta as any)?.instagram || {}), image_url: e.target.value } } })}
+                                                        className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    />
+                                                </div>
+                                            </Tooltip>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

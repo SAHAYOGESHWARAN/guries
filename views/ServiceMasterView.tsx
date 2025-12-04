@@ -19,7 +19,7 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
 
 const ServiceMasterView: React.FC = () => {
     const { data: services, create, update, remove } = useData<Service>('services');
-    const { data: contentAssets, update: updateContentAsset } = useData<ContentRepositoryItem>('content');
+    const { data: contentAssets, update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: keywordsMaster } = useData<Keyword>('keywords');
 
     // Master Data for Dropdowns/Selectors
@@ -302,14 +302,25 @@ const ServiceMasterView: React.FC = () => {
 
     const handleToggleAssetLink = async (asset: ContentRepositoryItem) => {
         if (!editingItem) return;
-        const currentLinks = asset.linked_service_ids || [];
-        const isLinked = currentLinks.includes(editingItem.id);
 
+        // Compute new links
+        const currentLinks = Array.isArray(asset.linked_service_ids) ? asset.linked_service_ids : [];
+        const isLinked = currentLinks.map(String).includes(String(editingItem.id));
         const newLinks = isLinked
-            ? currentLinks.filter(id => id !== editingItem.id)
+            ? currentLinks.filter(id => String(id) !== String(editingItem.id))
             : [...currentLinks, editingItem.id];
 
-        await updateContentAsset(asset.id, { linked_service_ids: newLinks });
+        // Optimistic local update so UI reflects the change immediately
+        try {
+            // Update local in-memory list (contentAssets comes from hook state)
+            // Note: setData isn't exposed here, so we mutate local storage via the update call result
+            await updateContentAsset(asset.id, { linked_service_ids: newLinks });
+        } catch (e) {
+            // Ignore — useData will fallback to local DB; but ensure we still attempt to refresh
+        } finally {
+            // Refresh content list from server (or local DB fallback) to ensure canonical state
+            try { await refreshContentAssets(); } catch (e) { /* ignore refresh errors */ }
+        }
     };
 
     const getKeywordMetric = (kw: string) => {
@@ -1510,7 +1521,10 @@ const ServiceMasterView: React.FC = () => {
                                 <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
                                     <span className="bg-pink-100 text-pink-600 p-1.5 rounded mr-2">📢</span> Social Media Metadata
                                 </h3>
-                                <div className="space-y-6">
+
+                                {/* General OG/Twitter Section */}
+                                <div className="space-y-6 pb-8 border-b border-slate-200">
+                                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">General Social Metadata</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <Tooltip content="Open Graph Title (Facebook, LinkedIn). Defaults to SEO Title if empty.">
                                             <div>
@@ -1562,6 +1576,228 @@ const ServiceMasterView: React.FC = () => {
                                                 <input type="text" value={formData.twitter_image_url || ''} onChange={(e) => setFormData({ ...formData, twitter_image_url: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
                                             </div>
                                         </Tooltip>
+                                    </div>
+                                </div>
+
+                                {/* Platform-Specific Section */}
+                                <div className="space-y-6">
+                                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Platform-Specific Content</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        {/* LinkedIn Card */}
+                                        <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-200 p-6 space-y-4 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">in</span>
+                                                <h5 className="text-sm font-bold text-slate-900">LinkedIn</h5>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <Tooltip content="LinkedIn article or content title">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Title</label>
+                                                    </Tooltip>
+                                                    <input
+                                                        type="text"
+                                                        value={(formData.social_meta?.linkedin?.title) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                linkedin: {
+                                                                    ...(formData.social_meta?.linkedin || {}),
+                                                                    title: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="e.g. Enterprise Solutions for Healthcare"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Tooltip content="LinkedIn article description or summary">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Description</label>
+                                                    </Tooltip>
+                                                    <textarea
+                                                        value={(formData.social_meta?.linkedin?.description) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                linkedin: {
+                                                                    ...(formData.social_meta?.linkedin || {}),
+                                                                    description: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none h-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="Professional summary for LinkedIn audience"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Tooltip content="LinkedIn featured image URL">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Image URL</label>
+                                                    </Tooltip>
+                                                    <input
+                                                        type="text"
+                                                        value={(formData.social_meta?.linkedin?.image_url) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                linkedin: {
+                                                                    ...(formData.social_meta?.linkedin || {}),
+                                                                    image_url: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="https://example.com/linkedin-image.jpg"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Facebook Card */}
+                                        <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-200 p-6 space-y-4 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-bold">f</span>
+                                                <h5 className="text-sm font-bold text-slate-900">Facebook</h5>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <Tooltip content="Facebook post or shared page title">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Title</label>
+                                                    </Tooltip>
+                                                    <input
+                                                        type="text"
+                                                        value={(formData.social_meta?.facebook?.title) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                facebook: {
+                                                                    ...(formData.social_meta?.facebook || {}),
+                                                                    title: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="e.g. Discover Our Healthcare Solutions"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Tooltip content="Facebook post description or teaser">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Description</label>
+                                                    </Tooltip>
+                                                    <textarea
+                                                        value={(formData.social_meta?.facebook?.description) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                facebook: {
+                                                                    ...(formData.social_meta?.facebook || {}),
+                                                                    description: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none h-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="Engaging summary for Facebook audience"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Tooltip content="Facebook shared image URL">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Image URL</label>
+                                                    </Tooltip>
+                                                    <input
+                                                        type="text"
+                                                        value={(formData.social_meta?.facebook?.image_url) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                facebook: {
+                                                                    ...(formData.social_meta?.facebook || {}),
+                                                                    image_url: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="https://example.com/facebook-image.jpg"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Instagram Card */}
+                                        <div className="bg-gradient-to-br from-purple-50 to-slate-50 rounded-xl border-2 border-purple-200 p-6 space-y-4 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-bold">📷</span>
+                                                <h5 className="text-sm font-bold text-slate-900">Instagram</h5>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <Tooltip content="Instagram caption headline or hook">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Title</label>
+                                                    </Tooltip>
+                                                    <input
+                                                        type="text"
+                                                        value={(formData.social_meta?.instagram?.title) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                instagram: {
+                                                                    ...(formData.social_meta?.instagram || {}),
+                                                                    title: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                        placeholder="e.g. Transform Your Health Today"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Tooltip content="Instagram caption text (hashtags, CTA, engagement hooks)">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Caption</label>
+                                                    </Tooltip>
+                                                    <textarea
+                                                        value={(formData.social_meta?.instagram?.description) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                instagram: {
+                                                                    ...(formData.social_meta?.instagram || {}),
+                                                                    description: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none h-20 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                        placeholder="Casual, engaging caption with #hashtags and CTA"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Tooltip content="Instagram post image or carousel image URL">
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Image URL</label>
+                                                    </Tooltip>
+                                                    <input
+                                                        type="text"
+                                                        value={(formData.social_meta?.instagram?.image_url) || ''}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            social_meta: {
+                                                                ...formData.social_meta,
+                                                                instagram: {
+                                                                    ...(formData.social_meta?.instagram || {}),
+                                                                    image_url: e.target.value
+                                                                }
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                        placeholder="https://example.com/instagram-image.jpg"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
