@@ -12,7 +12,7 @@ const AssetsView: React.FC = () => {
         name: '', type: 'Image', repository: 'Content Repository', usage_status: 'Available'
     });
 
-    const filteredAssets = assets.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredAssets = assets.filter(a => (a.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()));
 
     const handleUpload = async () => {
         await createAsset({ ...newAsset, date: new Date().toISOString() } as any);
@@ -25,7 +25,7 @@ const AssetsView: React.FC = () => {
         { header: 'Type', accessor: 'type' as keyof AssetLibraryItem, className: 'text-xs text-slate-500' },
         { header: 'Repository', accessor: 'repository' as keyof AssetLibraryItem, className: 'text-xs text-slate-500' },
         { header: 'Status', accessor: (item: AssetLibraryItem) => getStatusBadge(item.usage_status) },
-        { header: 'Date', accessor: (item: AssetLibraryItem) => new Date(item.date).toLocaleDateString(), className: 'text-xs text-slate-400' }
+        { header: 'Date', accessor: (item: AssetLibraryItem) => item.date ? new Date(item.date).toLocaleDateString() : '-', className: 'text-xs text-slate-400' }
     ];
 
     if (viewMode === 'upload') {
