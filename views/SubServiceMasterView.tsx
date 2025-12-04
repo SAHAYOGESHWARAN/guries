@@ -519,7 +519,6 @@ const SubServiceMasterView: React.FC = () => {
                                 <div className="bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 px-8 py-5">
                                     <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
                                         <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3 text-base">🧭</span>
-                                        <span>Navigation Configuration</span>
                                     </h3>
                                 </div>
 
@@ -1218,12 +1217,32 @@ const SubServiceMasterView: React.FC = () => {
 
                         </div>
                     </div>
+                </div>
             </div>
-                    );
+        );
     }
 
-                    return (
-                    <div className="space-y-6 h-full overflow-y-auto w-full p-6 animate-fade-in">
+    // Autosave draft to localStorage while editing
+    useEffect(() => {
+        if (viewMode !== 'form') return;
+        const key = editingItem ? `subservice_autosave:${editingItem.id}` : `subservice_autosave:new`;
+        const save = () => {
+            try {
+                localStorage.setItem(key, JSON.stringify({ description: formData.description, sub_service_name: formData.sub_service_name, meta_title: formData.meta_title, meta_description: formData.meta_description, social_meta: formData.social_meta }));
+            } catch (e) { }
+        };
+        const iv = setInterval(save, 8000);
+        const handleBeforeUnload = () => save();
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            clearInterval(iv);
+            handleBeforeUnload();
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [viewMode, editingItem, formData.description, formData.sub_service_name, formData.meta_title, formData.meta_description, formData.social_meta]);
+
+    return (
+        <div className="space-y-6 h-full overflow-y-auto w-full p-6 animate-fade-in">
                         <div className="flex justify-between items-start">
                             <div>
                                 <h1 className="text-xl font-bold text-slate-800 tracking-tight">Sub-Service Master</h1>
@@ -1300,23 +1319,4 @@ const SubServiceMasterView: React.FC = () => {
                     );
 };
 
-    // Autosave draft to localStorage while editing
-    useEffect(() => {
-        if (viewMode !== 'form') return;
-        const key = editingItem ? `subservice_autosave:${editingItem.id}` : `subservice_autosave:new`;
-        const save = () => {
-            try {
-                localStorage.setItem(key, JSON.stringify({ description: formData.description, sub_service_name: formData.sub_service_name, meta_title: formData.meta_title, meta_description: formData.meta_description, social_meta: formData.social_meta }));
-            } catch (e) { }
-        };
-        const iv = setInterval(save, 8000);
-        const handleBeforeUnload = () => save();
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            clearInterval(iv);
-            handleBeforeUnload();
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [viewMode, editingItem, formData.description, formData.sub_service_name, formData.meta_title, formData.meta_description, formData.social_meta]);
-
-                    export default SubServiceMasterView;
+export default SubServiceMasterView;
