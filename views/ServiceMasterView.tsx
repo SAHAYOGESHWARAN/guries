@@ -582,50 +582,74 @@ const ServiceMasterView: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* 3. DETAILED DESCRIPTION CARD */}
-                                <div className="bg-gradient-to-br from-violet-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    {/* Header */}
-                                    <div className="relative bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
-                                        <div className="absolute top-0 right-0 opacity-10">
-                                            <span className="text-9xl">📋</span>
+                                {/* 3. DETAILED DESCRIPTION CARD - HERO SECTION */}
+                                <div className="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-50 rounded-3xl border-3 border-indigo-400 shadow-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 relative">
+                                    {/* Animated Background Pattern */}
+                                    <div className="absolute inset-0 opacity-30">
+                                        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                                    </div>
+
+                                    {/* Header - Premium Styling */}
+                                    <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-10 py-14 text-white overflow-hidden border-b-4 border-indigo-700">
+                                        <div className="absolute top-0 right-0 opacity-15">
+                                            <span className="text-[180px] font-black">✨</span>
                                         </div>
                                         <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📖</span>
-                                                <h3 className="text-2xl font-bold">Service Description</h3>
+                                            <div className="flex items-center gap-4 mb-3">
+                                                <div className="bg-white bg-opacity-25 backdrop-blur-sm p-3 rounded-xl text-3xl shadow-lg border border-white border-opacity-30">📝</div>
+                                                <div>
+                                                    <h3 className="text-3xl font-black tracking-tight">Service Description</h3>
+                                                    <p className="text-indigo-100 text-sm mt-1 font-medium">Comprehensive service overview and positioning</p>
+                                                </div>
                                             </div>
-                                            <p className="text-purple-100 text-sm">Comprehensive service overview and positioning</p>
                                         </div>
                                     </div>
 
-                                    {/* Content */}
-                                    <div className="p-10">
-                                        <Tooltip content="A detailed description of the service offering used for internal reference and summaries.">
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
+                                    {/* Content - Full Width */}
+                                    <div className="p-10 relative z-10">
+                                        <Tooltip content="Write a comprehensive service description used across marketing materials, dashboards, and client communications. Make it compelling, clear, and customer-focused.">
+                                            <div className="space-y-6">
+                                                {/* Info Bar */}
+                                                <div className="flex items-center justify-between bg-white bg-opacity-70 backdrop-blur-sm rounded-2xl px-6 py-4 border-2 border-indigo-200 shadow-md">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-12 h-12 rounded-lg bg-white bg-opacity-20 flex items-center justify-center text-2xl">📝</div>
+                                                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg">📖</div>
                                                         <div>
-                                                            <h4 className="text-lg font-bold text-slate-800">DESCRIPTION CONTENT</h4>
-                                                            <p className="text-xs text-slate-500 mt-1">Comprehensive service overview and positioning</p>
+                                                            <h4 className="text-lg font-bold text-indigo-900">DESCRIPTION CONTENT</h4>
+                                                            <p className="text-xs text-slate-600 mt-0.5">Used in marketing materials, dashboards, and service listings</p>
                                                         </div>
                                                     </div>
-                                                    <div className="text-xs text-slate-500">Used in marketing materials, dashboards, and service listings</div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs text-slate-500 font-medium">Character Count</p>
+                                                        <p className={`text-2xl font-black font-mono ${((formData.service_description?.length || 0) > 1800) ? 'text-red-600' : 'text-indigo-600'}`}>{(formData.service_description?.length || 0)}/2000</p>
+                                                    </div>
                                                 </div>
 
-                                                <div className="mt-3">
-                                                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner">
-                                                        <textarea
-                                                            value={formData.service_description}
-                                                            onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                            className="w-full px-6 py-6 bg-white rounded-lg min-h-[520px] lg:min-h-[640px] text-sm leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 resize-none transition-all shadow-sm"
-                                                            placeholder="Write the full service description here..."
-                                                            maxLength={2000}
-                                                        />
+                                                {/* Large Textarea */}
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-3xl blur-xl opacity-20 -z-10"></div>
+                                                    <textarea
+                                                        value={formData.service_description}
+                                                        onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
+                                                        className="w-full px-8 py-8 bg-white text-slate-800 rounded-2xl min-h-[400px] lg:min-h-[500px] text-base leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 resize-none transition-all shadow-xl border-2 border-indigo-200 font-medium placeholder:text-slate-400 placeholder:font-normal"
+                                                        placeholder="🎯 Begin with the core value proposition...&#10;&#10;📋 Outline key service benefits and deliverables...&#10;&#10;👥 Describe the ideal customer or use case...&#10;&#10;💡 Include unique differentiators or approach...&#10;&#10;✨ Keep it customer-focused and compelling!"
+                                                        maxLength={2000}
+                                                    />
+                                                </div>
+
+                                                {/* Footer Tips */}
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-300 p-4 shadow-sm">
+                                                        <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">💬 Tip</p>
+                                                        <p className="text-xs text-blue-700">Keep descriptions concise yet comprehensive.</p>
                                                     </div>
-                                                    <div className="flex justify-between items-center mt-3">
-                                                        <div className="text-[12px] text-slate-500">Tip: Keep descriptions concise and customer-focused.</div>
-                                                        <div className={`text-[11px] font-mono ${((formData.service_description?.length || 0) > 1800) ? 'text-red-500' : 'text-slate-500'}`}>{(formData.service_description?.length || 0)}/2000</div>
+                                                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-300 p-4 shadow-sm">
+                                                        <p className="text-xs font-bold text-purple-800 uppercase tracking-wider mb-1">🎯 Focus</p>
+                                                        <p className="text-xs text-purple-700">Highlight customer benefits and outcomes.</p>
+                                                    </div>
+                                                    <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-300 p-4 shadow-sm">
+                                                        <p className="text-xs font-bold text-pink-800 uppercase tracking-wider mb-1">⭐ Quality</p>
+                                                        <p className="text-xs text-pink-700">Use clear language and structure.</p>
                                                     </div>
                                                 </div>
                                             </div>
