@@ -22,6 +22,7 @@ import * as toxicBacklinkController from '../controllers/toxicBacklinkController
 import * as uxController from '../controllers/uxController';
 import * as promotionController from '../controllers/promotionController';
 import * as graphicAssetController from '../controllers/graphicAssetController';
+import * as uploadController from '../controllers/uploadController';
 import * as urlErrorController from '../controllers/urlErrorController';
 import * as onPageSeoAuditController from '../controllers/onPageSeoAuditController';
 import * as hrController from '../controllers/hrController';
@@ -107,6 +108,9 @@ router.get('/graphics', graphicAssetController.getGraphicAssets);
 router.post('/graphics', graphicAssetController.createGraphicAsset);
 router.put('/graphics/:id', graphicAssetController.updateGraphicAsset);
 router.delete('/graphics/:id', graphicAssetController.deleteGraphicAsset);
+
+// --- Uploads (simple base64 uploader)
+router.post('/uploads', uploadController.uploadBase64);
 
 // --- Teams ---
 router.get('/teams', teamController.getTeams);

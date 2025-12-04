@@ -1,5 +1,6 @@
 
 import express from 'express';
+import path from 'path';
 import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -70,6 +71,9 @@ io.on('connection', (socket) => {
 
 // API Routes
 app.use('/api/v1', apiRoutes);
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Health Check
 app.get('/health', (req, res) => {

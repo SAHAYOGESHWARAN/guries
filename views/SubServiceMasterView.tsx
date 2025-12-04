@@ -13,7 +13,7 @@ const STATUSES = ['All Status', 'Published', 'Draft', 'Archived'];
 const SubServiceMasterView: React.FC = () => {
     const { data: subServices, create, update, remove } = useData<SubServiceItem>('subServices');
     const { data: services } = useData<Service>('services');
-    const { data: contentAssets, update: updateContentAsset } = useData<ContentRepositoryItem>('content');
+    const { data: contentAssets, update: updateContentAsset, create: createContent, refresh: refreshContent } = useData<ContentRepositoryItem>('content');
     const { data: keywordsMaster } = useData<Keyword>('keywords');
     const { data: contentTypes } = useData<ContentTypeItem>('contentTypes');
     const { data: brands } = useData<Brand>('brands');
@@ -33,6 +33,11 @@ const SubServiceMasterView: React.FC = () => {
 
     // Asset Search
     const [assetSearch, setAssetSearch] = useState('');
+    // Upload modal state
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadTitle, setUploadTitle] = useState('');
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
 
     // Form State (Extended)
     const [formData, setFormData] = useState<any>({
@@ -873,7 +878,8 @@ const SubServiceMasterView: React.FC = () => {
                                                 {/* Right: Available Assets */}
                                                 <div className="flex flex-col h-[600px]">
                                                     <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Add Assets from Library</h4>
-                                                    <div className="mb-3">
+                                                    <div className="mb-3 flex items-center gap-3">
+                                                        <div className="flex-1">
                                                         <input
                                                             type="text"
                                                             placeholder="Search repository..."
@@ -881,6 +887,8 @@ const SubServiceMasterView: React.FC = () => {
                                                             onChange={(e) => setAssetSearch(e.target.value)}
                                                             className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all"
                                                         />
+                                                        </div>
+                                                        <button onClick={() => setShowUploadModal(true)} className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">Upload New Asset</button>
                                                     </div>
                                                     <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-white p-3 space-y-3">
                                                         {availableAssets.length > 0 ? availableAssets.map(asset => (
@@ -907,6 +915,88 @@ const SubServiceMasterView: React.FC = () => {
                                                 </div>
                                             </div>
                                         </div>
+                                        {/* Upload Modal (simple) */}
+                                        {showUploadModal && (
+                                            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
+                                                <div className="bg-white rounded-xl w-full max-w-xl p-6 shadow-lg border border-slate-200">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h4 className="text-lg font-bold">Upload New Asset</h4>
+                                                        <button onClick={() => { setShowUploadModal(false); setUploadFile(null); setUploadTitle(''); }} className="text-slate-400 hover:text-slate-700">✕</button>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-1">Asset Title</label>
+                                                            <input type="text" value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg" placeholder="Enter asset title" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-1">Select File</label>
+                                                            <input type="file" onChange={(e) => setUploadFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} className="w-full" />
+                                                        </div>
+                                                        <div className="flex justify-end gap-3">
+                                                            <button onClick={() => { setShowUploadModal(false); setUploadFile(null); setUploadTitle(''); }} className="px-4 py-2 rounded-lg border border-slate-300 text-sm">Cancel</button>
+                                                            <button disabled={uploading || !uploadFile || !uploadTitle} onClick={async () => {
+                                                                if (!uploadFile || !uploadTitle) return;
+                                                                setUploading(true);
+                                                                try {
+                                                                    // Convert file to base64
+                                                                    const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+                                                                        const reader = new FileReader();
+                                                                        reader.onload = () => {
+                                                                            const result = reader.result as string;
+                                                                            const parts = result.split(',');
+                                                                            resolve(parts[1]);
+                                                                        };
+                                                                        reader.onerror = (err) => reject(err);
+                                                                        reader.readAsDataURL(file);
+                                                                    });
+
+                                                                    const base64 = await toBase64(uploadFile);
+                                                                    const filename = uploadFile.name;
+
+                                                                    // Upload to backend (base64 endpoint)
+                                                                    const uploadRes = await fetch('http://localhost:3001/api/v1/uploads', {
+                                                                        method: 'POST',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify({ filename, content_base64: base64 })
+                                                                    });
+                                                                    if (!uploadRes.ok) throw new Error('Upload failed');
+                                                                    const uploadJson = await uploadRes.json();
+
+                                                                    // Create content repository record pointing to this asset
+                                                                    const assetFormat = uploadFile.type.startsWith('image') ? 'image' : (uploadFile.type.startsWith('video') ? 'video' : 'file');
+                                                                    const payload: any = {
+                                                                        brand_id: formData.brand_id || 1,
+                                                                        content_title_clean: uploadTitle,
+                                                                        asset_type: 'asset',
+                                                                        status: 'ready',
+                                                                        asset_category: 'uploaded',
+                                                                        asset_format: assetFormat,
+                                                                        slug: '',
+                                                                        full_url: uploadJson.url,
+                                                                        thumbnail_url: uploadJson.url,
+                                                                        linked_sub_service_ids: editingItem ? [editingItem.id] : [],
+                                                                        linked_service_ids: editingItem ? [editingItem.parent_service_id] : []
+                                                                    };
+
+                                                                    // Use useData create if available for optimistic update
+                                                                    const created = await createContent(payload as any);
+                                                                    // refresh content list if available
+                                                                    if (refreshContent) await refreshContent();
+
+                                                                    // Close modal and reset
+                                                                    setShowUploadModal(false);
+                                                                    setUploadFile(null);
+                                                                    setUploadTitle('');
+                                                                } catch (err) {
+                                                                    alert('Upload failed.');
+                                                                    console.error(err);
+                                                                } finally { setUploading(false); }
+                                                            }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50">{uploading ? 'Uploading...' : 'Upload & Create'}</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                         )}
 
                         {activeTab === 'Governance' && (
