@@ -93,6 +93,19 @@ const ContentRepositoryView: React.FC = () => {
                                   <label className="block text-xs font-bold text-gray-700 mb-2">Body Content</label>
                                   <textarea value={formData.body_content} onChange={(e) => setFormData({...formData, body_content: e.target.value})} className="w-full p-3 border border-slate-300 rounded-md h-64 font-mono text-sm leading-relaxed" />
                               </div>
+                              <div className="mt-4 bg-white p-4 border border-slate-100 rounded">
+                                  <h4 className="font-semibold text-sm mb-2">Social Meta Defaults</h4>
+                                  <div className="grid grid-cols-3 gap-4">
+                                      {(['linkedin','facebook','instagram'] as const).map((ch) => (
+                                          <div key={ch}>
+                                              <div className="text-xs font-medium mb-1">{ch.charAt(0).toUpperCase() + ch.slice(1)}</div>
+                                              <input type="text" placeholder="Title" value={(formData.social_meta as any)?.[ch]?.title || ''} onChange={(e) => setFormData({...formData, social_meta: {...(formData.social_meta||{} as any), [ch]: {...((formData.social_meta as any)?.[ch]||{}), title: e.target.value}}})} className="w-full p-2 border border-slate-200 rounded-md mb-2 text-sm" />
+                                              <input type="text" placeholder="Description" value={(formData.social_meta as any)?.[ch]?.description || ''} onChange={(e) => setFormData({...formData, social_meta: {...(formData.social_meta||{} as any), [ch]: {...((formData.social_meta as any)?.[ch]||{}), description: e.target.value}}})} className="w-full p-2 border border-slate-200 rounded-md mb-2 text-sm" />
+                                              <input type="text" placeholder="Image URL" value={(formData.social_meta as any)?.[ch]?.image_url || ''} onChange={(e) => setFormData({...formData, social_meta: {...(formData.social_meta||{} as any), [ch]: {...((formData.social_meta as any)?.[ch]||{}), image_url: e.target.value}}})} className="w-full p-2 border border-slate-200 rounded-md text-sm" />
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
                           </div>
                       </div>
                   </div>

@@ -601,23 +601,33 @@ const ServiceMasterView: React.FC = () => {
                                     {/* Content */}
                                     <div className="p-10">
                                         <Tooltip content="A detailed description of the service offering used for internal reference and summaries.">
-                                            <div className="space-y-3">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest">
-                                                    <span>📝</span>
-                                                    Description Content
-                                                </label>
-                                                <div className="w-full">
-                                                    <textarea
-                                                        value={formData.service_description}
-                                                        onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                        className="w-full px-6 py-6 border-2 border-slate-300 rounded-lg min-h-[420px] lg:min-h-[520px] text-sm leading-relaxed focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none transition-all bg-white placeholder:text-slate-400 font-medium"
-                                                        placeholder="Describe the intent, promise, and key differentiators..."
-                                                    />
-                                                    <div className="flex justify-end mt-2">
-                                                        <div className="text-[11px] text-slate-500 font-mono">{(formData.service_description?.length || 0)}/2000</div>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-12 h-12 rounded-lg bg-white bg-opacity-20 flex items-center justify-center text-2xl">📝</div>
+                                                        <div>
+                                                            <h4 className="text-lg font-bold text-slate-800">DESCRIPTION CONTENT</h4>
+                                                            <p className="text-xs text-slate-500 mt-1">Comprehensive service overview and positioning</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Used in marketing materials, dashboards, and service listings</div>
+                                                </div>
+
+                                                <div className="mt-3">
+                                                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner">
+                                                        <textarea
+                                                            value={formData.service_description}
+                                                            onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
+                                                            className="w-full px-6 py-6 bg-white rounded-lg min-h-[520px] lg:min-h-[640px] text-sm leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 resize-none transition-all shadow-sm"
+                                                            placeholder="Write the full service description here..."
+                                                            maxLength={2000}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-3">
+                                                        <div className="text-[12px] text-slate-500">Tip: Keep descriptions concise and customer-focused.</div>
+                                                        <div className={`text-[11px] font-mono ${((formData.service_description?.length || 0) > 1800) ? 'text-red-500' : 'text-slate-500'}`}>{(formData.service_description?.length || 0)}/2000</div>
                                                     </div>
                                                 </div>
-                                                <p className="text-xs text-slate-500">Used in marketing materials, dashboards, and service listings</p>
                                             </div>
                                         </Tooltip>
                                     </div>

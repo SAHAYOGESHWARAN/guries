@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS content_repository (
     og_title VARCHAR(500),
     og_description TEXT,
     og_image_url VARCHAR(1000),
+    social_meta JSONB,
     thumbnail_url VARCHAR(1000),
     context TEXT,
     linked_campaign_id INTEGER REFERENCES campaigns(id),
@@ -135,34 +136,10 @@ CREATE TABLE IF NOT EXISTS services (
     service_code VARCHAR(100),
     slug VARCHAR(500),
     full_url VARCHAR(1000),
-    menu_heading VARCHAR(255),
-    short_tagline VARCHAR(500),
     service_description TEXT,
     industry_ids TEXT, -- JSON array
     country_ids TEXT, -- JSON array
-    language VARCHAR(50),
-    status VARCHAR(50),
-    -- Navigation
-    show_in_main_menu BOOLEAN DEFAULT false,
-    show_in_footer_menu BOOLEAN DEFAULT false,
-    menu_group VARCHAR(100),
-    menu_position INTEGER DEFAULT 0,
-    breadcrumb_label VARCHAR(255),
-    parent_menu_section VARCHAR(255),
-    include_in_xml_sitemap BOOLEAN DEFAULT true,
-    sitemap_priority DECIMAL(3,2) DEFAULT 0.8,
-    sitemap_changefreq VARCHAR(50) DEFAULT 'monthly',
-    -- Strategic
-    content_type VARCHAR(100),
-    buyer_journey_stage VARCHAR(100),
-    primary_persona_id INTEGER,
-    secondary_persona_ids TEXT, -- JSON array
-    target_segment_notes TEXT,
-    primary_cta_label VARCHAR(255),
-    primary_cta_url VARCHAR(1000),
-    form_id INTEGER,
-    linked_campaign_ids TEXT, -- JSON array
-    -- Content
+    -- Content block
     h1 VARCHAR(500),
     h2_list TEXT, -- JSON array
     h3_list TEXT, -- JSON array
@@ -172,52 +149,27 @@ CREATE TABLE IF NOT EXISTS services (
     internal_links TEXT, -- JSON array
     external_links TEXT, -- JSON array
     image_alt_texts TEXT, -- JSON array
-    word_count INTEGER DEFAULT 0,
-    reading_time_minutes INTEGER DEFAULT 0,
-    -- SEO
+    -- SEO meta
     meta_title VARCHAR(500),
     meta_description TEXT,
-    focus_keywords TEXT, -- JSON array
-    secondary_keywords TEXT, -- JSON array
-    seo_score DECIMAL(5,2) DEFAULT 0,
-    ranking_summary TEXT,
-    -- SMM
-    og_title VARCHAR(500),
-    og_description TEXT,
-    og_image_url VARCHAR(1000),
-    og_type VARCHAR(100),
-    twitter_title VARCHAR(500),
-    twitter_description TEXT,
-    twitter_image_url VARCHAR(1000),
-    -- Technical
+    canonical_url VARCHAR(1000),
     schema_type_id VARCHAR(100),
     robots_index VARCHAR(50),
     robots_follow VARCHAR(50),
     robots_custom TEXT,
-    canonical_url VARCHAR(1000),
-    redirect_from_urls TEXT, -- JSON array
-    hreflang_group_id INTEGER,
-    core_web_vitals_status VARCHAR(50),
-    tech_seo_status VARCHAR(50),
-    faq_section_enabled BOOLEAN DEFAULT false,
-    faq_content TEXT, -- JSON array
+    -- Social meta
+    og_title VARCHAR(500),
+    og_description TEXT,
+    og_image_url VARCHAR(1000),
+    social_meta JSONB,
+    -- Navigation
+    show_in_main_menu BOOLEAN DEFAULT false,
+    menu_position INTEGER DEFAULT 0,
+    breadcrumb_label VARCHAR(255),
     -- Linking
     has_subservices BOOLEAN DEFAULT false,
-    subservice_count INTEGER DEFAULT 0,
-    primary_subservice_id INTEGER,
-    featured_asset_id INTEGER,
-    asset_count INTEGER DEFAULT 0,
-    knowledge_topic_id INTEGER,
-    -- Governance
-    brand_id INTEGER,
-    business_unit VARCHAR(100),
-    content_owner_id INTEGER REFERENCES users(id),
-    created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    updated_by INTEGER REFERENCES users(id),
-    version_number INTEGER DEFAULT 1,
-    change_log_link VARCHAR(1000)
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Sub Services Table
@@ -228,71 +180,34 @@ CREATE TABLE IF NOT EXISTS sub_services (
     slug VARCHAR(500),
     full_url VARCHAR(1000),
     description TEXT,
-    status VARCHAR(50),
-    -- Core fields
-    menu_heading VARCHAR(255),
-    short_tagline VARCHAR(500),
-    language VARCHAR(50) DEFAULT 'en',
-    industry_ids TEXT, -- JSON array
-    country_ids TEXT, -- JSON array
-    -- Content
+    -- Content block
     h1 VARCHAR(500),
     h2_list TEXT, -- JSON array
     h3_list TEXT, -- JSON array
     h4_list TEXT, -- JSON array
     h5_list TEXT, -- JSON array
     body_content TEXT,
-    word_count INTEGER DEFAULT 0,
-    reading_time_minutes INTEGER DEFAULT 0,
-    -- SEO
+    internal_links TEXT, -- JSON array
+    external_links TEXT, -- JSON array
+    image_alt_texts TEXT, -- JSON array
+    -- SEO meta
     meta_title VARCHAR(500),
     meta_description TEXT,
-    focus_keywords TEXT, -- JSON array
-    secondary_keywords TEXT, -- JSON array
-    seo_score DECIMAL(5,2) DEFAULT 0,
-    ranking_summary TEXT,
-    -- SMM
+    canonical_url VARCHAR(1000),
+    schema_type_id VARCHAR(100),
+    robots_index VARCHAR(50),
+    robots_follow VARCHAR(50),
+    robots_custom TEXT,
+    -- Social meta
     og_title VARCHAR(500),
     og_description TEXT,
     og_image_url VARCHAR(1000),
-    og_type VARCHAR(100) DEFAULT 'website',
-    twitter_title VARCHAR(500),
-    twitter_description TEXT,
-    twitter_image_url VARCHAR(1000),
+    social_meta JSONB,
     -- Navigation
     menu_position INTEGER DEFAULT 0,
     breadcrumb_label VARCHAR(255),
-    include_in_xml_sitemap BOOLEAN DEFAULT true,
-    sitemap_priority DECIMAL(3,2) DEFAULT 0.8,
-    sitemap_changefreq VARCHAR(50) DEFAULT 'monthly',
-    -- Strategic
-    content_type VARCHAR(100),
-    buyer_journey_stage VARCHAR(100),
-    primary_cta_label VARCHAR(255),
-    primary_cta_url VARCHAR(1000),
-    -- Technical
-    robots_index VARCHAR(50) DEFAULT 'index',
-    robots_follow VARCHAR(50) DEFAULT 'follow',
-    robots_custom TEXT,
-    canonical_url VARCHAR(1000),
-    schema_type_id VARCHAR(100) DEFAULT 'Service',
-    redirect_from_urls TEXT, -- JSON array
-    hreflang_group_id INTEGER,
-    core_web_vitals_status VARCHAR(50),
-    tech_seo_status VARCHAR(50),
-    faq_section_enabled BOOLEAN DEFAULT false,
-    faq_content TEXT, -- JSON array
-    -- Governance
-    brand_id INTEGER DEFAULT 0,
-    content_owner_id INTEGER DEFAULT 0,
-    created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_by INTEGER REFERENCES users(id),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    version_number INTEGER DEFAULT 1,
-    change_log_link VARCHAR(1000),
-    -- Linking
-    assets_linked INTEGER DEFAULT 0
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Service Pages Table
@@ -408,9 +323,42 @@ CREATE TABLE IF NOT EXISTS assets (
     file_url VARCHAR(1000),
     description TEXT,
     tags TEXT, -- JSON array
-    status VARCHAR(50),
+    -- Content block
+    h1 VARCHAR(500),
+    h2_list TEXT, -- JSON array
+    h3_list TEXT, -- JSON array
+    body_content TEXT,
+    -- SEO meta
+    meta_title VARCHAR(500),
+    meta_description TEXT,
+    canonical_url VARCHAR(1000),
+    schema_type_id VARCHAR(100),
+    robots_index VARCHAR(50),
+    robots_follow VARCHAR(50),
+    robots_custom TEXT,
+    -- Social meta
+    og_title VARCHAR(500),
+    og_description TEXT,
+    og_image_url VARCHAR(1000),
+    -- Linking
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Service ↔ Asset linking table
+CREATE TABLE IF NOT EXISTS service_asset_links (
+    id SERIAL PRIMARY KEY,
+    service_id INTEGER REFERENCES services(id),
+    asset_id INTEGER REFERENCES assets(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Sub-service ↔ Asset linking table
+CREATE TABLE IF NOT EXISTS subservice_asset_links (
+    id SERIAL PRIMARY KEY,
+    sub_service_id INTEGER REFERENCES sub_services(id),
+    asset_id INTEGER REFERENCES assets(id),
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- =====================================================

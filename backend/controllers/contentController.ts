@@ -3,10 +3,29 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db';
 import { getSocket } from '../socket';
 
+// Helper to parse JSON/text fields from content_repository rows
+const parseContentRow = (row: any) => {
+    const jsonArrayFields = ['linked_service_ids', 'linked_sub_service_ids', 'h2_list', 'h3_list', 'focus_keywords', 'promotion_channels'];
+    const jsonObjectFields = ['social_meta', 'ai_qc_report'];
+    const parsed = { ...row };
+    jsonArrayFields.forEach(field => {
+        if (parsed[field] && typeof parsed[field] === 'string') {
+            try { parsed[field] = JSON.parse(parsed[field]); } catch (e) { parsed[field] = []; }
+        } else if (!parsed[field]) { parsed[field] = []; }
+    });
+    jsonObjectFields.forEach(field => {
+        if (parsed[field] && typeof parsed[field] === 'string') {
+            try { parsed[field] = JSON.parse(parsed[field]); } catch (e) { parsed[field] = {}; }
+        } else if (!parsed[field]) { parsed[field] = {}; }
+    });
+    return parsed;
+};
+
 export const getContent = async (req: any, res: any) => {
     try {
         const result = await pool.query('SELECT * FROM content_repository ORDER BY last_status_update_at DESC');
-        res.status(200).json(result.rows);
+        const parsed = result.rows.map(parseContentRow);
+        res.status(200).json(parsed);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -20,6 +39,7 @@ export const createContent = async (req: any, res: any) => {
         h1, h2_list, h3_list, body_content,
         meta_title, meta_description, focus_keywords,
         og_title, og_description, og_image_url,
+        social_meta,
         thumbnail_url, context, linked_campaign_id, promotion_channels, campaign_name, assigned_to_id,
         ai_qc_report
     } = req.body;
@@ -32,7 +52,7 @@ export const createContent = async (req: any, res: any) => {
                 linked_service_ids, linked_sub_service_ids,
                 h1, h2_list, h3_list, body_content,
                 meta_title, meta_description, focus_keywords,
-                og_title, og_description, og_image_url,
+                og_title, og_description, og_image_url, social_meta,
                 thumbnail_url, context, linked_campaign_id, promotion_channels, campaign_name, assigned_to_id,
                 ai_qc_report,
                 last_status_update_at, created_at
@@ -53,12 +73,12 @@ export const createContent = async (req: any, res: any) => {
                 JSON.stringify(linked_service_ids || []), JSON.stringify(linked_sub_service_ids || []),
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), body_content,
                 meta_title, meta_description, JSON.stringify(focus_keywords || []),
-                og_title, og_description, og_image_url,
+                og_title, og_description, og_image_url, JSON.stringify(social_meta || {}),
                 thumbnail_url, context, linked_campaign_id, JSON.stringify(promotion_channels || []), campaign_name, assigned_to_id,
                 JSON.stringify(ai_qc_report || null)
             ]
         );
-        const newItem = result.rows[0];
+        const newItem = parseContentRow(result.rows[0]);
         getSocket().emit('content_created', newItem);
         res.status(201).json(newItem);
     } catch (error: any) {
@@ -74,7 +94,7 @@ export const updateContent = async (req: any, res: any) => {
         linked_service_ids, linked_sub_service_ids,
         h1, h2_list, h3_list, body_content,
         meta_title, meta_description, focus_keywords,
-        og_title, og_description, og_image_url,
+        og_title, og_description, og_image_url, social_meta,
         promotion_channels, thumbnail_url, context, campaign_name, assigned_to_id,
         ai_qc_report
     } = req.body;
@@ -101,27 +121,28 @@ export const updateContent = async (req: any, res: any) => {
                 og_title=COALESCE($17, og_title),
                 og_description=COALESCE($18, og_description),
                 og_image_url=COALESCE($19, og_image_url),
-                promotion_channels=COALESCE($20, promotion_channels),
-                thumbnail_url=COALESCE($21, thumbnail_url),
-                context=COALESCE($22, context),
-                campaign_name=COALESCE($23, campaign_name),
-                assigned_to_id=COALESCE($24, assigned_to_id),
-                ai_qc_report=COALESCE($25, ai_qc_report),
+                social_meta=COALESCE($20, social_meta),
+                promotion_channels=COALESCE($21, promotion_channels),
+                thumbnail_url=COALESCE($22, thumbnail_url),
+                context=COALESCE($23, context),
+                campaign_name=COALESCE($24, campaign_name),
+                assigned_to_id=COALESCE($25, assigned_to_id),
+                ai_qc_report=COALESCE($26, ai_qc_report),
                 last_status_update_at=NOW() 
-            WHERE id=$26 RETURNING *`,
+            WHERE id=$27 RETURNING *`,
             [
                 content_title_clean, status, asset_type,
                 asset_category, asset_format, slug, full_url,
                 JSON.stringify(linked_service_ids), JSON.stringify(linked_sub_service_ids),
                 h1, JSON.stringify(h2_list), JSON.stringify(h3_list), body_content,
                 meta_title, meta_description, JSON.stringify(focus_keywords),
-                og_title, og_description, og_image_url,
+                og_title, og_description, og_image_url, JSON.stringify(social_meta || {}),
                 JSON.stringify(promotion_channels), thumbnail_url, context, campaign_name, assigned_to_id,
                 JSON.stringify(ai_qc_report),
                 id
             ]
         );
-        const updatedItem = result.rows[0];
+        const updatedItem = parseContentRow(result.rows[0]);
         getSocket().emit('content_updated', updatedItem);
         res.status(200).json(updatedItem);
     } catch (error: any) {
@@ -170,7 +191,7 @@ export const createDraftFromService = async (req: any, res: any) => {
                 `Draft: ${service.service_name}`, service.slug, service.full_url, JSON.stringify([service.id]), campaign_id,
                 service.h1, service.h2_list, service.h3_list, service.body_content,
                 service.meta_title, service.meta_description, service.focus_keywords,
-                service.og_title, service.og_description, service.og_image_url,
+                service.og_title, service.og_description, service.og_image_url, JSON.stringify(service.social_meta || {}),
                 service.brand_id || 1
             ]
         );
@@ -205,13 +226,13 @@ export const publishToService = async (req: any, res: any) => {
             `UPDATE services SET 
                 h1=$1, h2_list=$2, h3_list=$3, body_content=$4,
                 meta_title=$5, meta_description=$6, focus_keywords=$7,
-                og_title=$8, og_description=$9, og_image_url=$10,
+                og_title=$8, og_description=$9, og_image_url=$10, social_meta=$11,
                 updated_at=NOW(), version_number = COALESCE(version_number, 1) + 1
-            WHERE id=$11`,
+            WHERE id=$12`,
             [
                 content.h1, content.h2_list, content.h3_list, content.body_content,
                 content.meta_title, content.meta_description, content.focus_keywords,
-                content.og_title, content.og_description, content.og_image_url,
+                content.og_title, content.og_description, content.og_image_url, JSON.stringify(content.social_meta || {}),
                 serviceId
             ]
         );

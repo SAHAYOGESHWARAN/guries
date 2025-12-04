@@ -54,6 +54,8 @@ const SubServiceMasterView: React.FC = () => {
         // New Core fields
         menu_heading: '', short_tagline: '', language: 'en', industry_ids: [], country_ids: []
     });
+    // ensure social_meta in form
+    if (!formData.social_meta) formData.social_meta = { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } };
 
     // Helpers
     const [tempH2, setTempH2] = useState('');
@@ -105,6 +107,7 @@ const SubServiceMasterView: React.FC = () => {
             language: (item as any).language || 'en',
             industry_ids: (item as any).industry_ids || [],
             country_ids: (item as any).country_ids || []
+            , social_meta: (item as any).social_meta || { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } }
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -147,6 +150,7 @@ const SubServiceMasterView: React.FC = () => {
             robots_index: 'index', robots_follow: 'follow', canonical_url: '', schema_type_id: 'Service',
             brand_id: 0, content_owner_id: 0,
             menu_heading: '', short_tagline: '', language: 'en', industry_ids: [], country_ids: []
+            , social_meta: { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } }
         });
         setActiveTab('Core');
     };
@@ -813,6 +817,16 @@ const SubServiceMasterView: React.FC = () => {
                                                         <input type="text" value={formData.og_image_url} onChange={(e) => setFormData({ ...formData, og_image_url: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
                                                     </div>
                                                 </Tooltip>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    {(['linkedin','facebook','instagram'] as const).map((ch) => (
+                                                        <div key={ch}>
+                                                            <div className="text-xs font-medium mb-2">{ch.charAt(0).toUpperCase() + ch.slice(1)}</div>
+                                                            <input type="text" placeholder="Title" value={(formData.social_meta as any)?.[ch]?.title || ''} onChange={(e) => setFormData({...formData, social_meta: {...(formData.social_meta||{}), [ch]: {...((formData.social_meta as any)?.[ch]||{}), title: e.target.value}}})} className="w-full p-2 border border-slate-200 rounded-md mb-2 text-sm" />
+                                                            <input type="text" placeholder="Description" value={(formData.social_meta as any)?.[ch]?.description || ''} onChange={(e) => setFormData({...formData, social_meta: {...(formData.social_meta||{}), [ch]: {...((formData.social_meta as any)?.[ch]||{}), description: e.target.value}}})} className="w-full p-2 border border-slate-200 rounded-md mb-2 text-sm" />
+                                                            <input type="text" placeholder="Image URL" value={(formData.social_meta as any)?.[ch]?.image_url || ''} onChange={(e) => setFormData({...formData, social_meta: {...(formData.social_meta||{}), [ch]: {...((formData.social_meta as any)?.[ch]||{}), image_url: e.target.value}}})} className="w-full p-2 border border-slate-200 rounded-md text-sm" />
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                         )}

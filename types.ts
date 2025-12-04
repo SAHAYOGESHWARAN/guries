@@ -183,6 +183,12 @@ export interface Service {
   twitter_title?: string;
   twitter_description?: string;
   twitter_image_url?: string;
+    // Per-channel social meta (read-only suggestions / defaults)
+    social_meta?: {
+        linkedin?: { title?: string; description?: string; image_url?: string };
+        facebook?: { title?: string; description?: string; image_url?: string };
+        instagram?: { title?: string; description?: string; image_url?: string };
+    };
 
   // K. Linking
   has_subservices?: boolean;
@@ -248,6 +254,12 @@ export interface SubServiceItem {
     twitter_title?: string;
     twitter_description?: string;
     twitter_image_url?: string;
+        // Per-channel social meta
+        social_meta?: {
+            linkedin?: { title?: string; description?: string; image_url?: string };
+            facebook?: { title?: string; description?: string; image_url?: string };
+            instagram?: { title?: string; description?: string; image_url?: string };
+        };
     
     // Governance
     brand_id?: number;
@@ -303,6 +315,12 @@ export interface ContentRepositoryItem {
   og_title?: string;
   og_description?: string;
   og_image_url?: string;
+    // Per-channel social meta (working copy)
+    social_meta?: {
+        linkedin?: { title?: string; description?: string; image_url?: string };
+        facebook?: { title?: string; description?: string; image_url?: string };
+        instagram?: { title?: string; description?: string; image_url?: string };
+    };
 
   // QC / AI
   ai_qc_report?: {

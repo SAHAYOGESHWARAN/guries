@@ -5,15 +5,15 @@ import { getSocket } from '../socket';
 
 // Helper function to parse JSON fields for services
 const parseServiceRow = (row: any) => {
-    const jsonFields = [
+    const jsonArrayFields = [
         'industry_ids', 'country_ids', 'secondary_persona_ids', 'linked_campaign_ids',
         'h2_list', 'h3_list', 'h4_list', 'h5_list', 'internal_links', 'external_links',
-        'image_alt_texts', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls',
-        'faq_content'
+        'image_alt_texts', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content'
     ];
+    const jsonObjectFields = ['social_meta'];
     
     const parsed = { ...row };
-    jsonFields.forEach(field => {
+    jsonArrayFields.forEach(field => {
         if (parsed[field] && typeof parsed[field] === 'string') {
             try {
                 parsed[field] = JSON.parse(parsed[field]);
@@ -24,27 +24,35 @@ const parseServiceRow = (row: any) => {
             parsed[field] = [];
         }
     });
+    jsonObjectFields.forEach(field => {
+        if (parsed[field] && typeof parsed[field] === 'string') {
+            try {
+                parsed[field] = JSON.parse(parsed[field]);
+            } catch (e) {
+                parsed[field] = {};
+            }
+        } else if (!parsed[field]) {
+            parsed[field] = {};
+        }
+    });
     return parsed;
 };
 
 // Helper function to parse JSON fields for sub-services
 const parseSubServiceRow = (row: any) => {
-    const jsonFields = [
-        'industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list',
-        'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content'
-    ];
+    const jsonArrayFields = ['industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content'];
+    const jsonObjectFields = ['social_meta'];
     
     const parsed = { ...row };
-    jsonFields.forEach(field => {
+    jsonArrayFields.forEach(field => {
         if (parsed[field] && typeof parsed[field] === 'string') {
-            try {
-                parsed[field] = JSON.parse(parsed[field]);
-            } catch (e) {
-                parsed[field] = [];
-            }
-        } else if (!parsed[field]) {
-            parsed[field] = [];
-        }
+            try { parsed[field] = JSON.parse(parsed[field]); } catch (e) { parsed[field] = []; }
+        } else if (!parsed[field]) { parsed[field] = []; }
+    });
+    jsonObjectFields.forEach(field => {
+        if (parsed[field] && typeof parsed[field] === 'string') {
+            try { parsed[field] = JSON.parse(parsed[field]); } catch (e) { parsed[field] = {}; }
+        } else if (!parsed[field]) { parsed[field] = {}; }
     });
     return parsed;
 };
@@ -80,6 +88,8 @@ export const createService = async (req: any, res: any) => {
         meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
         // SMM
         og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+        social_meta,
+        social_meta,
         // Technical
         schema_type_id, robots_index, robots_follow, robots_custom, canonical_url,
         redirect_from_urls, hreflang_group_id, core_web_vitals_status, tech_seo_status,
@@ -124,7 +134,8 @@ export const createService = async (req: any, res: any) => {
                 h1, h2_list, h3_list, h4_list, h5_list, body_content, internal_links, external_links, image_alt_texts, 
                 word_count, reading_time_minutes,
                 meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
-                og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+                og_title, og_description, og_image_url, social_meta, og_type, twitter_title, twitter_description, twitter_image_url,
+                social_meta,
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, redirect_from_urls,
                 hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled, faq_content,
                 has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
@@ -144,11 +155,12 @@ export const createService = async (req: any, res: any) => {
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), JSON.stringify(h4_list || []), JSON.stringify(h5_list || []), body_content,
                 JSON.stringify(internal_links || []), JSON.stringify(external_links || []), JSON.stringify(image_alt_texts || []), word_count || 0, reading_time_minutes || 0,
                 meta_title, meta_description, JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
-                og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+                og_title, og_description, og_image_url, social_meta, og_type, twitter_title, twitter_description, twitter_image_url,
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, JSON.stringify(redirect_from_urls || []),
                 hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled || false, JSON.stringify(faq_content || []),
                 has_subservices || false, subservice_count || 0, primary_subservice_id || 0, featured_asset_id || 0, asset_count || 0, knowledge_topic_id || 0,
-                brand_id, business_unit, content_owner_id, generatedCreatedBy, generatedCreatedAt, generatedCreatedBy, generatedCreatedAt, generatedVersionNumber, change_log_link
+                brand_id, business_unit, content_owner_id, generatedCreatedBy, generatedCreatedAt, generatedCreatedBy, generatedCreatedAt, generatedVersionNumber, change_log_link,
+                JSON.stringify(social_meta || {})
             ]
         );
         const newItem = parseServiceRow(result.rows[0]);
@@ -175,7 +187,7 @@ export const updateService = async (req: any, res: any) => {
         internal_links, external_links, image_alt_texts, word_count, reading_time_minutes,
         meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
         og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
-        schema_type_id, robots_index, robots_follow, robots_custom, canonical_url,
+        social_meta, schema_type_id, robots_index, robots_follow, robots_custom, canonical_url,
         redirect_from_urls, hreflang_group_id, core_web_vitals_status, tech_seo_status,
         faq_section_enabled, faq_content,
         has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
@@ -233,8 +245,8 @@ export const updateService = async (req: any, res: any) => {
                 subservice_count=COALESCE($66, subservice_count), primary_subservice_id=COALESCE($67, primary_subservice_id), featured_asset_id=COALESCE($68, featured_asset_id),
                 asset_count=COALESCE($69, asset_count), knowledge_topic_id=COALESCE($70, knowledge_topic_id), brand_id=COALESCE($71, brand_id),
                 business_unit=COALESCE($72, business_unit), content_owner_id=COALESCE($73, content_owner_id), updated_by=$74,
-                version_number=$75, change_log_link=COALESCE($76, change_log_link), updated_at=$77
-             WHERE id=$78 RETURNING *`,
+                     version_number=$75, change_log_link=COALESCE($76, change_log_link), updated_at=$77, social_meta=COALESCE($78, social_meta)
+                 WHERE id=$79 RETURNING *`,
             [
                 service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids), JSON.stringify(country_ids), language, status,
@@ -249,7 +261,7 @@ export const updateService = async (req: any, res: any) => {
                 schema_type_id, robots_index, robots_follow, robots_custom, canonical_url, JSON.stringify(redirect_from_urls),
                 hreflang_group_id, core_web_vitals_status, tech_seo_status, faq_section_enabled, JSON.stringify(faq_content),
                 has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
-                brand_id, business_unit, content_owner_id, generatedUpdatedBy, newVersionNumber, change_log_link, generatedUpdatedAt, id
+                brand_id, business_unit, content_owner_id, generatedUpdatedBy, newVersionNumber, change_log_link, generatedUpdatedAt, JSON.stringify(social_meta || {}), id
             ]
         );
         const updatedItem = parseServiceRow(result.rows[0]);
@@ -346,7 +358,7 @@ export const createSubService = async (req: any, res: any) => {
                 JSON.stringify(redirect_from_urls || []), hreflang_group_id, core_web_vitals_status, tech_seo_status,
                 faq_section_enabled || false, JSON.stringify(faq_content || []),
                 brand_id || 0, content_owner_id || 0, created_by || null, created_at || null, updated_by || null, version_number || 1, change_log_link,
-                assets_linked || 0, null
+                JSON.stringify(social_meta || {}), assets_linked || 0, null
             ]
         );
         
@@ -437,8 +449,8 @@ export const updateSubService = async (req: any, res: any) => {
                 faq_section_enabled=COALESCE($51, faq_section_enabled), faq_content=COALESCE($52, faq_content),
                 brand_id=COALESCE($53, brand_id), content_owner_id=COALESCE($54, content_owner_id),
                 updated_by=COALESCE($55, updated_by), version_number=COALESCE($56, version_number), change_log_link=COALESCE($57, change_log_link),
-                assets_linked=COALESCE($58, assets_linked), updated_at=NOW() 
-            WHERE id=$59 RETURNING *`,
+                social_meta=COALESCE($58, social_meta), assets_linked=COALESCE($59, assets_linked), updated_at=NOW() 
+            WHERE id=$60 RETURNING *",
             [
                 sub_service_name, parent_service_id, slug, computedUrl, description, status,
                 menu_heading, short_tagline, language, JSON.stringify(industry_ids), JSON.stringify(country_ids),
@@ -452,7 +464,7 @@ export const updateSubService = async (req: any, res: any) => {
                 JSON.stringify(redirect_from_urls), hreflang_group_id, core_web_vitals_status, tech_seo_status,
                 faq_section_enabled, JSON.stringify(faq_content),
                 brand_id, content_owner_id, updated_by, version_number, change_log_link,
-                assets_linked,
+                JSON.stringify(social_meta || {}), assets_linked,
                 id
             ]
         );

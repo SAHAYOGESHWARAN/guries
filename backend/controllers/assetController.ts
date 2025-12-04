@@ -13,14 +13,14 @@ export const getAssets = async (req: any, res: any) => {
 };
 
 export const createAsset = async (req: any, res: any) => {
-    const { name, type, repository, linked_task, owner_id, usage_status } = req.body;
+    const { name, type, repository, linked_task, owner_id, usage_status, social_meta } = req.body;
     
     try {
         const result = await pool.query(
             `INSERT INTO assets (
-                name, type, repository, linked_task, owner_id, usage_status, created_at
+                asset_name, asset_type, file_url, description, tags, social_meta, created_at
             ) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
-            [name, type, repository, linked_task, owner_id, usage_status]
+            [name, type, repository, linked_task, owner_id, JSON.stringify(social_meta || {})]
         );
         
         const newAsset = result.rows[0];
@@ -33,18 +33,19 @@ export const createAsset = async (req: any, res: any) => {
 
 export const updateAsset = async (req: any, res: any) => {
     const { id } = req.params;
-    const { name, usage_status, linked_task, repository, type } = req.body;
+    const { name, usage_status, linked_task, repository, type, social_meta } = req.body;
     
     try {
         const result = await pool.query(
             `UPDATE assets SET 
-                name = COALESCE($1, name), 
-                usage_status = COALESCE($2, usage_status), 
-                linked_task = COALESCE($3, linked_task),
-                repository = COALESCE($4, repository),
-                type = COALESCE($5, type)
-            WHERE id = $6 RETURNING *`,
-            [name, usage_status, linked_task, repository, type, id]
+                asset_name = COALESCE($1, asset_name), 
+                tags = COALESCE($2, tags), 
+                file_url = COALESCE($3, file_url),
+                description = COALESCE($4, description),
+                asset_type = COALESCE($5, asset_type),
+                social_meta = COALESCE($6, social_meta)
+            WHERE id = $7 RETURNING *`,
+            [name, usage_status, repository, linked_task, type, JSON.stringify(social_meta || {}), id]
         );
         
         if (result.rows.length === 0) {
