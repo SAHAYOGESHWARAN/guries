@@ -62,6 +62,12 @@ const ServiceMasterView: React.FC = () => {
         seo_score: 0, ranking_summary: '',
         og_title: '', og_description: '', og_image_url: '', og_type: 'website',
         twitter_title: '', twitter_description: '', twitter_image_url: '',
+        // Per-channel social meta defaults
+        social_meta: {
+            linkedin: { title: '', description: '', image_url: '' },
+            facebook: { title: '', description: '', image_url: '' },
+            instagram: { title: '', description: '', image_url: '' }
+        },
         schema_type_id: 'Service', robots_index: 'index', robots_follow: 'follow', robots_custom: '',
         canonical_url: '', redirect_from_urls: [], hreflang_group_id: undefined,
         core_web_vitals_status: 'Good', tech_seo_status: 'Ok',
@@ -174,6 +180,15 @@ const ServiceMasterView: React.FC = () => {
             og_type: item.og_type || 'website',
             og_image_url: item.og_image_url || '',
             twitter_image_url: item.twitter_image_url || '',
+            // Ensure service content and SEO/SMM fields are prefetched when editing
+            service_description: item.service_description || '',
+            meta_title: item.meta_title || '',
+            meta_description: item.meta_description || '',
+            og_title: item.og_title || '',
+            og_description: item.og_description || '',
+            twitter_title: item.twitter_title || '',
+            twitter_description: item.twitter_description || '',
+            social_meta: item.social_meta || { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } },
             robots_custom: item.robots_custom || '',
             hreflang_group_id: item.hreflang_group_id ?? undefined,
             faq_section_enabled: item.faq_section_enabled || false,
@@ -585,7 +600,7 @@ const ServiceMasterView: React.FC = () => {
                                 </div>
 
                                 {/* 3. DETAILED DESCRIPTION CARD - HERO SECTION (Full-page layout) */}
-                                <div className="col-span-full w-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-50 rounded-3xl border-3 border-indigo-400 shadow-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 relative min-h-[calc(100vh-6rem)]">
+                                <div className="col-span-full w-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-50 rounded-3xl border-3 border-indigo-400 shadow-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 relative min-h-[calc(100vh-4rem)]">
                                     {/* Animated Background Pattern */}
                                     <div className="absolute inset-0 opacity-30">
                                         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
