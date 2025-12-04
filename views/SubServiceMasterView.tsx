@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import { getStatusBadge, SparkIcon } from '../constants';
@@ -23,6 +23,7 @@ const SubServiceMasterView: React.FC = () => {
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+    const [headerCollapsed, setHeaderCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [parentFilter, setParentFilter] = useState('All Parent Services');
     const [statusFilter, setStatusFilter] = useState('All Status');
@@ -109,6 +110,15 @@ const SubServiceMasterView: React.FC = () => {
             country_ids: (item as any).country_ids || []
             , social_meta: (item as any).social_meta || { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } }
         });
+        // Attempt to restore any autosaved draft for this item
+        try {
+            const key = `subservice_autosave:${item.id}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                setFormData(prev => ({ ...prev, ...parsed }));
+            }
+        } catch (e) { /* ignore */ }
         setActiveTab('Core');
         setViewMode('form');
     };
@@ -135,6 +145,11 @@ const SubServiceMasterView: React.FC = () => {
             payload.created_at = now;
             await create(payload as any);
         }
+        // clear autosave after successful save
+        try {
+            const key = editingItem ? `subservice_autosave:${editingItem.id}` : `subservice_autosave:new`;
+            localStorage.removeItem(key);
+        } catch (e) { }
         setViewMode('list');
     };
 
@@ -153,6 +168,15 @@ const SubServiceMasterView: React.FC = () => {
             , social_meta: { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } }
         });
         setActiveTab('Core');
+        // restore any autosave for new draft
+        try {
+            const key = `subservice_autosave:new`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                setFormData(prev => ({ ...prev, ...parsed }));
+            }
+        } catch (e) { /* ignore */ }
     };
 
     const handleSlugChange = (val: string) => {
@@ -262,23 +286,37 @@ const SubServiceMasterView: React.FC = () => {
         return (
             <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col overflow-hidden animate-slide-up">
                 {/* Header */}
-                <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-white shadow-sm z-40">
+                <div className={`border-b border-slate-200 px-6 ${headerCollapsed ? 'py-2' : 'py-4'} flex justify-between items-center bg-white shadow-sm z-40`}>
                     <div className="flex items-center gap-4">
                         <button onClick={() => setViewMode('list')} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900">{editingItem ? `Edit Sub-Service: ${editingItem.sub_service_name}` : 'Create New Sub-Service'}</h2>
-                            <p className="text-xs text-slate-500">Manage specialized offerings linked to main services.</p>
-                        </div>
+                        {!headerCollapsed ? (
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">{editingItem ? `Edit Sub-Service: ${editingItem.sub_service_name}` : 'Create New Sub-Service'}</h2>
+                                <p className="text-xs text-slate-500">Manage specialized offerings linked to main services.</p>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-semibold text-slate-700">Editing</span>
+                                <span className="text-xs text-slate-500">{editingItem ? editingItem.sub_service_name : 'New Sub-Service'}</span>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex gap-3">
-                        <button onClick={() => setViewMode('list')} className="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">Discard</button>
-                        <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors">Save Changes</button>
+                    <div className="flex gap-3 items-center">
+                        <button title={headerCollapsed ? 'Expand header' : 'Collapse header'} onClick={() => setHeaderCollapsed(h => !h)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+                            {headerCollapsed ? (
+                                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M6 10h8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            ) : (
+                                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M6 6h8M6 14h8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            )}
+                        </button>
+                        <button onClick={() => setViewMode('list')} className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">Discard</button>
+                        <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors">Save</button>
                     </div>
                 </div>
 
-                <div className="border-b border-slate-200 px-6 bg-white flex-shrink-0 z-30">
+                <div className={`border-b border-slate-200 px-6 bg-white flex-shrink-0 z-30 ${headerCollapsed ? 'hidden' : ''}`}>
                     <nav className="-mb-px flex space-x-8 overflow-x-auto scrollbar-hide">
                         {tabs.map((tab) => (
                             <button
@@ -359,6 +397,61 @@ const SubServiceMasterView: React.FC = () => {
                                                     </Tooltip>
 
                                             
+                                        </div>
+                                        </div>
+
+                                        {/* 2. DETAILED DESCRIPTION CARD - HERO SECTION (Full-width editor for Sub-Service) */}
+                                        <div className="col-span-full w-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-50 rounded-2xl border border-indigo-300 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 relative">
+                                            <div className="absolute inset-0 opacity-30">
+                                                <div className="absolute top-0 right-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                                                <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                                            </div>
+                                            <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6 text-white border-b border-indigo-700">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="bg-white bg-opacity-20 p-3 rounded-lg text-2xl">📝</div>
+                                                    <div>
+                                                        <h3 className="text-2xl font-extrabold">Sub-Service Description</h3>
+                                                        <p className="text-indigo-100 text-sm mt-1">Comprehensive overview and positioning for this sub-service</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-6">
+                                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                                    <div className="lg:col-span-4">
+                                                        <div className="bg-white/30 rounded-xl p-4 backdrop-blur-sm border border-white/30">
+                                                            <h4 className="text-sm font-bold text-indigo-900">Description Content</h4>
+                                                            <p className="text-xs text-slate-600 mt-2">Used in marketing materials, sub-service listings and internal docs.</p>
+                                                        </div>
+                                                        <div className="mt-4 space-y-3">
+                                                            <div className="bg-white rounded-lg p-3 border border-slate-200 text-sm text-slate-600">Start with the core value proposition and key differentiators.</div>
+                                                            <div className="bg-white rounded-lg p-3 border border-slate-200 text-sm text-slate-600">Highlight target user and expected outcomes.</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="lg:col-span-8">
+                                                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col overflow-hidden">
+                                                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                                                                <div>
+                                                                    <h4 className="text-lg font-bold text-slate-800">Description Editor</h4>
+                                                                    <p className="text-xs text-slate-500">Write a compelling, customer-focused description for this sub-service.</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-xs text-slate-500">Character Count</p>
+                                                                    <p className={`text-sm font-mono font-semibold ${((formData.description?.length || 0) > 1200) ? 'text-red-600' : 'text-indigo-600'}`}>{(formData.description?.length || 0)}/1500</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-4 flex-1 min-h-0">
+                                                                <textarea value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full h-full min-h-0 resize-none p-4 bg-slate-50 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Describe the intent, promise, and key differentiators..." />
+                                                            </div>
+                                                            <div className="px-4 py-3 border-t border-slate-100 bg-white">
+                                                                <div className="flex items-center justify-between text-sm text-slate-600">
+                                                                    <div>Keep descriptions concise yet comprehensive.</div>
+                                                                    <div>Highlight benefits and use-cases.</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Master Integrations */}
@@ -1206,5 +1299,24 @@ const SubServiceMasterView: React.FC = () => {
                     </div>
                     );
 };
+
+    // Autosave draft to localStorage while editing
+    useEffect(() => {
+        if (viewMode !== 'form') return;
+        const key = editingItem ? `subservice_autosave:${editingItem.id}` : `subservice_autosave:new`;
+        const save = () => {
+            try {
+                localStorage.setItem(key, JSON.stringify({ description: formData.description, sub_service_name: formData.sub_service_name, meta_title: formData.meta_title, meta_description: formData.meta_description, social_meta: formData.social_meta }));
+            } catch (e) { }
+        };
+        const iv = setInterval(save, 8000);
+        const handleBeforeUnload = () => save();
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            clearInterval(iv);
+            handleBeforeUnload();
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [viewMode, editingItem, formData.description, formData.sub_service_name, formData.meta_title, formData.meta_description, formData.social_meta]);
 
                     export default SubServiceMasterView;
