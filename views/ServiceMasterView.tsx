@@ -25,6 +25,8 @@ const ServiceMasterView: React.FC = () => {
     // Master Data for Dropdowns/Selectors
     const { data: users } = useData<User>('users');
     const { data: brands } = useData<Brand>('brands');
+        // Warn if brands are not loaded
+        const brandsLoaded = Array.isArray(brands) && brands.length > 0;
     const { data: campaigns } = useData<Campaign>('campaigns');
     const { data: industrySectors } = useData<IndustrySectorItem>('industrySectors');
     const { data: countries } = useData<CountryMasterItem>('countries');
@@ -626,12 +628,12 @@ const ServiceMasterView: React.FC = () => {
                                                 </div>
 
                                                 {/* Large Textarea */}
-                                                <div className="relative">
+                                                <div className="relative flex justify-center">
                                                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-3xl blur-xl opacity-20 -z-10"></div>
                                                     <textarea
                                                         value={formData.service_description}
                                                         onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                        className="w-full px-8 py-8 bg-white text-slate-800 rounded-2xl min-h-[400px] lg:min-h-[500px] text-base leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 resize-none transition-all shadow-xl border-2 border-indigo-200 font-medium placeholder:text-slate-400 placeholder:font-normal"
+                                                        className="w-full max-w-5xl px-10 py-12 bg-white text-slate-800 rounded-3xl min-h-[600px] lg:min-h-[700px] text-lg leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 resize-none transition-all shadow-2xl border-2 border-indigo-200 font-medium placeholder:text-slate-400 placeholder:font-normal"
                                                         placeholder="🎯 Begin with the core value proposition...&#10;&#10;📋 Outline key service benefits and deliverables...&#10;&#10;👥 Describe the ideal customer or use case...&#10;&#10;💡 Include unique differentiators or approach...&#10;&#10;✨ Keep it customer-focused and compelling!"
                                                         maxLength={2000}
                                                     />
@@ -1934,8 +1936,47 @@ const ServiceMasterView: React.FC = () => {
                                                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                                                         >
                                                             <option value={0}>Select Brand...</option>
-                                                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                            {brandsLoaded ? brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>) : null}
                                                         </select>
+                                                        {!brandsLoaded && (
+                                                            <div className="text-xs text-red-500 mt-2">No brands found. Please add brands in the master data.</div>
+                                                        )}
+                                                                                        {/* LinkedIn, Facebook, Instagram Social Meta Fields */}
+                                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                                                            {/* LinkedIn */}
+                                                                                            <Tooltip content="LinkedIn Card Metadata">
+                                                                                                <div>
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">LinkedIn Title</label>
+                                                                                                    <input type="text" value={formData.social_meta?.linkedin?.title || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...formData.social_meta?.linkedin, title: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">LinkedIn Description</label>
+                                                                                                    <textarea value={formData.social_meta?.linkedin?.description || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...formData.social_meta?.linkedin, description: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none" />
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">LinkedIn Image URL</label>
+                                                                                                    <input type="text" value={formData.social_meta?.linkedin?.image_url || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...formData.social_meta?.linkedin, image_url: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
+                                                                                                </div>
+                                                                                            </Tooltip>
+                                                                                            {/* Facebook */}
+                                                                                            <Tooltip content="Facebook Card Metadata">
+                                                                                                <div>
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">Facebook Title</label>
+                                                                                                    <input type="text" value={formData.social_meta?.facebook?.title || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...formData.social_meta?.facebook, title: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Facebook Description</label>
+                                                                                                    <textarea value={formData.social_meta?.facebook?.description || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...formData.social_meta?.facebook, description: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none" />
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Facebook Image URL</label>
+                                                                                                    <input type="text" value={formData.social_meta?.facebook?.image_url || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...formData.social_meta?.facebook, image_url: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
+                                                                                                </div>
+                                                                                            </Tooltip>
+                                                                                            {/* Instagram */}
+                                                                                            <Tooltip content="Instagram Card Metadata">
+                                                                                                <div>
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">Instagram Title</label>
+                                                                                                    <input type="text" value={formData.social_meta?.instagram?.title || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...formData.social_meta?.instagram, title: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Instagram Description</label>
+                                                                                                    <textarea value={formData.social_meta?.instagram?.description || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...formData.social_meta?.instagram, description: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none" />
+                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Instagram Image URL</label>
+                                                                                                    <input type="text" value={formData.social_meta?.instagram?.image_url || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...formData.social_meta?.instagram, image_url: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
+                                                                                                </div>
+                                                                                            </Tooltip>
+                                                                                        </div>
                                                     </div>
                                                 </Tooltip>
                                             </div>
