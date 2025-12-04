@@ -610,52 +610,69 @@ const ServiceMasterView: React.FC = () => {
 
                                     {/* Content - Full Width & Flexible Height */}
                                     <div className="p-10 relative z-10 h-full flex flex-col">
-                                        <Tooltip content="Write a comprehensive service description used across marketing materials, dashboards, and client communications. Make it compelling, clear, and customer-focused.">
-                                            <div className="space-y-6">
-                                                {/* Info Bar */}
-                                                <div className="flex items-center justify-between bg-white bg-opacity-70 backdrop-blur-sm rounded-2xl px-6 py-4 border-2 border-indigo-200 shadow-md">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg">📖</div>
+                                        <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                            {/* Left: Intro / Icon */}
+                                            <div className="lg:col-span-4 flex flex-col justify-start">
+                                                <div className="bg-white/30 rounded-2xl p-6 backdrop-blur-sm border border-white/40">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-16 h-16 rounded-lg bg-white shadow-md flex items-center justify-center text-3xl">📝</div>
                                                         <div>
-                                                            <h4 className="text-lg font-bold text-indigo-900">DESCRIPTION CONTENT</h4>
-                                                            <p className="text-xs text-slate-600 mt-0.5">Used in marketing materials, dashboards, and service listings</p>
+                                                            <h3 className="text-2xl font-extrabold text-indigo-900">Service Description</h3>
+                                                            <p className="mt-2 text-sm text-indigo-800">Comprehensive service overview and positioning</p>
+                                                            <p className="mt-4 text-xs text-slate-600">Use this content across marketing materials, dashboards, and service listings. Keep it customer-focused and outcome-driven.</p>
                                                         </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xs text-slate-500 font-medium">Character Count</p>
-                                                        <p className={`text-2xl font-black font-mono ${((formData.service_description?.length || 0) > 1800) ? 'text-red-600' : 'text-indigo-600'}`}>{(formData.service_description?.length || 0)}/2000</p>
-                                                    </div>
                                                 </div>
-
-                                                {/* Large Textarea - fills remaining vertical space */}
-                                                <div className="relative flex-1 flex flex-col">
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-3xl blur-xl opacity-20 -z-10"></div>
-                                                    <textarea
-                                                        value={formData.service_description}
-                                                        onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                        className="w-full px-8 py-6 bg-white text-slate-800 rounded-2xl min-h-0 h-full text-base leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 resize-none transition-all shadow-xl border-2 border-indigo-200 font-medium placeholder:text-slate-400 placeholder:font-normal overflow-auto"
-                                                        placeholder="🎯 Begin with the core value proposition...&#10;&#10;📋 Outline key service benefits and deliverables...&#10;&#10;👥 Describe the ideal customer or use case...&#10;&#10;💡 Include unique differentiators or approach...&#10;&#10;✨ Keep it customer-focused and compelling!"
-                                                        maxLength={2000}
-                                                    />
-                                                </div>
-
-                                                {/* Footer Tips */}
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-300 p-4 shadow-sm">
-                                                        <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">💬 Tip</p>
-                                                        <p className="text-xs text-blue-700">Keep descriptions concise yet comprehensive.</p>
+                                                <div className="mt-6 space-y-4">
+                                                    <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                                                        <p className="text-xs font-bold uppercase text-slate-600">DESCRIPTION CONTENT</p>
+                                                        <p className="text-[13px] text-slate-500 mt-1">Describe the intent, promise, and key differentiators.</p>
                                                     </div>
-                                                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-300 p-4 shadow-sm">
-                                                        <p className="text-xs font-bold text-purple-800 uppercase tracking-wider mb-1">🎯 Focus</p>
-                                                        <p className="text-xs text-purple-700">Highlight customer benefits and outcomes.</p>
-                                                    </div>
-                                                    <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-300 p-4 shadow-sm">
-                                                        <p className="text-xs font-bold text-pink-800 uppercase tracking-wider mb-1">⭐ Quality</p>
-                                                        <p className="text-xs text-pink-700">Use clear language and structure.</p>
+                                                    <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                                                        <p className="text-xs font-bold uppercase text-slate-600">Guidance</p>
+                                                        <ul className="text-[13px] text-slate-500 mt-2 list-disc pl-4 space-y-1">
+                                                            <li>Start with core value proposition.</li>
+                                                            <li>Highlight benefits & deliverables.</li>
+                                                            <li>Mention ideal customer or use-case.</li>
+                                                        </ul>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </Tooltip>
+
+                                            {/* Right: Editor */}
+                                            <div className="lg:col-span-8 flex flex-col h-full">
+                                                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 h-full flex flex-col overflow-hidden">
+                                                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                                                        <div>
+                                                            <h4 className="text-lg font-bold text-slate-800">Description Editor</h4>
+                                                            <p className="text-xs text-slate-500">Write a compelling, customer-focused description.</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-xs text-slate-500">Character Count</p>
+                                                            <p className={`text-xl font-mono font-semibold ${((formData.service_description?.length || 0) > 1800) ? 'text-red-600' : 'text-indigo-600'}`}>{(formData.service_description?.length || 0)}/2000</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="p-6 flex-1 min-h-0">
+                                                        <textarea
+                                                            value={formData.service_description}
+                                                            onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
+                                                            className="w-full h-full min-h-0 resize-none p-6 bg-slate-50 text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 text-base leading-relaxed overflow-auto"
+                                                            placeholder="🎯 Begin with the core value proposition...&#10;&#10;📋 Outline key service benefits and deliverables...&#10;&#10;👥 Describe the ideal customer or use case...&#10;&#10;💡 Include unique differentiators or approach..."
+                                                            maxLength={2000}
+                                                        />
+                                                    </div>
+
+                                                    <div className="px-6 py-4 bg-white border-t border-slate-100">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                            <div className="text-sm text-slate-600">Keep descriptions concise yet comprehensive.</div>
+                                                            <div className="text-sm text-slate-600">Highlight customer benefits and outcomes.</div>
+                                                            <div className="text-sm text-slate-600">Use clear language and structure.</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
