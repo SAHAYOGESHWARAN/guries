@@ -183,12 +183,24 @@ export interface Service {
   twitter_title?: string;
   twitter_description?: string;
   twitter_image_url?: string;
-    // Per-channel social meta (read-only suggestions / defaults)
-    social_meta?: {
-        linkedin?: { title?: string; description?: string; image_url?: string };
-        facebook?: { title?: string; description?: string; image_url?: string };
-        instagram?: { title?: string; description?: string; image_url?: string };
-    };
+  // LinkedIn Platform
+  linkedin_title?: string;
+  linkedin_description?: string;
+  linkedin_image_url?: string;
+  // Facebook Platform
+  facebook_title?: string;
+  facebook_description?: string;
+  facebook_image_url?: string;
+  // Instagram Platform
+  instagram_title?: string;
+  instagram_description?: string;
+  instagram_image_url?: string;
+  // Per-channel social meta (read-only suggestions / defaults)
+  social_meta?: {
+      linkedin?: { title?: string; description?: string; image_url?: string };
+      facebook?: { title?: string; description?: string; image_url?: string };
+      instagram?: { title?: string; description?: string; image_url?: string };
+  };
 
   // K. Linking
   has_subservices?: boolean;
@@ -251,15 +263,28 @@ export interface SubServiceItem {
     og_title?: string;
     og_description?: string;
     og_image_url?: string;
+    og_type?: 'article' | 'website' | 'product';
     twitter_title?: string;
     twitter_description?: string;
     twitter_image_url?: string;
-        // Per-channel social meta
-        social_meta?: {
-            linkedin?: { title?: string; description?: string; image_url?: string };
-            facebook?: { title?: string; description?: string; image_url?: string };
-            instagram?: { title?: string; description?: string; image_url?: string };
-        };
+    // LinkedIn Platform
+    linkedin_title?: string;
+    linkedin_description?: string;
+    linkedin_image_url?: string;
+    // Facebook Platform
+    facebook_title?: string;
+    facebook_description?: string;
+    facebook_image_url?: string;
+    // Instagram Platform
+    instagram_title?: string;
+    instagram_description?: string;
+    instagram_image_url?: string;
+    // Per-channel social meta
+    social_meta?: {
+        linkedin?: { title?: string; description?: string; image_url?: string };
+        facebook?: { title?: string; description?: string; image_url?: string };
+        instagram?: { title?: string; description?: string; image_url?: string };
+    };
     
     // Governance
     brand_id?: number;

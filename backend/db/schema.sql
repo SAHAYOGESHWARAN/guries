@@ -161,6 +161,23 @@ CREATE TABLE IF NOT EXISTS services (
     og_title VARCHAR(500),
     og_description TEXT,
     og_image_url VARCHAR(1000),
+    og_type VARCHAR(50),
+    twitter_title VARCHAR(500),
+    twitter_description TEXT,
+    twitter_image_url VARCHAR(1000),
+    -- LinkedIn
+    linkedin_title VARCHAR(500),
+    linkedin_description TEXT,
+    linkedin_image_url VARCHAR(1000),
+    -- Facebook
+    facebook_title VARCHAR(500),
+    facebook_description TEXT,
+    facebook_image_url VARCHAR(1000),
+    -- Instagram
+    instagram_title VARCHAR(500),
+    instagram_description TEXT,
+    instagram_image_url VARCHAR(1000),
+    -- Flexible social meta storage (JSONB for future platforms)
     social_meta JSONB,
     -- Navigation
     show_in_main_menu BOOLEAN DEFAULT false,
@@ -202,6 +219,23 @@ CREATE TABLE IF NOT EXISTS sub_services (
     og_title VARCHAR(500),
     og_description TEXT,
     og_image_url VARCHAR(1000),
+    og_type VARCHAR(50),
+    twitter_title VARCHAR(500),
+    twitter_description TEXT,
+    twitter_image_url VARCHAR(1000),
+    -- LinkedIn
+    linkedin_title VARCHAR(500),
+    linkedin_description TEXT,
+    linkedin_image_url VARCHAR(1000),
+    -- Facebook
+    facebook_title VARCHAR(500),
+    facebook_description TEXT,
+    facebook_image_url VARCHAR(1000),
+    -- Instagram
+    instagram_title VARCHAR(500),
+    instagram_description TEXT,
+    instagram_image_url VARCHAR(1000),
+    -- Flexible social meta storage (JSONB for future platforms)
     social_meta JSONB,
     -- Navigation
     menu_position INTEGER DEFAULT 0,
