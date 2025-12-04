@@ -333,6 +333,27 @@ const SubServiceMasterView: React.FC = () => {
                                                 </div>
                                             </Tooltip>
 
+                                                    <Tooltip content="Name of the sub-service (visible in lists and URLs).">
+                                                        <div className="bg-white border-2 border-indigo-100 rounded-2xl p-5 shadow-sm hover:border-indigo-200 transition-colors space-y-3">
+                                                            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px]">2</span>
+                                                                Sub-Service Name
+                                                                <span className="text-red-500 text-base leading-none">*</span>
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.sub_service_name}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setFormData({ ...formData, sub_service_name: val });
+                                                                    handleSlugChange(val);
+                                                                }}
+                                                                placeholder="Enter sub-service name..."
+                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                            />
+                                                        </div>
+                                                    </Tooltip>
+
                                             
                                         </div>
 
