@@ -522,6 +522,10 @@ export interface AssetLibraryItem {
     date: string;
     linked_task?: number;
     owner_id?: number;
+    file_url?: string;
+    thumbnail_url?: string;
+    file_size?: number;
+    file_type?: string;
 }
 
 export interface Integration {

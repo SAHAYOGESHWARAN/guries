@@ -5,122 +5,66 @@ import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem } from '../types';
 
 const AssetsView: React.FC = () => {
-    const { data: assets, create: createAsset } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assets = [], create: createAsset, remove: deleteAsset } = useData<AssetLibraryItem>('assetLibrary');
+
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'upload'>('list');
-    const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
-        name: '', type: 'Image', repository: 'Content Repository', usage_status: 'Available'
-    });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [isUploading, setIsUploading] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [dragActive, setDragActive] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const filteredAssets = assets.filter(a => (a.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()));
+    const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
+        name: '',
+        type: 'Image',
+        repository: 'Content Repository',
+        usage_status: 'Available'
+    });
+
+    const filteredAssets = assets.filter(a =>
+        (a.name || '').toLowerCase().includes((searchQuery || '').toLowerCase())
+    );
 
     const handleFileSelect = (file: File) => {
         setSelectedFile(file);
-        // Auto-fill name from filename if empty
-        if (!newAsset.name) {
-            const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-            setNewAsset({ ...newAsset, name: nameWithoutExt });
-        }
-        // Auto-detect type from file
-        const fileType = file.type;
-        if (fileType.startsWith('image/')) {
-            setNewAsset({ ...newAsset, type: 'Image' });
-        } else if (fileType.startsWith('video/')) {
-            setNewAsset({ ...newAsset, type: 'Video' });
-        } else if (fileType.includes('pdf') || fileType.includes('document')) {
-            setNewAsset({ ...newAsset, type: 'Document' });
-        }
-    };
+        setNewAsset(prev => ({
+            ...prev,
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            file_size: file.size,
+            file_type: file.type
+        }));
 
-    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // Check file size (50MB limit)
-            if (file.size > 50 * 1024 * 1024) {
-                alert('File size exceeds 50MB limit');
-                return;
-            }
-            handleFileSelect(file);
+        // Create preview for images
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                setPreviewUrl(result);
+                setNewAsset(prev => ({
+                    ...prev,
+                    file_url: result,
+                    thumbnail_url: result
+                }));
+            };
+            reader.readAsDataURL(file);
         }
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
     };
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
-        setIsDragging(false);
-        const file = e.dataTransfer.files?.[0];
-        if (file) {
-            // Check file size (50MB limit)
-            if (file.size > 50 * 1024 * 1024) {
-                alert('File size exceeds 50MB limit');
-                return;
-            }
-            handleFileSelect(file);
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0]);
         }
     };
 
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const uploadFileToServer = async (file: File): Promise<string> => {
-        // Convert file to base64
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = async () => {
-                try {
-                    const base64String = reader.result as string;
-                    // Remove data URL prefix (e.g., "data:image/png;base64,")
-                    const base64Content = base64String.split(',')[1];
-
-                    console.log('Uploading file:', file.name, 'Size:', file.size);
-
-                    // Upload to server
-                    const response = await fetch('/api/v1/uploads', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            filename: file.name,
-                            content_base64: base64Content
-                        })
-                    });
-
-                    console.log('Upload response status:', response.status);
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-                        console.error('Upload failed:', errorData);
-                        throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
-                    }
-
-                    const result = await response.json();
-                    console.log('Upload successful:', result);
-                    resolve(result.url || `/uploads/${result.filename}`);
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    reject(error);
-                }
-            };
-            reader.onerror = (error) => {
-                console.error('FileReader error:', error);
-                reject(error);
-            };
-            reader.readAsDataURL(file);
-        });
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
     };
 
     const handleUpload = async () => {
@@ -129,209 +73,267 @@ const AssetsView: React.FC = () => {
             return;
         }
 
-        setIsUploading(true);
-        setUploadProgress(0);
+        await createAsset({
+            ...newAsset,
+            date: new Date().toISOString()
+        } as any);
 
-        try {
-            let fileUrl = '';
+        // Reset form
+        setViewMode('list');
+        setSelectedFile(null);
+        setPreviewUrl('');
+        setNewAsset({
+            name: '',
+            type: 'Image',
+            repository: 'Content Repository',
+            usage_status: 'Available'
+        });
+    };
 
-            if (selectedFile) {
-                console.log('Starting file upload...');
-                // Simulate upload progress
-                const progressInterval = setInterval(() => {
-                    setUploadProgress(prev => Math.min(prev + 10, 90));
-                }, 200);
-
-                try {
-                    // Upload file to server
-                    fileUrl = await uploadFileToServer(selectedFile);
-                    console.log('File uploaded successfully:', fileUrl);
-                } catch (uploadError: any) {
-                    console.warn('File upload to server failed, storing reference only:', uploadError);
-                    // If upload fails, store the filename as reference
-                    fileUrl = `local://${selectedFile.name}`;
-                }
-
-                clearInterval(progressInterval);
-                setUploadProgress(100);
-            }
-
-            console.log('Creating asset record...');
-            // Create asset record
-            const assetData = {
-                ...newAsset,
-                date: new Date().toISOString(),
-                linked_task: selectedFile ? fileUrl : undefined,
-                file_size: selectedFile ? selectedFile.size : undefined,
-                file_type: selectedFile ? selectedFile.type : undefined
-            };
-
-            await createAsset(assetData as any);
-
-            console.log('Asset created successfully');
-
-            // Reset and return to list
-            setTimeout(() => {
-                setViewMode('list');
-                setNewAsset({ name: '', type: 'Image', repository: 'Content Repository', usage_status: 'Available' });
-                setSelectedFile(null);
-                setUploadProgress(0);
-                setIsUploading(false);
-            }, 500);
-        } catch (error: any) {
-            console.error('Upload failed:', error);
-            const errorMessage = error?.message || 'Upload failed. Please try again.';
-            alert(`Upload Error: ${errorMessage}\n\nPlease check:\n1. Backend server is running\n2. Network connection is stable\n3. File size is under 50MB\n\nError details: ${errorMessage}`);
-            setIsUploading(false);
-            setUploadProgress(0);
+    const handleDelete = async (id: number) => {
+        if (confirm('Delete this asset?')) {
+            await deleteAsset(id);
         }
     };
 
+    const getAssetIcon = (type: string) => {
+        const icons: Record<string, string> = {
+            'Image': '🖼️',
+            'Video': '🎥',
+            'Document': '📄',
+            'Archive': '📦'
+        };
+        return icons[type] || '📁';
+    };
+
     const columns = [
-        { header: 'Name', accessor: 'name' as keyof AssetLibraryItem, className: 'font-medium text-sm text-slate-700' },
-        { header: 'Type', accessor: 'type' as keyof AssetLibraryItem, className: 'text-xs text-slate-500' },
-        { header: 'Repository', accessor: 'repository' as keyof AssetLibraryItem, className: 'text-xs text-slate-500' },
-        { header: 'Status', accessor: (item: AssetLibraryItem) => getStatusBadge(item.usage_status) },
-        { header: 'Date', accessor: (item: AssetLibraryItem) => item.date ? new Date(item.date).toLocaleDateString() : '-', className: 'text-xs text-slate-400' }
+        {
+            header: 'Preview',
+            accessor: (item: AssetLibraryItem) => (
+                <div className="flex items-center justify-center">
+                    {item.thumbnail_url ? (
+                        <img
+                            src={item.thumbnail_url}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 shadow-sm"
+                        />
+                    ) : (
+                        <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-2xl shadow-sm">
+                            {getAssetIcon(item.type)}
+                        </div>
+                    )}
+                </div>
+            ),
+            className: 'w-24'
+        },
+        {
+            header: 'Name',
+            accessor: (item: AssetLibraryItem) => (
+                <div>
+                    <div className="font-bold text-slate-900 text-sm">{item.name}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">ID: {item.id}</div>
+                </div>
+            )
+        },
+        {
+            header: 'Type',
+            accessor: (item: AssetLibraryItem) => (
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-600">
+                    <span>{getAssetIcon(item.type)}</span>
+                    {item.type}
+                </span>
+            )
+        },
+        {
+            header: 'Repository',
+            accessor: (item: AssetLibraryItem) => (
+                <span className="text-xs text-slate-600 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+                    {item.repository}
+                </span>
+            )
+        },
+        {
+            header: 'Status',
+            accessor: (item: AssetLibraryItem) => getStatusBadge(item.usage_status)
+        },
+        {
+            header: 'Date',
+            accessor: (item: AssetLibraryItem) => (
+                <span className="text-xs text-slate-600">
+                    {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                </span>
+            )
+        },
+        {
+            header: 'Actions',
+            accessor: (item: AssetLibraryItem) => (
+                <div className="flex gap-2">
+                    {item.file_url && (
+                        <a
+                            href={item.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="View"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </a>
+                    )}
+                    <button
+                        onClick={() => handleDelete(item.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+            )
+        }
     ];
 
     if (viewMode === 'upload') {
         return (
             <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
                 <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                    <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-slate-50/50 w-full flex-shrink-0">
+                    {/* Header */}
+                    <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50 w-full flex-shrink-0">
                         <div>
-                            <h2 className="text-lg font-bold text-slate-800">Upload New Asset</h2>
-                            <p className="text-slate-500 text-xs mt-0.5">Add media to the central library</p>
+                            <h2 className="text-lg font-bold text-slate-900">Upload New Asset</h2>
+                            <p className="text-slate-600 text-xs mt-0.5">Add media to the central library</p>
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => {
-                                    setViewMode('list');
-                                    setSelectedFile(null);
-                                    setUploadProgress(0);
-                                }}
-                                disabled={isUploading}
-                                className="px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => setViewMode('list')}
+                                className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleUpload}
-                                disabled={isUploading || !newAsset.name}
-                                className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold shadow-sm hover:bg-blue-700 transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-colors text-sm"
                             >
-                                {isUploading ? (
-                                    <>
-                                        <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    'Confirm Upload'
-                                )}
+                                Confirm Upload
                             </button>
                         </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-6 bg-slate-50 w-full">
-                        <div className="w-full space-y-4">
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 w-full">
-                                {/* Hidden file input */}
+
+                    {/* Form Content */}
+                    <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
+                        <div className="max-w-3xl mx-auto space-y-6">
+                            {/* File Upload Zone */}
+                            <div
+                                className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${dragActive
+                                        ? 'border-indigo-500 bg-indigo-50'
+                                        : 'border-slate-300 bg-white hover:border-indigo-400 hover:bg-indigo-50/50'
+                                    }`}
+                                onDrop={handleDrop}
+                                onDragOver={handleDrag}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept="image/*,video/*,.pdf,.doc,.docx"
-                                    onChange={handleFileInputChange}
+                                    onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
                                     className="hidden"
+                                    accept="image/*,video/*,.pdf,.doc,.docx,.zip"
                                 />
 
-                                {/* Drag and drop zone */}
-                                <div
-                                    className={`border-2 border-dashed rounded-lg p-10 text-center transition-all cursor-pointer group w-full ${isDragging
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : selectedFile
-                                            ? 'border-green-500 bg-green-50'
-                                            : 'border-slate-300 hover:bg-slate-50'
-                                        }`}
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
-                                    onClick={handleUploadClick}
-                                >
-                                    <div className="group-hover:scale-105 transition-transform">
-                                        {selectedFile ? (
-                                            <>
-                                                <svg className="mx-auto h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <p className="mt-3 text-sm font-medium text-green-700">{selectedFile.name}</p>
-                                                <p className="text-xs text-green-600 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                                                <p className="text-xs text-slate-500 mt-2">Click to change file</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg className="mx-auto h-10 w-10 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                <p className="mt-3 text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
-                                                <p className="text-xs text-gray-500 mt-1">PNG, JPG, PDF, MP4 up to 50MB</p>
-                                            </>
-                                        )}
+                                {previewUrl ? (
+                                    <div className="space-y-4">
+                                        <img src={previewUrl} alt="Preview" className="max-h-64 mx-auto rounded-lg shadow-lg" />
+                                        <p className="text-sm font-medium text-slate-700">{selectedFile?.name}</p>
+                                        <p className="text-xs text-slate-500">
+                                            {selectedFile && `${(selectedFile.size / 1024).toFixed(2)} KB`}
+                                        </p>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedFile(null);
+                                                setPreviewUrl('');
+                                            }}
+                                            className="text-sm text-red-600 hover:text-red-700 font-medium"
+                                        >
+                                            Remove File
+                                        </button>
                                     </div>
-                                </div>
-
-                                {/* Upload progress bar */}
-                                {isUploading && uploadProgress > 0 && (
-                                    <div className="w-full">
-                                        <div className="flex justify-between text-xs text-slate-600 mb-1">
-                                            <span>Uploading...</span>
-                                            <span>{uploadProgress}%</span>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="bg-indigo-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
+                                            <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
                                         </div>
-                                        <div className="w-full bg-slate-200 rounded-full h-2">
-                                            <div
-                                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                                style={{ width: `${uploadProgress}%` }}
-                                            />
+                                        <div>
+                                            <p className="text-base font-semibold text-slate-700 mb-1">Click to upload or drag and drop</p>
+                                            <p className="text-sm text-slate-500">PNG, JPG, PDF, MP4 up to 50MB</p>
                                         </div>
                                     </div>
                                 )}
+                            </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 mb-1">Asset Name</label>
-                                        <input type="text" value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })} className="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Q1 Marketing Flyer" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 mb-1">Type</label>
-                                        <select value={newAsset.type} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="block w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
-                                            <option>Image</option>
-                                            <option>Video</option>
-                                            <option>Document</option>
-                                            <option>Archive</option>
-                                        </select>
-                                    </div>
+                            {/* Form Fields */}
+                            <div className="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-6 shadow-sm">
+                                {/* Asset Name */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.name}
+                                        onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                        placeholder="Enter asset name..."
+                                    />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 mb-1">Repository</label>
-                                        <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="block w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
-                                            <option>Content Repository</option>
-                                            <option>SMM Repository</option>
-                                            <option>SEO Repository</option>
-                                            <option>Design Repository</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                                        <select value={newAsset.usage_status} onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })} className="block w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
-                                            <option>Available</option>
-                                            <option>In Use</option>
-                                            <option>Archived</option>
-                                        </select>
-                                    </div>
+                                {/* Type */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Type</label>
+                                    <select
+                                        value={newAsset.type}
+                                        onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                    >
+                                        <option value="Image">Image</option>
+                                        <option value="Video">Video</option>
+                                        <option value="Document">Document</option>
+                                        <option value="Archive">Archive</option>
+                                    </select>
+                                </div>
+
+                                {/* Repository */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
+                                    <select
+                                        value={newAsset.repository}
+                                        onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                    >
+                                        <option value="Content Repository">Content Repository</option>
+                                        <option value="SMM Repository">SMM Repository</option>
+                                        <option value="SEO Repository">SEO Repository</option>
+                                        <option value="Design Repository">Design Repository</option>
+                                    </select>
+                                </div>
+
+                                {/* Status */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
+                                    <select
+                                        value={newAsset.usage_status}
+                                        onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                    >
+                                        <option value="Available">Available</option>
+                                        <option value="In Use">In Use</option>
+                                        <option value="Archived">Archived</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -341,40 +343,56 @@ const AssetsView: React.FC = () => {
         );
     }
 
+    // List View
     return (
         <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
-            <div className="flex justify-between items-start flex-shrink-0 w-full mb-4">
+            {/* Header */}
+            <div className="flex justify-between items-start flex-shrink-0 w-full mb-6">
                 <div>
-                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">Assets</h1>
-                    <p className="text-slate-500 text-xs mt-0.5">Manage and organize all your marketing assets</p>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
+                    <p className="text-slate-600 text-sm mt-1">Manage and organize all your marketing assets</p>
                 </div>
                 <button
                     onClick={() => setViewMode('upload')}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition-colors flex items-center"
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
                 >
-                    <svg className="w-3 h-3 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
                     Upload Asset
                 </button>
             </div>
 
-            <div className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 w-full mb-4 flex-shrink-0">
-                <div className="relative w-full">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
+            {/* Search */}
+            <div className="mb-6">
+                <div className="relative">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                     <input
-                        type="search"
-                        className="block w-full p-2 pl-9 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Search by title, file name, or tag..."
+                        type="text"
+                        placeholder="Search assets..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                     />
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-xl border border-slate-200 shadow-sm w-full min-h-0">
-                <div className="flex-1 overflow-hidden w-full h-full">
-                    <Table columns={columns} data={filteredAssets} title={`Showing ${filteredAssets.length} assets`} />
+            {/* Table */}
+            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden w-full">
+                <div className="px-6 py-3 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+                    <p className="text-sm text-slate-700 font-medium">
+                        Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                    </p>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                    <Table
+                        columns={columns}
+                        data={filteredAssets}
+                        title=""
+                        emptyMessage="No assets yet. Click 'Upload Asset' to add your first file!"
+                    />
                 </div>
             </div>
         </div>
