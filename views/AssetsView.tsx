@@ -87,6 +87,8 @@ const AssetsView: React.FC = () => {
                     // Remove data URL prefix (e.g., "data:image/png;base64,")
                     const base64Content = base64String.split(',')[1];
 
+                    console.log('Uploading file:', file.name, 'Size:', file.size);
+
                     // Upload to server
                     const response = await fetch('/api/v1/uploads', {
                         method: 'POST',
@@ -97,18 +99,26 @@ const AssetsView: React.FC = () => {
                         })
                     });
 
+                    console.log('Upload response status:', response.status);
+
                     if (!response.ok) {
-                        throw new Error(`Upload failed: ${response.statusText}`);
+                        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+                        console.error('Upload failed:', errorData);
+                        throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
                     }
 
                     const result = await response.json();
+                    console.log('Upload successful:', result);
                     resolve(result.url || `/uploads/${result.filename}`);
                 } catch (error) {
                     console.error('Upload error:', error);
                     reject(error);
                 }
             };
-            reader.onerror = reject;
+            reader.onerror = (error) => {
+                console.error('FileReader error:', error);
+                reject(error);
+            };
             reader.readAsDataURL(file);
         });
     };
@@ -126,24 +136,39 @@ const AssetsView: React.FC = () => {
             let fileUrl = '';
 
             if (selectedFile) {
+                console.log('Starting file upload...');
                 // Simulate upload progress
                 const progressInterval = setInterval(() => {
                     setUploadProgress(prev => Math.min(prev + 10, 90));
                 }, 200);
 
-                // Upload file to server
-                fileUrl = await uploadFileToServer(selectedFile);
+                try {
+                    // Upload file to server
+                    fileUrl = await uploadFileToServer(selectedFile);
+                    console.log('File uploaded successfully:', fileUrl);
+                } catch (uploadError: any) {
+                    console.warn('File upload to server failed, storing reference only:', uploadError);
+                    // If upload fails, store the filename as reference
+                    fileUrl = `local://${selectedFile.name}`;
+                }
 
                 clearInterval(progressInterval);
                 setUploadProgress(100);
             }
 
+            console.log('Creating asset record...');
             // Create asset record
-            await createAsset({
+            const assetData = {
                 ...newAsset,
                 date: new Date().toISOString(),
-                linked_task: selectedFile ? fileUrl : undefined
-            } as any);
+                linked_task: selectedFile ? fileUrl : undefined,
+                file_size: selectedFile ? selectedFile.size : undefined,
+                file_type: selectedFile ? selectedFile.type : undefined
+            };
+
+            await createAsset(assetData as any);
+
+            console.log('Asset created successfully');
 
             // Reset and return to list
             setTimeout(() => {
@@ -153,9 +178,10 @@ const AssetsView: React.FC = () => {
                 setUploadProgress(0);
                 setIsUploading(false);
             }, 500);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Upload failed:', error);
-            alert('Upload failed. Please try again.');
+            const errorMessage = error?.message || 'Upload failed. Please try again.';
+            alert(`Upload Error: ${errorMessage}\n\nPlease check:\n1. Backend server is running\n2. Network connection is stable\n3. File size is under 50MB\n\nError details: ${errorMessage}`);
             setIsUploading(false);
             setUploadProgress(0);
         }

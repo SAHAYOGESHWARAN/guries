@@ -33,7 +33,8 @@ app.use(cors({
     credentials: true
 }));
 app.use(morgan('dev') as any);
-app.use(express.json() as any);
+app.use(express.json({ limit: '100mb' }) as any); // Increased limit for file uploads
+app.use(express.urlencoded({ limit: '100mb', extended: true }) as any);
 
 // Robust Database Connection Check
 const connectDB = async (retries = 5) => {
@@ -58,7 +59,7 @@ const connectDB = async (retries = 5) => {
 // Real-time Connection Handler
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
-    
+
     socket.on('join_room', (room) => {
         socket.join(room);
         console.log(`User ${socket.id} joined room: ${room}`);

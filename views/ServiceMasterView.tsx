@@ -37,34 +37,59 @@ const ServiceMasterView: React.FC = () => {
     // Asset Search
     const [assetSearch, setAssetSearch] = useState('');
 
-    // Form State
+    // Form State - Complete with ALL fields
     const [formData, setFormData] = useState<Partial<Service>>({
         service_name: '', service_code: '', slug: '', full_url: '', menu_heading: '', short_tagline: '',
         service_description: '', status: 'Draft', language: 'en',
         industry_ids: [], country_ids: [],
+        // Content - ALL fields
         h1: '', h2_list: [], h3_list: [], h4_list: [], h5_list: [], body_content: '',
+        internal_links: [], external_links: [], image_alt_texts: [],
+        word_count: 0, reading_time_minutes: 0,
+        // SEO - ALL fields
         meta_title: '', meta_description: '', focus_keywords: [], secondary_keywords: [],
+        seo_score: 0, ranking_summary: '',
+        // SMM
         og_title: '', og_description: '', og_image_url: '', og_type: 'website',
         twitter_title: '', twitter_description: '', twitter_image_url: '',
         linkedin_title: '', linkedin_description: '', linkedin_image_url: '',
         facebook_title: '', facebook_description: '', facebook_image_url: '',
         instagram_title: '', instagram_description: '', instagram_image_url: '',
-        show_in_main_menu: false, show_in_footer_menu: false, menu_position: 0,
+        // Navigation - ALL fields
+        show_in_main_menu: false, show_in_footer_menu: false,
+        menu_group: '', menu_position: 0, breadcrumb_label: '', parent_menu_section: '',
         include_in_xml_sitemap: true, sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
+        // Strategic - ALL fields
         content_type: 'Pillar', buyer_journey_stage: 'Awareness',
+        primary_persona_id: 0, secondary_persona_ids: [],
+        target_segment_notes: '', primary_cta_label: '', primary_cta_url: '',
+        form_id: 0, linked_campaign_ids: [],
+        // Technical - ALL fields
         robots_index: 'index', robots_follow: 'follow', schema_type_id: 'Service',
-        brand_id: 0, content_owner_id: 0, has_subservices: false,
-        faq_section_enabled: false, faq_content: []
+        canonical_url: '', redirect_from_urls: [], hreflang_group_id: 0,
+        core_web_vitals_status: undefined, tech_seo_status: undefined,
+        faq_section_enabled: false, faq_content: [],
+        // Governance - ALL fields
+        brand_id: 0, business_unit: '', content_owner_id: 0,
+        created_by: 0, created_at: '', updated_by: 0, updated_at: '',
+        version_number: 1, change_log_link: '',
+        // Linking
+        has_subservices: false, subservice_count: 0, asset_count: 0
     });
 
-    // Helpers
+    // Helpers for list management
     const [tempH2, setTempH2] = useState('');
     const [tempH3, setTempH3] = useState('');
     const [tempH4, setTempH4] = useState('');
+    const [tempH5, setTempH5] = useState('');
     const [tempKeyword, setTempKeyword] = useState('');
     const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
     const [tempFaqQuestion, setTempFaqQuestion] = useState('');
     const [tempFaqAnswer, setTempFaqAnswer] = useState('');
+    const [tempInternalLink, setTempInternalLink] = useState({ url: '', anchor_text: '' });
+    const [tempExternalLink, setTempExternalLink] = useState({ url: '', anchor_text: '' });
+    const [tempImageAlt, setTempImageAlt] = useState({ url: '', alt_text: '' });
+    const [tempRedirectUrl, setTempRedirectUrl] = useState('');
 
     const filteredData = services.filter(item => {
         const matchesSearch = item.service_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -101,6 +126,7 @@ const ServiceMasterView: React.FC = () => {
         setEditingItem(item);
         setFormData({
             ...item,
+            // Ensure arrays are initialized
             h2_list: item.h2_list || [],
             h3_list: item.h3_list || [],
             h4_list: item.h4_list || [],
@@ -109,7 +135,28 @@ const ServiceMasterView: React.FC = () => {
             secondary_keywords: item.secondary_keywords || [],
             industry_ids: item.industry_ids || [],
             country_ids: item.country_ids || [],
-            faq_content: item.faq_content || []
+            secondary_persona_ids: item.secondary_persona_ids || [],
+            linked_campaign_ids: item.linked_campaign_ids || [],
+            internal_links: item.internal_links || [],
+            external_links: item.external_links || [],
+            image_alt_texts: item.image_alt_texts || [],
+            redirect_from_urls: item.redirect_from_urls || [],
+            faq_content: item.faq_content || [],
+            // Ensure numbers have defaults
+            word_count: item.word_count || 0,
+            reading_time_minutes: item.reading_time_minutes || 0,
+            seo_score: item.seo_score || 0,
+            menu_position: item.menu_position || 0,
+            sitemap_priority: item.sitemap_priority || 0.8,
+            hreflang_group_id: item.hreflang_group_id || 0,
+            version_number: item.version_number || 1,
+            // Ensure strings have defaults
+            parent_menu_section: item.parent_menu_section || '',
+            ranking_summary: item.ranking_summary || '',
+            core_web_vitals_status: item.core_web_vitals_status || undefined,
+            tech_seo_status: item.tech_seo_status || undefined,
+            business_unit: item.business_unit || '',
+            change_log_link: item.change_log_link || ''
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -146,18 +193,30 @@ const ServiceMasterView: React.FC = () => {
             service_description: '', status: 'Draft', language: 'en',
             industry_ids: [], country_ids: [],
             h1: '', h2_list: [], h3_list: [], h4_list: [], h5_list: [], body_content: '',
+            internal_links: [], external_links: [], image_alt_texts: [],
+            word_count: 0, reading_time_minutes: 0,
             meta_title: '', meta_description: '', focus_keywords: [], secondary_keywords: [],
+            seo_score: 0, ranking_summary: '',
             og_title: '', og_description: '', og_image_url: '', og_type: 'website',
             twitter_title: '', twitter_description: '', twitter_image_url: '',
             linkedin_title: '', linkedin_description: '', linkedin_image_url: '',
             facebook_title: '', facebook_description: '', facebook_image_url: '',
             instagram_title: '', instagram_description: '', instagram_image_url: '',
-            show_in_main_menu: false, show_in_footer_menu: false, menu_position: 0,
+            show_in_main_menu: false, show_in_footer_menu: false,
+            menu_group: '', menu_position: 0, breadcrumb_label: '', parent_menu_section: '',
             include_in_xml_sitemap: true, sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
             content_type: 'Pillar', buyer_journey_stage: 'Awareness',
+            primary_persona_id: 0, secondary_persona_ids: [],
+            target_segment_notes: '', primary_cta_label: '', primary_cta_url: '',
+            form_id: 0, linked_campaign_ids: [],
             robots_index: 'index', robots_follow: 'follow', schema_type_id: 'Service',
-            brand_id: 0, content_owner_id: 0, has_subservices: false,
-            faq_section_enabled: false, faq_content: []
+            canonical_url: '', redirect_from_urls: [], hreflang_group_id: 0,
+            core_web_vitals_status: undefined, tech_seo_status: undefined,
+            faq_section_enabled: false, faq_content: [],
+            brand_id: 0, business_unit: '', content_owner_id: 0,
+            created_by: 0, created_at: '', updated_by: 0, updated_at: '',
+            version_number: 1, change_log_link: '',
+            has_subservices: false, subservice_count: 0, asset_count: 0
         });
         setActiveTab('Core');
     };
@@ -428,17 +487,18 @@ const ServiceMasterView: React.FC = () => {
                                             </Tooltip>
                                         </div>
 
-                                        {/* Service Description */}
-                                        <Tooltip content="Core description of the service (what & why)">
-                                            <div>
+                                        {/* Service Description - LARGER & HORIZONTAL */}
+                                        <Tooltip content="Core description of the service (what & why). Provide comprehensive details about the service offering.">
+                                            <div className="col-span-full">
                                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-2.5 tracking-wide">Service Description</label>
                                                 <textarea
                                                     value={formData.service_description}
                                                     onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-                                                    rows={5}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                                    placeholder="Detailed description of what this service offers and why it matters..."
+                                                    rows={8}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-[13px] leading-relaxed transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y"
+                                                    placeholder="Detailed description of what this service offers and why it matters. Include key benefits, target audience, and unique value proposition..."
                                                 />
+                                                <p className="text-xs text-slate-500 mt-1">{(formData.service_description || '').length} characters</p>
                                             </div>
                                         </Tooltip>
 
@@ -491,7 +551,7 @@ const ServiceMasterView: React.FC = () => {
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <SparkIcon className="w-4 h-4" />
+                                                                <span className="w-4 h-4">✨</span>
                                                                 AI Suggest
                                                             </>
                                                         )}
@@ -592,35 +652,56 @@ const ServiceMasterView: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Menu Group</label>
-                                        <input
-                                            type="text"
-                                            value={formData.menu_group}
-                                            onChange={(e) => setFormData({ ...formData, menu_group: e.target.value })}
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm"
-                                            placeholder="Services"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Menu Position</label>
-                                        <input
-                                            type="number"
-                                            value={formData.menu_position}
-                                            onChange={(e) => setFormData({ ...formData, menu_position: parseInt(e.target.value) || 0 })}
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Breadcrumb Label</label>
-                                        <input
-                                            type="text"
-                                            value={formData.breadcrumb_label}
-                                            onChange={(e) => setFormData({ ...formData, breadcrumb_label: e.target.value })}
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm"
-                                        />
-                                    </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Tooltip content="Group this service belongs to in the menu (e.g., Services, Solutions)">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Menu Group</label>
+                                            <input
+                                                type="text"
+                                                value={formData.menu_group}
+                                                onChange={(e) => setFormData({ ...formData, menu_group: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-[13px]"
+                                                placeholder="Services"
+                                            />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Order in menu list. Lower numbers appear first.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Menu Position</label>
+                                            <input
+                                                type="number"
+                                                value={formData.menu_position}
+                                                onChange={(e) => setFormData({ ...formData, menu_position: parseInt(e.target.value) || 0 })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-[13px]"
+                                            />
+                                        </div>
+                                    </Tooltip>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Tooltip content="Custom label for breadcrumb navigation">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Breadcrumb Label</label>
+                                            <input
+                                                type="text"
+                                                value={formData.breadcrumb_label}
+                                                onChange={(e) => setFormData({ ...formData, breadcrumb_label: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-[13px]"
+                                            />
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip content="Parent section if nested under a mega-menu heading">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Parent Menu Section</label>
+                                            <input
+                                                type="text"
+                                                value={formData.parent_menu_section}
+                                                onChange={(e) => setFormData({ ...formData, parent_menu_section: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-[13px]"
+                                                placeholder="e.g., Digital Marketing"
+                                            />
+                                        </div>
+                                    </Tooltip>
                                 </div>
 
                                 <div className="border-t pt-6">
@@ -690,7 +771,7 @@ const ServiceMasterView: React.FC = () => {
                                         <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Buyer Journey Stage</label>
                                         <select
                                             value={formData.buyer_journey_stage}
-                                            onChange={(e) => setFormData({ ...formData, buyer_journey_stage: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, buyer_journey_stage: e.target.value as any })}
                                             className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm"
                                         >
                                             <option value="Awareness">Awareness</option>
@@ -1463,29 +1544,54 @@ const ServiceMasterView: React.FC = () => {
             {/* Table */}
             <Table
                 columns={[
-                    { key: 'service_name', label: 'Service Name', sortable: true },
-                    { key: 'service_code', label: 'Code', sortable: true },
-                    { key: 'slug', label: 'Slug', sortable: false },
-                    { key: 'status', label: 'Status', sortable: true },
-                    { key: 'subservice_count', label: 'Sub-Services', sortable: true },
-                    { key: 'asset_count', label: 'Assets', sortable: true },
-                    { key: 'updated_at', label: 'Updated', sortable: true }
+                    {
+                        header: 'Service Name',
+                        accessor: (item: Service) => (
+                            <div>
+                                <p className="font-medium text-slate-900">{item.service_name}</p>
+                                <p className="text-xs text-slate-500">{item.short_tagline || item.menu_heading}</p>
+                            </div>
+                        )
+                    },
+                    { header: 'Code', accessor: 'service_code' as keyof Service },
+                    { header: 'Slug', accessor: 'slug' as keyof Service },
+                    {
+                        header: 'Status',
+                        accessor: (item: Service) => <span className={`text-xs px-2 py-1 rounded ${getStatusBadge(item.status)}`}>{item.status}</span>
+                    },
+                    {
+                        header: 'Sub-Services',
+                        accessor: (item: Service) => <span className="text-sm font-medium">{item.subservice_count || 0}</span>
+                    },
+                    {
+                        header: 'Assets',
+                        accessor: (item: Service) => <span className="text-sm font-medium">{item.asset_count || 0}</span>
+                    },
+                    {
+                        header: 'Updated',
+                        accessor: (item: Service) => <span className="text-xs text-slate-600">{new Date(item.updated_at || '').toLocaleDateString()}</span>
+                    },
+                    {
+                        header: 'Actions',
+                        accessor: (item: Service) => (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleEdit(item)}
+                                    className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(item.id)}
+                                    className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )
+                    }
                 ]}
-                data={filteredData.map(item => ({
-                    ...item,
-                    service_name: (
-                        <div>
-                            <p className="font-medium text-slate-900">{item.service_name}</p>
-                            <p className="text-xs text-slate-500">{item.short_tagline || item.menu_heading}</p>
-                        </div>
-                    ),
-                    status: <span className={`text-xs px-2 py-1 rounded ${getStatusBadge(item.status)}`}>{item.status}</span>,
-                    subservice_count: <span className="text-sm font-medium">{item.subservice_count || 0}</span>,
-                    asset_count: <span className="text-sm font-medium">{item.asset_count || 0}</span>,
-                    updated_at: <span className="text-xs text-slate-600">{new Date(item.updated_at || '').toLocaleDateString()}</span>
-                }))}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                data={filteredData}
             />
         </div>
     );
