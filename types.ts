@@ -1,18 +1,18 @@
 
 // --- Identity & Organization ---
 export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: 'active' | 'inactive';
-  created_at: string;
-  avatar_url?: string;
-  department?: string;
-  country?: string;
-  target?: string;
-  projects_count?: number;
-  last_login?: string;
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    status: 'active' | 'inactive';
+    created_at: string;
+    avatar_url?: string;
+    department?: string;
+    country?: string;
+    target?: string;
+    projects_count?: number;
+    last_login?: string;
 }
 
 export interface Team {
@@ -41,28 +41,28 @@ export interface Brand {
 
 // --- Core Masters ---
 export interface Keyword {
-  id: number;
-  keyword: string;
-  keyword_type: string;
-  intent?: string; 
-  search_volume: number;
-  competition?: string;
-  mapped_service?: string;
-  status?: 'active' | 'deprecated';
-  updated_at?: string;
-  usage_count?: number;
+    id: number;
+    keyword: string;
+    keyword_type: string;
+    intent?: string;
+    search_volume: number;
+    competition?: string;
+    mapped_service?: string;
+    status?: 'active' | 'deprecated';
+    updated_at?: string;
+    usage_count?: number;
 }
 
 export interface BacklinkSource {
-  id: number;
-  domain: string;
-  platform_type: string;
-  da_score: number;
-  spam_score: number;
-  country?: string;
-  pricing?: 'Free' | 'Paid';
-  status: 'active' | 'blacklisted' | 'test' | 'trusted' | 'avoid';
-  updated_at?: string;
+    id: number;
+    domain: string;
+    platform_type: string;
+    da_score: number;
+    spam_score: number;
+    country?: string;
+    pricing?: 'Free' | 'Paid';
+    status: 'active' | 'blacklisted' | 'test' | 'trusted' | 'avoid';
+    updated_at?: string;
 }
 
 export interface BacklinkCredential {
@@ -93,126 +93,126 @@ export interface FAQItem {
 }
 
 export interface Service {
-  id: number;
-  
-  // A. Identity & Core Details
-  service_code: string;
-  service_name: string;
-  slug: string;
-  full_url: string;
-  menu_heading: string;
-  short_tagline: string;
-  service_description: string;
-  industry_ids: string[]; 
-  country_ids: string[]; 
-  language: string;
-  status: 'Draft' | 'Published' | 'Archived' | 'In Progress' | 'QC' | 'Approved';
+    id: number;
 
-  // B. Ownership & Governance
-  brand_id?: number;
-  business_unit?: string;
-  content_owner_id?: number;
-  created_by?: number;
-  created_at?: string;
-  updated_by?: number;
-  updated_at?: string;
-  version_number?: number;
-  change_log_link?: string;
-  
-  // C. Navigation
-  show_in_main_menu?: boolean;
-  show_in_footer_menu?: boolean;
-  menu_group?: string;
-  menu_position?: number;
-  breadcrumb_label?: string;
-  parent_menu_section?: string;
-  include_in_xml_sitemap?: boolean;
-  sitemap_priority?: number;
-  sitemap_changefreq?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    // A. Identity & Core Details
+    service_code: string;
+    service_name: string;
+    slug: string;
+    full_url: string;
+    menu_heading: string;
+    short_tagline: string;
+    service_description: string;
+    industry_ids: string[];
+    country_ids: string[];
+    language: string;
+    status: 'Draft' | 'Published' | 'Archived' | 'In Progress' | 'QC' | 'Approved';
 
-  // D. Strategic Mapping
-  content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page';
-  buyer_journey_stage?: 'Awareness' | 'Consideration' | 'Decision' | 'Retention';
-  primary_persona_id?: number;
-  secondary_persona_ids?: number[];
-  target_segment_notes?: string;
-  primary_cta_label?: string;
-  primary_cta_url?: string;
-  form_id?: number;
-  linked_campaign_ids?: number[];
+    // B. Ownership & Governance
+    brand_id?: number;
+    business_unit?: string;
+    content_owner_id?: number;
+    created_by?: number;
+    created_at?: string;
+    updated_by?: number;
+    updated_at?: string;
+    version_number?: number;
+    change_log_link?: string;
 
-  // E. Technical SEO
-  schema_type_id?: string;
-  robots_index?: 'index' | 'noindex';
-  robots_follow?: 'follow' | 'nofollow';
-  robots_custom?: string;
-  canonical_url?: string;
-  redirect_from_urls?: string[];
-  hreflang_group_id?: number;
-  core_web_vitals_status?: 'Good' | 'Needs Improvement' | 'Poor';
-  tech_seo_status?: 'Ok' | 'Warning' | 'Critical';
-  faq_section_enabled?: boolean;
-  faq_content?: FAQItem[];
+    // C. Navigation
+    show_in_main_menu?: boolean;
+    show_in_footer_menu?: boolean;
+    menu_group?: string;
+    menu_position?: number;
+    breadcrumb_label?: string;
+    parent_menu_section?: string;
+    include_in_xml_sitemap?: boolean;
+    sitemap_priority?: number;
+    sitemap_changefreq?: 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-  // F. Content Block
-  h1?: string;
-  h2_list?: string[];
-  h3_list?: string[];
-  h4_list?: string[];
-  h5_list?: string[];
-  body_content?: string;
-  internal_links?: ServiceLink[];
-  external_links?: ServiceLink[];
-  image_alt_texts?: ServiceImage[];
-  word_count?: number;
-  reading_time_minutes?: number;
+    // D. Strategic Mapping
+    content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page';
+    buyer_journey_stage?: 'Awareness' | 'Consideration' | 'Decision' | 'Retention';
+    primary_persona_id?: number;
+    secondary_persona_ids?: number[];
+    target_segment_notes?: string;
+    primary_cta_label?: string;
+    primary_cta_url?: string;
+    form_id?: number;
+    linked_campaign_ids?: number[];
 
-  // G. SEO Metadata
-  meta_title?: string;
-  meta_description?: string;
-  focus_keywords?: string[];
-  secondary_keywords?: string[];
-  seo_score?: number;
-  ranking_summary?: string;
+    // E. Technical SEO
+    schema_type_id?: string;
+    robots_index?: 'index' | 'noindex';
+    robots_follow?: 'follow' | 'nofollow';
+    robots_custom?: string;
+    canonical_url?: string;
+    redirect_from_urls?: string[];
+    hreflang_group_id?: number;
+    core_web_vitals_status?: 'Good' | 'Needs Improvement' | 'Poor';
+    tech_seo_status?: 'Ok' | 'Warning' | 'Critical';
+    faq_section_enabled?: boolean;
+    faq_content?: FAQItem[];
 
-  // H. SMM / Social Meta
-  og_title?: string;
-  og_description?: string;
-  og_image_url?: string;
-  og_type?: 'article' | 'website' | 'product';
-  twitter_title?: string;
-  twitter_description?: string;
-  twitter_image_url?: string;
-  // LinkedIn Platform
-  linkedin_title?: string;
-  linkedin_description?: string;
-  linkedin_image_url?: string;
-  // Facebook Platform
-  facebook_title?: string;
-  facebook_description?: string;
-  facebook_image_url?: string;
-  // Instagram Platform
-  instagram_title?: string;
-  instagram_description?: string;
-  instagram_image_url?: string;
-  // Per-channel social meta (read-only suggestions / defaults)
-  social_meta?: {
-      linkedin?: { title?: string; description?: string; image_url?: string };
-      facebook?: { title?: string; description?: string; image_url?: string };
-      instagram?: { title?: string; description?: string; image_url?: string };
-  };
+    // F. Content Block
+    h1?: string;
+    h2_list?: string[];
+    h3_list?: string[];
+    h4_list?: string[];
+    h5_list?: string[];
+    body_content?: string;
+    internal_links?: ServiceLink[];
+    external_links?: ServiceLink[];
+    image_alt_texts?: ServiceImage[];
+    word_count?: number;
+    reading_time_minutes?: number;
 
-  // K. Linking
-  has_subservices?: boolean;
-  subservice_count?: number;
-  primary_subservice_id?: number;
-  featured_asset_id?: number;
-  asset_count?: number;
-  knowledge_topic_id?: number;
+    // G. SEO Metadata
+    meta_title?: string;
+    meta_description?: string;
+    focus_keywords?: string[];
+    secondary_keywords?: string[];
+    seo_score?: number;
+    ranking_summary?: string;
 
-  // Legacy/Compat fields
-  health_score?: number;
-  industry?: string; 
+    // H. SMM / Social Meta
+    og_title?: string;
+    og_description?: string;
+    og_image_url?: string;
+    og_type?: 'article' | 'website' | 'product';
+    twitter_title?: string;
+    twitter_description?: string;
+    twitter_image_url?: string;
+    // LinkedIn Platform
+    linkedin_title?: string;
+    linkedin_description?: string;
+    linkedin_image_url?: string;
+    // Facebook Platform
+    facebook_title?: string;
+    facebook_description?: string;
+    facebook_image_url?: string;
+    // Instagram Platform
+    instagram_title?: string;
+    instagram_description?: string;
+    instagram_image_url?: string;
+    // Per-channel social meta (read-only suggestions / defaults)
+    social_meta?: {
+        linkedin?: { title?: string; description?: string; image_url?: string };
+        facebook?: { title?: string; description?: string; image_url?: string };
+        instagram?: { title?: string; description?: string; image_url?: string };
+    };
+
+    // K. Linking
+    has_subservices?: boolean;
+    subservice_count?: number;
+    primary_subservice_id?: number;
+    featured_asset_id?: number;
+    asset_count?: number;
+    knowledge_topic_id?: number;
+
+    // Legacy/Compat fields
+    health_score?: number;
+    industry?: string;
 }
 
 export interface ServiceUrl {
@@ -225,40 +225,43 @@ export interface ServiceUrl {
 export interface SubServiceItem {
     id: number;
     sub_service_name: string;
+    sub_service_code?: string;
     parent_service_id: number;
     slug: string;
     full_url: string;
     description: string;
-    status: 'Draft' | 'Published' | 'Archived';
-    
+    status: 'Draft' | 'In Progress' | 'QC' | 'Approved' | 'Published' | 'Archived';
+    language?: string;
+
     // Navigation
     menu_position?: number;
     breadcrumb_label?: string;
     include_in_xml_sitemap?: boolean;
     sitemap_priority?: number;
     sitemap_changefreq?: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    
+
     // Strategic
     content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page' | string;
     buyer_journey_stage?: 'Awareness' | 'Consideration' | 'Decision' | 'Retention' | string;
     primary_cta_label?: string;
     primary_cta_url?: string;
-    
+
     // Content Block
     h1?: string;
     h2_list?: string[];
     h3_list?: string[];
     body_content?: string;
-    
+
     // SEO Block
     meta_title?: string;
     meta_description?: string;
     focus_keywords?: string[];
+    secondary_keywords?: string[];
     schema_type_id?: string;
     canonical_url?: string;
     robots_index?: 'index' | 'noindex';
     robots_follow?: 'follow' | 'nofollow';
-    
+
     // SMM Block
     og_title?: string;
     og_description?: string;
@@ -285,13 +288,16 @@ export interface SubServiceItem {
         facebook?: { title?: string; description?: string; image_url?: string };
         instagram?: { title?: string; description?: string; image_url?: string };
     };
-    
+
     // Governance
     brand_id?: number;
     content_owner_id?: number;
+    created_at?: string;
+    updated_at?: string;
+    created_by?: number;
+    updated_by?: number;
 
     assets_linked?: number;
-    updated_at?: string;
     keywords?: string[]; // compat
 }
 
@@ -311,35 +317,35 @@ export interface ServicePageItem {
 }
 
 export interface ContentRepositoryItem {
-  id: number;
-  content_title_clean: string; 
-  asset_type: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page';
-  asset_category?: string;
-  asset_format?: 'image' | 'video' | 'text';
-  slug?: string;
-  full_url?: string;
-  status: 'idea' | 'outline' | 'draft' | 'qc_pending' | 'qc_passed' | 'published' | 'updated' | 'ready_to_publish';
-  
-  // Linking
-  linked_service_ids?: number[];
-  linked_sub_service_ids?: number[];
-  linked_campaign_id?: number;
-  
-  // Content Block (Working Copy)
-  h1?: string;
-  h2_list?: string[];
-  h3_list?: string[];
-  body_content?: string;
-  
-  // SEO Block (Working Copy)
-  meta_title?: string;
-  meta_description?: string;
-  focus_keywords?: string[];
-  
-  // SMM Block (Working Copy)
-  og_title?: string;
-  og_description?: string;
-  og_image_url?: string;
+    id: number;
+    content_title_clean: string;
+    asset_type: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page';
+    asset_category?: string;
+    asset_format?: 'image' | 'video' | 'text';
+    slug?: string;
+    full_url?: string;
+    status: 'idea' | 'outline' | 'draft' | 'qc_pending' | 'qc_passed' | 'published' | 'updated' | 'ready_to_publish';
+
+    // Linking
+    linked_service_ids?: number[];
+    linked_sub_service_ids?: number[];
+    linked_campaign_id?: number;
+
+    // Content Block (Working Copy)
+    h1?: string;
+    h2_list?: string[];
+    h3_list?: string[];
+    body_content?: string;
+
+    // SEO Block (Working Copy)
+    meta_title?: string;
+    meta_description?: string;
+    focus_keywords?: string[];
+
+    // SMM Block (Working Copy)
+    og_title?: string;
+    og_description?: string;
+    og_image_url?: string;
     // Per-channel social meta (working copy)
     social_meta?: {
         linkedin?: { title?: string; description?: string; image_url?: string };
@@ -347,27 +353,27 @@ export interface ContentRepositoryItem {
         instagram?: { title?: string; description?: string; image_url?: string };
     };
 
-  // QC / AI
-  ai_qc_report?: {
-      score: number;
-      issues: string[];
-      suggestions: string[];
-  };
+    // QC / AI
+    ai_qc_report?: {
+        score: number;
+        issues: string[];
+        suggestions: string[];
+    };
 
-  brand_id?: number;
-  created_at?: string;
-  last_status_update_at: string;
-  word_count?: number;
-  assigned_to_id?: number;
-  
-  // Legacy/Compat
-  service_id?: number;
-  service_name?: string;
-  campaign_name?: string;
-  keywords?: string[];
-  promotion_channels?: string[];
-  thumbnail_url?: string;
-  context?: string; 
+    brand_id?: number;
+    created_at?: string;
+    last_status_update_at: string;
+    word_count?: number;
+    assigned_to_id?: number;
+
+    // Legacy/Compat
+    service_id?: number;
+    service_name?: string;
+    campaign_name?: string;
+    keywords?: string[];
+    promotion_channels?: string[];
+    thumbnail_url?: string;
+    context?: string;
 }
 
 // ... other types (Project, Campaign, Task, etc.) ...
@@ -426,7 +432,7 @@ export interface Notification {
     text: string;
     type: 'success' | 'warning' | 'info' | 'error';
     read: boolean;
-    time: string; 
+    time: string;
     created_at?: string;
 }
 
