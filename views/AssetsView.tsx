@@ -343,6 +343,7 @@ const AssetsView: React.FC = () => {
         );
     }
 
+    
     // List View
     return (
         <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
