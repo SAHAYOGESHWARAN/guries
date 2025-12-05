@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import Table from '../components/Table';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
@@ -12,6 +12,8 @@ const AssetsView: React.FC = () => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
     const [dragActive, setDragActive] = useState(false);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
@@ -21,11 +23,15 @@ const AssetsView: React.FC = () => {
         usage_status: 'Available'
     });
 
-    const filteredAssets = assets.filter(a =>
-        (a.name || '').toLowerCase().includes((searchQuery || '').toLowerCase())
+    // Memoize filtered assets for better performance
+    const filteredAssets = useMemo(() =>
+        assets.filter(a =>
+            (a.name || '').toLowerCase().includes((searchQuery || '').toLowerCase())
+        ),
+        [assets, searchQuery]
     );
 
-    const handleFileSelect = (file: File) => {
+    const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
         setNewAsset(prev => ({
             ...prev,
@@ -34,7 +40,7 @@ const AssetsView: React.FC = () => {
             file_type: file.type
         }));
 
-        // Create preview for images
+        // Create preview for images only
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -47,71 +53,96 @@ const AssetsView: React.FC = () => {
                 }));
             };
             reader.readAsDataURL(file);
+        } else {
+            setPreviewUrl('');
         }
-    };
+    }, []);
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        if (e.dataTransfer.files?.[0]) {
             handleFileSelect(e.dataTransfer.files[0]);
         }
-    };
+    }, [handleFileSelect]);
 
-    const handleDrag = (e: React.DragEvent) => {
+    const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         if (e.type === "dragenter" || e.type === "dragover") {
             setDragActive(true);
         } else if (e.type === "dragleave") {
             setDragActive(false);
         }
-    };
+    }, []);
 
-    const handleUpload = async () => {
-        if (!newAsset.name) {
+    const handleUpload = useCallback(async () => {
+        if (!newAsset.name?.trim()) {
             alert('Please enter an asset name');
             return;
         }
 
-        await createAsset({
-            ...newAsset,
-            date: new Date().toISOString()
-        } as any);
-
-        // Reset form
-        setViewMode('list');
-        setSelectedFile(null);
-        setPreviewUrl('');
-        setNewAsset({
-            name: '',
-            type: 'Image',
-            repository: 'Content Repository',
-            usage_status: 'Available'
-        });
-    };
-
-    const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this asset? This action cannot be undone.')) {
-            try {
-                await removeAsset(id);
-            } catch (error) {
-                console.error('Failed to delete asset:', error);
-                alert('Failed to delete asset. Please try again.');
-            }
+        if (!selectedFile && !newAsset.file_url) {
+            alert('Please select a file to upload');
+            return;
         }
-    };
 
-    const getAssetIcon = (type: string) => {
+        setIsUploading(true);
+        try {
+            await createAsset({
+                ...newAsset,
+                date: new Date().toISOString()
+            } as AssetLibraryItem);
+
+            // Reset form
+            setSelectedFile(null);
+            setPreviewUrl('');
+            setNewAsset({
+                name: '',
+                type: 'Image',
+                repository: 'Content Repository',
+                usage_status: 'Available'
+            });
+
+            // Switch to list view immediately
+            setViewMode('list');
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Failed to upload asset. Please try again.');
+        } finally {
+            setIsUploading(false);
+        }
+    }, [newAsset, selectedFile, createAsset]);
+
+    const handleDelete = useCallback(async (e: React.MouseEvent, id: number, name: string) => {
+        e.stopPropagation();
+
+        if (deletingId !== null) return;
+
+        if (!window.confirm(`Delete "${name}"?`)) return;
+
+        setDeletingId(id);
+        try {
+            await removeAsset(id);
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert('Failed to delete asset. Please try again.');
+        } finally {
+            setDeletingId(null);
+        }
+    }, [deletingId, removeAsset]);
+
+    const getAssetIcon = useCallback((type: string) => {
         const icons: Record<string, string> = {
-            'Image': '🖼️',
+            'Image': '�️',
             'Video': '🎥',
             'Document': '📄',
             'Archive': '📦'
         };
         return icons[type] || '📁';
-    };
+    }, []);
 
-    const columns = [
+    // Memoize columns for better performance
+    const columns = useMemo(() => [
         {
             header: 'Preview',
             accessor: (item: AssetLibraryItem) => (
@@ -121,6 +152,7 @@ const AssetsView: React.FC = () => {
                             src={item.thumbnail_url}
                             alt={item.name}
                             className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 shadow-sm"
+                            loading="lazy"
                         />
                     ) : (
                         <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-2xl shadow-sm">
@@ -188,24 +220,31 @@ const AssetsView: React.FC = () => {
                         </a>
                     )}
                     <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        onClick={(e) => handleDelete(e, item.id, item.name)}
+                        disabled={deletingId === item.id}
+                        className={`p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all ${deletingId === item.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title="Delete"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        {deletingId === item.id ? (
+                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        )}
                     </button>
                 </div>
             )
         }
-    ];
+    ], [getAssetIcon, handleDelete, deletingId]);
 
     if (viewMode === 'upload') {
         return (
-            <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
+            <div className="h-full flex flex-col w-full p-6 overflow-hidden">
                 <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                    {/* Header */}
                     <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50 w-full flex-shrink-0">
                         <div>
                             <h2 className="text-lg font-bold text-slate-900">Upload New Asset</h2>
@@ -214,23 +253,33 @@ const AssetsView: React.FC = () => {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setViewMode('list')}
-                                className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
+                                disabled={isUploading}
+                                className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleUpload}
-                                className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-colors text-sm"
+                                disabled={isUploading}
+                                className={`bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-colors text-sm flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Confirm Upload
+                                {isUploading ? (
+                                    <>
+                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    'Confirm Upload'
+                                )}
                             </button>
                         </div>
                     </div>
 
-                    {/* Form Content */}
                     <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
                         <div className="max-w-3xl mx-auto space-y-6">
-                            {/* File Upload Zone */}
                             <div
                                 className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${dragActive
                                     ? 'border-indigo-500 bg-indigo-50'
@@ -245,7 +294,7 @@ const AssetsView: React.FC = () => {
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
+                                    onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
                                     className="hidden"
                                     accept="image/*,video/*,.pdf,.doc,.docx,.zip"
                                 />
@@ -283,9 +332,7 @@ const AssetsView: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Form Fields */}
                             <div className="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-6 shadow-sm">
-                                {/* Asset Name */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
                                     <input
@@ -297,7 +344,6 @@ const AssetsView: React.FC = () => {
                                     />
                                 </div>
 
-                                {/* Type */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Type</label>
                                     <select
@@ -312,7 +358,6 @@ const AssetsView: React.FC = () => {
                                     </select>
                                 </div>
 
-                                {/* Repository */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
                                     <select
@@ -327,7 +372,6 @@ const AssetsView: React.FC = () => {
                                     </select>
                                 </div>
 
-                                {/* Status */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
                                     <select
@@ -348,11 +392,8 @@ const AssetsView: React.FC = () => {
         );
     }
 
-
-    // List View
     return (
-        <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
-            {/* Header */}
+        <div className="h-full flex flex-col w-full p-6 overflow-hidden">
             <div className="flex justify-between items-start flex-shrink-0 w-full mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
@@ -369,7 +410,6 @@ const AssetsView: React.FC = () => {
                 </button>
             </div>
 
-            {/* Search */}
             <div className="mb-6">
                 <div className="relative">
                     <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -385,7 +425,6 @@ const AssetsView: React.FC = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden w-full">
                 <div className="px-6 py-3 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-purple-50">
                     <p className="text-sm text-slate-700 font-medium">

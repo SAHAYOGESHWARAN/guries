@@ -10,7 +10,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     tasks: { endpoint: 'tasks', event: 'task' },
     projects: { endpoint: 'projects', event: 'project' },
     campaigns: { endpoint: 'campaigns', event: 'campaign' },
-    assetLibrary: { endpoint: 'assets', event: 'asset' },
+    assetLibrary: { endpoint: 'assetLibrary', event: 'assetLibrary' },
     content: { endpoint: 'content', event: 'content' },
     smm: { endpoint: 'smm', event: 'smm_post' },
     graphics: { endpoint: 'graphics', event: 'graphic' },
@@ -33,7 +33,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     uxIssues: { endpoint: 'ux-issues', event: 'ux_issue' },
     qc: { endpoint: 'qc-runs', event: 'qc_run' },
     // Read-only view or filtered
-    promotionItems: { endpoint: 'promotion-items', event: 'content' }, 
+    promotionItems: { endpoint: 'promotion-items', event: 'content' },
     // Configs & Masters
     effortTargets: { endpoint: 'effort-targets', event: 'effort_target' },
     goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
@@ -117,7 +117,7 @@ export function useData<T>(collection: string) {
         try {
             if (collection === 'promotionItems') {
                 const allContent = (db as any)['content']?.getAll() || [];
-                const filtered = allContent.filter((i: any) => 
+                const filtered = allContent.filter((i: any) =>
                     ['qc_passed', 'updated', 'ready_to_publish', 'published'].includes(i.status)
                 );
                 setData(filtered);
@@ -146,7 +146,7 @@ export function useData<T>(collection: string) {
             const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
                 signal: controller.signal
             });
-            
+
             clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error('API Error');
@@ -158,7 +158,7 @@ export function useData<T>(collection: string) {
             // We silently fall back to the local data we already loaded in state initialization.
             // Only log if it's not an abort error
             if (err.name !== 'AbortError') {
-               setIsOffline(true);
+                setIsOffline(true);
             }
             loadLocal(); // Ensure state is consistent with local storage
         } finally {
@@ -170,14 +170,14 @@ export function useData<T>(collection: string) {
         fetchData();
 
         const socket = getSocket();
-        
+
         if (resource && socket) {
             if (!socket.connected) socket.connect();
 
             const handleCreate = (newItem: T) => {
                 setData(prev => [newItem, ...prev]);
             };
-            
+
             const handleUpdate = (updatedItem: T & { id: number | string }) => {
                 setData(prev => prev.map(item => (item as any).id === updatedItem.id ? updatedItem : item));
             };
@@ -202,7 +202,7 @@ export function useData<T>(collection: string) {
         const handleStorageChange = (e: Event) => {
             const customEvent = e as CustomEvent;
             const targetKey = collection === 'promotionItems' ? (db as any)['content']?.key : (db as any)[collection]?.key;
-            
+
             if (targetKey && customEvent.detail?.key === targetKey) {
                 loadLocal();
             }
@@ -216,9 +216,9 @@ export function useData<T>(collection: string) {
         // 1. Optimistic Local Update
         let newItem = item;
         if ((db as any)[collection]) {
-             newItem = (db as any)[collection].create(item);
+            newItem = (db as any)[collection].create(item);
         }
-        
+
         // 2. Try Backend Sync and return server response if available (for real ID)
         let serverItem = null;
         if (resource && !isOffline) {
@@ -243,7 +243,7 @@ export function useData<T>(collection: string) {
         if ((db as any)[collection]) {
             updatedItem = (db as any)[collection].update(id, updates);
         }
-        
+
         if (resource && !isOffline) {
             fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
                 method: 'PUT',
@@ -258,7 +258,7 @@ export function useData<T>(collection: string) {
         if ((db as any)[collection]) {
             (db as any)[collection].delete(id);
         }
-        
+
         if (resource && !isOffline) {
             fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
                 method: 'DELETE',
