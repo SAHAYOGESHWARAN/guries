@@ -331,7 +331,7 @@ export const createSubService = async (req: any, res: any) => {
         faq_section_enabled, faq_content,
         // Governance
         brand_id, content_owner_id, created_by, created_at, updated_by, version_number, change_log_link,
-        assets_linked
+        social_meta, assets_linked
     } = req.body;
 
     // URL normalization - ensure it follows parent service pattern
@@ -427,7 +427,7 @@ export const updateSubService = async (req: any, res: any) => {
         faq_section_enabled, faq_content,
         // Governance
         brand_id, content_owner_id, updated_by, version_number, change_log_link,
-        assets_linked
+        social_meta, assets_linked
     } = req.body;
 
     // URL normalization
@@ -466,7 +466,7 @@ export const updateSubService = async (req: any, res: any) => {
                 brand_id=COALESCE($53, brand_id), content_owner_id=COALESCE($54, content_owner_id),
                 updated_by=COALESCE($55, updated_by), version_number=COALESCE($56, version_number), change_log_link=COALESCE($57, change_log_link),
                 social_meta=COALESCE($58, social_meta), assets_linked=COALESCE($59, assets_linked), updated_at=NOW() 
-            WHERE id=$60 RETURNING *",
+            WHERE id=$60 RETURNING *`,
             [
                 sub_service_name, parent_service_id, slug, computedUrl, description, status,
                 menu_heading, short_tagline, language, JSON.stringify(industry_ids), JSON.stringify(country_ids),
@@ -484,12 +484,12 @@ export const updateSubService = async (req: any, res: any) => {
                 id
             ]
         );
-        
+
         const updatedItem = parseSubServiceRow(result.rows[0]);
         getSocket().emit('sub_service_updated', updatedItem);
-        
+
         if (updatedItem.parent_service_id) {
-             await pool.query(
+            await pool.query(
                 `UPDATE services 
                  SET subservice_count = (SELECT COUNT(*) FROM sub_services WHERE parent_service_id = $1),
             has_subservices = (SELECT COUNT(*) > 0 FROM sub_services WHERE parent_service_id = $1),

@@ -2,6 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
+import SocialMetaForm from '../components/SocialMetaForm';
+import AssetLinker from '../components/AssetLinker';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
@@ -21,103 +23,83 @@ const ServiceMasterView: React.FC = () => {
     const { data: services = [], create, update, remove } = useData<Service>('services');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
-
-    // Master Data for Dropdowns/Selectors
-    const { data: users = [] } = useData<User>('users');
-    const { data: brands = [] } = useData<Brand>('brands');
-        // Warn if brands are not loaded
-        const brandsLoaded = Array.isArray(brands) && brands.length > 0;
-    const { data: campaigns = [] } = useData<Campaign>('campaigns');
-    const { data: industrySectors = [] } = useData<IndustrySectorItem>('industrySectors');
-    const { data: countries = [] } = useData<CountryMasterItem>('countries');
     const { data: contentTypes = [] } = useData<ContentTypeItem>('contentTypes');
     const { data: personas = [] } = useData<PersonaMasterItem>('personas');
     const { data: forms = [] } = useData<FormMasterItem>('forms');
+    const { data: campaigns = [] } = useData<Campaign>('campaigns');
+    const { data: industries = [] } = useData<IndustrySectorItem>('industries');
+    const { data: countries = [] } = useData<CountryMasterItem>('countries');
+    const { data: users = [] } = useData<User>('users');
+    const { data: brands = [] } = useData<Brand>('brands');
+    const brandsLoaded = Array.isArray(brands) && brands.length > 0;
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [searchQuery, setSearchQuery] = useState('');
+    const [parentFilter, setParentFilter] = useState('All Parent Services');
     const [statusFilter, setStatusFilter] = useState('All Status');
     const [editingItem, setEditingItem] = useState<Service | null>(null);
-    const [activeTab, setActiveTab] = useState<'Core' | 'Navigation' | 'Strategic' | 'Content' | 'SEO' | 'SMM' | 'Technical' | 'Linking' | 'Governance'>('Core');
+    const [assetSearch, setAssetSearch] = useState('');
+    const [activeTab, setActiveTab] = useState('Core');
     const [copiedUrl, setCopiedUrl] = useState(false);
 
-    // Asset Picker State within Full Frame
-    const [assetSearch, setAssetSearch] = useState('');
-
-    const createInitialFormState = (): Partial<Service> => ({
-        service_name: '', service_code: '', slug: '', full_url: '',
-        menu_heading: '', short_tagline: '',
-        service_description: '', status: 'Draft', language: 'en',
-        menu_group: '', menu_position: 0,
-        show_in_main_menu: false, show_in_footer_menu: false,
-        parent_menu_section: '',
-        include_in_xml_sitemap: true,
-        industry_ids: [], country_ids: [],
-        linked_campaign_ids: [],
-        h1: '', h2_list: [], h3_list: [], h4_list: [], h5_list: [], body_content: '',
-        internal_links: [], external_links: [], image_alt_texts: [],
-        word_count: 0, reading_time_minutes: 0,
-        meta_title: '', meta_description: '', focus_keywords: [], secondary_keywords: [],
-        seo_score: 0, ranking_summary: '',
-        og_title: '', og_description: '', og_image_url: '', og_type: 'website',
-        twitter_title: '', twitter_description: '', twitter_image_url: '',
-        // Per-channel social meta defaults
-        social_meta: {
-            linkedin: { title: '', description: '', image_url: '' },
-            facebook: { title: '', description: '', image_url: '' },
-            instagram: { title: '', description: '', image_url: '' }
-        },
-        schema_type_id: 'Service', robots_index: 'index', robots_follow: 'follow', robots_custom: '',
-        canonical_url: '', redirect_from_urls: [], hreflang_group_id: undefined,
-        core_web_vitals_status: 'Good', tech_seo_status: 'Ok',
-        sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
-        faq_section_enabled: false, faq_content: [],
-        content_type: 'Pillar',
-        buyer_journey_stage: 'Awareness',
-        target_segment_notes: '',
-        primary_persona_id: undefined,
-        secondary_persona_ids: [],
-        form_id: undefined,
-        primary_cta_label: '', primary_cta_url: '',
-        brand_id: 0,
-        business_unit: '',
-        content_owner_id: 0,
-        created_by: undefined,
-        updated_by: undefined,
-        version_number: 1,
-        change_log_link: ''
-    });
-
-    // Form State
-    const [formData, setFormData] = useState<Partial<Service>>(() => createInitialFormState());
-
-    // Helper inputs
     const [tempH2, setTempH2] = useState('');
     const [tempH3, setTempH3] = useState('');
     const [tempH4, setTempH4] = useState('');
     const [tempH5, setTempH5] = useState('');
     const [tempKeyword, setTempKeyword] = useState('');
     const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
-    const [tempRedirect, setTempRedirect] = useState('');
     const [tempInternalLink, setTempInternalLink] = useState<ServiceLink>({ anchor_text: '', url: '', rel: '', target_type: '' });
     const [tempExternalLink, setTempExternalLink] = useState<ServiceLink>({ anchor_text: '', url: '', rel: '', target_type: '' });
     const [tempImage, setTempImage] = useState<ServiceImage>({ url: '', alt_text: '', context: '' });
     const [tempFaq, setTempFaq] = useState<FAQItem>({ question: '', answer: '' });
+    const [tempRedirect, setTempRedirect] = useState('');
 
-    // Computed Data
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    const filteredData = services.filter(item => {
-        const matchesSearch = !normalizedQuery || [
-            item.service_name,
-            item.service_code,
-            item.menu_heading,
-            item.short_tagline,
-            item.full_url
-        ].some(value => (value || '').toLowerCase().includes(normalizedQuery));
-        const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
-        return matchesSearch && matchesStatus;
+    const createInitialFormState = () => ({
+        service_name: '',
+        service_code: '',
+        slug: '',
+        full_url: '',
+        menu_heading: '',
+        short_tagline: '',
+        language: 'en',
+        status: 'Draft',
+        meta_title: '',
+        meta_description: '',
+        og_title: '',
+        og_description: '',
+        og_image_url: '',
+        twitter_title: '',
+        twitter_description: '',
+        twitter_image_url: '',
+        brand_id: 0,
+        content_owner_id: 0,
+        include_in_xml_sitemap: true,
+        sitemap_priority: 0.8,
+        sitemap_changefreq: 'monthly',
+        og_type: 'website',
+        h1: '',
+        h2_list: [],
+        h3_list: [],
+        h4_list: [],
+        h5_list: [],
+        body_content: '',
+        focus_keywords: [],
+        secondary_keywords: [],
+        content_type: '',
+        primary_persona_id: undefined,
+        secondary_persona_ids: [],
+        form_id: undefined,
+        linked_campaign_ids: [],
+        image_alt_texts: [],
+        internal_links: [],
+        external_links: [],
+        faq_content: [],
+        primary_cta_label: '',
+        primary_cta_url: ''
     });
+
+    const [formData, setFormData] = useState<any>(createInitialFormState());
 
     const linkedAssets = useMemo(() => {
         if (!editingItem) return [];
@@ -133,6 +115,14 @@ const ServiceMasterView: React.FC = () => {
     }, [contentAssets, editingItem, assetSearch]);
 
     const availableContentTypes = Array.isArray(contentTypes) && contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
+
+    const filteredData = useMemo(() => {
+        return services.filter(service => {
+            const matchesSearch = searchQuery === '' || service.service_name.toLowerCase().includes(searchQuery.toLowerCase()) || service.service_code.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesStatus = statusFilter === 'All Status' || service.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [services, searchQuery, statusFilter]);
 
     // Handlers
     const handleCreateClick = () => {
@@ -230,7 +220,7 @@ const ServiceMasterView: React.FC = () => {
 
     const handleSlugChange = (val: string) => {
         const slug = val.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
-        setFormData(prev => ({ ...prev, slug, full_url: `/services/${slug}` }));
+        setFormData((prev: any) => ({ ...prev, slug, full_url: `/services/${slug}` }));
     };
 
     const handleCopyFullUrl = () => {
@@ -250,7 +240,7 @@ const ServiceMasterView: React.FC = () => {
     // List Management
     const addToList = (field: keyof Service, value: any, setter?: any) => {
         if (!value) return;
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             [field]: [...(prev[field] as any[] || []), value]
         }));
@@ -258,7 +248,7 @@ const ServiceMasterView: React.FC = () => {
     };
 
     const removeFromList = (field: keyof Service, index: number) => {
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             [field]: (prev[field] as any[]).filter((_, i) => i !== index)
         }));
@@ -266,7 +256,7 @@ const ServiceMasterView: React.FC = () => {
 
     const addLink = (field: 'internal_links' | 'external_links', link: ServiceLink, setter: React.Dispatch<React.SetStateAction<ServiceLink>>) => {
         if (!link.anchor_text?.trim() || !link.url?.trim()) return;
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             [field]: [...((prev[field] as ServiceLink[]) || []), link]
         }));
@@ -275,7 +265,7 @@ const ServiceMasterView: React.FC = () => {
 
     const addImageAlt = (image: ServiceImage) => {
         if (!image.url?.trim() || !image.alt_text?.trim()) return;
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             image_alt_texts: [...((prev.image_alt_texts as ServiceImage[]) || []), image]
         }));
@@ -284,7 +274,7 @@ const ServiceMasterView: React.FC = () => {
 
     const addFaqItem = (faq: FAQItem) => {
         if (!faq.question?.trim() || !faq.answer?.trim()) return;
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             faq_content: [...((prev.faq_content as FAQItem[]) || []), faq]
         }));
@@ -723,7 +713,7 @@ const ServiceMasterView: React.FC = () => {
                                                 <div className="border-2 border-orange-200 rounded-xl overflow-hidden">
                                                     <div className="max-h-72 overflow-y-auto bg-white">
                                                         <div className="space-y-2 p-4">
-                                                            {industrySectors.map(ind => (
+                                                            {industries.map(ind => (
                                                                 <label key={ind.id} className="flex items-center space-x-3 cursor-pointer p-3 hover:bg-orange-50 rounded-lg transition-all group">
                                                                     <input
                                                                         type="checkbox"
@@ -1268,12 +1258,12 @@ const ServiceMasterView: React.FC = () => {
                                                 <span className="text-[10px] text-slate-400 font-mono">{formData.internal_links?.length || 0}</span>
                                             </div>
                                             <div className="space-y-2">
-                                                <input type="text" value={tempInternalLink.anchor_text} onChange={(e) => setTempInternalLink(prev => ({ ...prev, anchor_text: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm" placeholder="Anchor text" />
-                                                <input type="text" value={tempInternalLink.url} onChange={(e) => setTempInternalLink(prev => ({ ...prev, url: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm font-mono" placeholder="/supporting-page" />
+                                                <input type="text" value={tempInternalLink.anchor_text} onChange={(e) => setTempInternalLink((prev: ServiceLink) => ({ ...prev, anchor_text: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm" placeholder="Anchor text" />
+                                                <input type="text" value={tempInternalLink.url} onChange={(e) => setTempInternalLink((prev: ServiceLink) => ({ ...prev, url: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm font-mono" placeholder="/supporting-page" />
                                                 <button onClick={() => addLink('internal_links', tempInternalLink, setTempInternalLink)} className="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">Add Internal Link</button>
                                             </div>
                                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                                                {formData.internal_links?.length ? formData.internal_links.map((link, idx) => (
+                                                {formData.internal_links?.length ? formData.internal_links.map((link: ServiceLink, idx: number) => (
                                                     <div key={`internal-${idx}`} className="flex items-center justify-between bg-white p-3 rounded border border-slate-200 text-sm">
                                                         <div className="min-w-0">
                                                             <p className="font-semibold text-slate-800 truncate">{link.anchor_text}</p>
@@ -1291,12 +1281,12 @@ const ServiceMasterView: React.FC = () => {
                                                 <span className="text-[10px] text-slate-400 font-mono">{formData.external_links?.length || 0}</span>
                                             </div>
                                             <div className="space-y-2">
-                                                <input type="text" value={tempExternalLink.anchor_text} onChange={(e) => setTempExternalLink(prev => ({ ...prev, anchor_text: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm" placeholder="Anchor text" />
-                                                <input type="text" value={tempExternalLink.url} onChange={(e) => setTempExternalLink(prev => ({ ...prev, url: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm font-mono" placeholder="https://partner-site.com" />
+                                                <input type="text" value={tempExternalLink.anchor_text} onChange={(e) => setTempExternalLink((prev: ServiceLink) => ({ ...prev, anchor_text: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm" placeholder="Anchor text" />
+                                                <input type="text" value={tempExternalLink.url} onChange={(e) => setTempExternalLink((prev: ServiceLink) => ({ ...prev, url: e.target.value }))} className="w-full p-2.5 border border-slate-200 rounded text-sm font-mono" placeholder="https://partner-site.com" />
                                                 <button onClick={() => addLink('external_links', tempExternalLink, setTempExternalLink)} className="w-full bg-slate-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-black transition">Add External Link</button>
                                             </div>
                                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                                                {formData.external_links?.length ? formData.external_links.map((link, idx) => (
+                                                {formData.external_links?.length ? formData.external_links.map((link: ServiceLink, idx: number) => (
                                                     <div key={`external-${idx}`} className="flex items-center justify-between bg-white p-3 rounded border border-slate-200 text-sm">
                                                         <div className="min-w-0">
                                                             <p className="font-semibold text-slate-800 truncate">{link.anchor_text}</p>
@@ -1315,13 +1305,13 @@ const ServiceMasterView: React.FC = () => {
                                             <span className="text-[10px] text-slate-400 font-mono">{formData.image_alt_texts?.length || 0}</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                            <input type="text" value={tempImage.url} onChange={(e) => setTempImage(prev => ({ ...prev, url: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm font-mono" placeholder="Image URL" />
-                                            <input type="text" value={tempImage.alt_text} onChange={(e) => setTempImage(prev => ({ ...prev, alt_text: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Alt text" />
-                                            <input type="text" value={tempImage.context} onChange={(e) => setTempImage(prev => ({ ...prev, context: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Usage context" />
+                                            <input type="text" value={tempImage.url} onChange={(e) => setTempImage((prev: ServiceImage) => ({ ...prev, url: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm font-mono" placeholder="Image URL" />
+                                            <input type="text" value={tempImage.alt_text} onChange={(e) => setTempImage((prev: ServiceImage) => ({ ...prev, alt_text: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Alt text" />
+                                            <input type="text" value={tempImage.context} onChange={(e) => setTempImage((prev: ServiceImage) => ({ ...prev, context: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Usage context" />
                                         </div>
                                         <button onClick={() => addImageAlt(tempImage)} className="w-full mt-2 bg-slate-800 text-white py-2 rounded-lg text-xs font-bold hover:bg-slate-900 transition">Add Image Alt Mapping</button>
                                         <div className="space-y-2 max-h-52 overflow-y-auto">
-                                            {formData.image_alt_texts?.length ? formData.image_alt_texts.map((img, idx) => (
+                                            {formData.image_alt_texts?.length ? formData.image_alt_texts.map((img: ServiceImage, idx: number) => (
                                                 <div key={`img-${idx}`} className="flex items-start justify-between border border-slate-200 rounded-lg p-3 text-sm">
                                                     <div className="min-w-0">
                                                         <p className="font-semibold text-slate-800 truncate">{img.alt_text}</p>
@@ -1408,7 +1398,7 @@ const ServiceMasterView: React.FC = () => {
                                         </div>
                                         <div className="bg-white border border-slate-200 rounded-lg p-4 min-h-[160px] grid gap-3 lg:grid-cols-2">
                                             {formData.focus_keywords && formData.focus_keywords.length > 0 ? (
-                                                formData.focus_keywords.map((k, idx) => (
+                                                formData.focus_keywords.map((k: string, idx: number) => (
                                                     <div key={`${k}-${idx}`} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-green-200 transition-colors">
                                                         <div>
                                                             <p className="text-sm font-semibold text-slate-800">{k}</p>
@@ -1459,7 +1449,7 @@ const ServiceMasterView: React.FC = () => {
                                         </div>
                                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 min-h-[140px] overflow-y-auto space-y-2">
                                             {formData.secondary_keywords && formData.secondary_keywords.length > 0 ? (
-                                                formData.secondary_keywords.map((k, idx) => (
+                                                formData.secondary_keywords.map((k: string, idx: number) => (
                                                     <div key={`${k}-${idx}`} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-100">
                                                         <div>
                                                             <p className="text-sm font-medium text-slate-700">{k}</p>
@@ -1515,291 +1505,11 @@ const ServiceMasterView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* --- TAB: SMM --- */}
+                        {/* --- TAB: SMM (refactored) --- */}
                         {activeTab === 'SMM' && (
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
-                                    <span className="bg-pink-100 text-pink-600 p-1.5 rounded mr-2">📢</span> Social Media Metadata
-                                </h3>
-
-                                {/* General OG/Twitter Section */}
-                                <div className="space-y-6 pb-8 border-b border-slate-200">
-                                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">General Social Metadata</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <Tooltip content="Open Graph Title (Facebook, LinkedIn). Defaults to SEO Title if empty.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">OG Title</label>
-                                                <input type="text" value={formData.og_title} onChange={(e) => setFormData({ ...formData, og_title: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip content="Twitter Card Title. Defaults to OG Title if empty.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Twitter Title</label>
-                                                <input type="text" value={formData.twitter_title} onChange={(e) => setFormData({ ...formData, twitter_title: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
-                                            </div>
-                                        </Tooltip>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <Tooltip content="Open Graph Description.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">OG Description</label>
-                                                <textarea value={formData.og_description} onChange={(e) => setFormData({ ...formData, og_description: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg h-24 text-sm resize-none" />
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip content="Twitter Card Description.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Twitter Description</label>
-                                                <textarea value={formData.twitter_description} onChange={(e) => setFormData({ ...formData, twitter_description: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg h-24 text-sm resize-none" />
-                                            </div>
-                                        </Tooltip>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        <Tooltip content="Image used by Open Graph previews.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">OG Image URL</label>
-                                                <input type="text" value={formData.og_image_url || ''} onChange={(e) => setFormData({ ...formData, og_image_url: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip content="Controls how social platforms render the preview card.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">OG Type</label>
-                                                <select value={formData.og_type || 'website'} onChange={(e) => setFormData({ ...formData, og_type: e.target.value as any })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
-                                                    <option value="website">Website</option>
-                                                    <option value="article">Article</option>
-                                                    <option value="product">Product</option>
-                                                </select>
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip content="Image used for Twitter card previews.">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Twitter Image URL</label>
-                                                <input type="text" value={formData.twitter_image_url || ''} onChange={(e) => setFormData({ ...formData, twitter_image_url: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
-                                            </div>
-                                        </Tooltip>
-                                    </div>
-                                </div>
-
-                                {/* Platform-Specific Section */}
-                                <div className="space-y-6">
-                                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Platform-Specific Content</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        {/* LinkedIn Card */}
-                                        <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-200 p-6 space-y-4 hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">in</span>
-                                                <h5 className="text-sm font-bold text-slate-900">LinkedIn</h5>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <Tooltip content="LinkedIn article or content title">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Title</label>
-                                                    </Tooltip>
-                                                    <input
-                                                        type="text"
-                                                        value={(formData.social_meta?.linkedin?.title) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                linkedin: {
-                                                                    ...(formData.social_meta?.linkedin || {}),
-                                                                    title: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        placeholder="e.g. Enterprise Solutions for Healthcare"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Tooltip content="LinkedIn article description or summary">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Description</label>
-                                                    </Tooltip>
-                                                    <textarea
-                                                        value={(formData.social_meta?.linkedin?.description) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                linkedin: {
-                                                                    ...(formData.social_meta?.linkedin || {}),
-                                                                    description: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none h-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        placeholder="Professional summary for LinkedIn audience"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Tooltip content="LinkedIn featured image URL">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Image URL</label>
-                                                    </Tooltip>
-                                                    <input
-                                                        type="text"
-                                                        value={(formData.social_meta?.linkedin?.image_url) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                linkedin: {
-                                                                    ...(formData.social_meta?.linkedin || {}),
-                                                                    image_url: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        placeholder="https://example.com/linkedin-image.jpg"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Facebook Card */}
-                                        <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-200 p-6 space-y-4 hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-bold">f</span>
-                                                <h5 className="text-sm font-bold text-slate-900">Facebook</h5>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <Tooltip content="Facebook post or shared page title">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Title</label>
-                                                    </Tooltip>
-                                                    <input
-                                                        type="text"
-                                                        value={(formData.social_meta?.facebook?.title) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                facebook: {
-                                                                    ...(formData.social_meta?.facebook || {}),
-                                                                    title: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        placeholder="e.g. Discover Our Healthcare Solutions"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Tooltip content="Facebook post description or teaser">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Description</label>
-                                                    </Tooltip>
-                                                    <textarea
-                                                        value={(formData.social_meta?.facebook?.description) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                facebook: {
-                                                                    ...(formData.social_meta?.facebook || {}),
-                                                                    description: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none h-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        placeholder="Engaging summary for Facebook audience"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Tooltip content="Facebook shared image URL">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Image URL</label>
-                                                    </Tooltip>
-                                                    <input
-                                                        type="text"
-                                                        value={(formData.social_meta?.facebook?.image_url) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                facebook: {
-                                                                    ...(formData.social_meta?.facebook || {}),
-                                                                    image_url: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        placeholder="https://example.com/facebook-image.jpg"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Instagram Card */}
-                                        <div className="bg-gradient-to-br from-purple-50 to-slate-50 rounded-xl border-2 border-purple-200 p-6 space-y-4 hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-bold">📷</span>
-                                                <h5 className="text-sm font-bold text-slate-900">Instagram</h5>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <Tooltip content="Instagram caption headline or hook">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Title</label>
-                                                    </Tooltip>
-                                                    <input
-                                                        type="text"
-                                                        value={(formData.social_meta?.instagram?.title) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                instagram: {
-                                                                    ...(formData.social_meta?.instagram || {}),
-                                                                    title: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                        placeholder="e.g. Transform Your Health Today"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Tooltip content="Instagram caption text (hashtags, CTA, engagement hooks)">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Caption</label>
-                                                    </Tooltip>
-                                                    <textarea
-                                                        value={(formData.social_meta?.instagram?.description) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                instagram: {
-                                                                    ...(formData.social_meta?.instagram || {}),
-                                                                    description: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none h-20 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                        placeholder="Casual, engaging caption with #hashtags and CTA"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Tooltip content="Instagram post image or carousel image URL">
-                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 tracking-wide">Image URL</label>
-                                                    </Tooltip>
-                                                    <input
-                                                        type="text"
-                                                        value={(formData.social_meta?.instagram?.image_url) || ''}
-                                                        onChange={(e) => setFormData({
-                                                            ...formData,
-                                                            social_meta: {
-                                                                ...formData.social_meta,
-                                                                instagram: {
-                                                                    ...(formData.social_meta?.instagram || {}),
-                                                                    image_url: e.target.value
-                                                                }
-                                                            }
-                                                        })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                        placeholder="https://example.com/instagram-image.jpg"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* Use the shared SocialMetaForm for consistent SMM UI */}
+                                <SocialMetaForm formData={formData} setFormData={setFormData} />
                             </div>
                         )}
 
@@ -1923,7 +1633,7 @@ const ServiceMasterView: React.FC = () => {
                                             <button onClick={() => addToList('redirect_from_urls', tempRedirect, setTempRedirect)} className="bg-slate-100 text-slate-600 px-6 rounded-lg font-bold border border-slate-200 hover:bg-slate-200 transition-colors">+</button>
                                         </div>
                                         <ul className="space-y-2">
-                                            {formData.redirect_from_urls?.map((url, i) => (
+                                            {formData.redirect_from_urls?.map((url: string, i: number) => (
                                                 <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
                                                     <span className="font-mono text-slate-600">{url}</span>
                                                     <button onClick={() => removeFromList('redirect_from_urls', i)} className="text-slate-400 hover:text-red-500 font-bold p-1 transition-colors">
@@ -1949,12 +1659,12 @@ const ServiceMasterView: React.FC = () => {
                                         </label>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <input type="text" value={tempFaq.question} onChange={(e) => setTempFaq(prev => ({ ...prev, question: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Question" />
-                                        <input type="text" value={tempFaq.answer} onChange={(e) => setTempFaq(prev => ({ ...prev, answer: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Answer" />
+                                        <input type="text" value={tempFaq.question} onChange={(e) => setTempFaq((prev: FAQItem) => ({ ...prev, question: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Question" />
+                                        <input type="text" value={tempFaq.answer} onChange={(e) => setTempFaq((prev: FAQItem) => ({ ...prev, answer: e.target.value }))} className="p-2.5 border border-slate-200 rounded text-sm" placeholder="Answer" />
                                     </div>
                                     <button onClick={() => addFaqItem(tempFaq)} className="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">Add FAQ</button>
                                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                                        {formData.faq_content?.length ? formData.faq_content.map((faq, idx) => (
+                                        {formData.faq_content?.length ? formData.faq_content.map((faq: FAQItem, idx: number) => (
                                             <div key={`faq-${idx}`} className="bg-white rounded-lg border border-slate-200 p-3 text-sm flex justify-between gap-3">
                                                 <div className="min-w-0">
                                                     <p className="font-semibold text-slate-800 truncate">{faq.question}</p>
@@ -1971,82 +1681,9 @@ const ServiceMasterView: React.FC = () => {
                         {/* --- TAB: LINKING (ASSETS) --- */}
                         {activeTab === 'Linking' && (
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
-                                    <span className="bg-blue-100 text-blue-600 p-1.5 rounded mr-2">🔗</span> Asset Management
-                                </h3>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    {/* Left: Linked Assets */}
-                                    <div className="flex flex-col h-[600px]">
-                                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4 flex justify-between items-center">
-                                            <span>Attached Assets</span>
-                                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{linkedAssets.length}</span>
-                                        </h4>
-                                        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 p-3 space-y-3">
-                                            {linkedAssets.length > 0 ? linkedAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group">
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className={`w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm ${asset.asset_format === 'image' ? 'bg-purple-500' : 'bg-blue-500'
-                                                            }`}>
-                                                            {asset.asset_type ? asset.asset_type.slice(0, 2) : 'NA'}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-bold text-sm text-slate-800 truncate" title={asset.content_title_clean}>{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wide mt-0.5">{asset.status}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleToggleAssetLink(asset)}
-                                                        className="text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Unlink Asset"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
-                                                </div>
-                                            )) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                                                    <p className="text-sm italic">No assets linked.</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Right: Available Assets */}
-                                    <div className="flex flex-col h-[600px]">
-                                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Add Assets from Library</h4>
-                                        <div className="mb-3">
-                                            <input
-                                                type="text"
-                                                placeholder="Search repository..."
-                                                value={assetSearch}
-                                                onChange={(e) => setAssetSearch(e.target.value)}
-                                                className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all"
-                                            />
-                                        </div>
-                                        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-white p-3 space-y-3">
-                                            {availableAssets.length > 0 ? availableAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-colors group cursor-pointer" onClick={() => handleToggleAssetLink(asset)}>
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold uppercase">
-                                                            {asset.asset_type ? asset.asset_type.slice(0, 2) : 'NA'}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-bold text-sm text-slate-700 truncate">{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-400 mt-0.5">ID: {asset.id}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button className="text-indigo-600 opacity-0 group-hover:opacity-100 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded transition-all">
-                                                        Link
-                                                    </button>
-                                                </div>
-                                            )) : (
-                                                <div className="p-10 text-center text-sm text-slate-400">
-                                                    {assetSearch ? 'No matching assets found.' : 'Search to find assets.'}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* Use AssetLinker for consistent asset linking UI */}
+                                {/* @ts-ignore */}
+                                <AssetLinker linkedAssets={linkedAssets} availableAssets={availableAssets} assetSearch={assetSearch} setAssetSearch={setAssetSearch} onToggle={handleToggleAssetLink} />
                             </div>
                         )}
 
@@ -2141,11 +1778,11 @@ const ServiceMasterView: React.FC = () => {
                                                         <div className="space-y-2">
                                                             <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 break-all">
                                                                 {editingItem && formData.created_at
-                                                                    ? new Date(formData.created_at).toLocaleString('en-US', { 
+                                                                    ? new Date(formData.created_at).toLocaleString('en-US', {
                                                                         year: 'numeric', month: 'short', day: '2-digit',
-                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit',
                                                                         timeZoneName: 'short'
-                                                                      })
+                                                                    })
                                                                     : <span className="text-slate-500 italic">Auto-set on creation</span>
                                                                 }
                                                             </div>
@@ -2163,11 +1800,11 @@ const ServiceMasterView: React.FC = () => {
                                                         <div className="space-y-2">
                                                             <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 break-all">
                                                                 {editingItem && formData.updated_at
-                                                                    ? new Date(formData.updated_at).toLocaleString('en-US', { 
+                                                                    ? new Date(formData.updated_at).toLocaleString('en-US', {
                                                                         year: 'numeric', month: 'short', day: '2-digit',
                                                                         hour: '2-digit', minute: '2-digit', second: '2-digit',
                                                                         timeZoneName: 'short'
-                                                                      })
+                                                                    })
                                                                     : <span className="text-slate-500 italic">Auto-set on save</span>
                                                                 }
                                                             </div>
@@ -2209,42 +1846,6 @@ const ServiceMasterView: React.FC = () => {
                                                         {!brandsLoaded && (
                                                             <div className="text-xs text-red-500 mt-2">No brands found. Please add brands in the master data.</div>
                                                         )}
-                                                                                        {/* LinkedIn, Facebook, Instagram Social Meta Fields */}
-                                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                                                                            {/* LinkedIn */}
-                                                                                            <Tooltip content="LinkedIn Card Metadata">
-                                                                                                <div>
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">LinkedIn Title</label>
-                                                                                                    <input type="text" value={formData.social_meta?.linkedin?.title || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...formData.social_meta?.linkedin, title: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">LinkedIn Description</label>
-                                                                                                    <textarea value={formData.social_meta?.linkedin?.description || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...formData.social_meta?.linkedin, description: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none" />
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">LinkedIn Image URL</label>
-                                                                                                    <input type="text" value={formData.social_meta?.linkedin?.image_url || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...formData.social_meta?.linkedin, image_url: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
-                                                                                                </div>
-                                                                                            </Tooltip>
-                                                                                            {/* Facebook */}
-                                                                                            <Tooltip content="Facebook Card Metadata">
-                                                                                                <div>
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">Facebook Title</label>
-                                                                                                    <input type="text" value={formData.social_meta?.facebook?.title || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...formData.social_meta?.facebook, title: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Facebook Description</label>
-                                                                                                    <textarea value={formData.social_meta?.facebook?.description || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...formData.social_meta?.facebook, description: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none" />
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Facebook Image URL</label>
-                                                                                                    <input type="text" value={formData.social_meta?.facebook?.image_url || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...formData.social_meta?.facebook, image_url: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
-                                                                                                </div>
-                                                                                            </Tooltip>
-                                                                                            {/* Instagram */}
-                                                                                            <Tooltip content="Instagram Card Metadata">
-                                                                                                <div>
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">Instagram Title</label>
-                                                                                                    <input type="text" value={formData.social_meta?.instagram?.title || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...formData.social_meta?.instagram, title: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm" />
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Instagram Description</label>
-                                                                                                    <textarea value={formData.social_meta?.instagram?.description || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...formData.social_meta?.instagram, description: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none" />
-                                                                                                    <label className="block text-xs font-bold text-blue-700 uppercase mt-2 mb-1.5">Instagram Image URL</label>
-                                                                                                    <input type="text" value={formData.social_meta?.instagram?.image_url || ''} onChange={e => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...formData.social_meta?.instagram, image_url: e.target.value } } })} className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono text-slate-600" placeholder="https://..." />
-                                                                                                </div>
-                                                                                            </Tooltip>
-                                                                                        </div>
                                                     </div>
                                                 </Tooltip>
                                             </div>
