@@ -5,7 +5,7 @@ import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem } from '../types';
 
 const AssetsView: React.FC = () => {
-    const { data: assets = [], create: createAsset, remove: deleteAsset } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assets = [], create: createAsset, remove: removeAsset } = useData<AssetLibraryItem>('assetLibrary');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'upload'>('list');
@@ -91,8 +91,13 @@ const AssetsView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (confirm('Delete this asset?')) {
-            await deleteAsset(id);
+        if (window.confirm('Are you sure you want to delete this asset? This action cannot be undone.')) {
+            try {
+                await removeAsset(id);
+            } catch (error) {
+                console.error('Failed to delete asset:', error);
+                alert('Failed to delete asset. Please try again.');
+            }
         }
     };
 
@@ -228,8 +233,8 @@ const AssetsView: React.FC = () => {
                             {/* File Upload Zone */}
                             <div
                                 className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${dragActive
-                                        ? 'border-indigo-500 bg-indigo-50'
-                                        : 'border-slate-300 bg-white hover:border-indigo-400 hover:bg-indigo-50/50'
+                                    ? 'border-indigo-500 bg-indigo-50'
+                                    : 'border-slate-300 bg-white hover:border-indigo-400 hover:bg-indigo-50/50'
                                     }`}
                                 onDrop={handleDrop}
                                 onDragOver={handleDrag}
@@ -343,7 +348,7 @@ const AssetsView: React.FC = () => {
         );
     }
 
-    
+
     // List View
     return (
         <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
