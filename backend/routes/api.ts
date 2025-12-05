@@ -84,6 +84,12 @@ router.post('/assets', assetController.createAsset);
 router.put('/assets/:id', assetController.updateAsset);
 router.delete('/assets/:id', assetController.deleteAsset);
 
+// --- Asset Library ---
+router.get('/assetLibrary', assetController.getAssetLibrary);
+router.post('/assetLibrary', assetController.createAssetLibraryItem);
+router.put('/assetLibrary/:id', assetController.updateAssetLibraryItem);
+router.delete('/assetLibrary/:id', assetController.deleteAssetLibraryItem);
+
 // --- Content Repository ---
 router.get('/content', contentController.getContent);
 router.post('/content', contentController.createContent);
@@ -230,7 +236,7 @@ router.delete('/qc-checklists/:id', qcController.deleteChecklist);
 
 router.get('/qc-versions', qcController.getChecklistVersions);
 router.get('/qc-weightage-configs', qcController.getWeightageConfigs);
-router.post('/qc-weightage-configs', qcController.createWeightageConfig); 
+router.post('/qc-weightage-configs', qcController.createWeightageConfig);
 router.put('/qc-weightage-configs/:id', qcController.updateWeightageConfig);
 router.delete('/qc-weightage-configs/:id', qcController.deleteWeightageConfig);
 
