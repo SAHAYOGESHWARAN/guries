@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
+import SocialMetaForm from '../components/SocialMetaForm';
+import AssetLinker from '../components/AssetLinker';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
@@ -357,191 +359,13 @@ const SubServiceMasterView: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Social Media Metadata Card */}
+                        {/* Social Media Metadata Card (refactored) */}
                         <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                            {/* Header */}
-                            <div className="relative bg-gradient-to-r from-pink-50 to-slate-50 border-b border-slate-200 px-8 py-8">
-                                <div className="flex items-center gap-3">
-                                    <span className="bg-pink-100 text-pink-600 p-2.5 rounded-lg text-lg">📢</span>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Social Media Metadata</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5">Platform-specific sharing content</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Tooltip content="Open Graph Title (Facebook, LinkedIn)">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">OG Title</label>
-                                            <input type="text" value={formData.og_title || ''} onChange={(e) => setFormData({ ...formData, og_title: e.target.value })} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all" placeholder="Social sharing title" />
-                                        </div>
-                                    </Tooltip>
-                                    <Tooltip content="Twitter Card Title">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Twitter Title</label>
-                                            <input type="text" value={formData.twitter_title || ''} onChange={(e) => setFormData({ ...formData, twitter_title: e.target.value })} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all" placeholder="Twitter sharing title" />
-                                        </div>
-                                    </Tooltip>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Tooltip content="Open Graph Description">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">OG Description</label>
-                                            <textarea value={formData.og_description || ''} onChange={(e) => setFormData({ ...formData, og_description: e.target.value })} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all resize-none h-24" placeholder="Social sharing description" />
-                                        </div>
-                                    </Tooltip>
-                                    <Tooltip content="Twitter Card Description">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Twitter Description</label>
-                                            <textarea value={formData.twitter_description || ''} onChange={(e) => setFormData({ ...formData, twitter_description: e.target.value })} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all resize-none h-24" placeholder="Twitter sharing description" />
-                                        </div>
-                                    </Tooltip>
-                                </div>
-
-                                <Tooltip content="Image URL for social sharing">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Social Share Image URL</label>
-                                        <input type="text" value={formData.og_image_url || ''} onChange={(e) => setFormData({ ...formData, og_image_url: e.target.value })} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all" placeholder="https://example.com/image.jpg" />
-                                    </div>
-                                </Tooltip>
-
-                                <div className="space-y-6 pb-8 border-b border-slate-200">
-                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Platform-Specific Content</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {/* LinkedIn Card */}
-                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/20 rounded-xl border-2 border-blue-200 p-6 space-y-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="bg-blue-100 text-blue-600 px-2.5 py-1 rounded-lg text-xs font-bold">in</span>
-                                                <h5 className="text-sm font-bold text-slate-900">LinkedIn</h5>
-                                            </div>
-                                            <Tooltip content="Professional headline optimized for LinkedIn sharing">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Title</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Professional headline"
-                                                        value={(formData.social_meta as any)?.linkedin?.title || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...((formData.social_meta as any)?.linkedin || {}), title: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                            <Tooltip content="Professional summary for LinkedIn article preview">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Description</label>
-                                                    <textarea
-                                                        placeholder="Professional summary"
-                                                        value={(formData.social_meta as any)?.linkedin?.description || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...((formData.social_meta as any)?.linkedin || {}), description: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none h-20"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                            <Tooltip content="Featured image URL for LinkedIn (1200x627px recommended)">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Image URL</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="https://example.com/linkedin-image.jpg"
-                                                        value={(formData.social_meta as any)?.linkedin?.image_url || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, linkedin: { ...((formData.social_meta as any)?.linkedin || {}), image_url: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                        </div>
-
-                                        {/* Facebook Card */}
-                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/20 rounded-xl border-2 border-blue-200 p-6 space-y-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="bg-blue-100 text-blue-600 px-2.5 py-1 rounded-lg text-xs font-bold">f</span>
-                                                <h5 className="text-sm font-bold text-slate-900">Facebook</h5>
-                                            </div>
-                                            <Tooltip content="Engaging headline for Facebook feed sharing">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Title</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Engaging headline"
-                                                        value={(formData.social_meta as any)?.facebook?.title || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...((formData.social_meta as any)?.facebook || {}), title: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                            <Tooltip content="Engaging description for Facebook page preview">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Description</label>
-                                                    <textarea
-                                                        placeholder="Engaging summary"
-                                                        value={(formData.social_meta as any)?.facebook?.description || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...((formData.social_meta as any)?.facebook || {}), description: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none h-20"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                            <Tooltip content="Share image URL for Facebook (1200x628px recommended)">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Image URL</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="https://example.com/facebook-image.jpg"
-                                                        value={(formData.social_meta as any)?.facebook?.image_url || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, facebook: { ...((formData.social_meta as any)?.facebook || {}), image_url: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                        </div>
-
-                                        {/* Instagram Card */}
-                                        <div className="bg-gradient-to-br from-purple-50 to-pink-50/20 rounded-xl border-2 border-purple-200 p-6 space-y-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="bg-purple-100 text-purple-600 px-2.5 py-1 rounded-lg text-xs font-bold">📷</span>
-                                                <h5 className="text-sm font-bold text-slate-900">Instagram</h5>
-                                            </div>
-                                            <Tooltip content="Instagram post hook or engagement hook">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Title</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Post hook or headline"
-                                                        value={(formData.social_meta as any)?.instagram?.title || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...((formData.social_meta as any)?.instagram || {}), title: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                            <Tooltip content="Instagram caption with hashtags and engagement prompts (max 2200 chars)">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Caption</label>
-                                                    <textarea
-                                                        placeholder="Caption with #hashtags for engagement"
-                                                        value={(formData.social_meta as any)?.instagram?.description || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...((formData.social_meta as any)?.instagram || {}), description: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none h-20"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                            <Tooltip content="Post image URL for Instagram (1080x1080px square recommended)">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Image URL</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="https://example.com/instagram-image.jpg"
-                                                        value={(formData.social_meta as any)?.instagram?.image_url || ''}
-                                                        onChange={(e) => setFormData({ ...formData, social_meta: { ...formData.social_meta, instagram: { ...((formData.social_meta as any)?.instagram || {}), image_url: e.target.value } } })}
-                                                        className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl text-sm font-mono text-slate-600 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="p-6">
+                                {/* Use reusable SocialMetaForm component */}
+                                {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+                                {/* @ts-ignore */}
+                                <SocialMetaForm formData={formData} setFormData={setFormData} />
                             </div>
                         </div>
 
@@ -629,93 +453,12 @@ const SubServiceMasterView: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Asset Linking Card */}
+                        {/* Asset Linking Card (refactored) */}
                         <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                            {/* Header */}
-                            <div className="relative bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 px-8 py-8">
-                                <div className="flex items-center gap-3">
-                                    <span className="bg-blue-100 text-blue-600 p-2.5 rounded-lg text-lg">🔗</span>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Asset Management</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5">Link content assets and resources</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-8">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    {/* Linked Assets */}
-                                    <div className="flex flex-col h-[600px]">
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase mb-4 flex justify-between items-center tracking-wider">
-                                            <span>Linked Assets</span>
-                                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{linkedAssets.length}</span>
-                                        </h4>
-                                        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 p-3 space-y-3">
-                                            {linkedAssets.length > 0 ? linkedAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group">
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className={`w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm bg-indigo-600`}>
-                                                            {asset.asset_type ? asset.asset_type.slice(0, 2) : 'NA'}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-medium text-sm text-slate-800 truncate" title={asset.content_title_clean}>{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wide mt-0.5">{asset.status}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleToggleAssetLink(asset)}
-                                                        className="text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                                                        title="Unlink Asset"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
-                                                </div>
-                                            )) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                                                    <p className="text-sm italic">No assets linked</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Available Assets */}
-                                    <div className="flex flex-col h-[600px]">
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase mb-4 tracking-wider">Add Assets from Library</h4>
-                                        <div className="mb-3">
-                                            <input
-                                                type="text"
-                                                placeholder="Search repository..."
-                                                value={assetSearch}
-                                                onChange={(e) => setAssetSearch(e.target.value)}
-                                                className="w-full p-3 text-sm border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                            />
-                                        </div>
-                                        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-white p-3 space-y-3">
-                                            {availableAssets.length > 0 ? availableAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-colors group cursor-pointer" onClick={() => handleToggleAssetLink(asset)}>
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold uppercase">
-                                                            {asset.asset_type ? asset.asset_type.slice(0, 2) : 'NA'}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-medium text-sm text-slate-700 truncate">{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-400 mt-0.5">ID: {asset.id}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button className="text-indigo-600 opacity-0 group-hover:opacity-100 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded transition-all">
-                                                        Link
-                                                    </button>
-                                                </div>
-                                            )) : (
-                                                <div className="p-10 text-center text-sm text-slate-400">
-                                                    {assetSearch ? 'No matching assets found.' : 'Search to find assets.'}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* Use reusable AssetLinker component */}
+                            {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+                            {/* @ts-ignore */}
+                            <AssetLinker linkedAssets={linkedAssets} availableAssets={availableAssets} assetSearch={assetSearch} setAssetSearch={setAssetSearch} onToggle={handleToggleAssetLink} />
                         </div>
                     </div>
                 </div>
