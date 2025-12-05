@@ -96,7 +96,7 @@ const SocialMetaForm: React.FC<Props> = ({ formData, setFormData }) => {
       </div>
 
       {/* Platform Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {platforms.map((platform) => {
           const data = formData.social_meta?.[platform.id as keyof SocialMeta] || {};
           const isExpanded = activePreview === platform.id;
@@ -104,7 +104,7 @@ const SocialMetaForm: React.FC<Props> = ({ formData, setFormData }) => {
           return (
             <div
               key={platform.id}
-              className={`bg-white rounded-2xl border-2 ${platform.borderColor} shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden`}
+              className={`bg-white rounded-2xl border-2 ${platform.borderColor} shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full`}
             >
               {/* Platform Header */}
               <div className={`bg-gradient-to-r ${platform.bgGradient} p-6 text-white`}>
@@ -133,11 +133,12 @@ const SocialMetaForm: React.FC<Props> = ({ formData, setFormData }) => {
               </div>
 
               {/* Form Fields */}
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 flex-1">
                 <Tooltip content={`Title displayed when sharing on ${platform.name}`}>
                   <div>
-                    <label className={`block text-xs font-bold ${platform.textColor} uppercase mb-2 tracking-wide flex items-center gap-2`}>
-                      <span>📝</span> Title
+                    <label className={`flex items-center gap-2 text-xs font-bold ${platform.textColor} uppercase mb-2 tracking-wide`}>
+                      <span className="text-base">📝</span>
+                      <span>Title</span>
                     </label>
                     <input
                       type="text"
@@ -154,8 +155,9 @@ const SocialMetaForm: React.FC<Props> = ({ formData, setFormData }) => {
 
                 <Tooltip content={`Description or caption for ${platform.name} shares`}>
                   <div>
-                    <label className={`block text-xs font-bold ${platform.textColor} uppercase mb-2 tracking-wide flex items-center gap-2`}>
-                      <span>💬</span> {platform.id === 'instagram' ? 'Caption' : 'Description'}
+                    <label className={`flex items-center gap-2 text-xs font-bold ${platform.textColor} uppercase mb-2 tracking-wide`}>
+                      <span className="text-base">💬</span>
+                      <span>{platform.id === 'instagram' ? 'Caption' : 'Description'}</span>
                     </label>
                     <textarea
                       value={data.description || ''}
@@ -172,8 +174,9 @@ const SocialMetaForm: React.FC<Props> = ({ formData, setFormData }) => {
 
                 <Tooltip content={`Image URL for ${platform.name} preview card`}>
                   <div>
-                    <label className={`block text-xs font-bold ${platform.textColor} uppercase mb-2 tracking-wide flex items-center gap-2`}>
-                      <span>🖼️</span> Image URL
+                    <label className={`flex items-center gap-2 text-xs font-bold ${platform.textColor} uppercase mb-2 tracking-wide`}>
+                      <span className="text-base">🖼️</span>
+                      <span>Image URL</span>
                     </label>
                     <div className="flex gap-2">
                       <input
