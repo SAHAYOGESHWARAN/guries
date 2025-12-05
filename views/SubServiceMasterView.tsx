@@ -200,11 +200,14 @@ const SubServiceMasterView: React.FC = () => {
                             {/* Header */}
                             <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
                                 <div className="absolute top-0 right-0 opacity-10">
-                                    <div className="w-40 h-40 rounded-full bg-white"></div>
+                                    <span className="text-9xl">💎</span>
                                 </div>
                                 <div className="relative z-10">
-                                    <h3 className="text-2xl font-bold">Core Information</h3>
-                                    <p className="text-indigo-100 text-sm mt-1">Sub-service name, parent service, and URL slug</p>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🏷️</span>
+                                        <h3 className="text-2xl font-bold">Core Information</h3>
+                                    </div>
+                                    <p className="text-indigo-100 text-sm">Sub-service name, parent service, and URL slug</p>
                                 </div>
                             </div>
 
@@ -310,25 +313,31 @@ const SubServiceMasterView: React.FC = () => {
                         </div>
 
                         {/* SEO Metadata Card */}
-                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                        <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-slate-50 rounded-2xl border-2 border-green-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                             {/* Header */}
-                            <div className="relative bg-gradient-to-r from-green-50 to-slate-50 border-b border-slate-200 px-8 py-8">
-                                <div className="flex items-center gap-3">
-                                    <span className="bg-green-100 text-green-600 p-2.5 rounded-lg text-lg">🔍</span>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">SEO Metadata</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5">Search engine visibility and metadata</p>
+                            <div className="relative bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-10 text-white overflow-hidden">
+                                <div className="absolute top-0 right-0 opacity-10">
+                                    <span className="text-9xl">🔍</span>
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📊</span>
+                                        <h3 className="text-2xl font-bold">SEO Metadata</h3>
                                     </div>
+                                    <p className="text-green-100 text-sm">Search engine visibility and metadata</p>
                                 </div>
                             </div>
 
                             {/* Content */}
-                            <div className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Meta Title</label>
-                                            <span className={`text-[10px] font-mono font-bold ${(formData.meta_title?.length || 0) > 60 ? 'text-red-500' : 'text-green-600'}`}>
+                            <div className="p-10">
+                                <div className="space-y-6">
+                                    <div className="bg-white rounded-xl border-2 border-green-100 p-6 hover:border-green-300 transition-colors">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest">
+                                                <span className="text-sm">📝</span>
+                                                Meta Title
+                                            </label>
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold ${(formData.meta_title?.length || 0) > 60 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                                                 {formData.meta_title?.length || 0}/60
                                             </span>
                                         </div>
@@ -336,24 +345,46 @@ const SubServiceMasterView: React.FC = () => {
                                             type="text"
                                             value={formData.meta_title || ''}
                                             onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                                            placeholder="Sub-Service Name - Brand"
+                                            placeholder="Sub-Service Name - Brand | Compelling Value Proposition"
                                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                                         />
+                                        <p className="text-xs text-slate-500 mt-2">💡 Optimal length: 50-60 characters for best display in search results</p>
                                     </div>
 
-                                    <div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Meta Description</label>
-                                            <span className={`text-[10px] font-mono font-bold ${(formData.meta_description?.length || 0) > 160 ? 'text-red-500' : 'text-green-600'}`}>
+                                    <div className="bg-white rounded-xl border-2 border-emerald-100 p-6 hover:border-emerald-300 transition-colors">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <label className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
+                                                <span className="text-sm">📄</span>
+                                                Meta Description
+                                            </label>
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold ${(formData.meta_description?.length || 0) > 160 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                                 {formData.meta_description?.length || 0}/160
                                             </span>
                                         </div>
                                         <textarea
                                             value={formData.meta_description || ''}
                                             onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                                            placeholder="Brief summary for search results..."
-                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all resize-none h-24"
+                                            placeholder="Write a compelling summary that encourages clicks from search results. Include key benefits and a call-to-action."
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-none"
+                                            rows={4}
                                         />
+                                        <p className="text-xs text-slate-500 mt-2">💡 Optimal length: 150-160 characters for complete display in search results</p>
+                                    </div>
+
+                                    {/* SEO Tips */}
+                                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200 p-5">
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-2xl">💡</span>
+                                            <div className="flex-1">
+                                                <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-2">SEO Best Practices</h4>
+                                                <ul className="text-xs text-amber-800 space-y-1">
+                                                    <li>• Include primary keywords naturally in both title and description</li>
+                                                    <li>• Make titles unique and descriptive for each sub-service</li>
+                                                    <li>• Write descriptions that encourage clicks with clear value propositions</li>
+                                                    <li>• Avoid keyword stuffing - focus on readability and user intent</li>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -370,96 +401,137 @@ const SubServiceMasterView: React.FC = () => {
                         </div>
 
                         {/* Governance Card */}
-                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                        <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                             {/* Header */}
-                            <div className="relative bg-gradient-to-r from-teal-50 to-slate-50 border-b border-slate-200 px-8 py-8">
-                                <div className="flex items-center gap-3">
-                                    <span className="bg-teal-100 text-teal-600 p-2.5 rounded-lg text-lg">⚖️</span>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Governance & Ownership</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5">Ownership and management assignments</p>
+                            <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
+                                <div className="absolute top-0 right-0 opacity-10">
+                                    <span className="text-9xl">⚖️</span>
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
+                                        <h3 className="text-2xl font-bold">Governance & Ownership</h3>
                                     </div>
+                                    <p className="text-teal-100 text-sm">Ownership and management assignments</p>
                                 </div>
                             </div>
 
                             {/* Content */}
-                            <div className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Tooltip content="Associated brand">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Brand</label>
-                                            <select
-                                                value={formData.brand_id || 0}
-                                                onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || 0 })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-medium bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
-                                            >
-                                                <option value={0}>Select Brand...</option>
-                                                {brands.map(b => (
-                                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </Tooltip>
+                            <div className="p-10">
+                                <div className="space-y-8">
+                                    {/* Ownership Section */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Tooltip content="Associated brand for this sub-service">
+                                            <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
+                                                    <span className="text-sm">🏢</span>
+                                                    Brand
+                                                </label>
+                                                <select
+                                                    value={formData.brand_id || 0}
+                                                    onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || 0 })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-medium bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all cursor-pointer"
+                                                >
+                                                    <option value={0}>Select Brand...</option>
+                                                    {brands.map(b => (
+                                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </Tooltip>
 
-                                    <Tooltip content="Content owner/manager">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-600 uppercase mb-2 tracking-wide">Content Owner</label>
-                                            <select
-                                                value={formData.content_owner_id || 0}
-                                                onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || 0 })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-medium bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
-                                            >
-                                                <option value={0}>Select Owner...</option>
-                                                {users.map(u => (
-                                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </Tooltip>
-                                </div>
+                                        <Tooltip content="Person responsible for managing this sub-service content">
+                                            <div className="bg-white rounded-xl border-2 border-teal-100 p-6 hover:border-teal-300 transition-colors">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-teal-700 uppercase tracking-widest mb-3">
+                                                    <span className="text-sm">👤</span>
+                                                    Content Owner
+                                                </label>
+                                                <select
+                                                    value={formData.content_owner_id || 0}
+                                                    onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || 0 })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-medium bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all cursor-pointer"
+                                                >
+                                                    <option value={0}>Select Owner...</option>
+                                                    {users.map(u => (
+                                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
 
-                                <div className="border-t border-slate-200 pt-6">
-                                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">Auto-Generated Metadata</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5 tracking-wide">Record ID</label>
-                                            <input
-                                                type="text"
-                                                value={editingItem?.id || 'New Record'}
-                                                readOnly
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-mono"
-                                            />
+                                    {/* Auto-Generated Metadata Section */}
+                                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-lg">🕒</span>
+                                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Auto-Generated Metadata</h4>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5 tracking-wide">Created</label>
-                                            <input
-                                                type="text"
-                                                value={(editingItem as any)?.created_at ? new Date((editingItem as any).created_at).toLocaleDateString() : 'N/A'}
-                                                readOnly
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-mono"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5 tracking-wide">Modified</label>
-                                            <input
-                                                type="text"
-                                                value={(editingItem as any)?.updated_at ? new Date((editingItem as any).updated_at).toLocaleDateString() : 'Just now'}
-                                                readOnly
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 text-sm font-mono"
-                                            />
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wide">Record ID</label>
+                                                <div className="px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-700 text-sm font-mono font-bold">
+                                                    {editingItem?.id || '—'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wide">Created Date</label>
+                                                <div className="px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-700 text-sm font-mono">
+                                                    {(editingItem as any)?.created_at
+                                                        ? new Date((editingItem as any).created_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: '2-digit'
+                                                        })
+                                                        : 'N/A'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wide">Last Modified</label>
+                                                <div className="px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-700 text-sm font-mono">
+                                                    {(editingItem as any)?.updated_at
+                                                        ? new Date((editingItem as any).updated_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: '2-digit'
+                                                        })
+                                                        : 'Just now'}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Asset Linking Card (refactored) */}
-                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                            {/* Use reusable AssetLinker component */}
-                            {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-                            {/* @ts-ignore */}
-                            <AssetLinker linkedAssets={linkedAssets} availableAssets={availableAssets} assetSearch={assetSearch} setAssetSearch={setAssetSearch} onToggle={handleToggleAssetLink} />
-                        </div>
+                        {/* Asset Linking Card */}
+                        {editingItem && (
+                            <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                {/* Header */}
+                                <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-10 text-white overflow-hidden">
+                                    <div className="absolute top-0 right-0 opacity-10">
+                                        <span className="text-9xl">🔗</span>
+                                    </div>
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📎</span>
+                                            <h3 className="text-2xl font-bold">Content Assets</h3>
+                                        </div>
+                                        <p className="text-purple-100 text-sm">Link related content assets to this sub-service</p>
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-8">
+                                    <AssetLinker
+                                        linkedAssets={linkedAssets}
+                                        availableAssets={availableAssets}
+                                        assetSearch={assetSearch}
+                                        setAssetSearch={setAssetSearch}
+                                        onToggle={handleToggleAssetLink}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

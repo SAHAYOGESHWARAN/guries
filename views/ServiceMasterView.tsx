@@ -1213,42 +1213,161 @@ const ServiceMasterView: React.FC = () => {
                                         </Tooltip>
                                     </div>
 
-                                    {/* Body Content Section */}
-                                    <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-xl border-2 border-slate-200 p-6">
-                                        <Tooltip content="Main body copy. Supports Markdown formatting for rich text editing.">
-                                            <div className="space-y-3">
-                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-3 tracking-wider flex items-center gap-2">
-                                                    <span className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded text-[10px] font-mono font-bold">BODY</span>
-                                                    <span>Body Content</span>
-                                                </label>
-                                                <div className="relative">
-                                                    <textarea
-                                                        value={formData.body_content}
-                                                        onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
-                                                        className="w-full px-4 py-4 border-2 border-slate-300 rounded-lg h-64 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-y bg-white placeholder:text-slate-400 shadow-sm"
-                                                        placeholder="# Write your content here...&#10;&#10;Supports Markdown formatting:&#10;- **Bold**&#10;- *Italic*&#10;- Lists&#10;- Links&#10;- Headers"
-                                                        style={{ minHeight: '256px' }}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
-                                                    <div className="flex items-center gap-4 text-slate-600">
-                                                        <span className="flex items-center gap-1.5">
-                                                            <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                            </svg>
-                                                            <span className="font-medium">Markdown supported</span>
-                                                        </span>
-                                                        <span className="text-slate-400">•</span>
-                                                        <span className="text-slate-500">
-                                                            {formData.body_content ? Math.ceil((formData.body_content.split(/\s+/).filter(Boolean).length || 0) / 200) : 0} min read
-                                                        </span>
+                                    {/* Body Content Section - Enhanced */}
+                                    <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border-2 border-indigo-200 shadow-xl overflow-hidden">
+                                        {/* Header */}
+                                        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6 text-white overflow-hidden">
+                                            <div className="absolute top-0 right-0 opacity-10">
+                                                <span className="text-9xl">📝</span>
+                                            </div>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="bg-white bg-opacity-20 p-2.5 rounded-xl text-2xl">✍️</span>
+                                                        <div>
+                                                            <h3 className="text-xl font-bold">Body Content</h3>
+                                                            <p className="text-indigo-100 text-xs mt-0.5">Main content area with Markdown support</p>
+                                                        </div>
                                                     </div>
-                                                    <span className="font-mono text-slate-600 font-semibold">
-                                                        {formData.body_content?.length || 0} <span className="text-slate-400 font-normal">characters</span>
-                                                    </span>
+                                                    <div className="flex items-center gap-4 text-sm">
+                                                        <div className="bg-white bg-opacity-20 px-3 py-1.5 rounded-lg">
+                                                            <span className="font-mono font-bold">{formData.body_content?.split(/\s+/).filter(Boolean).length || 0}</span>
+                                                            <span className="text-white/80 text-xs ml-1">words</span>
+                                                        </div>
+                                                        <div className="bg-white bg-opacity-20 px-3 py-1.5 rounded-lg">
+                                                            <span className="font-mono font-bold">{formData.body_content ? Math.ceil((formData.body_content.split(/\s+/).filter(Boolean).length || 0) / 200) : 0}</span>
+                                                            <span className="text-white/80 text-xs ml-1">min read</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </Tooltip>
+                                        </div>
+
+                                        {/* Editor Area */}
+                                        <div className="p-8">
+                                            <Tooltip content="Main body copy. Supports Markdown formatting for rich text editing.">
+                                                <div className="space-y-4">
+                                                    {/* Toolbar */}
+                                                    <div className="flex items-center justify-between bg-white rounded-xl border-2 border-indigo-200 px-4 py-3 shadow-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Formatting:</span>
+                                                            <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                                <span className="bg-slate-100 px-2 py-1 rounded font-mono">**bold**</span>
+                                                                <span className="bg-slate-100 px-2 py-1 rounded font-mono">*italic*</span>
+                                                                <span className="bg-slate-100 px-2 py-1 rounded font-mono"># heading</span>
+                                                                <span className="bg-slate-100 px-2 py-1 rounded font-mono">- list</span>
+                                                                <span className="bg-slate-100 px-2 py-1 rounded font-mono">[link](url)</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    const words = formData.body_content?.split(/\s+/).filter(Boolean).length || 0;
+                                                                    const chars = formData.body_content?.length || 0;
+                                                                    alert(`Content Stats:\n\n• Words: ${words}\n• Characters: ${chars}\n• Reading Time: ${Math.ceil(words / 200)} min\n• Paragraphs: ${formData.body_content?.split(/\n\n/).filter(Boolean).length || 0}`);
+                                                                }}
+                                                                className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-200 transition-colors"
+                                                            >
+                                                                📊 Stats
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setFormData({ ...formData, body_content: '' })}
+                                                                className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-200 transition-colors"
+                                                            >
+                                                                🗑️ Clear
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Text Editor */}
+                                                    <div className="relative">
+                                                        <textarea
+                                                            value={formData.body_content}
+                                                            onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
+                                                            className="w-full px-6 py-5 border-2 border-indigo-200 rounded-xl font-mono text-sm leading-loose focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-y bg-white placeholder:text-slate-400 shadow-inner"
+                                                            placeholder="# Start writing your content here...&#10;&#10;## Section Heading&#10;&#10;Write engaging, well-structured content that provides value to your readers.&#10;&#10;### Key Points:&#10;- Use clear, concise language&#10;- Break content into digestible sections&#10;- Include relevant examples&#10;- Add internal and external links&#10;&#10;**Pro tip:** Use Markdown formatting to structure your content effectively.&#10;&#10;---&#10;&#10;Ready to create something amazing? Start typing!"
+                                                            style={{ minHeight: '500px', maxHeight: '800px' }}
+                                                        />
+
+                                                        {/* Character limit indicator */}
+                                                        {formData.body_content?.length > 5000 && (
+                                                            <div className="absolute top-3 right-3">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${formData.body_content.length > 10000
+                                                                    ? 'bg-red-100 text-red-700'
+                                                                    : 'bg-yellow-100 text-yellow-700'
+                                                                    }`}>
+                                                                    {formData.body_content.length > 10000 ? '⚠️ Very Long' : '⚡ Long Content'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Footer Stats Bar */}
+                                                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 px-6 py-4">
+                                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                                            <div className="text-center">
+                                                                <div className="text-2xl font-bold text-indigo-600 font-mono">
+                                                                    {formData.body_content?.length || 0}
+                                                                </div>
+                                                                <div className="text-xs text-slate-600 font-medium uppercase tracking-wide">Characters</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-2xl font-bold text-purple-600 font-mono">
+                                                                    {formData.body_content?.split(/\s+/).filter(Boolean).length || 0}
+                                                                </div>
+                                                                <div className="text-xs text-slate-600 font-medium uppercase tracking-wide">Words</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-2xl font-bold text-pink-600 font-mono">
+                                                                    {formData.body_content?.split(/\n\n/).filter(Boolean).length || 0}
+                                                                </div>
+                                                                <div className="text-xs text-slate-600 font-medium uppercase tracking-wide">Paragraphs</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-2xl font-bold text-indigo-600 font-mono">
+                                                                    {formData.body_content ? Math.ceil((formData.body_content.split(/\s+/).filter(Boolean).length || 0) / 200) : 0}
+                                                                </div>
+                                                                <div className="text-xs text-slate-600 font-medium uppercase tracking-wide">Min Read</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-2xl font-bold text-purple-600 font-mono">
+                                                                    {formData.body_content?.split(/\n/).length || 0}
+                                                                </div>
+                                                                <div className="text-xs text-slate-600 font-medium uppercase tracking-wide">Lines</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Quick Tips */}
+                                                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200 p-4">
+                                                        <div className="flex items-start gap-3">
+                                                            <span className="text-xl">💡</span>
+                                                            <div className="flex-1">
+                                                                <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-2">Writing Tips</h4>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-amber-800">
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="text-amber-600">•</span>
+                                                                        <span>Aim for 300-800 words for optimal engagement</span>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="text-amber-600">•</span>
+                                                                        <span>Use headings to break up long sections</span>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="text-amber-600">•</span>
+                                                                        <span>Keep paragraphs short (3-4 sentences)</span>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="text-amber-600">•</span>
+                                                                        <span>Include relevant keywords naturally</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Tooltip>
+                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1678,12 +1797,30 @@ const ServiceMasterView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* --- TAB: LINKING (ASSETS) --- */}
+                        {/* --- TAB: LINKING --- */}
                         {activeTab === 'Linking' && (
-                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
-                                {/* Use AssetLinker for consistent asset linking UI */}
-                                {/* @ts-ignore */}
-                                <AssetLinker linkedAssets={linkedAssets} availableAssets={availableAssets} assetSearch={assetSearch} setAssetSearch={setAssetSearch} onToggle={handleToggleAssetLink} />
+                            <div className="space-y-8">
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-xl">
+                                    <div className="flex items-center gap-4 mb-3">
+                                        <div className="bg-white bg-opacity-20 p-3 rounded-xl">
+                                            <span className="text-3xl">🔗</span>
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold">Content Linking</h2>
+                                            <p className="text-white/90 text-sm mt-1">Manage asset connections</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {editingItem && (
+                                    <AssetLinker
+                                        linkedAssets={linkedAssets}
+                                        availableAssets={availableAssets}
+                                        assetSearch={assetSearch}
+                                        setAssetSearch={setAssetSearch}
+                                        onToggle={handleToggleAssetLink}
+                                    />
+                                )}
                             </div>
                         )}
 
