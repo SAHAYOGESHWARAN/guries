@@ -18,21 +18,21 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
 ];
 
 const ServiceMasterView: React.FC = () => {
-    const { data: services, create, update, remove } = useData<Service>('services');
-    const { data: contentAssets, update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
-    const { data: keywordsMaster } = useData<Keyword>('keywords');
+    const { data: services = [], create, update, remove } = useData<Service>('services');
+    const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
+    const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
 
     // Master Data for Dropdowns/Selectors
-    const { data: users } = useData<User>('users');
-    const { data: brands } = useData<Brand>('brands');
+    const { data: users = [] } = useData<User>('users');
+    const { data: brands = [] } = useData<Brand>('brands');
         // Warn if brands are not loaded
         const brandsLoaded = Array.isArray(brands) && brands.length > 0;
-    const { data: campaigns } = useData<Campaign>('campaigns');
-    const { data: industrySectors } = useData<IndustrySectorItem>('industrySectors');
-    const { data: countries } = useData<CountryMasterItem>('countries');
-    const { data: contentTypes } = useData<ContentTypeItem>('contentTypes');
-    const { data: personas } = useData<PersonaMasterItem>('personas');
-    const { data: forms } = useData<FormMasterItem>('forms');
+    const { data: campaigns = [] } = useData<Campaign>('campaigns');
+    const { data: industrySectors = [] } = useData<IndustrySectorItem>('industrySectors');
+    const { data: countries = [] } = useData<CountryMasterItem>('countries');
+    const { data: contentTypes = [] } = useData<ContentTypeItem>('contentTypes');
+    const { data: personas = [] } = useData<PersonaMasterItem>('personas');
+    const { data: forms = [] } = useData<FormMasterItem>('forms');
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
@@ -132,7 +132,7 @@ const ServiceMasterView: React.FC = () => {
             .slice(0, 10); // Limit results for perf
     }, [contentAssets, editingItem, assetSearch]);
 
-    const availableContentTypes = contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
+    const availableContentTypes = Array.isArray(contentTypes) && contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
 
     // Handlers
     const handleCreateClick = () => {
@@ -2305,7 +2305,7 @@ const ServiceMasterView: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6">
+        <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6 ui-surface">
             <div className="flex justify-between items-start">
                 <div>
                     <h1 className="text-xl font-bold text-slate-800 tracking-tight">Service Master</h1>

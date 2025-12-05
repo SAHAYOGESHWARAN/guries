@@ -9,12 +9,12 @@ import type { SubServiceItem, Service, ContentRepositoryItem, Brand, User } from
 const STATUSES = ['All Status', 'Published', 'Draft', 'Archived'];
 
 const SubServiceMasterView: React.FC = () => {
-    const { data: subServices, create, update, remove } = useData<SubServiceItem>('subServices');
-    const { data: services } = useData<Service>('services');
-    const { data: contentAssets, update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
-    const { data: brands } = useData<Brand>('brands');
+    const { data: subServices = [], create, update, remove } = useData<SubServiceItem>('subServices');
+    const { data: services = [] } = useData<Service>('services');
+    const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
+    const { data: brands = [] } = useData<Brand>('brands');
     const brandsLoaded = Array.isArray(brands) && brands.length > 0;
-    const { data: users } = useData<User>('users');
+    const { data: users = [] } = useData<User>('users');
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
@@ -725,7 +725,7 @@ const SubServiceMasterView: React.FC = () => {
 
     // List View
     return (
-        <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6">
+        <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6 ui-surface">
             <div className="flex justify-between items-start">
                 <div>
                     <h1 className="text-xl font-bold text-slate-800 tracking-tight">Sub-Service Master</h1>

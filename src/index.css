@@ -42,3 +42,25 @@ body {
   background-size: 24px 24px;
 }
 
+/* Button and Card helpers for a consistent modern look */
+.btn-primary {
+  background: linear-gradient(90deg,#4f46e5,#7c3aed);
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(79,70,229,0.12);
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(79,70,229,0.16); }
+
+.card {
+  border-radius: 1rem;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.90));
+  border: 1px solid rgba(148,163,184,0.12);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.06);
+}
+
+/* Smooth transitions for interactive elements */
+.smooth-transition { transition: all 160ms cubic-bezier(.2,.9,.2,1); }
+
