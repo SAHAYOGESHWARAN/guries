@@ -5,7 +5,7 @@ import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem } from '../types';
 
 const AssetsView: React.FC = () => {
-    const { data: assets = [], create: createAsset, remove: removeAsset } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assets = [], create: createAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'upload'>('list');
@@ -22,6 +22,11 @@ const AssetsView: React.FC = () => {
         repository: 'Content Repository',
         usage_status: 'Available'
     });
+
+    // Auto-refresh on mount to ensure latest data
+    React.useEffect(() => {
+        refresh?.();
+    }, []);
 
     // Memoize filtered assets for better performance
     const filteredAssets = useMemo(() =>
@@ -88,7 +93,7 @@ const AssetsView: React.FC = () => {
 
         setIsUploading(true);
         try {
-            await createAsset({
+            const result = await createAsset({
                 ...newAsset,
                 date: new Date().toISOString()
             } as AssetLibraryItem);
@@ -105,13 +110,16 @@ const AssetsView: React.FC = () => {
 
             // Switch to list view immediately
             setViewMode('list');
+
+            // Force refresh to ensure data is up to date
+            setTimeout(() => refresh?.(), 100);
         } catch (error) {
             console.error('Upload failed:', error);
             alert('Failed to upload asset. Please try again.');
         } finally {
             setIsUploading(false);
         }
-    }, [newAsset, selectedFile, createAsset]);
+    }, [newAsset, selectedFile, createAsset, refresh]);
 
     const handleDelete = useCallback(async (e: React.MouseEvent, id: number, name: string) => {
         e.stopPropagation();
@@ -123,13 +131,15 @@ const AssetsView: React.FC = () => {
         setDeletingId(id);
         try {
             await removeAsset(id);
+            // Force refresh after delete to ensure UI is updated
+            setTimeout(() => refresh?.(), 100);
         } catch (error) {
             console.error('Delete failed:', error);
             alert('Failed to delete asset. Please try again.');
         } finally {
             setDeletingId(null);
         }
-    }, [deletingId, removeAsset]);
+    }, [deletingId, removeAsset, refresh]);
 
     const getAssetIcon = useCallback((type: string) => {
         const icons: Record<string, string> = {
