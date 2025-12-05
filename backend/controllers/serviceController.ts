@@ -11,7 +11,7 @@ const parseServiceRow = (row: any) => {
         'image_alt_texts', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content'
     ];
     const jsonObjectFields = ['social_meta'];
-    
+
     const parsed = { ...row };
     jsonArrayFields.forEach(field => {
         if (parsed[field] && typeof parsed[field] === 'string') {
@@ -42,7 +42,7 @@ const parseServiceRow = (row: any) => {
 const parseSubServiceRow = (row: any) => {
     const jsonArrayFields = ['industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content'];
     const jsonObjectFields = ['social_meta'];
-    
+
     const parsed = { ...row };
     jsonArrayFields.forEach(field => {
         if (parsed[field] && typeof parsed[field] === 'string') {
@@ -70,9 +70,9 @@ export const getServices = async (req: any, res: any) => {
 
 export const createService = async (req: any, res: any) => {
     // Full destructuring of all 9 blocks
-    const { 
-        service_name, service_code, slug, full_url, menu_heading, 
-        short_tagline, service_description, industry_ids, country_ids, 
+    const {
+        service_name, service_code, slug, full_url, menu_heading,
+        short_tagline, service_description, industry_ids, country_ids,
         language, status,
         // Navigation
         show_in_main_menu, show_in_footer_menu, menu_group, menu_position,
@@ -101,7 +101,7 @@ export const createService = async (req: any, res: any) => {
         // Governance
         brand_id, business_unit, content_owner_id, created_by, version_number, change_log_link
     } = req.body;
-    
+
     // AUTO-GENERATE: Timestamps and User Tracking
     const generatedCreatedAt = new Date().toISOString();
     const generatedCreatedBy = created_by || 1; // Fallback to admin user (ID 1) if not provided
@@ -119,8 +119,8 @@ export const createService = async (req: any, res: any) => {
     } else {
         // Enforce standard prefix
         if (!computedUrl.startsWith('/services/')) {
-             // Handle leading slash presence
-             computedUrl = computedUrl.startsWith('/') ? `/services${computedUrl}` : `/services/${computedUrl}`;
+            // Handle leading slash presence
+            computedUrl = computedUrl.startsWith('/') ? `/services${computedUrl}` : `/services/${computedUrl}`;
         }
     }
 
@@ -181,9 +181,9 @@ export const createService = async (req: any, res: any) => {
 
 export const updateService = async (req: any, res: any) => {
     const { id } = req.params;
-    const { 
-        service_name, service_code, slug, full_url, menu_heading, 
-        short_tagline, service_description, industry_ids, country_ids, 
+    const {
+        service_name, service_code, slug, full_url, menu_heading,
+        short_tagline, service_description, industry_ids, country_ids,
         language, status,
         show_in_main_menu, show_in_footer_menu, menu_group, menu_position,
         breadcrumb_label, parent_menu_section, include_in_xml_sitemap,
@@ -203,11 +203,11 @@ export const updateService = async (req: any, res: any) => {
         has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
         brand_id, business_unit, content_owner_id, updated_by, version_number, change_log_link
     } = req.body;
-    
+
     // AUTO-GENERATE: Updated timestamp and auto-increment version
     const generatedUpdatedAt = new Date().toISOString();
     const generatedUpdatedBy = updated_by || 1; // Fallback to admin user (ID 1)
-    
+
     // Fetch current version to auto-increment
     let newVersionNumber = version_number || 1;
     try {
@@ -218,7 +218,7 @@ export const updateService = async (req: any, res: any) => {
     } catch (e) {
         console.warn('Could not fetch current version, using provided or default');
     }
-    
+
     const normalizedParentMenuSection = typeof parent_menu_section === 'string'
         ? parent_menu_section.trim()
         : parent_menu_section;
@@ -226,7 +226,7 @@ export const updateService = async (req: any, res: any) => {
     // --- URL Validation & Normalization for Update ---
     let computedUrl = full_url;
     if (computedUrl && !computedUrl.startsWith('/services/')) {
-         computedUrl = computedUrl.startsWith('/') ? `/services${computedUrl}` : `/services/${computedUrl}`;
+        computedUrl = computedUrl.startsWith('/') ? `/services${computedUrl}` : `/services/${computedUrl}`;
     }
 
     try {
@@ -310,7 +310,7 @@ export const getSubServices = async (req: any, res: any) => {
 };
 
 export const createSubService = async (req: any, res: any) => {
-    const { 
+    const {
         // Core fields
         sub_service_name, parent_service_id, slug, full_url, description, status,
         menu_heading, short_tagline, language, industry_ids, country_ids,
@@ -377,7 +377,7 @@ export const createSubService = async (req: any, res: any) => {
                 JSON.stringify(social_meta || {}), assets_linked || 0, null
             ]
         );
-        
+
         const newItem = parseSubServiceRow(result.rows[0]);
         getSocket().emit('sub_service_created', newItem);
 
@@ -406,7 +406,7 @@ export const createSubService = async (req: any, res: any) => {
 
 export const updateSubService = async (req: any, res: any) => {
     const { id } = req.params;
-    const { 
+    const {
         // Core fields
         sub_service_name, parent_service_id, slug, full_url, description, status,
         menu_heading, short_tagline, language, industry_ids, country_ids,
@@ -492,8 +492,8 @@ export const updateSubService = async (req: any, res: any) => {
              await pool.query(
                 `UPDATE services 
                  SET subservice_count = (SELECT COUNT(*) FROM sub_services WHERE parent_service_id = $1),
-                     has_subservices = (SELECT COUNT(*) > 0 FROM sub_services WHERE parent_service_id = $1),
-                     updated_at = NOW()
+            has_subservices = (SELECT COUNT(*) > 0 FROM sub_services WHERE parent_service_id = $1),
+        updated_at = NOW()
                  WHERE id = $1`,
                 [updatedItem.parent_service_id]
             );
@@ -524,8 +524,8 @@ export const deleteSubService = async (req: any, res: any) => {
             await pool.query(
                 `UPDATE services 
                  SET subservice_count = (SELECT COUNT(*) FROM sub_services WHERE parent_service_id = $1),
-                     has_subservices = (SELECT COUNT(*) > 0 FROM sub_services WHERE parent_service_id = $1),
-                     updated_at = NOW()
+        has_subservices = (SELECT COUNT(*) > 0 FROM sub_services WHERE parent_service_id = $1),
+        updated_at = NOW()
                  WHERE id = $1`,
                 [parentId]
             );
