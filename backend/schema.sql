@@ -383,10 +383,14 @@ CREATE TABLE IF NOT EXISTS assets (
 	file_size BIGINT,
 	file_type VARCHAR(100),
 	social_meta JSONB,
+	linked_service_ids TEXT DEFAULT '[]', -- JSON array of linked service IDs
+	linked_sub_service_ids TEXT DEFAULT '[]', -- JSON array of linked sub-service IDs
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Create index for faster queries
+-- Create indexes for faster queries
 CREATE INDEX IF NOT EXISTS idx_assets_type ON assets(asset_type);
 CREATE INDEX IF NOT EXISTS idx_assets_created ON assets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_assets_linked_services ON assets USING gin ((linked_service_ids::jsonb));
+CREATE INDEX IF NOT EXISTS idx_assets_linked_sub_services ON assets USING gin ((linked_sub_service_ids::jsonb));

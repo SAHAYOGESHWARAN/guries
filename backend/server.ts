@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
+import migrationRoutes from './routes/migration';
 import { pool } from './config/db';
 import { initSocket } from './socket';
 
@@ -72,6 +73,7 @@ io.on('connection', (socket) => {
 
 // API Routes
 app.use('/api/v1', apiRoutes);
+app.use('/api/migrations', migrationRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));

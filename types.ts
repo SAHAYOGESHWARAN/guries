@@ -526,6 +526,8 @@ export interface AssetLibraryItem {
     thumbnail_url?: string;
     file_size?: number;
     file_type?: string;
+    linked_service_ids?: number[];
+    linked_sub_service_ids?: number[];
 }
 
 export interface Integration {

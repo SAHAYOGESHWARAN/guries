@@ -83,11 +83,21 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 COALESCE(description, 'Available') as usage_status,
                 file_url,
                 og_image_url as thumbnail_url,
-                created_at as date
+                created_at as date,
+                linked_service_ids,
+                linked_sub_service_ids
             FROM assets 
             ORDER BY created_at DESC
         `);
-        res.status(200).json(result.rows);
+
+        // Parse JSON arrays for linked IDs
+        const parsed = result.rows.map(row => ({
+            ...row,
+            linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
+            linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : []
+        }));
+
+        res.status(200).json(parsed);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -122,7 +132,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
 
 export const updateAssetLibraryItem = async (req: any, res: any) => {
     const { id } = req.params;
-    const { name, type, repository, usage_status, file_url, thumbnail_url } = req.body;
+    const { name, type, repository, usage_status, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids } = req.body;
 
     try {
         const result = await pool.query(
@@ -133,8 +143,10 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 description = COALESCE($4, description),
                 file_url = COALESCE($5, file_url),
                 og_image_url = COALESCE($6, og_image_url),
+                linked_service_ids = COALESCE($7, linked_service_ids),
+                linked_sub_service_ids = COALESCE($8, linked_sub_service_ids),
                 updated_at = NOW()
-            WHERE id = $7 RETURNING 
+            WHERE id = $9 RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
@@ -142,15 +154,32 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 description as usage_status,
                 file_url,
                 og_image_url as thumbnail_url,
-                created_at as date`,
-            [name, type, repository, usage_status, file_url, thumbnail_url, id]
+                created_at as date,
+                linked_service_ids,
+                linked_sub_service_ids`,
+            [
+                name,
+                type,
+                repository,
+                usage_status,
+                file_url,
+                thumbnail_url,
+                linked_service_ids ? JSON.stringify(linked_service_ids) : null,
+                linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
+                id
+            ]
         );
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
-        const updatedAsset = result.rows[0];
+        const updatedAsset = {
+            ...result.rows[0],
+            linked_service_ids: result.rows[0].linked_service_ids ? JSON.parse(result.rows[0].linked_service_ids) : [],
+            linked_sub_service_ids: result.rows[0].linked_sub_service_ids ? JSON.parse(result.rows[0].linked_sub_service_ids) : []
+        };
+
         getSocket().emit('assetLibrary_updated', updatedAsset);
         res.status(200).json(updatedAsset);
     } catch (error: any) {
