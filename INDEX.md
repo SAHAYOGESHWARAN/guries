@@ -6,10 +6,13 @@
 - **Development**: `start-development.bat`
 - **Production**: `start-production.bat`
 - **Verify All**: `run-all-checks.bat`
+- **Fix Assets**: `fix-assets.bat` (Run once to add assets table)
 
 ### Key Documentation
 - **Quick Start**: `QUICK_START_PRODUCTION.md`
 - **Final Summary**: `FINAL_PRODUCTION_SUMMARY.md`
+- **Asset System Fix**: `ASSET_SYSTEM_FIX.md`
+- **Editor Enhancement**: `EDITOR_ENHANCEMENT_SUMMARY.md` ⭐ NEW
 - **Status Report**: `PRODUCTION_STATUS_REPORT.md` (in docs folder)
 - **Checklist**: `PRODUCTION_READY_CHECKLIST.md` (in docs folder)
 

@@ -364,3 +364,29 @@ CREATE TABLE IF NOT EXISTS backlink_sources (
 
 ��0J2
 
+
+
+-- =====================================================
+-- ASSETS TABLE
+-- =====================================================
+
+-- Assets Table (Central Asset Library)
+CREATE TABLE IF NOT EXISTS assets (
+	id SERIAL PRIMARY KEY,
+	asset_name VARCHAR(500) NOT NULL,
+	asset_type VARCHAR(100) DEFAULT 'Image',
+	file_url TEXT,
+	thumbnail_url TEXT,
+	og_image_url TEXT,
+	description TEXT,
+	tags TEXT, -- Used for repository field
+	file_size BIGINT,
+	file_type VARCHAR(100),
+	social_meta JSONB,
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_assets_type ON assets(asset_type);
+CREATE INDEX IF NOT EXISTS idx_assets_created ON assets(created_at DESC);
