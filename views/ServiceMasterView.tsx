@@ -1917,611 +1917,548 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                 totalAssets={libraryAssets.length}
                             />
                         )}
-
-                        {/* Main Content Area */}
-                        <div className="p-8">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                {/* Left Panel: Linked Assets */}
-                                <div className="flex flex-col">
-                                    {/* Panel Header */}
-                                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl px-6 py-4 border-b-2 border-indigo-700">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-lg font-bold text-white">Linked Assets</h4>
-                                                    <p className="text-xs text-indigo-100">Currently connected content</p>
-                                                </div>
-                                            </div>
-                                            <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full">
-                                                <span className="text-2xl font-bold text-white">{linkedAssets.length}</span>
-                                            </div>
+                        {/* Left Panel: Linked Assets */}
+                        <div className="flex flex-col">
+                            {/* Panel Header */}
+                            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl px-6 py-4 border-b-2 border-indigo-700">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-lg font-bold text-white">Linked Assets</h4>
+                                            <p className="text-xs text-indigo-100">Currently connected content</p>
                                         </div>
                                     </div>
-
-                                    {/* Linked Assets List */}
-                                    <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-b-2xl border-2 border-indigo-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
-                                        <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                                            {linkedAssets.length > 0 ? linkedAssets.map(asset => (
-                                                <div key={asset.id} className="bg-white rounded-xl border-2 border-indigo-200 shadow-sm hover:shadow-md transition-all group p-4">
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                            {/* Asset Type Badge */}
-                                                            <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
-                                                                asset.asset_type === 'video' ? 'bg-red-500' :
-                                                                    asset.asset_type === 'pdf' ? 'bg-orange-500' :
-                                                                        asset.asset_type === 'graphic' ? 'bg-green-500' :
-                                                                            'bg-slate-500'
-                                                                }`}>
-                                                                <span className="text-2xl">
-                                                                    {asset.asset_type === 'blog' ? '📝' :
-                                                                        asset.asset_type === 'video' ? '🎥' :
-                                                                            asset.asset_type === 'pdf' ? '📄' :
-                                                                                asset.asset_type === 'graphic' ? '🖼️' : '📦'}
-                                                                </span>
-                                                                <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
-                                                                    {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Asset Info */}
-                                                            <div className="flex-1 min-w-0">
-                                                                <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2" title={asset.content_title_clean}>
-                                                                    {asset.content_title_clean}
-                                                                </h5>
-                                                                <div className="flex flex-wrap gap-2 items-center">
-                                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
-                                                                        asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                                                                            'bg-slate-100 text-slate-700'
-                                                                        }`}>
-                                                                        {asset.status}
-                                                                    </span>
-                                                                    <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Unlink Button */}
-                                                        <button
-                                                            onClick={() => handleToggleAssetLink(asset)}
-                                                            className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-2 border-transparent hover:border-red-200"
-                                                            title="Unlink this asset"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                                                    <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
-                                                        <span className="text-7xl opacity-50">🔗</span>
-                                                    </div>
-                                                    <h5 className="text-lg font-bold text-slate-700 mb-2">No Assets Linked</h5>
-                                                    <p className="text-sm text-slate-500 max-w-xs">
-                                                        Search and link content assets from the library to connect them with this service.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full">
+                                        <span className="text-2xl font-bold text-white">{linkedAssets.length}</span>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Right Panel: Available Assets */}
-                                <div className="flex flex-col">
-                                    {/* Panel Header */}
-                                    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-6 py-4 border-b-2 border-blue-700">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-lg font-bold text-white">Asset Library</h4>
-                                                <p className="text-xs text-blue-100">Browse and link content</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                            {/* Linked Assets List */}
+                            <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-b-2xl border-2 border-indigo-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
+                                <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                    {linkedAssets.length > 0 ? linkedAssets.map(asset => (
+                                        <div key={asset.id} className="bg-white rounded-xl border-2 border-indigo-200 shadow-sm hover:shadow-md transition-all group p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                    {/* Asset Type Badge */}
+                                                    <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
+                                                        asset.asset_type === 'video' ? 'bg-red-500' :
+                                                            asset.asset_type === 'pdf' ? 'bg-orange-500' :
+                                                                asset.asset_type === 'graphic' ? 'bg-green-500' :
+                                                                    'bg-slate-500'
+                                                        }`}>
+                                                        <span className="text-2xl">
+                                                            {asset.asset_type === 'blog' ? '📝' :
+                                                                asset.asset_type === 'video' ? '🎥' :
+                                                                    asset.asset_type === 'pdf' ? '📄' :
+                                                                        asset.asset_type === 'graphic' ? '🖼️' : '📦'}
+                                                        </span>
+                                                        <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
+                                                            {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
+                                                        </span>
+                                                    </div>
 
-                                    {/* Search Bar */}
-                                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 border-t-0 border-b-0 p-4">
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                </svg>
-                                            </div>
-                                            <input
-                                                type="text"
-                                                placeholder="Search by title, type, or keyword..."
-                                                value={assetSearch}
-                                                onChange={(e) => setAssetSearch(e.target.value)}
-                                                className="w-full pl-12 pr-12 py-3 border-2 border-blue-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white shadow-sm"
-                                            />
-                                            {assetSearch && (
+                                                    {/* Asset Info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2" title={asset.content_title_clean}>
+                                                            {asset.content_title_clean}
+                                                        </h5>
+                                                        <div className="flex flex-wrap gap-2 items-center">
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
+                                                                asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-slate-100 text-slate-700'
+                                                                }`}>
+                                                                {asset.status}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Unlink Button */}
                                                 <button
-                                                    onClick={() => setAssetSearch('')}
-                                                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
+                                                    onClick={() => handleToggleContentLink(asset)}
+                                                    className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-2 border-transparent hover:border-red-200"
+                                                    title="Unlink this asset"
                                                 >
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                     </svg>
                                                 </button>
-                                            )}
+                                            </div>
                                         </div>
+                                    )) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                            <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
+                                                <span className="text-7xl opacity-50">🔗</span>
+                                            </div>
+                                            <h5 className="text-lg font-bold text-slate-700 mb-2">No Assets Linked</h5>
+                                            <p className="text-sm text-slate-500 max-w-xs">
+                                                Search and link content assets from the library to connect them with this service.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Panel: Available Assets */}
+                        <div className="flex flex-col">
+                            {/* Panel Header */}
+                            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-6 py-4 border-b-2 border-blue-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
                                     </div>
+                                    <div>
+                                        <h4 className="text-lg font-bold text-white">Asset Library</h4>
+                                        <p className="text-xs text-blue-100">Browse and link content</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                                    {/* Available Assets List */}
-                                    <div className="flex-1 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-b-2xl border-2 border-blue-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
-                                        <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                                            {availableAssets.length > 0 ? availableAssets.map(asset => (
-                                                <div
-                                                    key={asset.id}
-                                                    onClick={() => handleToggleAssetLink(asset)}
-                                                    className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 shadow-sm hover:shadow-md transition-all group p-4 cursor-pointer"
-                                                >
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                            {/* Asset Type Badge */}
-                                                            <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
-                                                                asset.asset_type === 'video' ? 'bg-red-500' :
-                                                                    asset.asset_type === 'pdf' ? 'bg-orange-500' :
-                                                                        asset.asset_type === 'graphic' ? 'bg-green-500' :
-                                                                            'bg-slate-500'
-                                                                }`}>
-                                                                <span className="text-2xl">
-                                                                    {asset.asset_type === 'blog' ? '📝' :
-                                                                        asset.asset_type === 'video' ? '🎥' :
-                                                                            asset.asset_type === 'pdf' ? '📄' :
-                                                                                asset.asset_type === 'graphic' ? '🖼️' : '📦'}
-                                                                </span>
-                                                                <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
-                                                                    {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
-                                                                </span>
-                                                            </div>
+                            {/* Search Bar */}
+                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 border-t-0 border-b-0 p-4">
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search by title, type, or keyword..."
+                                        value={assetSearch}
+                                        onChange={(e) => setAssetSearch(e.target.value)}
+                                        className="w-full pl-12 pr-12 py-3 border-2 border-blue-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white shadow-sm"
+                                    />
+                                    {assetSearch && (
+                                        <button
+                                            onClick={() => setAssetSearch('')}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
 
-                                                            {/* Asset Info */}
-                                                            <div className="flex-1 min-w-0">
-                                                                <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors" title={asset.content_title_clean}>
-                                                                    {asset.content_title_clean}
-                                                                </h5>
-                                                                <div className="flex flex-wrap gap-2 items-center">
-                                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
-                                                                        asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                                                                            'bg-slate-100 text-slate-700'
-                                                                        }`}>
-                                                                        {asset.status}
-                                                                    </span>
-                                                                    <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Link Button */}
-                                                        <button className="flex-shrink-0 px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-700 shadow-sm border-2 border-blue-700">
-                                                            + Link
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                                                    <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
-                                                        <span className="text-7xl opacity-50">
-                                                            {assetSearch ? '🔍' : '📚'}
+                            {/* Available Assets List */}
+                            <div className="flex-1 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-b-2xl border-2 border-blue-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
+                                <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                    {availableAssets.length > 0 ? availableAssets.map(asset => (
+                                        <div
+                                            key={asset.id}
+                                            onClick={() => handleToggleContentLink(asset)}
+                                            className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 shadow-sm hover:shadow-md transition-all group p-4 cursor-pointer"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                    {/* Asset Type Badge */}
+                                                    <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
+                                                        asset.asset_type === 'video' ? 'bg-red-500' :
+                                                            asset.asset_type === 'pdf' ? 'bg-orange-500' :
+                                                                asset.asset_type === 'graphic' ? 'bg-green-500' :
+                                                                    'bg-slate-500'
+                                                        }`}>
+                                                        <span className="text-2xl">
+                                                            {asset.asset_type === 'blog' ? '📝' :
+                                                                asset.asset_type === 'video' ? '🎥' :
+                                                                    asset.asset_type === 'pdf' ? '📄' :
+                                                                        asset.asset_type === 'graphic' ? '🖼️' : '📦'}
+                                                        </span>
+                                                        <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
+                                                            {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
                                                         </span>
                                                     </div>
-                                                    <h5 className="text-lg font-bold text-slate-700 mb-2">
-                                                        {assetSearch ? 'No Matching Assets' : contentAssets.length === 0 ? 'No Assets Available' : 'All Assets Linked'}
-                                                    </h5>
-                                                    <p className="text-sm text-slate-500 max-w-xs">
-                                                        {assetSearch
-                                                            ? `No assets found matching "${assetSearch}". Try a different search term.`
-                                                            : contentAssets.length === 0
-                                                                ? 'No assets in the content repository yet. Create some content first.'
-                                                                : 'All available assets are already linked to this service.'}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Footer with Tips */}
-                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-t-2 border-amber-200 px-8 py-6">
-                            <div className="flex items-start gap-4">
-                                <div className="bg-amber-100 p-3 rounded-xl flex-shrink-0">
-                                    <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1">
-                                    <h5 className="text-sm font-bold text-amber-900 mb-2">Asset Linking Tips</h5>
-                                    <ul className="text-xs text-amber-800 space-y-1.5">
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-amber-600 font-bold">•</span>
-                                            <span><strong>Link related content</strong> to create a comprehensive resource hub for your service</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-amber-600 font-bold">•</span>
-                                            <span><strong>Organize by topic</strong> to help users discover relevant materials easily</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-amber-600 font-bold">•</span>
-                                            <span><strong>Keep it relevant</strong> - only link assets that directly support this service</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-amber-600 font-bold">•</span>
-                                            <span><strong>Update regularly</strong> to ensure linked content stays current and valuable</span>
-                                        </li>
-                                    </ul>
+                                                    {/* Asset Info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors" title={asset.content_title_clean}>
+                                                            {asset.content_title_clean}
+                                                        </h5>
+                                                        <div className="flex flex-wrap gap-2 items-center">
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
+                                                                asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-slate-100 text-slate-700'
+                                                                }`}>
+                                                                {asset.status}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Link Button */}
+                                                <button className="flex-shrink-0 px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-700 shadow-sm border-2 border-blue-700">
+                                                    + Link
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                            <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
+                                                <span className="text-7xl opacity-50">
+                                                    {assetSearch ? '🔍' : '📚'}
+                                                </span>
+                                            </div>
+                                            <h5 className="text-lg font-bold text-slate-700 mb-2">
+                                                {assetSearch ? 'No Matching Assets' : contentAssets.length === 0 ? 'No Assets Available' : 'All Assets Linked'}
+                                            </h5>
+                                            <p className="text-sm text-slate-500 max-w-xs">
+                                                {assetSearch
+                                                    ? `No assets found matching "${assetSearch}". Try a different search term.`
+                                                    : contentAssets.length === 0
+                                                        ? 'No assets in the content repository yet. Create some content first.'
+                                                        : 'All available assets are already linked to this service.'}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Custom Scrollbar Styles */}
-                    <style>{`
-                                    .custom-scrollbar::-webkit-scrollbar {
-                                        width: 8px;
-                                    }
-                                    .custom-scrollbar::-webkit-scrollbar-track {
-                                        background: rgba(0, 0, 0, 0.05);
-                                        border-radius: 10px;
-                                    }
-                                    .custom-scrollbar::-webkit-scrollbar-thumb {
-                                        background: rgba(0, 0, 0, 0.2);
-                                        border-radius: 10px;
-                                    }
-                                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                                        background: rgba(0, 0, 0, 0.3);
-                                    }
-                                    .line-clamp-2 {
-                                        display: -webkit-box;
-                                        -webkit-line-clamp: 2;
-                                        -webkit-box-orient: vertical;
-                                        overflow: hidden;
-                                    }
-                                `}</style>
-                </div>
-                        )}
 
-                {/* --- TAB: GOVERNANCE --- */}
-                {activeTab === 'Governance' && (
-                    <div className="space-y-10">
-                        {/* 1. OWNERSHIP & METADATA CARD */}
-                        <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                            {/* Header */}
-                            <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
-                                <div className="absolute top-0 right-0 opacity-10">
-                                    <span className="text-9xl">⚖️</span>
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
-                                        <h3 className="text-2xl font-bold">Ownership & Metadata</h3>
+                    {/* --- TAB: GOVERNANCE --- */}
+                    {activeTab === 'Governance' && (
+                        <div className="space-y-10">
+                            {/* 1. OWNERSHIP & METADATA CARD */}
+                            <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                {/* Header */}
+                                <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
+                                    <div className="absolute top-0 right-0 opacity-10">
+                                        <span className="text-9xl">⚖️</span>
                                     </div>
-                                    <p className="text-teal-100 text-sm">Manage content ownership and business unit assignment</p>
-                                </div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-10">
-                                <div className="space-y-8">
-                                    {/* Row 1 - Content Owner & Business Unit */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <Tooltip content="Person responsible for maintaining this service content.">
-                                            <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">👤</span>
-                                                    Content Owner
-                                                </label>
-                                                <select
-                                                    value={formData.content_owner_id || 0}
-                                                    onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || undefined })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer"
-                                                >
-                                                    <option value={0}>Select Owner...</option>
-                                                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                                </select>
-                                            </div>
-                                        </Tooltip>
-
-                                        <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
-                                            <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">🏛️</span>
-                                                    Business Unit
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.business_unit || ''}
-                                                    onChange={(e) => setFormData({ ...formData, business_unit: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400"
-                                                    placeholder="Growth Marketing / SEO Team"
-                                                />
-                                            </div>
-                                        </Tooltip>
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
+                                            <h3 className="text-2xl font-bold">Ownership & Metadata</h3>
+                                        </div>
+                                        <p className="text-teal-100 text-sm">Manage content ownership and business unit assignment</p>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* 2. AUDIT TRAIL & TIMESTAMPS CARD */}
-                        <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                            {/* Header */}
-                            <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
-                                <div className="absolute top-0 right-0 opacity-10">
-                                    <span className="text-9xl">📋</span>
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🕒</span>
-                                        <h3 className="text-2xl font-bold">Audit Trail & Timestamps</h3>
-                                    </div>
-                                    <p className="text-indigo-100 text-sm">Auto-generated creation and modification history</p>
-                                </div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-10">
-                                <div className="space-y-8">
-                                    {/* Timestamps - Generated Automatically */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <Tooltip content="Timestamp when this service was originally created. Auto-generated by system.">
-                                            <div className="bg-white rounded-xl border-2 border-green-100 p-6">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">✅</span>
-                                                    Created By (Timestamp)
-                                                </label>
-                                                <div className="space-y-2">
-                                                    <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 break-all">
-                                                        {editingItem && formData.created_at
-                                                            ? new Date(formData.created_at).toLocaleString('en-US', {
-                                                                year: 'numeric', month: 'short', day: '2-digit',
-                                                                hour: '2-digit', minute: '2-digit', second: '2-digit',
-                                                                timeZoneName: 'short'
-                                                            })
-                                                            : <span className="text-slate-500 italic">Auto-set on creation</span>
-                                                        }
-                                                    </div>
-                                                    <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp</p>
+                                {/* Content */}
+                                <div className="p-10">
+                                    <div className="space-y-8">
+                                        {/* Row 1 - Content Owner & Business Unit */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <Tooltip content="Person responsible for maintaining this service content.">
+                                                <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
+                                                        <span className="text-sm">👤</span>
+                                                        Content Owner
+                                                    </label>
+                                                    <select
+                                                        value={formData.content_owner_id || 0}
+                                                        onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer"
+                                                    >
+                                                        <option value={0}>Select Owner...</option>
+                                                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                    </select>
                                                 </div>
-                                            </div>
-                                        </Tooltip>
+                                            </Tooltip>
 
-                                        <Tooltip content="Timestamp when this service was last modified. Auto-generated by system on every save.">
-                                            <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">🔄</span>
-                                                    Updated By (Timestamp)
-                                                </label>
-                                                <div className="space-y-2">
-                                                    <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 break-all">
-                                                        {editingItem && formData.updated_at
-                                                            ? new Date(formData.updated_at).toLocaleString('en-US', {
-                                                                year: 'numeric', month: 'short', day: '2-digit',
-                                                                hour: '2-digit', minute: '2-digit', second: '2-digit',
-                                                                timeZoneName: 'short'
-                                                            })
-                                                            : <span className="text-slate-500 italic">Auto-set on save</span>
-                                                        }
-                                                    </div>
-                                                    <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp on every update</p>
+                                            <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
+                                                <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                        <span className="text-sm">🏛️</span>
+                                                        Business Unit
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.business_unit || ''}
+                                                        onChange={(e) => setFormData({ ...formData, business_unit: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400"
+                                                        placeholder="Growth Marketing / SEO Team"
+                                                    />
                                                 </div>
-                                            </div>
-                                        </Tooltip>
-                                    </div>
-
-                                    {/* Version & Brand Info */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <Tooltip content="Auto-incremented version number tracking major revisions.">
-                                            <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">📌</span>
-                                                    Version Number
-                                                </label>
-                                                <div className="text-sm font-mono font-bold text-slate-700 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
-                                                    v{formData.version_number || 1}
-                                                </div>
-                                                <p className="text-xs text-slate-500 mt-2">Read-only - Auto-increments on each save</p>
-                                            </div>
-                                        </Tooltip>
-
-                                        <Tooltip content="Brand this service belongs to.">
-                                            <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">🏢</span>
-                                                    Brand
-                                                </label>
-                                                <select
-                                                    value={formData.brand_id || 0}
-                                                    onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-                                                >
-                                                    <option value={0}>Select Brand...</option>
-                                                    {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                                </select>
-                                            </div>
-                                        </Tooltip>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. CHANGE MANAGEMENT CARD */}
-                        <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-slate-50 rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                            {/* Header */}
-                            <div className="relative bg-gradient-to-r from-amber-600 to-yellow-600 px-8 py-10 text-white overflow-hidden">
-                                <div className="absolute top-0 right-0 opacity-10">
-                                    <span className="text-9xl">📝</span>
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
-                                        <h3 className="text-2xl font-bold">Change Management</h3>
-                                    </div>
-                                    <p className="text-amber-100 text-sm">Track release notes and approval workflows</p>
-                                </div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-10">
-                                <Tooltip content="Link to release notes, Jira ticket, or change request documenting the last major update.">
-                                    <div className="space-y-3">
-                                        <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest">
-                                            <span>🔗</span>
-                                            Change Log / Release Notes Link
-                                        </label>
-                                        <input
-                                            type="url"
-                                            value={formData.change_log_link || ''}
-                                            onChange={(e) => setFormData({ ...formData, change_log_link: e.target.value })}
-                                            className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-sm font-mono transition-all focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white placeholder:text-slate-400"
-                                            placeholder="https://notion.so/changelog or https://jira.company.com/browse/MARK-1234"
-                                        />
-                                        <div className="text-xs text-slate-600 space-y-1 bg-amber-50 p-4 rounded-lg border border-amber-200">
-                                            <p className="font-semibold">📌 Quick Links:</p>
-                                            <ul className="list-disc list-inside space-y-0.5 text-slate-600">
-                                                <li>Notion Changelog: <code className="bg-white px-2 py-1 rounded text-xs">https://notion.so/changelog</code></li>
-                                                <li>Jira Epic: <code className="bg-white px-2 py-1 rounded text-xs">https://jira.company.com/browse/MARK-XXX</code></li>
-                                                <li>GitHub Release: <code className="bg-white px-2 py-1 rounded text-xs">https://github.com/repo/releases/tag/v1.0.0</code></li>
-                                            </ul>
+                                            </Tooltip>
                                         </div>
                                     </div>
-                                </Tooltip>
+                                </div>
+                            </div>
+
+                            {/* 2. AUDIT TRAIL & TIMESTAMPS CARD */}
+                            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                {/* Header */}
+                                <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
+                                    <div className="absolute top-0 right-0 opacity-10">
+                                        <span className="text-9xl">📋</span>
+                                    </div>
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🕒</span>
+                                            <h3 className="text-2xl font-bold">Audit Trail & Timestamps</h3>
+                                        </div>
+                                        <p className="text-indigo-100 text-sm">Auto-generated creation and modification history</p>
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-10">
+                                    <div className="space-y-8">
+                                        {/* Timestamps - Generated Automatically */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <Tooltip content="Timestamp when this service was originally created. Auto-generated by system.">
+                                                <div className="bg-white rounded-xl border-2 border-green-100 p-6">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
+                                                        <span className="text-sm">✅</span>
+                                                        Created By (Timestamp)
+                                                    </label>
+                                                    <div className="space-y-2">
+                                                        <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 break-all">
+                                                            {editingItem && formData.created_at
+                                                                ? new Date(formData.created_at).toLocaleString('en-US', {
+                                                                    year: 'numeric', month: 'short', day: '2-digit',
+                                                                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                                                                    timeZoneName: 'short'
+                                                                })
+                                                                : <span className="text-slate-500 italic">Auto-set on creation</span>
+                                                            }
+                                                        </div>
+                                                        <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp</p>
+                                                    </div>
+                                                </div>
+                                            </Tooltip>
+
+                                            <Tooltip content="Timestamp when this service was last modified. Auto-generated by system on every save.">
+                                                <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                                        <span className="text-sm">🔄</span>
+                                                        Updated By (Timestamp)
+                                                    </label>
+                                                    <div className="space-y-2">
+                                                        <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 break-all">
+                                                            {editingItem && formData.updated_at
+                                                                ? new Date(formData.updated_at).toLocaleString('en-US', {
+                                                                    year: 'numeric', month: 'short', day: '2-digit',
+                                                                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                                                                    timeZoneName: 'short'
+                                                                })
+                                                                : <span className="text-slate-500 italic">Auto-set on save</span>
+                                                            }
+                                                        </div>
+                                                        <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp on every update</p>
+                                                    </div>
+                                                </div>
+                                            </Tooltip>
+                                        </div>
+
+                                        {/* Version & Brand Info */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <Tooltip content="Auto-incremented version number tracking major revisions.">
+                                                <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                                        <span className="text-sm">📌</span>
+                                                        Version Number
+                                                    </label>
+                                                    <div className="text-sm font-mono font-bold text-slate-700 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
+                                                        v{formData.version_number || 1}
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 mt-2">Read-only - Auto-increments on each save</p>
+                                                </div>
+                                            </Tooltip>
+
+                                            <Tooltip content="Brand this service belongs to.">
+                                                <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                        <span className="text-sm">🏢</span>
+                                                        Brand
+                                                    </label>
+                                                    <select
+                                                        value={formData.brand_id || 0}
+                                                        onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                                                    >
+                                                        <option value={0}>Select Brand...</option>
+                                                        {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                    </select>
+                                                </div>
+                                            </Tooltip>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 3. CHANGE MANAGEMENT CARD */}
+                            <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-slate-50 rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                {/* Header */}
+                                <div className="relative bg-gradient-to-r from-amber-600 to-yellow-600 px-8 py-10 text-white overflow-hidden">
+                                    <div className="absolute top-0 right-0 opacity-10">
+                                        <span className="text-9xl">📝</span>
+                                    </div>
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
+                                            <h3 className="text-2xl font-bold">Change Management</h3>
+                                        </div>
+                                        <p className="text-amber-100 text-sm">Track release notes and approval workflows</p>
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-10">
+                                    <Tooltip content="Link to release notes, Jira ticket, or change request documenting the last major update.">
+                                        <div className="space-y-3">
+                                            <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest">
+                                                <span>🔗</span>
+                                                Change Log / Release Notes Link
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={formData.change_log_link || ''}
+                                                onChange={(e) => setFormData({ ...formData, change_log_link: e.target.value })}
+                                                className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-sm font-mono transition-all focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white placeholder:text-slate-400"
+                                                placeholder="https://notion.so/changelog or https://jira.company.com/browse/MARK-1234"
+                                            />
+                                            <div className="text-xs text-slate-600 space-y-1 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                                <p className="font-semibold">📌 Quick Links:</p>
+                                                <ul className="list-disc list-inside space-y-0.5 text-slate-600">
+                                                    <li>Notion Changelog: <code className="bg-white px-2 py-1 rounded text-xs">https://notion.so/changelog</code></li>
+                                                    <li>Jira Epic: <code className="bg-white px-2 py-1 rounded text-xs">https://jira.company.com/browse/MARK-XXX</code></li>
+                                                    <li>GitHub Release: <code className="bg-white px-2 py-1 rounded text-xs">https://github.com/repo/releases/tag/v1.0.0</code></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </Tooltip>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                    }
 
-            </div>
                 </div >
             </div >
         );
     }
 
-return (
-    <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6">
-        <div className="flex justify-between items-start">
-            <div>
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Service Master</h1>
-                <p className="text-slate-500 text-xs mt-0.5">Manage service offerings, metadata, content structures, and connectivity.</p>
-            </div>
-            <div className="flex items-center space-x-3">
-                <button onClick={handleExport} className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50">Export</button>
-                <button onClick={handleCreateClick} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center">
-                    <span className="mr-1 text-lg">+</span> Add Service
-                </button>
-            </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="relative w-full md:w-96">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
-                    <input type="search" className="block w-full pl-10 p-2.5 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+    return (
+        <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6">
+            <div className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">Service Master</h1>
+                    <p className="text-slate-500 text-xs mt-0.5">Manage service offerings, metadata, content structures, and connectivity.</p>
                 </div>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[140px]">
-                    <option>All Status</option>
-                    {SERVICE_STATUS_OPTIONS.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                    ))}
-                </select>
+                <div className="flex items-center space-x-3">
+                    <button onClick={handleExport} className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50">Export</button>
+                    <button onClick={handleCreateClick} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center">
+                        <span className="mr-1 text-lg">+</span> Add Service
+                    </button>
+                </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="relative w-full md:w-96">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </div>
+                        <input type="search" className="block w-full pl-10 p-2.5 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
+                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[140px]">
+                        <option>All Status</option>
+                        {SERVICE_STATUS_OPTIONS.map(status => (
+                            <option key={status} value={status}>{status}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <Table
+                    columns={[
+                        {
+                            header: 'Service Code',
+                            accessor: (item: Service) => (
+                                <Tooltip content="Internal ID">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-slate-800 text-xs">{item.service_code}</span>
+                                        <span className="text-[10px] text-slate-500 uppercase">{item.language}</span>
+                                    </div>
+                                </Tooltip>
+                            ),
+                            className: "font-mono w-24"
+                        },
+                        {
+                            header: 'Service Name',
+                            accessor: (item: Service) => (
+                                <div>
+                                    <div className="font-bold text-slate-800 text-sm hover:text-indigo-600 transition-colors">{item.service_name}</div>
+                                    <div className="text-[11px] text-slate-500 truncate max-w-[220px]">{item.short_tagline || 'No tagline defined'}</div>
+                                </div>
+                            )
+                        },
+                        {
+                            header: 'Menu Heading',
+                            accessor: (item: Service) => (
+                                <div>
+                                    <div className="font-semibold text-slate-700 text-sm">{item.menu_heading || '—'}</div>
+                                    <div className="text-[10px] text-slate-400 uppercase tracking-wide">Menu #{item.menu_position ?? 0}</div>
+                                </div>
+                            ),
+                            className: "min-w-[140px]"
+                        },
+                        {
+                            header: 'Full URL',
+                            accessor: (item: Service) => (
+                                item.full_url ? (
+                                    <a
+                                        href={item.full_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs font-mono text-indigo-600 hover:underline truncate block max-w-[200px]"
+                                        title={item.full_url}
+                                    >
+                                        {item.full_url}
+                                    </a>
+                                ) : (
+                                    <span className="text-xs text-slate-400">—</span>
+                                )
+                            )
+                        },
+                        { header: 'Type', accessor: 'content_type' as keyof Service, className: "text-xs text-slate-600 font-medium" },
+                        { header: 'Status', accessor: (item: Service) => getStatusBadge(item.status) },
+                        {
+                            header: 'Linked Assets',
+                            accessor: (item: Service) => {
+                                const count = contentAssets.filter(a => a.linked_service_ids?.includes(item.id)).length;
+                                return (
+                                    <Tooltip content="Number of assets linked to this service">
+                                        <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-bold border border-indigo-100">{count}</span>
+                                    </Tooltip>
+                                );
+                            },
+                            className: "text-center"
+                        },
+                        {
+                            header: 'Actions',
+                            accessor: (item: Service) => (
+                                <div className="flex space-x-2">
+                                    <button onClick={() => handleEdit(item)} className="text-slate-500 hover:text-indigo-600 font-medium text-xs transition-colors">Edit</button>
+                                    <button onClick={() => handleDelete(item.id)} className="text-slate-500 hover:text-red-600 font-medium text-xs transition-colors">Delete</button>
+                                </div>
+                            )
+                        }
+                    ]}
+                    data={filteredData}
+                    title={`Service Registry (${filteredData.length})`}
+                />
             </div>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-            <Table
-                columns={[
-                    {
-                        header: 'Service Code',
-                        accessor: (item: Service) => (
-                            <Tooltip content="Internal ID">
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-slate-800 text-xs">{item.service_code}</span>
-                                    <span className="text-[10px] text-slate-500 uppercase">{item.language}</span>
-                                </div>
-                            </Tooltip>
-                        ),
-                        className: "font-mono w-24"
-                    },
-                    {
-                        header: 'Service Name',
-                        accessor: (item: Service) => (
-                            <div>
-                                <div className="font-bold text-slate-800 text-sm hover:text-indigo-600 transition-colors">{item.service_name}</div>
-                                <div className="text-[11px] text-slate-500 truncate max-w-[220px]">{item.short_tagline || 'No tagline defined'}</div>
-                            </div>
-                        )
-                    },
-                    {
-                        header: 'Menu Heading',
-                        accessor: (item: Service) => (
-                            <div>
-                                <div className="font-semibold text-slate-700 text-sm">{item.menu_heading || '—'}</div>
-                                <div className="text-[10px] text-slate-400 uppercase tracking-wide">Menu #{item.menu_position ?? 0}</div>
-                            </div>
-                        ),
-                        className: "min-w-[140px]"
-                    },
-                    {
-                        header: 'Full URL',
-                        accessor: (item: Service) => (
-                            item.full_url ? (
-                                <a
-                                    href={item.full_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-xs font-mono text-indigo-600 hover:underline truncate block max-w-[200px]"
-                                    title={item.full_url}
-                                >
-                                    {item.full_url}
-                                </a>
-                            ) : (
-                                <span className="text-xs text-slate-400">—</span>
-                            )
-                        )
-                    },
-                    { header: 'Type', accessor: 'content_type' as keyof Service, className: "text-xs text-slate-600 font-medium" },
-                    { header: 'Status', accessor: (item: Service) => getStatusBadge(item.status) },
-                    {
-                        header: 'Linked Assets',
-                        accessor: (item: Service) => {
-                            const count = contentAssets.filter(a => a.linked_service_ids?.includes(item.id)).length;
-                            return (
-                                <Tooltip content="Number of assets linked to this service">
-                                    <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-bold border border-indigo-100">{count}</span>
-                                </Tooltip>
-                            );
-                        },
-                        className: "text-center"
-                    },
-                    {
-                        header: 'Actions',
-                        accessor: (item: Service) => (
-                            <div className="flex space-x-2">
-                                <button onClick={() => handleEdit(item)} className="text-slate-500 hover:text-indigo-600 font-medium text-xs transition-colors">Edit</button>
-                                <button onClick={() => handleDelete(item.id)} className="text-slate-500 hover:text-red-600 font-medium text-xs transition-colors">Delete</button>
-                            </div>
-                        )
-                    }
-                ]}
-                data={filteredData}
-                title={`Service Registry (${filteredData.length})`}
-            />
-        </div>
-    </div>
-);
+    );
 };
 
 export default ServiceMasterView;
