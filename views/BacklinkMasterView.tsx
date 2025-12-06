@@ -8,11 +8,11 @@ import type { BacklinkSource } from '../types';
 
 const TYPES = ['All Types', 'Guest Post', 'Directory', 'Forum', 'Profile', 'Blog'];
 const COUNTRIES = ['All Countries', 'United States', 'United Kingdom', 'Canada', 'Australia'];
-const STATUSES = ['All Status', 'active', 'trusted', 'avoid', 'blacklisted', 'test'];
+const STATUSES = ['All Status', 'active', 'trusted', 'avoid', 'blacklisted'];
 
 const BacklinkMasterView: React.FC = () => {
     const { data: backlinks, create, update, remove } = useData<BacklinkSource>('backlinks');
-    
+
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('All Types');
     const [countryFilter, setCountryFilter] = useState('All Countries');
@@ -29,7 +29,7 @@ const BacklinkMasterView: React.FC = () => {
         const matchesType = typeFilter === 'All Types' || item.platform_type === typeFilter;
         const matchesCountry = countryFilter === 'All Countries' || item.country === countryFilter;
         const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
-        
+
         return matchesSearch && matchesType && matchesCountry && matchesStatus;
     });
 
@@ -54,13 +54,13 @@ const BacklinkMasterView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if(confirm('Delete this backlink source?')) await remove(id);
+        if (confirm('Delete this backlink source?')) await remove(id);
     };
 
     const handleSave = async () => {
         // Domain Validation Regex
         const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
-        
+
         if (!formData.domain || !domainRegex.test(formData.domain)) {
             alert("Please enter a valid domain name (e.g., example.com)");
             return;
@@ -117,18 +117,18 @@ const BacklinkMasterView: React.FC = () => {
                     <div className="w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Domain</label>
-                            <input type="text" value={formData.domain} onChange={(e) => setFormData({...formData, domain: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. example.com" />
+                            <input type="text" value={formData.domain} onChange={(e) => setFormData({ ...formData, domain: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. example.com" />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Type</label>
-                                <select value={formData.platform_type} onChange={(e) => setFormData({...formData, platform_type: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                <select value={formData.platform_type} onChange={(e) => setFormData({ ...formData, platform_type: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                     {TYPES.filter(t => t !== 'All Types').map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
-                                <select value={formData.country} onChange={(e) => setFormData({...formData, country: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                <select value={formData.country} onChange={(e) => setFormData({ ...formData, country: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                     {COUNTRIES.filter(c => c !== 'All Countries').map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
@@ -136,22 +136,22 @@ const BacklinkMasterView: React.FC = () => {
                         <div className="grid grid-cols-3 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">DA Score</label>
-                                <input type="number" value={formData.da_score} onChange={(e) => setFormData({...formData, da_score: parseInt(e.target.value)})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                                <input type="number" value={formData.da_score} onChange={(e) => setFormData({ ...formData, da_score: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Spam Score</label>
-                                <input type="number" value={formData.spam_score} onChange={(e) => setFormData({...formData, spam_score: parseInt(e.target.value)})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                                <input type="number" value={formData.spam_score} onChange={(e) => setFormData({ ...formData, spam_score: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Pricing</label>
-                                <select value={formData.pricing} onChange={(e) => setFormData({...formData, pricing: e.target.value as any})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                <select value={formData.pricing} onChange={(e) => setFormData({ ...formData, pricing: e.target.value as any })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                     <option>Paid</option><option>Free</option>
                                 </select>
                             </div>
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
-                            <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                            <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                 <option value="active">Active</option><option value="trusted">Trusted</option><option value="avoid">Avoid</option><option value="blacklisted">Blacklisted</option><option value="test">Test</option>
                             </select>
                         </div>
@@ -166,7 +166,7 @@ const BacklinkMasterView: React.FC = () => {
             <div className="flex justify-between items-start flex-shrink-0">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Backlink Master</h1>
                 <div className="flex space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >

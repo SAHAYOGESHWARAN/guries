@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
+import { getSocket } from '../socket';
 
 // Generic helper for master tables to reduce boilerplate
 const getMaster = async (table: string, res: any) => {
@@ -12,9 +13,20 @@ const getMaster = async (table: string, res: any) => {
     }
 };
 
-const deleteMaster = async (table: string, id: string, res: any) => {
+const deleteMaster = async (table: string, id: string, res: any, eventName?: string) => {
     try {
         await pool.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+
+        // Emit socket event if eventName provided
+        if (eventName) {
+            try {
+                const io = getSocket();
+                io.emit(`${eventName}_deleted`, { id: parseInt(id) });
+            } catch (e) {
+                console.warn('Socket not available for delete event');
+            }
+        }
+
         res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: `Failed to delete from ${table}`, details: error.message });
@@ -130,8 +142,23 @@ export const createCountry = async (req: any, res: any) => {
             'INSERT INTO countries (country_name, code, region, has_backlinks, has_content, has_smm, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
             [country_name, code, region, has_backlinks, has_content, has_smm, status]
         );
-        res.status(201).json(result.rows[0]);
-    } catch (e: any) { res.status(500).json({ error: e.message }); }
+
+        const newCountry = result.rows[0];
+
+        // Emit socket event for real-time updates
+        try {
+            const io = getSocket();
+            io.emit('country_created', newCountry);
+            console.log('✅ Socket event emitted: country_created', newCountry.id);
+        } catch (e) {
+            console.warn('⚠️  Socket not available for country_created event');
+        }
+
+        res.status(201).json(newCountry);
+    } catch (e: any) {
+        console.error('❌ Error creating country:', e.message);
+        res.status(500).json({ error: e.message });
+    }
 };
 export const updateCountry = async (req: any, res: any) => {
     const { id } = req.params;
@@ -141,10 +168,25 @@ export const updateCountry = async (req: any, res: any) => {
             'UPDATE countries SET country_name=$1, code=$2, region=$3, has_backlinks=$4, has_content=$5, has_smm=$6, status=$7 WHERE id=$8 RETURNING *',
             [country_name, code, region, has_backlinks, has_content, has_smm, status, id]
         );
-        res.status(200).json(result.rows[0]);
-    } catch (e: any) { res.status(500).json({ error: e.message }); }
+
+        const updatedCountry = result.rows[0];
+
+        // Emit socket event for real-time updates
+        try {
+            const io = getSocket();
+            io.emit('country_updated', updatedCountry);
+            console.log('✅ Socket event emitted: country_updated', updatedCountry.id);
+        } catch (e) {
+            console.warn('⚠️  Socket not available for country_updated event');
+        }
+
+        res.status(200).json(updatedCountry);
+    } catch (e: any) {
+        console.error('❌ Error updating country:', e.message);
+        res.status(500).json({ error: e.message });
+    }
 };
-export const deleteCountry = (req: any, res: any) => deleteMaster('countries', req.params.id, res);
+export const deleteCountry = (req: any, res: any) => deleteMaster('countries', req.params.id, res, 'country');
 
 // --- SEO Errors ---
 export const getSeoErrors = (req: any, res: any) => getMaster('seo_errors', res);

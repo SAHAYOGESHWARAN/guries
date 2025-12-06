@@ -62,10 +62,7 @@ async function setupDatabase() {
         await appPool.query(schemaSql);
         console.log('✅ Database schema created successfully!\n');
 
-        // Step 4: Insert sample data (optional)
-        console.log('📊 Inserting sample data...');
-        await insertSampleData(appPool);
-        console.log('✅ Sample data inserted successfully!\n');
+        // Database schema created - ready for production use
 
         // Close connection
         await appPool.end();
@@ -84,92 +81,7 @@ async function setupDatabase() {
     }
 }
 
-async function insertSampleData(pool) {
-    try {
-        // Insert sample users
-        await pool.query(`
-            INSERT INTO users (name, email, phone_number, role, status) VALUES
-            ('Admin User', 'admin@example.com', '+1234567890', 'Admin', 'active'),
-            ('John Doe', 'john@example.com', '+1234567891', 'Content Manager', 'active'),
-            ('Jane Smith', 'jane@example.com', '+1234567892', 'SEO Specialist', 'active')
-            ON CONFLICT (email) DO NOTHING;
-        `);
-        console.log('   ✓ Sample users inserted');
-
-        // Insert sample brands
-        await pool.query(`
-            INSERT INTO brands (brand_name, brand_code, website_url, industry, status) VALUES
-            ('Acme Corp', 'ACME', 'https://acme.com', 'Technology', 'active'),
-            ('Global Services', 'GLBL', 'https://globalservices.com', 'Consulting', 'active')
-            ON CONFLICT DO NOTHING;
-        `);
-        console.log('   ✓ Sample brands inserted');
-
-        // Insert sample countries
-        await pool.query(`
-            INSERT INTO countries (country_name, code, region, has_backlinks, has_content, has_smm, status) VALUES
-            ('United States', 'US', 'North America', true, true, true, 'Active'),
-            ('United Kingdom', 'UK', 'Europe', true, true, true, 'Active'),
-            ('Canada', 'CA', 'North America', true, true, false, 'Active'),
-            ('Australia', 'AU', 'Oceania', true, true, true, 'Active'),
-            ('India', 'IN', 'Asia', true, true, true, 'Active')
-            ON CONFLICT DO NOTHING;
-        `);
-        console.log('   ✓ Sample countries inserted');
-
-        // Insert sample content types
-        await pool.query(`
-            INSERT INTO content_types (content_type, category, description, status) VALUES
-            ('Pillar', 'Core', 'Long-form primary page', 'active'),
-            ('Cluster', 'Supporting', 'Supporting topic page', 'active'),
-            ('Landing', 'Conversion', 'Campaign landing page', 'active'),
-            ('Blog', 'Editorial', 'Blog article', 'active'),
-            ('Case Study', 'Proof', 'Customer story', 'active')
-            ON CONFLICT DO NOTHING;
-        `);
-        console.log('   ✓ Sample content types inserted');
-
-        // Insert sample asset types
-        await pool.query(`
-            INSERT INTO asset_types (asset_type, category, description, status) VALUES
-            ('Blog', 'Content', 'Blog post or article', 'active'),
-            ('Video', 'Media', 'Video content', 'active'),
-            ('PDF', 'Document', 'PDF document', 'active'),
-            ('Infographic', 'Visual', 'Infographic design', 'active'),
-            ('Whitepaper', 'Document', 'Technical whitepaper', 'active')
-            ON CONFLICT DO NOTHING;
-        `);
-        console.log('   ✓ Sample asset types inserted');
-
-        // Insert sample platforms
-        await pool.query(`
-            INSERT INTO platforms (platform_name, platform_type, status) VALUES
-            ('LinkedIn', 'Social Media', 'active'),
-            ('Facebook', 'Social Media', 'active'),
-            ('Twitter', 'Social Media', 'active'),
-            ('Instagram', 'Social Media', 'active'),
-            ('YouTube', 'Video', 'active')
-            ON CONFLICT DO NOTHING;
-        `);
-        console.log('   ✓ Sample platforms inserted');
-
-        // Insert sample industry sectors
-        await pool.query(`
-            INSERT INTO industry_sectors (industry_name, description, status) VALUES
-            ('Technology', 'Technology and software companies', 'active'),
-            ('Healthcare', 'Healthcare and medical services', 'active'),
-            ('Finance', 'Financial services and banking', 'active'),
-            ('Retail', 'Retail and e-commerce', 'active'),
-            ('Manufacturing', 'Manufacturing and industrial', 'active')
-            ON CONFLICT DO NOTHING;
-        `);
-        console.log('   ✓ Sample industry sectors inserted');
-
-    } catch (error) {
-        console.error('   ⚠️  Error inserting sample data:', error.message);
-        // Don't fail the entire setup if sample data fails
-    }
-}
+// Sample data insertion removed - production database ready
 
 // Run the setup
 setupDatabase();
