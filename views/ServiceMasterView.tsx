@@ -1852,83 +1852,312 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
 
                         {/* --- TAB: LINKING (ASSETS) --- */}
                         {activeTab === 'Linking' && (
-                            <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-8">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase border-b pb-3 mb-4 tracking-wider flex items-center">
-                                    <span className="bg-blue-100 text-blue-600 p-1.5 rounded mr-2">🔗</span> Asset Management
-                                </h3>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    {/* Left: Linked Assets */}
-                                    <div className="flex flex-col h-[600px]">
-                                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4 flex justify-between items-center">
-                                            <span>Attached Assets</span>
-                                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{linkedAssets.length}</span>
-                                        </h4>
-                                        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 p-3 space-y-3">
-                                            {linkedAssets.length > 0 ? linkedAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group">
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className={`w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm ${asset.asset_format === 'image' ? 'bg-purple-500' : 'bg-blue-500'
-                                                            }`}>
-                                                            {asset.asset_type ? asset.asset_type.slice(0, 2) : 'NA'}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-bold text-sm text-slate-800 truncate" title={asset.content_title_clean}>{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wide mt-0.5">{asset.status}</p>
-                                                        </div>
+                            <div className="space-y-6">
+                                {/* Professional Asset Linking Interface */}
+                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+                                    {/* Header */}
+                                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 border-b-2 border-blue-700">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="bg-white bg-opacity-20 p-3 rounded-xl">
+                                                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-bold text-white">Asset Management</h3>
+                                                    <p className="text-blue-100 text-sm mt-1">Link content assets to this service page</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="bg-white bg-opacity-20 px-5 py-3 rounded-xl">
+                                                    <div className="text-center">
+                                                        <p className="text-3xl font-bold text-white">{linkedAssets.length}</p>
+                                                        <p className="text-xs text-blue-100 font-semibold uppercase tracking-wide">Linked</p>
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleToggleAssetLink(asset)}
-                                                        className="text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Unlink Asset"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
                                                 </div>
-                                            )) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                                                    <p className="text-sm italic">No assets linked.</p>
+                                                <div className="bg-white bg-opacity-20 px-5 py-3 rounded-xl">
+                                                    <div className="text-center">
+                                                        <p className="text-3xl font-bold text-white">{availableAssets.length}</p>
+                                                        <p className="text-xs text-blue-100 font-semibold uppercase tracking-wide">Available</p>
+                                                    </div>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Right: Available Assets */}
-                                    <div className="flex flex-col h-[600px]">
-                                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Add Assets from Library</h4>
-                                        <div className="mb-3">
-                                            <input
-                                                type="text"
-                                                placeholder="Search repository..."
-                                                value={assetSearch}
-                                                onChange={(e) => setAssetSearch(e.target.value)}
-                                                className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all"
-                                            />
-                                        </div>
-                                        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-white p-3 space-y-3">
-                                            {availableAssets.length > 0 ? availableAssets.map(asset => (
-                                                <div key={asset.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-colors group cursor-pointer" onClick={() => handleToggleAssetLink(asset)}>
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold uppercase">
-                                                            {asset.asset_type ? asset.asset_type.slice(0, 2) : 'NA'}
+                                    {/* Main Content Area */}
+                                    <div className="p-8">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            {/* Left Panel: Linked Assets */}
+                                            <div className="flex flex-col">
+                                                {/* Panel Header */}
+                                                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl px-6 py-4 border-b-2 border-indigo-700">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-lg font-bold text-white">Linked Assets</h4>
+                                                                <p className="text-xs text-indigo-100">Currently connected content</p>
+                                                            </div>
                                                         </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-bold text-sm text-slate-700 truncate">{asset.content_title_clean}</p>
-                                                            <p className="text-[10px] text-slate-400 mt-0.5">ID: {asset.id}</p>
+                                                        <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full">
+                                                            <span className="text-2xl font-bold text-white">{linkedAssets.length}</span>
                                                         </div>
                                                     </div>
-                                                    <button className="text-indigo-600 opacity-0 group-hover:opacity-100 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded transition-all">
-                                                        Link
-                                                    </button>
                                                 </div>
-                                            )) : (
-                                                <div className="p-10 text-center text-sm text-slate-400">
-                                                    {assetSearch ? 'No matching assets found.' : contentAssets.length === 0 ? 'No assets in repository.' : 'All assets are already linked.'}
+
+                                                {/* Linked Assets List */}
+                                                <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-b-2xl border-2 border-indigo-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
+                                                    <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                                        {linkedAssets.length > 0 ? linkedAssets.map(asset => (
+                                                            <div key={asset.id} className="bg-white rounded-xl border-2 border-indigo-200 shadow-sm hover:shadow-md transition-all group p-4">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                                        {/* Asset Type Badge */}
+                                                                        <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
+                                                                            asset.asset_type === 'video' ? 'bg-red-500' :
+                                                                                asset.asset_type === 'pdf' ? 'bg-orange-500' :
+                                                                                    asset.asset_type === 'graphic' ? 'bg-green-500' :
+                                                                                        'bg-slate-500'
+                                                                            }`}>
+                                                                            <span className="text-2xl">
+                                                                                {asset.asset_type === 'blog' ? '📝' :
+                                                                                    asset.asset_type === 'video' ? '🎥' :
+                                                                                        asset.asset_type === 'pdf' ? '📄' :
+                                                                                            asset.asset_type === 'graphic' ? '🖼️' : '📦'}
+                                                                            </span>
+                                                                            <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
+                                                                                {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {/* Asset Info */}
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2" title={asset.content_title_clean}>
+                                                                                {asset.content_title_clean}
+                                                                            </h5>
+                                                                            <div className="flex flex-wrap gap-2 items-center">
+                                                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
+                                                                                    asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                        'bg-slate-100 text-slate-700'
+                                                                                    }`}>
+                                                                                    {asset.status}
+                                                                                </span>
+                                                                                <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Unlink Button */}
+                                                                    <button
+                                                                        onClick={() => handleToggleAssetLink(asset)}
+                                                                        className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-2 border-transparent hover:border-red-200"
+                                                                        title="Unlink this asset"
+                                                                    >
+                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )) : (
+                                                            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                                                <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
+                                                                    <span className="text-7xl opacity-50">🔗</span>
+                                                                </div>
+                                                                <h5 className="text-lg font-bold text-slate-700 mb-2">No Assets Linked</h5>
+                                                                <p className="text-sm text-slate-500 max-w-xs">
+                                                                    Search and link content assets from the library to connect them with this service.
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            )}
+                                            </div>
+
+                                            {/* Right Panel: Available Assets */}
+                                            <div className="flex flex-col">
+                                                {/* Panel Header */}
+                                                <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-6 py-4 border-b-2 border-blue-700">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-lg font-bold text-white">Asset Library</h4>
+                                                            <p className="text-xs text-blue-100">Browse and link content</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Search Bar */}
+                                                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 border-t-0 border-b-0 p-4">
+                                                    <div className="relative">
+                                                        <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                            </svg>
+                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search by title, type, or keyword..."
+                                                            value={assetSearch}
+                                                            onChange={(e) => setAssetSearch(e.target.value)}
+                                                            className="w-full pl-12 pr-12 py-3 border-2 border-blue-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white shadow-sm"
+                                                        />
+                                                        {assetSearch && (
+                                                            <button
+                                                                onClick={() => setAssetSearch('')}
+                                                                className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Available Assets List */}
+                                                <div className="flex-1 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-b-2xl border-2 border-blue-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
+                                                    <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                                        {availableAssets.length > 0 ? availableAssets.map(asset => (
+                                                            <div
+                                                                key={asset.id}
+                                                                onClick={() => handleToggleAssetLink(asset)}
+                                                                className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 shadow-sm hover:shadow-md transition-all group p-4 cursor-pointer"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                                        {/* Asset Type Badge */}
+                                                                        <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
+                                                                            asset.asset_type === 'video' ? 'bg-red-500' :
+                                                                                asset.asset_type === 'pdf' ? 'bg-orange-500' :
+                                                                                    asset.asset_type === 'graphic' ? 'bg-green-500' :
+                                                                                        'bg-slate-500'
+                                                                            }`}>
+                                                                            <span className="text-2xl">
+                                                                                {asset.asset_type === 'blog' ? '📝' :
+                                                                                    asset.asset_type === 'video' ? '🎥' :
+                                                                                        asset.asset_type === 'pdf' ? '📄' :
+                                                                                            asset.asset_type === 'graphic' ? '🖼️' : '📦'}
+                                                                            </span>
+                                                                            <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
+                                                                                {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {/* Asset Info */}
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors" title={asset.content_title_clean}>
+                                                                                {asset.content_title_clean}
+                                                                            </h5>
+                                                                            <div className="flex flex-wrap gap-2 items-center">
+                                                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
+                                                                                    asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                        'bg-slate-100 text-slate-700'
+                                                                                    }`}>
+                                                                                    {asset.status}
+                                                                                </span>
+                                                                                <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Link Button */}
+                                                                    <button className="flex-shrink-0 px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-700 shadow-sm border-2 border-blue-700">
+                                                                        + Link
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )) : (
+                                                            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                                                <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
+                                                                    <span className="text-7xl opacity-50">
+                                                                        {assetSearch ? '🔍' : '📚'}
+                                                                    </span>
+                                                                </div>
+                                                                <h5 className="text-lg font-bold text-slate-700 mb-2">
+                                                                    {assetSearch ? 'No Matching Assets' : contentAssets.length === 0 ? 'No Assets Available' : 'All Assets Linked'}
+                                                                </h5>
+                                                                <p className="text-sm text-slate-500 max-w-xs">
+                                                                    {assetSearch
+                                                                        ? `No assets found matching "${assetSearch}". Try a different search term.`
+                                                                        : contentAssets.length === 0
+                                                                            ? 'No assets in the content repository yet. Create some content first.'
+                                                                            : 'All available assets are already linked to this service.'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer with Tips */}
+                                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-t-2 border-amber-200 px-8 py-6">
+                                        <div className="flex items-start gap-4">
+                                            <div className="bg-amber-100 p-3 rounded-xl flex-shrink-0">
+                                                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                                </svg>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h5 className="text-sm font-bold text-amber-900 mb-2">Asset Linking Tips</h5>
+                                                <ul className="text-xs text-amber-800 space-y-1.5">
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="text-amber-600 font-bold">•</span>
+                                                        <span><strong>Link related content</strong> to create a comprehensive resource hub for your service</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="text-amber-600 font-bold">•</span>
+                                                        <span><strong>Organize by topic</strong> to help users discover relevant materials easily</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="text-amber-600 font-bold">•</span>
+                                                        <span><strong>Keep it relevant</strong> - only link assets that directly support this service</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="text-amber-600 font-bold">•</span>
+                                                        <span><strong>Update regularly</strong> to ensure linked content stays current and valuable</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Custom Scrollbar Styles */}
+                                <style>{`
+                                    .custom-scrollbar::-webkit-scrollbar {
+                                        width: 8px;
+                                    }
+                                    .custom-scrollbar::-webkit-scrollbar-track {
+                                        background: rgba(0, 0, 0, 0.05);
+                                        border-radius: 10px;
+                                    }
+                                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                                        background: rgba(0, 0, 0, 0.2);
+                                        border-radius: 10px;
+                                    }
+                                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                                        background: rgba(0, 0, 0, 0.3);
+                                    }
+                                    .line-clamp-2 {
+                                        display: -webkit-box;
+                                        -webkit-line-clamp: 2;
+                                        -webkit-box-orient: vertical;
+                                        overflow: hidden;
+                                    }
+                                `}</style>
                             </div>
                         )}
 
