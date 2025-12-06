@@ -122,15 +122,30 @@ const ServiceMasterView: React.FC = () => {
 
     const linkedAssets = useMemo(() => {
         if (!editingItem) return [];
-        return contentAssets.filter(a => a.linked_service_ids?.includes(editingItem.id));
+        return contentAssets.filter(a => {
+            const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
+            return links.map(String).includes(String(editingItem.id));
+        });
     }, [contentAssets, editingItem]);
 
     const availableAssets = useMemo(() => {
         if (!editingItem) return [];
+        const searchLower = assetSearch.toLowerCase().trim();
         return contentAssets
-            .filter(a => !a.linked_service_ids?.includes(editingItem.id))
-            .filter(a => a.content_title_clean.toLowerCase().includes(assetSearch.toLowerCase()))
-            .slice(0, 10); // Limit results for perf
+            .filter(a => {
+                // Check if asset is not already linked
+                const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
+                const isLinked = links.map(String).includes(String(editingItem.id));
+                if (isLinked) return false;
+
+                // Check if asset matches search query (if any)
+                if (!searchLower) return true;
+                const title = (a.content_title_clean || '').toLowerCase();
+                const assetType = (a.asset_type || '').toLowerCase();
+                const status = (a.status || '').toLowerCase();
+                return title.includes(searchLower) || assetType.includes(searchLower) || status.includes(searchLower);
+            })
+            .slice(0, 20); // Increased limit to show more results
     }, [contentAssets, editingItem, assetSearch]);
 
     const availableContentTypes = contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
@@ -299,23 +314,26 @@ const ServiceMasterView: React.FC = () => {
 
     const handleToggleAssetLink = async (asset: ContentRepositoryItem) => {
         if (!editingItem) return;
-        // Compute new links
         const currentLinks = Array.isArray(asset.linked_service_ids) ? asset.linked_service_ids : [];
         const isLinked = currentLinks.map(String).includes(String(editingItem.id));
         const newLinks = isLinked
             ? currentLinks.filter(id => String(id) !== String(editingItem.id))
             : [...currentLinks, editingItem.id];
 
-        // Optimistic local update so UI reflects the change immediately
         try {
-            // Update local in-memory list (contentAssets comes from hook state)
-            // Note: setData isn't exposed here, so we mutate local storage via the update call result
+            // Update the asset with new links - the useData hook now updates state immediately
             await updateContentAsset(asset.id, { linked_service_ids: newLinks });
+
+            // Force a refresh to ensure we have the latest data
+            await refreshContentAssets();
         } catch (e) {
-            // Ignore — useData will fallback to local DB; but ensure we still attempt to refresh
-        } finally {
-            // Refresh content list from server (or local DB fallback) to ensure canonical state
-            try { await refreshContentAssets(); } catch (e) { /* ignore refresh errors */ }
+            console.error('Asset link update error:', e);
+            // Even if there's an error, try to refresh to show current state
+            try {
+                await refreshContentAssets();
+            } catch (refreshError) {
+                console.error('Refresh error:', refreshError);
+            }
         }
     };
 
@@ -1202,7 +1220,7 @@ const ServiceMasterView: React.FC = () => {
                                         </Tooltip>
                                     </div>
 
-                                    {/* Body Content Section */}
+                                    {/* Body Content Section - Long Horizontal Box */}
                                     <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-xl border-2 border-slate-200 p-6">
                                         <Tooltip content="Main body copy. Supports Markdown formatting for rich text editing.">
                                             <div className="space-y-3">
@@ -1214,9 +1232,9 @@ const ServiceMasterView: React.FC = () => {
                                                     <textarea
                                                         value={formData.body_content}
                                                         onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
-                                                        className="w-full px-4 py-4 border-2 border-slate-300 rounded-lg h-64 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-y bg-white placeholder:text-slate-400 shadow-sm"
-                                                        placeholder="# Write your content here...&#10;&#10;Supports Markdown formatting:&#10;- **Bold**&#10;- *Italic*&#10;- Lists&#10;- Links&#10;- Headers"
-                                                        style={{ minHeight: '256px' }}
+                                                        className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg h-24 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none bg-white placeholder:text-slate-400 shadow-sm overflow-x-auto"
+                                                        placeholder="# Write your content here... Supports Markdown formatting: **Bold**, *Italic*, Lists, Links, Headers"
+                                                        style={{ minHeight: '96px', maxHeight: '120px' }}
                                                     />
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
@@ -1743,7 +1761,7 @@ const ServiceMasterView: React.FC = () => {
                                                 </div>
                                             )) : (
                                                 <div className="p-10 text-center text-sm text-slate-400">
-                                                    {assetSearch ? 'No matching assets found.' : 'Search to find assets.'}
+                                                    {assetSearch ? 'No matching assets found.' : contentAssets.length === 0 ? 'No assets in repository.' : 'All assets are already linked.'}
                                                 </div>
                                             )}
                                         </div>

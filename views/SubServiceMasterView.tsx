@@ -91,15 +91,30 @@ const SubServiceMasterView: React.FC = () => {
 
     const linkedAssets = useMemo(() => {
         if (!editingItem) return [];
-        return contentAssets.filter(a => a.linked_sub_service_ids?.includes(editingItem.id));
+        return contentAssets.filter(a => {
+            const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
+            return links.map(String).includes(String(editingItem.id));
+        });
     }, [contentAssets, editingItem]);
 
     const availableAssets = useMemo(() => {
         if (!editingItem) return [];
+        const searchLower = assetSearch.toLowerCase().trim();
         return contentAssets
-            .filter(a => !a.linked_sub_service_ids?.includes(editingItem.id))
-            .filter(a => a.content_title_clean.toLowerCase().includes(assetSearch.toLowerCase()))
-            .slice(0, 10);
+            .filter(a => {
+                // Check if asset is not already linked
+                const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
+                const isLinked = links.map(String).includes(String(editingItem.id));
+                if (isLinked) return false;
+
+                // Check if asset matches search query (if any)
+                if (!searchLower) return true;
+                const title = (a.content_title_clean || '').toLowerCase();
+                const assetType = (a.asset_type || '').toLowerCase();
+                const status = (a.status || '').toLowerCase();
+                return title.includes(searchLower) || assetType.includes(searchLower) || status.includes(searchLower);
+            })
+            .slice(0, 20); // Increased limit to show more results
     }, [contentAssets, editingItem, assetSearch]);
 
     const handleCreateClick = () => {
@@ -240,11 +255,19 @@ const SubServiceMasterView: React.FC = () => {
             : [...currentLinks, editingItem.id];
 
         try {
+            // Update the asset with new links - the useData hook now updates state immediately
             await updateContentAsset(asset.id, { linked_sub_service_ids: newLinks });
+
+            // Force a refresh to ensure we have the latest data
+            await refreshContentAssets();
         } catch (e) {
             console.error('Asset link update error:', e);
-        } finally {
-            try { await refreshContentAssets(); } catch (e) { console.error('Refresh error:', e); }
+            // Even if there's an error, try to refresh to show current state
+            try {
+                await refreshContentAssets();
+            } catch (refreshError) {
+                console.error('Refresh error:', refreshError);
+            }
         }
     };
 

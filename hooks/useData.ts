@@ -235,7 +235,12 @@ export function useData<T>(collection: string) {
                 setIsOffline(true);
             }
         }
-        return serverItem || newItem;
+
+        // 3. Immediately update state to reflect the new item
+        const finalItem = serverItem || newItem;
+        setData(prev => [finalItem, ...prev]);
+
+        return finalItem;
     };
 
     const update = async (id: number | string, updates: any) => {
@@ -251,6 +256,16 @@ export function useData<T>(collection: string) {
                 body: JSON.stringify(updates),
             }).catch(() => setIsOffline(true));
         }
+
+        // Immediately update state to reflect the changes
+        // Use updatedItem if available, otherwise merge updates with existing item
+        setData(prev => prev.map(item => {
+            if ((item as any).id === id) {
+                return updatedItem || { ...item, ...updates };
+            }
+            return item;
+        }));
+
         return updatedItem;
     };
 
@@ -264,6 +279,9 @@ export function useData<T>(collection: string) {
                 method: 'DELETE',
             }).catch(() => setIsOffline(true));
         }
+
+        // Immediately update state to remove the item
+        setData(prev => prev.filter(item => (item as any).id !== id));
     };
 
     // Added refresh method explicitly exposing fetch
