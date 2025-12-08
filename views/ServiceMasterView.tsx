@@ -2053,431 +2053,220 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                 />
                             </div>
                         )}
-                        {/* Left Panel: Linked Assets */}
-                        <div className="flex flex-col">
-                            {/* Panel Header */}
-                            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl px-6 py-4 border-b-2 border-indigo-700">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
+
+
+                        {/* --- TAB: GOVERNANCE --- */}
+                        {activeTab === 'Governance' && (
+                            <div className="space-y-10">
+                                {/* 1. OWNERSHIP & METADATA CARD */}
+                                <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">⚖️</span>
                                         </div>
-                                        <div>
-                                            <h4 className="text-lg font-bold text-white">Linked Assets</h4>
-                                            <p className="text-xs text-indigo-100">Currently connected content</p>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
+                                                <h3 className="text-2xl font-bold">Ownership & Metadata</h3>
+                                            </div>
+                                            <p className="text-teal-100 text-sm">Manage content ownership and business unit assignment</p>
                                         </div>
                                     </div>
-                                    <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full">
-                                        <span className="text-2xl font-bold text-white">{linkedAssets.length}</span>
+
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <div className="space-y-8">
+                                            {/* Row 1 - Content Owner & Business Unit */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="Person responsible for maintaining this service content.">
+                                                    <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">👤</span>
+                                                            Content Owner
+                                                        </label>
+                                                        <select
+                                                            value={formData.content_owner_id || 0}
+                                                            onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer"
+                                                        >
+                                                            <option value={0}>Select Owner...</option>
+                                                            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
+                                                    <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🏛️</span>
+                                                            Business Unit
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.business_unit || ''}
+                                                            onChange={(e) => setFormData({ ...formData, business_unit: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400"
+                                                            placeholder="Growth Marketing / SEO Team"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Linked Assets List */}
-                            <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-b-2xl border-2 border-indigo-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
-                                <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                                    {linkedAssets.length > 0 ? linkedAssets.map(asset => (
-                                        <div key={asset.id} className="bg-white rounded-xl border-2 border-indigo-200 shadow-sm hover:shadow-md transition-all group p-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                    {/* Asset Type Badge */}
-                                                    <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
-                                                        asset.asset_type === 'video' ? 'bg-red-500' :
-                                                            asset.asset_type === 'pdf' ? 'bg-orange-500' :
-                                                                asset.asset_type === 'graphic' ? 'bg-green-500' :
-                                                                    'bg-slate-500'
-                                                        }`}>
-                                                        <span className="text-2xl">
-                                                            {asset.asset_type === 'blog' ? '📝' :
-                                                                asset.asset_type === 'video' ? '🎥' :
-                                                                    asset.asset_type === 'pdf' ? '📄' :
-                                                                        asset.asset_type === 'graphic' ? '🖼️' : '📦'}
-                                                        </span>
-                                                        <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
-                                                            {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
-                                                        </span>
-                                                    </div>
+                                {/* 2. AUDIT TRAIL & TIMESTAMPS CARD */}
+                                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">📋</span>
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🕒</span>
+                                                <h3 className="text-2xl font-bold">Audit Trail & Timestamps</h3>
+                                            </div>
+                                            <p className="text-indigo-100 text-sm">Auto-generated creation and modification history</p>
+                                        </div>
+                                    </div>
 
-                                                    {/* Asset Info */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2" title={asset.content_title_clean}>
-                                                            {asset.content_title_clean}
-                                                        </h5>
-                                                        <div className="flex flex-wrap gap-2 items-center">
-                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
-                                                                asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    'bg-slate-100 text-slate-700'
-                                                                }`}>
-                                                                {asset.status}
-                                                            </span>
-                                                            <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <div className="space-y-8">
+                                            {/* Timestamps - Generated Automatically */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="Timestamp when this service was originally created. Auto-generated by system.">
+                                                    <div className="bg-white rounded-xl border-2 border-green-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">✅</span>
+                                                            Created By (Timestamp)
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 break-all">
+                                                                {editingItem && formData.created_at
+                                                                    ? new Date(formData.created_at).toLocaleString('en-US', {
+                                                                        year: 'numeric', month: 'short', day: '2-digit',
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit',
+                                                                        timeZoneName: 'short'
+                                                                    })
+                                                                    : <span className="text-slate-500 italic">Auto-set on creation</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp</p>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </Tooltip>
 
-                                                {/* Unlink Button */}
-                                                <button
-                                                    onClick={() => handleToggleContentLink(asset)}
-                                                    className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-2 border-transparent hover:border-red-200"
-                                                    title="Unlink this asset"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                                            <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
-                                                <span className="text-7xl opacity-50">🔗</span>
-                                            </div>
-                                            <h5 className="text-lg font-bold text-slate-700 mb-2">No Assets Linked</h5>
-                                            <p className="text-sm text-slate-500 max-w-xs">
-                                                Search and link content assets from the library to connect them with this service.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Panel: Available Assets */}
-                        <div className="flex flex-col">
-                            {/* Panel Header */}
-                            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-6 py-4 border-b-2 border-blue-700">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-lg font-bold text-white">Asset Library</h4>
-                                        <p className="text-xs text-blue-100">Browse and link content</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Search Bar */}
-                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 border-t-0 border-b-0 p-4">
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Search by title, type, or keyword..."
-                                        value={assetSearch}
-                                        onChange={(e) => setAssetSearch(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-3 border-2 border-blue-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white shadow-sm"
-                                    />
-                                    {assetSearch && (
-                                        <button
-                                            onClick={() => setAssetSearch('')}
-                                            className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Available Assets List */}
-                            <div className="flex-1 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-b-2xl border-2 border-blue-200 border-t-0 p-4 min-h-[600px] max-h-[700px]">
-                                <div className="h-full overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                                    {availableAssets.length > 0 ? availableAssets.map(asset => (
-                                        <div
-                                            key={asset.id}
-                                            onClick={() => handleToggleContentLink(asset)}
-                                            className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 shadow-sm hover:shadow-md transition-all group p-4 cursor-pointer"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                    {/* Asset Type Badge */}
-                                                    <div className={`w-14 h-14 flex-shrink-0 rounded-xl flex flex-col items-center justify-center text-white shadow-md ${asset.asset_type === 'blog' ? 'bg-blue-500' :
-                                                        asset.asset_type === 'video' ? 'bg-red-500' :
-                                                            asset.asset_type === 'pdf' ? 'bg-orange-500' :
-                                                                asset.asset_type === 'graphic' ? 'bg-green-500' :
-                                                                    'bg-slate-500'
-                                                        }`}>
-                                                        <span className="text-2xl">
-                                                            {asset.asset_type === 'blog' ? '📝' :
-                                                                asset.asset_type === 'video' ? '🎥' :
-                                                                    asset.asset_type === 'pdf' ? '📄' :
-                                                                        asset.asset_type === 'graphic' ? '🖼️' : '📦'}
-                                                        </span>
-                                                        <span className="text-[9px] font-bold uppercase mt-1 opacity-90">
-                                                            {asset.asset_type ? String(asset.asset_type).slice(0, 3) : 'N/A'}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Asset Info */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <h5 className="font-bold text-sm text-slate-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors" title={asset.content_title_clean}>
-                                                            {asset.content_title_clean}
-                                                        </h5>
-                                                        <div className="flex flex-wrap gap-2 items-center">
-                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.status === 'published' ? 'bg-green-100 text-green-700' :
-                                                                asset.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    'bg-slate-100 text-slate-700'
-                                                                }`}>
-                                                                {asset.status}
-                                                            </span>
-                                                            <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                                <Tooltip content="Timestamp when this service was last modified. Auto-generated by system on every save.">
+                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🔄</span>
+                                                            Updated By (Timestamp)
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 break-all">
+                                                                {editingItem && formData.updated_at
+                                                                    ? new Date(formData.updated_at).toLocaleString('en-US', {
+                                                                        year: 'numeric', month: 'short', day: '2-digit',
+                                                                        hour: '2-digit', minute: '2-digit', second: '2-digit',
+                                                                        timeZoneName: 'short'
+                                                                    })
+                                                                    : <span className="text-slate-500 italic">Auto-set on save</span>
+                                                                }
+                                                            </div>
+                                                            <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp on every update</p>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </Tooltip>
+                                            </div>
 
-                                                {/* Link Button */}
-                                                <button className="flex-shrink-0 px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-700 shadow-sm border-2 border-blue-700">
-                                                    + Link
-                                                </button>
+                                            {/* Version & Brand Info */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <Tooltip content="Auto-incremented version number tracking major revisions.">
+                                                    <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📌</span>
+                                                            Version Number
+                                                        </label>
+                                                        <div className="text-sm font-mono font-bold text-slate-700 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
+                                                            v{formData.version_number || 1}
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 mt-2">Read-only - Auto-increments on each save</p>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Brand this service belongs to.">
+                                                    <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🏢</span>
+                                                            Brand
+                                                        </label>
+                                                        <select
+                                                            value={formData.brand_id || 0}
+                                                            onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                                                        >
+                                                            <option value={0}>Select Brand...</option>
+                                                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </Tooltip>
                                             </div>
                                         </div>
-                                    )) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                                            <div className="bg-white rounded-full p-8 mb-6 shadow-lg">
-                                                <span className="text-7xl opacity-50">
-                                                    {assetSearch ? '🔍' : '📚'}
-                                                </span>
-                                            </div>
-                                            <h5 className="text-lg font-bold text-slate-700 mb-2">
-                                                {assetSearch ? 'No Matching Assets' : contentAssets.length === 0 ? 'No Assets Available' : 'All Assets Linked'}
-                                            </h5>
-                                            <p className="text-sm text-slate-500 max-w-xs">
-                                                {assetSearch
-                                                    ? `No assets found matching "${assetSearch}". Try a different search term.`
-                                                    : contentAssets.length === 0
-                                                        ? 'No assets in the content repository yet. Create some content first.'
-                                                        : 'All available assets are already linked to this service.'}
-                                            </p>
+                                    </div>
+                                </div>
+
+                                {/* 3. CHANGE MANAGEMENT CARD */}
+                                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-slate-50 rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-amber-600 to-yellow-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">📝</span>
                                         </div>
-                                    )}
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
+                                                <h3 className="text-2xl font-bold">Change Management</h3>
+                                            </div>
+                                            <p className="text-amber-100 text-sm">Track release notes and approval workflows</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <Tooltip content="Link to release notes, Jira ticket, or change request documenting the last major update.">
+                                            <div className="space-y-3">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest">
+                                                    <span>🔗</span>
+                                                    Change Log / Release Notes Link
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={formData.change_log_link || ''}
+                                                    onChange={(e) => setFormData({ ...formData, change_log_link: e.target.value })}
+                                                    className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-sm font-mono transition-all focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white placeholder:text-slate-400"
+                                                    placeholder="https://notion.so/changelog or https://jira.company.com/browse/MARK-1234"
+                                                />
+                                                <div className="text-xs text-slate-600 space-y-1 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                                    <p className="font-semibold">📌 Quick Links:</p>
+                                                    <ul className="list-disc list-inside space-y-0.5 text-slate-600">
+                                                        <li>Notion Changelog: <code className="bg-white px-2 py-1 rounded text-xs">https://notion.so/changelog</code></li>
+                                                        <li>Jira Epic: <code className="bg-white px-2 py-1 rounded text-xs">https://jira.company.com/browse/MARK-XXX</code></li>
+                                                        <li>GitHub Release: <code className="bg-white px-2 py-1 rounded text-xs">https://github.com/repo/releases/tag/v1.0.0</code></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
+
                     </div>
-
-
-                    {/* --- TAB: GOVERNANCE --- */}
-                    {activeTab === 'Governance' && (
-                        <div className="space-y-10">
-                            {/* 1. OWNERSHIP & METADATA CARD */}
-                            <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                {/* Header */}
-                                <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
-                                    <div className="absolute top-0 right-0 opacity-10">
-                                        <span className="text-9xl">⚖️</span>
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
-                                            <h3 className="text-2xl font-bold">Ownership & Metadata</h3>
-                                        </div>
-                                        <p className="text-teal-100 text-sm">Manage content ownership and business unit assignment</p>
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-10">
-                                    <div className="space-y-8">
-                                        {/* Row 1 - Content Owner & Business Unit */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <Tooltip content="Person responsible for maintaining this service content.">
-                                                <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
-                                                        <span className="text-sm">👤</span>
-                                                        Content Owner
-                                                    </label>
-                                                    <select
-                                                        value={formData.content_owner_id || 0}
-                                                        onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || undefined })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer"
-                                                    >
-                                                        <option value={0}>Select Owner...</option>
-                                                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                                    </select>
-                                                </div>
-                                            </Tooltip>
-
-                                            <Tooltip content="Business unit or pod responsible for this service (optional metadata).">
-                                                <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
-                                                        <span className="text-sm">🏛️</span>
-                                                        Business Unit
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={formData.business_unit || ''}
-                                                        onChange={(e) => setFormData({ ...formData, business_unit: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400"
-                                                        placeholder="Growth Marketing / SEO Team"
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 2. AUDIT TRAIL & TIMESTAMPS CARD */}
-                            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                {/* Header */}
-                                <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
-                                    <div className="absolute top-0 right-0 opacity-10">
-                                        <span className="text-9xl">📋</span>
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🕒</span>
-                                            <h3 className="text-2xl font-bold">Audit Trail & Timestamps</h3>
-                                        </div>
-                                        <p className="text-indigo-100 text-sm">Auto-generated creation and modification history</p>
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-10">
-                                    <div className="space-y-8">
-                                        {/* Timestamps - Generated Automatically */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <Tooltip content="Timestamp when this service was originally created. Auto-generated by system.">
-                                                <div className="bg-white rounded-xl border-2 border-green-100 p-6">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
-                                                        <span className="text-sm">✅</span>
-                                                        Created By (Timestamp)
-                                                    </label>
-                                                    <div className="space-y-2">
-                                                        <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-green-50 rounded-lg border border-green-200 break-all">
-                                                            {editingItem && formData.created_at
-                                                                ? new Date(formData.created_at).toLocaleString('en-US', {
-                                                                    year: 'numeric', month: 'short', day: '2-digit',
-                                                                    hour: '2-digit', minute: '2-digit', second: '2-digit',
-                                                                    timeZoneName: 'short'
-                                                                })
-                                                                : <span className="text-slate-500 italic">Auto-set on creation</span>
-                                                            }
-                                                        </div>
-                                                        <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp</p>
-                                                    </div>
-                                                </div>
-                                            </Tooltip>
-
-                                            <Tooltip content="Timestamp when this service was last modified. Auto-generated by system on every save.">
-                                                <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
-                                                        <span className="text-sm">🔄</span>
-                                                        Updated By (Timestamp)
-                                                    </label>
-                                                    <div className="space-y-2">
-                                                        <div className="text-sm font-mono font-semibold text-slate-700 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 break-all">
-                                                            {editingItem && formData.updated_at
-                                                                ? new Date(formData.updated_at).toLocaleString('en-US', {
-                                                                    year: 'numeric', month: 'short', day: '2-digit',
-                                                                    hour: '2-digit', minute: '2-digit', second: '2-digit',
-                                                                    timeZoneName: 'short'
-                                                                })
-                                                                : <span className="text-slate-500 italic">Auto-set on save</span>
-                                                            }
-                                                        </div>
-                                                        <p className="text-xs text-slate-500">Read-only - System automatically generates this timestamp on every update</p>
-                                                    </div>
-                                                </div>
-                                            </Tooltip>
-                                        </div>
-
-                                        {/* Version & Brand Info */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <Tooltip content="Auto-incremented version number tracking major revisions.">
-                                                <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
-                                                        <span className="text-sm">📌</span>
-                                                        Version Number
-                                                    </label>
-                                                    <div className="text-sm font-mono font-bold text-slate-700 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
-                                                        v{formData.version_number || 1}
-                                                    </div>
-                                                    <p className="text-xs text-slate-500 mt-2">Read-only - Auto-increments on each save</p>
-                                                </div>
-                                            </Tooltip>
-
-                                            <Tooltip content="Brand this service belongs to.">
-                                                <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
-                                                        <span className="text-sm">🏢</span>
-                                                        Brand
-                                                    </label>
-                                                    <select
-                                                        value={formData.brand_id || 0}
-                                                        onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || undefined })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-                                                    >
-                                                        <option value={0}>Select Brand...</option>
-                                                        {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                                    </select>
-                                                </div>
-                                            </Tooltip>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 3. CHANGE MANAGEMENT CARD */}
-                            <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-slate-50 rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                {/* Header */}
-                                <div className="relative bg-gradient-to-r from-amber-600 to-yellow-600 px-8 py-10 text-white overflow-hidden">
-                                    <div className="absolute top-0 right-0 opacity-10">
-                                        <span className="text-9xl">📝</span>
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
-                                            <h3 className="text-2xl font-bold">Change Management</h3>
-                                        </div>
-                                        <p className="text-amber-100 text-sm">Track release notes and approval workflows</p>
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-10">
-                                    <Tooltip content="Link to release notes, Jira ticket, or change request documenting the last major update.">
-                                        <div className="space-y-3">
-                                            <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest">
-                                                <span>🔗</span>
-                                                Change Log / Release Notes Link
-                                            </label>
-                                            <input
-                                                type="url"
-                                                value={formData.change_log_link || ''}
-                                                onChange={(e) => setFormData({ ...formData, change_log_link: e.target.value })}
-                                                className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-sm font-mono transition-all focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white placeholder:text-slate-400"
-                                                placeholder="https://notion.so/changelog or https://jira.company.com/browse/MARK-1234"
-                                            />
-                                            <div className="text-xs text-slate-600 space-y-1 bg-amber-50 p-4 rounded-lg border border-amber-200">
-                                                <p className="font-semibold">📌 Quick Links:</p>
-                                                <ul className="list-disc list-inside space-y-0.5 text-slate-600">
-                                                    <li>Notion Changelog: <code className="bg-white px-2 py-1 rounded text-xs">https://notion.so/changelog</code></li>
-                                                    <li>Jira Epic: <code className="bg-white px-2 py-1 rounded text-xs">https://jira.company.com/browse/MARK-XXX</code></li>
-                                                    <li>GitHub Release: <code className="bg-white px-2 py-1 rounded text-xs">https://github.com/repo/releases/tag/v1.0.0</code></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                    }
-
-                </div >
-            </div >
+                </div>
+            </div>
         );
     }
 
