@@ -21,6 +21,7 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
 
 const ServiceMasterView: React.FC = () => {
     const { data: services = [], create, update, remove } = useData<Service>('services');
+    const { data: subServices = [] } = useData<any>('subServices');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: libraryAssets = [], update: updateLibraryAsset, refresh: refreshLibraryAssets } = useData<AssetLibraryItem>('assetLibrary');
     const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
@@ -184,6 +185,27 @@ const ServiceMasterView: React.FC = () => {
     }, [contentAssets, editingItem, assetSearch]);
 
     const availableContentTypes = contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
+
+    // Usage Metrics - Automatic calculation
+    const getKeywordUsageCount = (serviceId: number) => {
+        return keywordsMaster.filter(k => k.mapped_service === String(serviceId)).length;
+    };
+
+    const getLinkedAssetsCount = (serviceId: number) => {
+        const contentCount = contentAssets.filter(a => {
+            const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
+            return links.map(String).includes(String(serviceId));
+        }).length;
+        const libraryCount = libraryAssets.filter(a => {
+            const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
+            return links.map(String).includes(String(serviceId));
+        }).length;
+        return contentCount + libraryCount;
+    };
+
+    const getSubServicesCount = (serviceId: number) => {
+        return subServices.filter((s: any) => s.parent_service_id === serviceId).length;
+    };
 
     // Handlers
     const handleCreateClick = () => {
@@ -2364,16 +2386,36 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                         { header: 'Type', accessor: 'content_type' as keyof Service, className: "text-xs text-slate-600 font-medium" },
                         { header: 'Status', accessor: (item: Service) => getStatusBadge(item.status) },
                         {
-                            header: 'Linked Assets',
+                            header: 'Usage Metrics',
                             accessor: (item: Service) => {
-                                const count = contentAssets.filter(a => a.linked_service_ids?.includes(item.id)).length;
+                                const keywordCount = getKeywordUsageCount(item.id);
+                                const assetCount = getLinkedAssetsCount(item.id);
+                                const subServiceCount = getSubServicesCount(item.id);
                                 return (
-                                    <Tooltip content="Number of assets linked to this service">
-                                        <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-bold border border-indigo-100">{count}</span>
-                                    </Tooltip>
+                                    <div className="flex gap-2 items-center justify-center">
+                                        <Tooltip content={`${keywordCount} keywords linked to this service`}>
+                                            <span className="bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full text-xs font-bold border border-brand-100 flex items-center gap-1">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
+                                                {keywordCount}
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip content={`${assetCount} assets linked to this service`}>
+                                            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-100 flex items-center gap-1">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                {assetCount}
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip content={`${subServiceCount} sub-services under this service`}>
+                                            <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold border border-purple-100 flex items-center gap-1">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                                {subServiceCount}
+                                            </span>
+                                        </Tooltip>
+                                    </div>
                                 );
                             },
-                            className: "text-center"
+                            className: "text-center min-w-[200px]",
+                            tooltip: "Automatic usage metrics: Keywords, Assets, and Sub-Services"
                         },
                         {
                             header: 'Actions',
