@@ -1163,9 +1163,15 @@ const SubServiceMasterView: React.FC = () => {
                         {
                             header: 'Linked Assets',
                             accessor: (item: SubServiceItem) => {
-                                const count = contentAssets.filter(a => a.linked_sub_service_ids?.includes(item.id)).length;
+                                // Count assets from both Content Repository and Asset Library
+                                const contentCount = contentAssets.filter(a => a.linked_sub_service_ids?.includes(item.id)).length;
+                                const libraryCount = libraryAssets.filter(a => {
+                                    const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
+                                    return links.map(String).includes(String(item.id));
+                                }).length;
+                                const count = contentCount + libraryCount;
                                 return (
-                                    <Tooltip content="Number of assets linked">
+                                    <Tooltip content={`Total assets linked: ${libraryCount} from Asset Library + ${contentCount} from Content Repository`}>
                                         <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-bold border border-indigo-100">
                                             {count}
                                         </span>

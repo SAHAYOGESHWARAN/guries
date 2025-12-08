@@ -2,10 +2,12 @@ import React, { useState, useRef, useMemo, useCallback } from 'react';
 import Table from '../components/Table';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
-import type { AssetLibraryItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem } from '../types';
 
 const AssetsView: React.FC = () => {
     const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: services = [] } = useData<Service>('services');
+    const { data: subServices = [] } = useData<SubServiceItem>('subServices');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
@@ -23,8 +25,13 @@ const AssetsView: React.FC = () => {
         name: '',
         type: 'Image',
         repository: 'Content Repository',
-        usage_status: 'Available'
+        usage_status: 'Available',
+        linked_service_ids: [],
+        linked_sub_service_ids: []
     });
+
+    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+    const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
 
     // Auto-refresh on mount to ensure latest data
     React.useEffect(() => {
@@ -131,22 +138,35 @@ const AssetsView: React.FC = () => {
 
         setIsUploading(true);
         try {
-            // Auto-link based on mapped_to field
+            // Build the linked IDs from the selected service and sub-services
+            const linkedServiceIds = selectedServiceId ? [selectedServiceId] : [];
+            const linkedSubServiceIds = selectedSubServiceIds;
+
+            // Build mapped_to display string
+            let mappedToString = '';
+            if (selectedServiceId) {
+                const service = services.find(s => s.id === selectedServiceId);
+                if (service) {
+                    mappedToString = service.service_name;
+                    if (selectedSubServiceIds.length > 0) {
+                        const subServiceNames = selectedSubServiceIds
+                            .map(id => subServices.find(ss => ss.id === id)?.sub_service_name)
+                            .filter(Boolean)
+                            .join(', ');
+                        if (subServiceNames) {
+                            mappedToString += ` / ${subServiceNames}`;
+                        }
+                    }
+                }
+            }
+
             const assetPayload = {
                 ...newAsset,
-                date: new Date().toISOString()
+                date: new Date().toISOString(),
+                linked_service_ids: linkedServiceIds,
+                linked_sub_service_ids: linkedSubServiceIds,
+                mapped_to: mappedToString || newAsset.mapped_to
             };
-
-            // Parse mapped_to field to auto-populate linked IDs
-            // Format: "Service Name / Sub-service Name / Page Title"
-            if (newAsset.mapped_to && newAsset.mapped_to.trim()) {
-                // This is a placeholder for auto-linking logic
-                // In a real implementation, you would:
-                // 1. Parse the mapped_to string
-                // 2. Look up service/sub-service IDs from the database
-                // 3. Populate linked_service_ids and linked_sub_service_ids arrays
-                // For now, we'll keep the mapped_to field for manual linking later
-            }
 
             if (viewMode === 'edit' && editingAsset) {
                 // Update existing asset
@@ -160,11 +180,15 @@ const AssetsView: React.FC = () => {
             setSelectedFile(null);
             setPreviewUrl('');
             setEditingAsset(null);
+            setSelectedServiceId(null);
+            setSelectedSubServiceIds([]);
             setNewAsset({
                 name: '',
                 type: 'Image',
                 repository: 'Content Repository',
-                usage_status: 'Available'
+                usage_status: 'Available',
+                linked_service_ids: [],
+                linked_sub_service_ids: []
             });
 
             // Switch to list view immediately
@@ -178,7 +202,7 @@ const AssetsView: React.FC = () => {
         } finally {
             setIsUploading(false);
         }
-    }, [newAsset, selectedFile, createAsset, updateAsset, editingAsset, viewMode, refresh]);
+    }, [newAsset, selectedFile, createAsset, updateAsset, editingAsset, viewMode, refresh, selectedServiceId, selectedSubServiceIds, services, subServices]);
 
     const handleEdit = useCallback((e: React.MouseEvent, asset: AssetLibraryItem) => {
         e.stopPropagation();
@@ -196,8 +220,16 @@ const AssetsView: React.FC = () => {
             file_url: asset.file_url,
             thumbnail_url: asset.thumbnail_url,
             file_size: asset.file_size,
-            file_type: asset.file_type
+            file_type: asset.file_type,
+            linked_service_ids: asset.linked_service_ids || [],
+            linked_sub_service_ids: asset.linked_sub_service_ids || []
         });
+
+        // Set selected service and sub-services for the UI
+        if (asset.linked_service_ids && asset.linked_service_ids.length > 0) {
+            setSelectedServiceId(asset.linked_service_ids[0]);
+        }
+        setSelectedSubServiceIds(asset.linked_sub_service_ids || []);
         if (asset.thumbnail_url || asset.file_url) {
             setPreviewUrl(asset.thumbnail_url || asset.file_url || '');
         }
@@ -287,25 +319,46 @@ const AssetsView: React.FC = () => {
             accessor: (item: AssetLibraryItem) => getStatusBadge(item.usage_status)
         },
         {
-            header: 'Mapped To',
-            accessor: (item: AssetLibraryItem) => (
-                <div className="max-w-xs">
-                    {item.mapped_to ? (
-                        <div className="text-xs text-slate-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+            header: 'Linked To',
+            accessor: (item: AssetLibraryItem) => {
+                const linkedServiceIds = item.linked_service_ids || [];
+                const linkedSubServiceIds = item.linked_sub_service_ids || [];
+                const hasLinks = linkedServiceIds.length > 0 || linkedSubServiceIds.length > 0;
+
+                if (!hasLinks) {
+                    return <span className="text-xs text-slate-400 italic">Not linked</span>;
+                }
+
+                return (
+                    <div className="max-w-xs">
+                        <div className="text-xs text-slate-700 bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-200">
                             <div className="flex items-start gap-2">
-                                <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                                 </svg>
-                                <span className="font-medium line-clamp-2" title={item.mapped_to}>
-                                    {item.mapped_to}
-                                </span>
+                                <div className="space-y-1">
+                                    {linkedServiceIds.map(serviceId => {
+                                        const service = services.find(s => s.id === serviceId);
+                                        return service ? (
+                                            <div key={serviceId} className="font-medium text-indigo-900">
+                                                {service.service_name}
+                                            </div>
+                                        ) : null;
+                                    })}
+                                    {linkedSubServiceIds.length > 0 && (
+                                        <div className="text-indigo-700 text-[11px]">
+                                            {linkedSubServiceIds.map(ssId => {
+                                                const subService = subServices.find(ss => ss.id === ssId);
+                                                return subService?.sub_service_name;
+                                            }).filter(Boolean).join(', ')}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    ) : (
-                        <span className="text-xs text-slate-400 italic">Not mapped</span>
-                    )}
-                </div>
-            )
+                    </div>
+                );
+            }
         },
         {
             header: 'Date',
@@ -562,20 +615,87 @@ const AssetsView: React.FC = () => {
                                     </select>
                                 </div>
 
-                                {/* Row 5: Mapped To (Service/Sub-service/Page) */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                                        Mapped To
-                                        <span className="text-xs font-normal text-slate-500 ml-2">(Service / Sub-service / Page)</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={newAsset.mapped_to || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, mapped_to: e.target.value })}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                        placeholder="e.g., Service Name / Sub-service Name / Page Title"
-                                    />
-                                    <p className="text-xs text-slate-500 mt-1">You can also link this asset to services later from the Services page</p>
+                                {/* Row 5: Link to Service/Sub-service */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            Link to Service
+                                            <span className="text-xs font-normal text-slate-500 ml-2">(Optional)</span>
+                                        </label>
+                                        <select
+                                            value={selectedServiceId || ''}
+                                            onChange={(e) => {
+                                                const serviceId = e.target.value ? parseInt(e.target.value) : null;
+                                                setSelectedServiceId(serviceId);
+                                                // Clear sub-service selections when service changes
+                                                setSelectedSubServiceIds([]);
+                                            }}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                        >
+                                            <option value="">Select a service...</option>
+                                            {services.map(service => (
+                                                <option key={service.id} value={service.id}>
+                                                    {service.service_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {selectedServiceId && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                Link to Sub-Services
+                                                <span className="text-xs font-normal text-slate-500 ml-2">(Select multiple)</span>
+                                            </label>
+                                            <div className="border-2 border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+                                                {subServices
+                                                    .filter(ss => ss.parent_service_id === selectedServiceId)
+                                                    .map(subService => (
+                                                        <label key={subService.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSubServiceIds.includes(subService.id)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setSelectedSubServiceIds([...selectedSubServiceIds, subService.id]);
+                                                                    } else {
+                                                                        setSelectedSubServiceIds(selectedSubServiceIds.filter(id => id !== subService.id));
+                                                                    }
+                                                                }}
+                                                                className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                                            />
+                                                            <span className="text-sm text-slate-700">{subService.sub_service_name}</span>
+                                                        </label>
+                                                    ))}
+                                                {subServices.filter(ss => ss.parent_service_id === selectedServiceId).length === 0 && (
+                                                    <p className="text-xs text-slate-500 italic p-2">No sub-services available for this service</p>
+                                                )}
+                                            </div>
+                                            {selectedSubServiceIds.length > 0 && (
+                                                <p className="text-xs text-indigo-600 mt-2">
+                                                    {selectedSubServiceIds.length} sub-service(s) selected
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {(selectedServiceId || selectedSubServiceIds.length > 0) && (
+                                        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                                            <p className="text-xs font-bold text-indigo-700 mb-1">Linked to:</p>
+                                            <p className="text-sm text-indigo-900">
+                                                {selectedServiceId && services.find(s => s.id === selectedServiceId)?.service_name}
+                                                {selectedSubServiceIds.length > 0 && (
+                                                    <span className="text-indigo-600">
+                                                        {' / '}
+                                                        {selectedSubServiceIds
+                                                            .map(id => subServices.find(ss => ss.id === id)?.sub_service_name)
+                                                            .filter(Boolean)
+                                                            .join(', ')}
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Row 6: Status & Usage Status */}
