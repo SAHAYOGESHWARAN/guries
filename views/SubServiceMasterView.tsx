@@ -2,11 +2,11 @@ import React, { useState, useMemo } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
-import AssetLinker from '../components/AssetLinker';
+import ServiceAssetLinker from '../components/ServiceAssetLinker';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
-import type { SubServiceItem, Service, ContentRepositoryItem, Brand, User, ContentTypeItem, Keyword } from '../types';
+import type { SubServiceItem, Service, ContentRepositoryItem, AssetLibraryItem, Brand, User, ContentTypeItem, Keyword } from '../types';
 
 const STATUSES = ['All Status', 'Draft', 'In Progress', 'QC', 'Approved', 'Published', 'Archived'];
 const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
@@ -20,6 +20,7 @@ const SubServiceMasterView: React.FC = () => {
     const { data: subServices = [], create, update, remove } = useData<SubServiceItem>('subServices');
     const { data: services = [] } = useData<Service>('services');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
+    const { data: libraryAssets = [], update: updateLibraryAsset, refresh: refreshLibraryAssets } = useData<AssetLibraryItem>('assetLibrary');
     const { data: brands = [] } = useData<Brand>('brands');
     const { data: users = [] } = useData<User>('users');
     const { data: contentTypes = [] } = useData<ContentTypeItem>('contentTypes');
@@ -33,6 +34,7 @@ const SubServiceMasterView: React.FC = () => {
     const [editingItem, setEditingItem] = useState<SubServiceItem | null>(null);
     const [activeTab, setActiveTab] = useState<'Core' | 'SEO' | 'SMM' | 'Linking' | 'Governance'>('Core');
     const [assetSearch, setAssetSearch] = useState('');
+    const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [copiedUrl, setCopiedUrl] = useState(false);
 
     // Form State
@@ -89,33 +91,37 @@ const SubServiceMasterView: React.FC = () => {
         return matchesSearch && matchesParent && matchesStatus;
     });
 
-    const linkedAssets = useMemo(() => {
+    // Linked and Available Assets from Asset Library
+    const linkedLibraryAssets = useMemo(() => {
         if (!editingItem) return [];
-        return contentAssets.filter(a => {
+        return libraryAssets.filter(a => {
             const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
             return links.map(String).includes(String(editingItem.id));
         });
-    }, [contentAssets, editingItem]);
+    }, [libraryAssets, editingItem]);
 
-    const availableAssets = useMemo(() => {
+    const availableLibraryAssets = useMemo(() => {
         if (!editingItem) return [];
         const searchLower = assetSearch.toLowerCase().trim();
-        return contentAssets
+        return libraryAssets
             .filter(a => {
                 // Check if asset is not already linked
                 const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
                 const isLinked = links.map(String).includes(String(editingItem.id));
                 if (isLinked) return false;
 
+                // Check repository filter
+                if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;
+
                 // Check if asset matches search query (if any)
                 if (!searchLower) return true;
-                const title = (a.content_title_clean || '').toLowerCase();
-                const assetType = (a.asset_type || '').toLowerCase();
-                const status = (a.status || '').toLowerCase();
-                return title.includes(searchLower) || assetType.includes(searchLower) || status.includes(searchLower);
+                const name = (a.name || '').toLowerCase();
+                const assetType = (a.type || '').toLowerCase();
+                const repository = (a.repository || '').toLowerCase();
+                return name.includes(searchLower) || assetType.includes(searchLower) || repository.includes(searchLower);
             })
-            .slice(0, 20); // Increased limit to show more results
-    }, [contentAssets, editingItem, assetSearch]);
+            .slice(0, 20); // Limit to show 20 results
+    }, [libraryAssets, editingItem, assetSearch, repositoryFilter]);
 
     const handleCreateClick = () => {
         setEditingItem(null);
@@ -246,7 +252,7 @@ const SubServiceMasterView: React.FC = () => {
             .catch(() => alert('Unable to copy URL to clipboard.'));
     };
 
-    const handleToggleAssetLink = async (asset: ContentRepositoryItem) => {
+    const handleToggleLibraryLink = async (asset: AssetLibraryItem) => {
         if (!editingItem) return;
         const currentLinks = Array.isArray(asset.linked_sub_service_ids) ? asset.linked_sub_service_ids : [];
         const isLinked = currentLinks.map(String).includes(String(editingItem.id));
@@ -255,16 +261,16 @@ const SubServiceMasterView: React.FC = () => {
             : [...currentLinks, editingItem.id];
 
         try {
-            // Update the asset with new links - the useData hook now updates state immediately
-            await updateContentAsset(asset.id, { linked_sub_service_ids: newLinks });
+            // Update the library asset with new links
+            await updateLibraryAsset(asset.id, { linked_sub_service_ids: newLinks });
 
             // Force a refresh to ensure we have the latest data
-            await refreshContentAssets();
+            await refreshLibraryAssets();
         } catch (e) {
-            console.error('Asset link update error:', e);
+            console.error('Library asset link update error:', e);
             // Even if there's an error, try to refresh to show current state
             try {
-                await refreshContentAssets();
+                await refreshLibraryAssets();
             } catch (refreshError) {
                 console.error('Refresh error:', refreshError);
             }
@@ -830,28 +836,17 @@ const SubServiceMasterView: React.FC = () => {
                         {activeTab === 'Linking' && (
                             <div className="space-y-10">
                                 {editingItem ? (
-                                    <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                        <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-10 text-white overflow-hidden">
-                                            <div className="absolute top-0 right-0 opacity-10">
-                                                <span className="text-9xl">🔗</span>
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📎</span>
-                                                    <h3 className="text-2xl font-bold">Content Assets</h3>
-                                                </div>
-                                                <p className="text-purple-100 text-sm">Link related content assets to this sub-service</p>
-                                            </div>
-                                        </div>
-
-                                        <AssetLinker
-                                            linkedAssets={linkedAssets}
-                                            availableAssets={availableAssets}
-                                            assetSearch={assetSearch}
-                                            setAssetSearch={setAssetSearch}
-                                            onToggle={handleToggleAssetLink}
-                                        />
-                                    </div>
+                                    <ServiceAssetLinker
+                                        linkedAssets={linkedLibraryAssets}
+                                        availableAssets={availableLibraryAssets}
+                                        assetSearch={assetSearch}
+                                        setAssetSearch={setAssetSearch}
+                                        onToggle={handleToggleLibraryLink}
+                                        totalAssets={libraryAssets.length}
+                                        repositoryFilter={repositoryFilter}
+                                        setRepositoryFilter={setRepositoryFilter}
+                                        allAssets={libraryAssets}
+                                    />
                                 ) : (
                                     <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-2xl border-2 border-amber-300 shadow-lg overflow-hidden">
                                         <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-6 text-white overflow-hidden">
