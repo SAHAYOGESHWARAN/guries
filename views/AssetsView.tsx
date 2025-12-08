@@ -286,6 +286,87 @@ const AssetsView: React.FC = () => {
             )
         },
         {
+            header: 'Mapped To',
+            accessor: (item: AssetLibraryItem) => {
+                const linkedServices = (item.linked_service_ids || []).map(id => services.find(s => s.id === id)).filter(Boolean);
+                const linkedSubServices = (item.linked_sub_service_ids || []).map(id => subServices.find(s => s.id === id)).filter(Boolean);
+                const totalLinks = linkedServices.length + linkedSubServices.length;
+
+                if (totalLinks === 0) {
+                    return (
+                        <div className="flex items-center gap-2 text-slate-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                            <span className="text-xs">Not linked</span>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="flex flex-col gap-1.5">
+                        {linkedServices.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide bg-blue-100 px-2 py-0.5 rounded">
+                                    Services ({linkedServices.length})
+                                </span>
+                                {linkedServices.slice(0, 2).map((service: any) => (
+                                    <button
+                                        key={service.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.location.hash = `/services`;
+                                        }}
+                                        className="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 px-2 py-1 rounded text-[10px] font-medium transition-colors group"
+                                        title={`Go to ${service.service_name}`}
+                                    >
+                                        <span className="truncate max-w-[100px]">{service.service_name}</span>
+                                        <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </button>
+                                ))}
+                                {linkedServices.length > 2 && (
+                                    <span className="text-[10px] text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded">
+                                        +{linkedServices.length - 2} more
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                        {linkedSubServices.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wide bg-purple-100 px-2 py-0.5 rounded">
+                                    Sub-Services ({linkedSubServices.length})
+                                </span>
+                                {linkedSubServices.slice(0, 2).map((subService: any) => (
+                                    <button
+                                        key={subService.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.location.hash = `/sub-services`;
+                                        }}
+                                        className="inline-flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-800 px-2 py-1 rounded text-[10px] font-medium transition-colors group"
+                                        title={`Go to ${subService.sub_service_name}`}
+                                    >
+                                        <span className="truncate max-w-[100px]">{subService.sub_service_name}</span>
+                                        <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </button>
+                                ))}
+                                {linkedSubServices.length > 2 && (
+                                    <span className="text-[10px] text-purple-600 font-semibold bg-purple-100 px-2 py-1 rounded">
+                                        +{linkedSubServices.length - 2} more
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            className: 'min-w-[200px]'
+        },
+        {
             header: 'Actions',
             accessor: (item: AssetLibraryItem) => (
                 <div className="flex gap-2">
@@ -532,174 +613,254 @@ const AssetsView: React.FC = () => {
                                     </select>
                                 </div>
 
-                                {/* Row 5: Mapped To - Enhanced with Links */}
-                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-6">
-                                    <label className="block text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                        </svg>
-                                        Mapped To
-                                        <span className="text-xs font-normal text-blue-600 ml-auto">Linked Services & Sub-Services</span>
-                                    </label>
-
-                                    {/* Display Linked Services */}
-                                    {(newAsset.linked_service_ids && newAsset.linked_service_ids.length > 0) ||
-                                        (newAsset.linked_sub_service_ids && newAsset.linked_sub_service_ids.length > 0) ? (
-                                        <div className="space-y-3 mb-4">
-                                            {/* Linked Services */}
-                                            {newAsset.linked_service_ids && newAsset.linked_service_ids.length > 0 && (
+                                {/* Row 5: Asset Relationships - Professional Card Design */}
+                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+                                    {/* Header */}
+                                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 border-b-2 border-blue-700">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                    </svg>
+                                                </div>
                                                 <div>
-                                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Services ({newAsset.linked_service_ids.length})</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {newAsset.linked_service_ids.map(serviceId => {
-                                                            const service = services.find(s => s.id === serviceId);
-                                                            return service ? (
-                                                                <div key={serviceId} className="inline-flex items-center gap-2 bg-white border-2 border-blue-300 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all group">
-                                                                    <span className="text-xs font-medium text-blue-900">{service.service_name}</span>
-                                                                    <a
-                                                                        href={`#/services/${service.id}`}
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            window.location.hash = `/services/${service.id}`;
-                                                                        }}
-                                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                                                                        title="Go to Service"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                                        </svg>
-                                                                    </a>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = (newAsset.linked_service_ids || []).filter(id => id !== serviceId);
-                                                                            setNewAsset({ ...newAsset, linked_service_ids: updated });
-                                                                        }}
-                                                                        className="text-slate-400 hover:text-red-600 transition-colors"
-                                                                        title="Remove link"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                                        </svg>
-                                                                    </button>
-                                                                </div>
-                                                            ) : null;
-                                                        })}
+                                                    <h3 className="text-base font-bold text-white">Asset Relationships</h3>
+                                                    <p className="text-xs text-blue-100 mt-0.5">Linked services and sub-services</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-white bg-opacity-20 px-4 py-2 rounded-lg">
+                                                    <div className="text-center">
+                                                        <p className="text-xl font-bold text-white">
+                                                            {((newAsset.linked_service_ids?.length || 0) + (newAsset.linked_sub_service_ids?.length || 0))}
+                                                        </p>
+                                                        <p className="text-[10px] text-blue-100 font-semibold uppercase tracking-wide">Total Links</p>
                                                     </div>
                                                 </div>
-                                            )}
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                            {/* Linked Sub-Services */}
-                                            {newAsset.linked_sub_service_ids && newAsset.linked_sub_service_ids.length > 0 && (
-                                                <div>
-                                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Sub-Services ({newAsset.linked_sub_service_ids.length})</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {newAsset.linked_sub_service_ids.map(subServiceId => {
-                                                            const subService = subServices.find(s => s.id === subServiceId);
-                                                            return subService ? (
-                                                                <div key={subServiceId} className="inline-flex items-center gap-2 bg-white border-2 border-purple-300 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all group">
-                                                                    <span className="text-xs font-medium text-purple-900">{subService.sub_service_name}</span>
-                                                                    <a
-                                                                        href={`#/sub-services/${subService.id}`}
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            window.location.hash = `/sub-services/${subService.id}`;
-                                                                        }}
-                                                                        className="text-purple-600 hover:text-purple-800 transition-colors"
-                                                                        title="Go to Sub-Service"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                                        </svg>
-                                                                    </a>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = (newAsset.linked_sub_service_ids || []).filter(id => id !== subServiceId);
-                                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: updated });
-                                                                        }}
-                                                                        className="text-slate-400 hover:text-red-600 transition-colors"
-                                                                        title="Remove link"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                                        </svg>
-                                                                    </button>
-                                                                </div>
-                                                            ) : null;
-                                                        })}
+                                    {/* Content */}
+                                    <div className="p-6">
+                                        {(newAsset.linked_service_ids && newAsset.linked_service_ids.length > 0) ||
+                                            (newAsset.linked_sub_service_ids && newAsset.linked_sub_service_ids.length > 0) ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {/* Services Column */}
+                                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-5">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="bg-blue-500 p-2 rounded-lg">
+                                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </div>
+                                                            <h4 className="text-sm font-bold text-blue-900">Services</h4>
+                                                        </div>
+                                                        <span className="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                                                            {newAsset.linked_service_ids?.length || 0}
+                                                        </span>
+                                                    </div>
+
+                                                    {newAsset.linked_service_ids && newAsset.linked_service_ids.length > 0 ? (
+                                                        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                                                            {newAsset.linked_service_ids.map(serviceId => {
+                                                                const service = services.find(s => s.id === serviceId);
+                                                                return service ? (
+                                                                    <div key={serviceId} className="bg-white rounded-lg border-2 border-blue-300 p-3 hover:shadow-md transition-all group">
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-sm font-semibold text-blue-900 truncate">{service.service_name}</p>
+                                                                                <p className="text-xs text-blue-600 mt-0.5">ID: {service.id}</p>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        window.location.hash = `/services`;
+                                                                                    }}
+                                                                                    className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+                                                                                    title="Go to Service"
+                                                                                >
+                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        const updated = (newAsset.linked_service_ids || []).filter(id => id !== serviceId);
+                                                                                        setNewAsset({ ...newAsset, linked_service_ids: updated });
+                                                                                    }}
+                                                                                    className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                                                                                    title="Remove link"
+                                                                                >
+                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null;
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-6">
+                                                            <svg className="w-12 h-12 text-blue-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                                            </svg>
+                                                            <p className="text-xs text-blue-700 font-medium">No services linked</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Sub-Services Column */}
+                                                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 p-5">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="bg-purple-500 p-2 rounded-lg">
+                                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                                </svg>
+                                                            </div>
+                                                            <h4 className="text-sm font-bold text-purple-900">Sub-Services</h4>
+                                                        </div>
+                                                        <span className="bg-purple-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                                                            {newAsset.linked_sub_service_ids?.length || 0}
+                                                        </span>
+                                                    </div>
+
+                                                    {newAsset.linked_sub_service_ids && newAsset.linked_sub_service_ids.length > 0 ? (
+                                                        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                                                            {newAsset.linked_sub_service_ids.map(subServiceId => {
+                                                                const subService = subServices.find(s => s.id === subServiceId);
+                                                                return subService ? (
+                                                                    <div key={subServiceId} className="bg-white rounded-lg border-2 border-purple-300 p-3 hover:shadow-md transition-all group">
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-sm font-semibold text-purple-900 truncate">{subService.sub_service_name}</p>
+                                                                                <p className="text-xs text-purple-600 mt-0.5">ID: {subService.id}</p>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        window.location.hash = `/sub-services`;
+                                                                                    }}
+                                                                                    className="p-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
+                                                                                    title="Go to Sub-Service"
+                                                                                >
+                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        const updated = (newAsset.linked_sub_service_ids || []).filter(id => id !== subServiceId);
+                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: updated });
+                                                                                    }}
+                                                                                    className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                                                                                    title="Remove link"
+                                                                                >
+                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null;
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-6">
+                                                            <svg className="w-12 h-12 text-purple-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                            <p className="text-xs text-purple-700 font-medium">No sub-services linked</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12">
+                                                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mb-4">
+                                                    <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                    </svg>
+                                                </div>
+                                                <h4 className="text-base font-bold text-slate-800 mb-2">No Relationships Yet</h4>
+                                                <p className="text-sm text-slate-600 mb-6 max-w-md mx-auto">
+                                                    This asset hasn't been linked to any services or sub-services. Link it to show where this asset is being used.
+                                                </p>
+                                                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 max-w-lg mx-auto">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="bg-amber-100 p-2 rounded-lg flex-shrink-0">
+                                                            <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="flex-1 text-left">
+                                                            <p className="text-xs font-semibold text-amber-900 mb-1">How to Link Assets</p>
+                                                            <p className="text-xs text-amber-800 leading-relaxed">
+                                                                Navigate to <strong>Services</strong> or <strong>Sub-Services</strong> pages, select an item, go to the <strong>Linking</strong> tab, and connect this asset from the Asset Library.
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-4 text-center mb-4">
-                                            <svg className="w-8 h-8 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                            </svg>
-                                            <p className="text-xs text-slate-600">No linked services or sub-services yet</p>
-                                            <p className="text-xs text-slate-500 mt-1">Link this asset from the Services or Sub-Services pages</p>
-                                        </div>
-                                    )}
-
-                                    {/* Info Note */}
-                                    <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 flex items-start gap-2">
-                                        <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <p className="text-xs text-blue-800 leading-relaxed">
-                                            <strong>Tip:</strong> To link this asset to services or sub-services, go to the Services or Sub-Services page and use the "Linking" tab to connect assets.
-                                        </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Row 6: Status & Usage Status */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
-                                        <select
-                                            value={newAsset.status || 'Draft'}
-                                            onChange={(e) => setNewAsset({ ...newAsset, status: e.target.value as any })}
-                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                        >
-                                            <option value="Draft">Draft</option>
-                                            <option value="In Progress">In Progress</option>
-                                            <option value="QC">QC</option>
-                                            <option value="Approved">Approved</option>
-                                            <option value="Published">Published</option>
-                                            <option value="Archived">Archived</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">Usage Status</label>
-                                        <select
-                                            value={newAsset.usage_status}
-                                            onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
-                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                        >
-                                            <option value="Available">Available</option>
-                                            <option value="In Use">In Use</option>
-                                            <option value="Archived">Archived</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Row 7: QC Score */}
+                            {/* Row 6: Status & Usage Status */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                                        QC Score
-                                        <span className="text-xs font-normal text-slate-500 ml-2">(0-100)</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={newAsset.qc_score || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, qc_score: parseInt(e.target.value) || undefined })}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                        placeholder="Enter QC score (0-100)"
-                                    />
-                                    <p className="text-xs text-slate-500 mt-1">Quality control score - will be updated after QC review</p>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
+                                    <select
+                                        value={newAsset.status || 'Draft'}
+                                        onChange={(e) => setNewAsset({ ...newAsset, status: e.target.value as any })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                    >
+                                        <option value="Draft">Draft</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="QC">QC</option>
+                                        <option value="Approved">Approved</option>
+                                        <option value="Published">Published</option>
+                                        <option value="Archived">Archived</option>
+                                    </select>
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Usage Status</label>
+                                    <select
+                                        value={newAsset.usage_status}
+                                        onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                    >
+                                        <option value="Available">Available</option>
+                                        <option value="In Use">In Use</option>
+                                        <option value="Archived">Archived</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Row 7: QC Score */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">
+                                    QC Score
+                                    <span className="text-xs font-normal text-slate-500 ml-2">(0-100)</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={newAsset.qc_score || ''}
+                                    onChange={(e) => setNewAsset({ ...newAsset, qc_score: parseInt(e.target.value) || undefined })}
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                    placeholder="Enter QC score (0-100)"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Quality control score - will be updated after QC review</p>
                             </div>
                         </div>
                     </div>
