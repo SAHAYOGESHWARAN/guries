@@ -22,9 +22,7 @@ const ContentRepositoryView: React.FC = () => {
         status: 'idea',
         h1: '',
         body_content: '',
-        thumbnail_url: '',
-        preview_image_url: '',
-        repository: 'Main'
+        thumbnail_url: ''
     });
 
     const [uploadingFile, setUploadingFile] = useState(false);
@@ -63,9 +61,7 @@ const ContentRepositoryView: React.FC = () => {
             status: 'idea',
             h1: '',
             body_content: '',
-            thumbnail_url: '',
-            preview_image_url: '',
-            repository: 'Main'
+            thumbnail_url: ''
         });
     };
 
@@ -128,8 +124,8 @@ const ContentRepositoryView: React.FC = () => {
             const result = reader.result as string;
 
             // Determine asset type from file
-            let assetType = 'document';
-            if (file.type.startsWith('image/')) assetType = 'image';
+            let assetType: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page' = 'article';
+            if (file.type.startsWith('image/')) assetType = 'graphic';
             else if (file.type.startsWith('video/')) assetType = 'video';
             else if (file.type === 'application/pdf') assetType = 'pdf';
 
@@ -140,9 +136,7 @@ const ContentRepositoryView: React.FC = () => {
                 status: 'draft',
                 h1: file.name.replace(/\.[^/.]+$/, ""),
                 body_content: `Uploaded file: ${file.name}\nSize: ${(file.size / 1024).toFixed(2)} KB\nType: ${file.type}`,
-                thumbnail_url: file.type.startsWith('image/') ? result : '',
-                preview_image_url: file.type.startsWith('image/') ? result : '',
-                repository: 'Main'
+                thumbnail_url: file.type.startsWith('image/') ? result : ''
             });
 
             setUploadingFile(false);
@@ -215,10 +209,10 @@ const ContentRepositoryView: React.FC = () => {
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* Preview Image */}
-                        {(previewItem.preview_image_url || previewItem.thumbnail_url) && (
+                        {previewItem.thumbnail_url && (
                             <div className="rounded-xl overflow-hidden border-2 border-slate-200 shadow-lg">
                                 <img
-                                    src={previewItem.preview_image_url || previewItem.thumbnail_url}
+                                    src={previewItem.thumbnail_url}
                                     alt={previewItem.content_title_clean}
                                     className="w-full h-auto object-cover"
                                     onError={(e) => {
@@ -311,15 +305,14 @@ const ContentRepositoryView: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-2">Asset Type</label>
-                                        <select value={formData.asset_type} onChange={(e) => setFormData({ ...formData, asset_type: e.target.value })} className="w-full p-2 border border-slate-300 rounded-md text-sm">
+                                        <select value={formData.asset_type} onChange={(e) => setFormData({ ...formData, asset_type: e.target.value as any })} className="w-full p-2 border border-slate-300 rounded-md text-sm">
+                                            <option value="article">Article</option>
                                             <option value="blog">Blog</option>
                                             <option value="video">Video</option>
+                                            <option value="graphic">Graphic</option>
                                             <option value="pdf">PDF</option>
-                                            <option value="image">Image</option>
-                                            <option value="document">Document</option>
-                                            <option value="infographic">Infographic</option>
-                                            <option value="case_study">Case Study</option>
-                                            <option value="whitepaper">Whitepaper</option>
+                                            <option value="guide">Guide</option>
+                                            <option value="service_page">Service Page</option>
                                         </select>
                                     </div>
                                 </div>
@@ -335,10 +328,7 @@ const ContentRepositoryView: React.FC = () => {
                                         <input type="text" value={formData.thumbnail_url || ''} onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })} placeholder="https://..." className="w-full p-2 border border-slate-300 rounded-md text-sm font-mono" />
                                     </div>
                                 </div>
-                                <div className="mb-4">
-                                    <label className="block text-xs font-bold text-gray-700 mb-2">Preview Image URL</label>
-                                    <input type="text" value={formData.preview_image_url || ''} onChange={(e) => setFormData({ ...formData, preview_image_url: e.target.value })} placeholder="https://..." className="w-full p-2 border border-slate-300 rounded-md text-sm font-mono" />
-                                </div>
+
                                 <div className="mb-4">
                                     <label className="block text-xs font-bold text-gray-700 mb-2">H1 Header</label>
                                     <input type="text" value={formData.h1} onChange={(e) => setFormData({ ...formData, h1: e.target.value })} className="w-full p-2 border border-slate-300 rounded-md text-sm" />
@@ -361,7 +351,6 @@ const ContentRepositoryView: React.FC = () => {
             <div className="flex justify-between items-start flex-shrink-0 w-full mb-4">
                 <div>
                     <h1 className="text-xl font-bold text-slate-800 tracking-tight">Assets</h1>
-                    <p className="text-slate-500 text-xs mt-0.5">Manage and organize all your marketing assets</p>
                 </div>
                 <div className="flex space-x-3">
                     <label className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm flex items-center transition-colors cursor-pointer">
@@ -449,9 +438,9 @@ const ContentRepositoryView: React.FC = () => {
                                         header: 'Preview',
                                         accessor: (item: ContentRepositoryItem) => (
                                             <div className="flex items-center justify-center py-2">
-                                                {(item.thumbnail_url || item.preview_image_url) ? (
+                                                {item.thumbnail_url ? (
                                                     <img
-                                                        src={item.thumbnail_url || item.preview_image_url}
+                                                        src={item.thumbnail_url}
                                                         alt={item.content_title_clean}
                                                         className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
                                                         onClick={() => handleView(item)}
@@ -512,14 +501,6 @@ const ContentRepositoryView: React.FC = () => {
                                             <span className={`inline-flex items-center gap-1 text-xs font-bold text-white capitalize px-3 py-1 rounded-full ${getAssetTypeColor(item.asset_type)}`}>
                                                 <span>{getAssetTypeIcon(item.asset_type)}</span>
                                                 {(item.asset_type || '').replace(/_/g, ' ')}
-                                            </span>
-                                        )
-                                    },
-                                    {
-                                        header: 'Repository',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <span className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                                                {item.repository || 'Main'}
                                             </span>
                                         )
                                     },
