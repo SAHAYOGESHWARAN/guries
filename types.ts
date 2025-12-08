@@ -516,9 +516,13 @@ export interface SmmPost {
 export interface AssetLibraryItem {
     id: number;
     name: string;
-    type: string;
+    type: string; // Asset Type: article/video/graphic/guide
+    asset_category?: string; // e.g., "what science can do", "how to"
+    asset_format?: string; // e.g., "image", "video", "pdf"
     repository: string;
     usage_status: 'Available' | 'In Use' | 'Archived';
+    status?: 'Draft' | 'Published' | 'Archived' | 'In Progress' | 'QC' | 'Approved';
+    qc_score?: number; // Quality control score
     date: string;
     linked_task?: number;
     owner_id?: number;
@@ -528,6 +532,8 @@ export interface AssetLibraryItem {
     file_type?: string;
     linked_service_ids?: number[];
     linked_sub_service_ids?: number[];
+    linked_page_ids?: number[]; // For mapping to specific pages
+    mapped_to?: string; // Display string: "Service / Sub-service / Page"
 }
 
 export interface Integration {

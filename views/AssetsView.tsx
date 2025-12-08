@@ -29,12 +29,22 @@ const AssetsView: React.FC = () => {
     }, []);
 
     // Memoize filtered assets for better performance
-    const filteredAssets = useMemo(() =>
-        assets.filter(a =>
-            (a.name || '').toLowerCase().includes((searchQuery || '').toLowerCase())
-        ),
-        [assets, searchQuery]
-    );
+    const filteredAssets = useMemo(() => {
+        const query = (searchQuery || '').toLowerCase().trim();
+        if (!query) return assets;
+
+        return assets.filter(a => {
+            const name = (a.name || '').toLowerCase();
+            const type = (a.type || '').toLowerCase();
+            const repository = (a.repository || '').toLowerCase();
+            const status = (a.usage_status || '').toLowerCase();
+
+            return name.includes(query) ||
+                type.includes(query) ||
+                repository.includes(query) ||
+                status.includes(query);
+        });
+    }, [assets, searchQuery]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -215,19 +225,33 @@ const AssetsView: React.FC = () => {
             header: 'Actions',
             accessor: (item: AssetLibraryItem) => (
                 <div className="flex gap-2">
-                    {item.file_url && (
-                        <a
-                            href={item.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                    {(item.file_url || item.thumbnail_url) && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const url = item.file_url || item.thumbnail_url;
+                                if (url) {
+                                    // Check if it's a base64 data URL
+                                    if (url.startsWith('data:')) {
+                                        // Open in new window for base64 images
+                                        const win = window.open();
+                                        if (win) {
+                                            win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
+                                        }
+                                    } else {
+                                        // Open regular URL in new tab
+                                        window.open(url, '_blank', 'noopener,noreferrer');
+                                    }
+                                }
+                            }}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                            title="View"
+                            title="View Asset"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                        </a>
+                        </button>
                     )}
                     <button
                         onClick={(e) => handleDelete(e, item.id, item.name)}
@@ -343,6 +367,7 @@ const AssetsView: React.FC = () => {
                             </div>
 
                             <div className="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-6 shadow-sm">
+                                {/* Row 1: Asset Name */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
                                     <input
@@ -354,20 +379,68 @@ const AssetsView: React.FC = () => {
                                     />
                                 </div>
 
+                                {/* Row 2: Asset Type & Category */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            Asset Type
+                                            <span className="text-xs font-normal text-slate-500 ml-2">(article/video/graphic/guide)</span>
+                                        </label>
+                                        <select
+                                            value={newAsset.type}
+                                            onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                        >
+                                            <option value="article">Article</option>
+                                            <option value="video">Video</option>
+                                            <option value="graphic">Graphic</option>
+                                            <option value="guide">Guide</option>
+                                            <option value="listicle">Listicle</option>
+                                            <option value="how-to">How To</option>
+                                            <option value="Image">Image</option>
+                                            <option value="Document">Document</option>
+                                            <option value="Archive">Archive</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            Asset Category
+                                            <span className="text-xs font-normal text-slate-500 ml-2">(e.g., what science can do)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.asset_category || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                            placeholder="e.g., what science can do"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Row 3: Asset Format */}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Type</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        Asset Format
+                                        <span className="text-xs font-normal text-slate-500 ml-2">(e.g., image, video, pdf)</span>
+                                    </label>
                                     <select
-                                        value={newAsset.type}
-                                        onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                        value={newAsset.asset_format || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
                                         className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
                                     >
-                                        <option value="Image">Image</option>
-                                        <option value="Video">Video</option>
-                                        <option value="Document">Document</option>
-                                        <option value="Archive">Archive</option>
+                                        <option value="">Select format...</option>
+                                        <option value="image">Image</option>
+                                        <option value="video">Video</option>
+                                        <option value="pdf">PDF</option>
+                                        <option value="doc">Document</option>
+                                        <option value="ppt">Presentation</option>
+                                        <option value="infographic">Infographic</option>
+                                        <option value="ebook">eBook</option>
                                     </select>
                                 </div>
 
+                                {/* Row 4: Repository */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
                                     <select
@@ -382,17 +455,70 @@ const AssetsView: React.FC = () => {
                                     </select>
                                 </div>
 
+                                {/* Row 5: Mapped To (Service/Sub-service/Page) */}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
-                                    <select
-                                        value={newAsset.usage_status}
-                                        onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                    >
-                                        <option value="Available">Available</option>
-                                        <option value="In Use">In Use</option>
-                                        <option value="Archived">Archived</option>
-                                    </select>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        Mapped To
+                                        <span className="text-xs font-normal text-slate-500 ml-2">(Service / Sub-service / Page)</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.mapped_to || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, mapped_to: e.target.value })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                        placeholder="e.g., Service Name / Sub-service Name / Page Title"
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">You can also link this asset to services later from the Services page</p>
+                                </div>
+
+                                {/* Row 6: Status & Usage Status */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
+                                        <select
+                                            value={newAsset.status || 'Draft'}
+                                            onChange={(e) => setNewAsset({ ...newAsset, status: e.target.value as any })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                        >
+                                            <option value="Draft">Draft</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="QC">QC</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Published">Published</option>
+                                            <option value="Archived">Archived</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Usage Status</label>
+                                        <select
+                                            value={newAsset.usage_status}
+                                            onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                        >
+                                            <option value="Available">Available</option>
+                                            <option value="In Use">In Use</option>
+                                            <option value="Archived">Archived</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Row 7: QC Score */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        QC Score
+                                        <span className="text-xs font-normal text-slate-500 ml-2">(0-100)</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={newAsset.qc_score || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, qc_score: parseInt(e.target.value) || undefined })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                        placeholder="Enter QC score (0-100)"
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">Quality control score - will be updated after QC review</p>
                                 </div>
                             </div>
                         </div>

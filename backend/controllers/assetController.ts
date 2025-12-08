@@ -79,10 +79,12 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 id,
                 asset_name as name,
                 asset_type as type,
-                COALESCE(tags, 'Content Repository') as repository,
-                COALESCE(description, 'Available') as usage_status,
+                tags as repository,
+                description as usage_status,
                 file_url,
-                og_image_url as thumbnail_url,
+                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+                file_size,
+                file_type,
                 created_at as date,
                 linked_service_ids,
                 linked_sub_service_ids
@@ -93,6 +95,8 @@ export const getAssetLibrary = async (req: any, res: any) => {
         // Parse JSON arrays for linked IDs
         const parsed = result.rows.map(row => ({
             ...row,
+            repository: row.repository || 'Content Repository',
+            usage_status: row.usage_status || 'Available',
             linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
             linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : []
         }));
@@ -109,17 +113,19 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `INSERT INTO assets (
-                asset_name, asset_type, tags, description, file_url, og_image_url, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING 
+                asset_name, asset_type, tags, description, file_url, og_image_url, thumbnail_url, file_size, file_type, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
                 tags as repository,
                 description as usage_status,
                 file_url,
-                og_image_url as thumbnail_url,
+                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+                file_size,
+                file_type,
                 created_at as date`,
-            [name, type, repository, usage_status, file_url, thumbnail_url, date || new Date().toISOString()]
+            [name, type, repository, usage_status, file_url, thumbnail_url, thumbnail_url, file_size, file_type, date || new Date().toISOString()]
         );
 
         const newAsset = result.rows[0];
@@ -143,17 +149,20 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 description = COALESCE($4, description),
                 file_url = COALESCE($5, file_url),
                 og_image_url = COALESCE($6, og_image_url),
-                linked_service_ids = COALESCE($7, linked_service_ids),
-                linked_sub_service_ids = COALESCE($8, linked_sub_service_ids),
+                thumbnail_url = COALESCE($7, thumbnail_url),
+                linked_service_ids = COALESCE($8, linked_service_ids),
+                linked_sub_service_ids = COALESCE($9, linked_sub_service_ids),
                 updated_at = NOW()
-            WHERE id = $9 RETURNING 
+            WHERE id = $10 RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
                 tags as repository,
                 description as usage_status,
                 file_url,
-                og_image_url as thumbnail_url,
+                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+                file_size,
+                file_type,
                 created_at as date,
                 linked_service_ids,
                 linked_sub_service_ids`,
@@ -163,6 +172,7 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 repository,
                 usage_status,
                 file_url,
+                thumbnail_url,
                 thumbnail_url,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
@@ -176,6 +186,8 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
 
         const updatedAsset = {
             ...result.rows[0],
+            repository: result.rows[0].repository || 'Content Repository',
+            usage_status: result.rows[0].usage_status || 'Available',
             linked_service_ids: result.rows[0].linked_service_ids ? JSON.parse(result.rows[0].linked_service_ids) : [],
             linked_sub_service_ids: result.rows[0].linked_sub_service_ids ? JSON.parse(result.rows[0].linked_sub_service_ids) : []
         };

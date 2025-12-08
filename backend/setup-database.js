@@ -53,13 +53,27 @@ async function setupDatabase() {
             port: parseInt(process.env.DB_PORT || '5432'),
         });
 
-        // Step 3: Run schema.sql
-        console.log('📄 Reading schema.sql file...');
-        const schemaPath = path.join(__dirname, 'schema.sql');
-        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+        // Step 3: Run schema_master.sql (consolidated schema)
+        console.log('📄 Reading schema_master.sql file...');
+        const schemaPath = path.join(__dirname, '..', 'schema.sql');
 
-        console.log('🔨 Executing schema SQL...');
-        await appPool.query(schemaSql);
+        if (!fs.existsSync(schemaPath)) {
+            console.error('❌ schema_master.sql not found!');
+            console.log('   Looking for alternative schema files...');
+            const altPath = path.join(__dirname, 'schema.sql');
+            if (fs.existsSync(altPath)) {
+                console.log('   ✅ Found schema.sql, using it instead');
+                const schemaSql = fs.readFileSync(altPath, 'utf8');
+                await appPool.query(schemaSql);
+            } else {
+                throw new Error('No schema file found!');
+            }
+        } else {
+            const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+            console.log('🔨 Executing schema SQL...');
+            await appPool.query(schemaSql);
+        }
+
         console.log('✅ Database schema created successfully!\n');
 
         // Database schema created - ready for production use

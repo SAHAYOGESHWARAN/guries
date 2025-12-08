@@ -1908,14 +1908,150 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
 
                         {/* --- TAB: LINKING (ASSETS) --- */}
                         {activeTab === 'Linking' && (
-                            <ServiceAssetLinker
-                                linkedAssets={linkedLibraryAssets}
-                                availableAssets={availableLibraryAssets}
-                                assetSearch={assetSearch}
-                                setAssetSearch={setAssetSearch}
-                                onToggle={handleToggleLibraryLink}
-                                totalAssets={libraryAssets.length}
-                            />
+                            <div className="space-y-10">
+                                {/* 1. LINKING METADATA CARD */}
+                                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    {/* Header */}
+                                    <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">🔗</span>
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
+                                                <h3 className="text-2xl font-bold">Linking Metadata</h3>
+                                            </div>
+                                            <p className="text-blue-100 text-sm">Manage relationships with sub-services, assets, and knowledge topics</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-10">
+                                        <div className="space-y-8">
+                                            {/* Row 1 - Sub-Services */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                <Tooltip content="Does this service have sub-services?">
+                                                    <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📋</span>
+                                                            Has Sub-Services
+                                                        </label>
+                                                        <div className="flex items-center gap-3">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.has_subservices || false}
+                                                                onChange={(e) => setFormData({ ...formData, has_subservices: e.target.checked })}
+                                                                className="w-5 h-5 text-blue-600 border-2 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                                            />
+                                                            <span className="text-sm text-slate-600">
+                                                                {formData.has_subservices ? 'Yes' : 'No'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Rollup count of sub-services under this service">
+                                                    <div className="bg-white rounded-xl border-2 border-indigo-100 p-6 hover:border-indigo-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🔢</span>
+                                                            Sub-Service Count
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.subservice_count || 0}
+                                                            onChange={(e) => setFormData({ ...formData, subservice_count: parseInt(e.target.value) || 0 })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
+                                                            placeholder="0"
+                                                            min="0"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Highlighted sub-service on service page">
+                                                    <div className="bg-white rounded-xl border-2 border-purple-100 p-6 hover:border-purple-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">⭐</span>
+                                                            Primary Sub-Service ID
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.primary_subservice_id || ''}
+                                                            onChange={(e) => setFormData({ ...formData, primary_subservice_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white"
+                                                            placeholder="Sub-service ID"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+
+                                            {/* Row 2 - Assets & Knowledge */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                <Tooltip content="Key article / video to feature on page">
+                                                    <div className="bg-white rounded-xl border-2 border-green-100 p-6 hover:border-green-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">🎬</span>
+                                                            Featured Asset ID
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.featured_asset_id || ''}
+                                                            onChange={(e) => setFormData({ ...formData, featured_asset_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white"
+                                                            placeholder="Asset ID"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Number of linked assets (rollup)">
+                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6 hover:border-orange-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📦</span>
+                                                            Asset Count
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.asset_count || 0}
+                                                            onChange={(e) => setFormData({ ...formData, asset_count: parseInt(e.target.value) || 0 })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white"
+                                                            placeholder="0"
+                                                            min="0"
+                                                            readOnly
+                                                            title="Auto-calculated from linked assets"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-2">Auto-calculated</p>
+                                                    </div>
+                                                </Tooltip>
+
+                                                <Tooltip content="Link to Knowledge Hub / Topic Master">
+                                                    <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📚</span>
+                                                            Knowledge Topic ID
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.knowledge_topic_id || ''}
+                                                            onChange={(e) => setFormData({ ...formData, knowledge_topic_id: parseInt(e.target.value) || undefined })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all bg-white"
+                                                            placeholder="Topic ID"
+                                                        />
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 2. ASSET LINKER */}
+                                <ServiceAssetLinker
+                                    linkedAssets={linkedLibraryAssets}
+                                    availableAssets={availableLibraryAssets}
+                                    assetSearch={assetSearch}
+                                    setAssetSearch={setAssetSearch}
+                                    onToggle={handleToggleLibraryLink}
+                                    totalAssets={libraryAssets.length}
+                                />
+                            </div>
                         )}
                         {/* Left Panel: Linked Assets */}
                         <div className="flex flex-col">
