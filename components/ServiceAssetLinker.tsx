@@ -8,6 +8,9 @@ type Props = {
     setAssetSearch: (v: string) => void;
     onToggle: (asset: AssetLibraryItem) => void;
     totalAssets: number;
+    repositoryFilter?: string;
+    setRepositoryFilter?: (v: string) => void;
+    allAssets?: AssetLibraryItem[];
 };
 
 const ServiceAssetLinker: React.FC<Props> = ({
@@ -16,8 +19,19 @@ const ServiceAssetLinker: React.FC<Props> = ({
     assetSearch,
     setAssetSearch,
     onToggle,
-    totalAssets
+    totalAssets,
+    repositoryFilter = 'All',
+    setRepositoryFilter,
+    allAssets = []
 }) => {
+    // Get unique repositories from all assets
+    const repositories = React.useMemo(() => {
+        const repos = new Set<string>();
+        allAssets.forEach(asset => {
+            if (asset.repository) repos.add(asset.repository);
+        });
+        return ['All', ...Array.from(repos).sort()];
+    }, [allAssets]);
     const getAssetTypeColor = (type: string) => {
         const colors: Record<string, string> = {
             'Image': 'bg-green-500',
@@ -128,9 +142,9 @@ const ServiceAssetLinker: React.FC<Props> = ({
                                                         </h5>
                                                         <div className="flex flex-wrap gap-2 items-center">
                                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.type === 'Image' ? 'bg-green-100 text-green-700' :
-                                                                    asset.type === 'Video' ? 'bg-red-100 text-red-700' :
-                                                                        asset.type === 'Document' ? 'bg-orange-100 text-orange-700' :
-                                                                            'bg-purple-100 text-purple-700'
+                                                                asset.type === 'Video' ? 'bg-red-100 text-red-700' :
+                                                                    asset.type === 'Document' ? 'bg-orange-100 text-orange-700' :
+                                                                        'bg-purple-100 text-purple-700'
                                                                 }`}>
                                                                 {asset.type}
                                                             </span>
@@ -186,8 +200,8 @@ const ServiceAssetLinker: React.FC<Props> = ({
                                 </div>
                             </div>
 
-                            {/* Search Bar */}
-                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 border-t-0 border-b-0 p-4">
+                            {/* Search Bar & Filters */}
+                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 border-t-0 border-b-0 p-4 space-y-3">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                         <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,6 +226,22 @@ const ServiceAssetLinker: React.FC<Props> = ({
                                         </button>
                                     )}
                                 </div>
+
+                                {/* Repository Filter */}
+                                {setRepositoryFilter && repositories.length > 1 && (
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-xs font-bold text-blue-700 whitespace-nowrap">Repository:</label>
+                                        <select
+                                            value={repositoryFilter}
+                                            onChange={(e) => setRepositoryFilter(e.target.value)}
+                                            className="flex-1 px-3 py-2 border-2 border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white shadow-sm cursor-pointer"
+                                        >
+                                            {repositories.map(repo => (
+                                                <option key={repo} value={repo}>{repo}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Available Assets List */}
@@ -248,9 +278,9 @@ const ServiceAssetLinker: React.FC<Props> = ({
                                                         </h5>
                                                         <div className="flex flex-wrap gap-2 items-center">
                                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${asset.type === 'Image' ? 'bg-green-100 text-green-700' :
-                                                                    asset.type === 'Video' ? 'bg-red-100 text-red-700' :
-                                                                        asset.type === 'Document' ? 'bg-orange-100 text-orange-700' :
-                                                                            'bg-purple-100 text-purple-700'
+                                                                asset.type === 'Video' ? 'bg-red-100 text-red-700' :
+                                                                    asset.type === 'Document' ? 'bg-orange-100 text-orange-700' :
+                                                                        'bg-purple-100 text-purple-700'
                                                                 }`}>
                                                                 {asset.type}
                                                             </span>

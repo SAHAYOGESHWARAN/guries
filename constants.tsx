@@ -3,15 +3,15 @@ import React from 'react';
 
 // Sidebar Navigation Types
 export interface NavItem {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
+    id: string;
+    name: string;
+    icon: React.ReactNode;
 }
 
 export interface NavSection {
-  title: string;
-  items?: NavItem[];
-  item?: NavItem;
+    title: string;
+    items?: NavItem[];
+    item?: NavItem;
 }
 
 // --- Icon Components ---
@@ -52,6 +52,7 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'campaigns', name: 'Campaigns', icon: <CampaignIcon /> },
             { id: 'tasks', name: 'Tasks', icon: <TaskIcon /> },
             { id: 'assets', name: 'Assets', icon: <AssetIcon /> },
+            { id: 'asset-library', name: 'Asset Library', icon: <RepoIcon /> },
         ]
     },
     {

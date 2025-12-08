@@ -47,6 +47,7 @@ const ServiceMasterView: React.FC = () => {
 
     // Asset Picker State within Full Frame
     const [assetSearch, setAssetSearch] = useState('');
+    const [repositoryFilter, setRepositoryFilter] = useState('All');
 
     const createInitialFormState = (): Partial<Service> => ({
         service_name: '', service_code: '', slug: '', full_url: '',
@@ -140,6 +141,9 @@ const ServiceMasterView: React.FC = () => {
                 const isLinked = links.map(String).includes(String(editingItem.id));
                 if (isLinked) return false;
 
+                // Check repository filter
+                if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;
+
                 // Check if asset matches search query (if any)
                 if (!searchLower) return true;
                 const name = (a.name || '').toLowerCase();
@@ -148,7 +152,7 @@ const ServiceMasterView: React.FC = () => {
                 return name.includes(searchLower) || assetType.includes(searchLower) || repository.includes(searchLower);
             })
             .slice(0, 20); // Limit to show 20 results
-    }, [libraryAssets, editingItem, assetSearch]);
+    }, [libraryAssets, editingItem, assetSearch, repositoryFilter]);
 
     // Legacy: Content Repository Assets (for backward compatibility)
     const linkedAssets = useMemo(() => {
@@ -2050,6 +2054,9 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                     setAssetSearch={setAssetSearch}
                                     onToggle={handleToggleLibraryLink}
                                     totalAssets={libraryAssets.length}
+                                    repositoryFilter={repositoryFilter}
+                                    setRepositoryFilter={setRepositoryFilter}
+                                    allAssets={libraryAssets}
                                 />
                             </div>
                         )}

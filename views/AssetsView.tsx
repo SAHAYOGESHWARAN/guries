@@ -5,15 +5,18 @@ import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem } from '../types';
 
 const AssetsView: React.FC = () => {
-    const { data: assets = [], create: createAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'list' | 'upload'>('list');
+    const [repositoryFilter, setRepositoryFilter] = useState('All');
+    const [typeFilter, setTypeFilter] = useState('All');
+    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit'>('list');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
     const [dragActive, setDragActive] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [editingAsset, setEditingAsset] = useState<AssetLibraryItem | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
@@ -28,12 +31,37 @@ const AssetsView: React.FC = () => {
         refresh?.();
     }, []);
 
+    // Get unique repositories and types
+    const repositories = useMemo(() => {
+        const repos = new Set<string>();
+        assets.forEach(a => {
+            if (a.repository) repos.add(a.repository);
+        });
+        return ['All', ...Array.from(repos).sort()];
+    }, [assets]);
+
+    const assetTypes = useMemo(() => {
+        const types = new Set<string>();
+        assets.forEach(a => {
+            if (a.type) types.add(a.type);
+        });
+        return ['All', ...Array.from(types).sort()];
+    }, [assets]);
+
     // Memoize filtered assets for better performance
     const filteredAssets = useMemo(() => {
         const query = (searchQuery || '').toLowerCase().trim();
-        if (!query) return assets;
 
         return assets.filter(a => {
+            // Repository filter
+            if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;
+
+            // Type filter
+            if (typeFilter !== 'All' && a.type !== typeFilter) return false;
+
+            // Search query
+            if (!query) return true;
+
             const name = (a.name || '').toLowerCase();
             const type = (a.type || '').toLowerCase();
             const repository = (a.repository || '').toLowerCase();
@@ -44,7 +72,7 @@ const AssetsView: React.FC = () => {
                 repository.includes(query) ||
                 status.includes(query);
         });
-    }, [assets, searchQuery]);
+    }, [assets, searchQuery, repositoryFilter, typeFilter]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -96,21 +124,31 @@ const AssetsView: React.FC = () => {
             return;
         }
 
-        if (!selectedFile && !newAsset.file_url) {
+        if (!selectedFile && !newAsset.file_url && viewMode !== 'edit') {
             alert('Please select a file to upload');
             return;
         }
 
         setIsUploading(true);
         try {
-            const result = await createAsset({
-                ...newAsset,
-                date: new Date().toISOString()
-            } as AssetLibraryItem);
+            if (viewMode === 'edit' && editingAsset) {
+                // Update existing asset
+                await updateAsset(editingAsset.id, {
+                    ...newAsset,
+                    date: new Date().toISOString()
+                });
+            } else {
+                // Create new asset
+                await createAsset({
+                    ...newAsset,
+                    date: new Date().toISOString()
+                } as AssetLibraryItem);
+            }
 
             // Reset form
             setSelectedFile(null);
             setPreviewUrl('');
+            setEditingAsset(null);
             setNewAsset({
                 name: '',
                 type: 'Image',
@@ -124,12 +162,36 @@ const AssetsView: React.FC = () => {
             // Force refresh to ensure data is up to date
             setTimeout(() => refresh?.(), 100);
         } catch (error) {
-            console.error('Upload failed:', error);
-            alert('Failed to upload asset. Please try again.');
+            console.error('Save failed:', error);
+            alert('Failed to save asset. Please try again.');
         } finally {
             setIsUploading(false);
         }
-    }, [newAsset, selectedFile, createAsset, refresh]);
+    }, [newAsset, selectedFile, createAsset, updateAsset, editingAsset, viewMode, refresh]);
+
+    const handleEdit = useCallback((e: React.MouseEvent, asset: AssetLibraryItem) => {
+        e.stopPropagation();
+        setEditingAsset(asset);
+        setNewAsset({
+            name: asset.name,
+            type: asset.type,
+            repository: asset.repository,
+            usage_status: asset.usage_status,
+            status: asset.status,
+            asset_category: asset.asset_category,
+            asset_format: asset.asset_format,
+            mapped_to: asset.mapped_to,
+            qc_score: asset.qc_score,
+            file_url: asset.file_url,
+            thumbnail_url: asset.thumbnail_url,
+            file_size: asset.file_size,
+            file_type: asset.file_type
+        });
+        if (asset.thumbnail_url || asset.file_url) {
+            setPreviewUrl(asset.thumbnail_url || asset.file_url || '');
+        }
+        setViewMode('edit');
+    }, []);
 
     const handleDelete = useCallback(async (e: React.MouseEvent, id: number, name: string) => {
         e.stopPropagation();
@@ -254,6 +316,15 @@ const AssetsView: React.FC = () => {
                         </button>
                     )}
                     <button
+                        onClick={(e) => handleEdit(e, item)}
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="Edit"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
+                    <button
                         onClick={(e) => handleDelete(e, item.id, item.name)}
                         disabled={deletingId === item.id}
                         className={`p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all ${deletingId === item.id ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -273,16 +344,20 @@ const AssetsView: React.FC = () => {
                 </div>
             )
         }
-    ], [getAssetIcon, handleDelete, deletingId]);
+    ], [getAssetIcon, handleEdit, handleDelete, deletingId]);
 
-    if (viewMode === 'upload') {
+    if (viewMode === 'upload' || viewMode === 'edit') {
         return (
             <div className="h-full flex flex-col w-full p-6 overflow-hidden">
                 <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
                     <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50 w-full flex-shrink-0">
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900">Upload New Asset</h2>
-                            <p className="text-slate-600 text-xs mt-0.5">Add media to the central library</p>
+                            <h2 className="text-lg font-bold text-slate-900">
+                                {viewMode === 'edit' ? 'Edit Asset' : 'Upload New Asset'}
+                            </h2>
+                            <p className="text-slate-600 text-xs mt-0.5">
+                                {viewMode === 'edit' ? 'Update asset information' : 'Add media to the central library'}
+                            </p>
                         </div>
                         <div className="flex gap-2">
                             <button
@@ -303,10 +378,10 @@ const AssetsView: React.FC = () => {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Uploading...
+                                        {viewMode === 'edit' ? 'Saving...' : 'Uploading...'}
                                     </>
                                 ) : (
-                                    'Confirm Upload'
+                                    viewMode === 'edit' ? 'Save Changes' : 'Confirm Upload'
                                 )}
                             </button>
                         </div>
@@ -546,18 +621,62 @@ const AssetsView: React.FC = () => {
                 </button>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-6 space-y-4">
                 <div className="relative">
                     <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
                         type="text"
-                        placeholder="Search assets..."
+                        placeholder="Search assets by name, type, repository, or status..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                     />
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-4">
+                    <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-600 mb-2">Repository</label>
+                        <select
+                            value={repositoryFilter}
+                            onChange={(e) => setRepositoryFilter(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border-2 border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all cursor-pointer text-sm"
+                        >
+                            {repositories.map(repo => (
+                                <option key={repo} value={repo}>{repo}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-600 mb-2">Type</label>
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border-2 border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all cursor-pointer text-sm"
+                        >
+                            {assetTypes.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {(repositoryFilter !== 'All' || typeFilter !== 'All' || searchQuery) && (
+                        <div className="flex items-end">
+                            <button
+                                onClick={() => {
+                                    setRepositoryFilter('All');
+                                    setTypeFilter('All');
+                                    setSearchQuery('');
+                                }}
+                                className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all text-sm font-medium"
+                            >
+                                Clear Filters
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -39,6 +39,7 @@ const CompetitorBenchmarkMasterView = React.lazy(() => import('./views/Competito
 const UxIssuesView = React.lazy(() => import('./views/UxIssuesView'));
 const TasksView = React.lazy(() => import('./views/TasksView'));
 const AssetsView = React.lazy(() => import('./views/AssetsView'));
+const AssetLibraryView = React.lazy(() => import('./views/AssetLibraryView'));
 const OnPageErrorsView = React.lazy(() => import('./views/OnPageErrorsView'));
 const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView'));
 const PromotionRepositoryView = React.lazy(() => import('./views/PromotionRepositoryView'));
@@ -78,15 +79,15 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setViewState({ view: 'dashboard', id: null });
-    setIsLoading(false); 
+    setIsLoading(false);
   };
 
   const handleNavigate = (view: string, id: number | null = null) => {
     if (view === 'logout') {
-        handleLogout();
+      handleLogout();
     } else {
-        setViewState({ view, id });
-        window.scrollTo(0, 0);
+      setViewState({ view, id });
+      window.scrollTo(0, 0);
     }
   };
 
@@ -103,13 +104,14 @@ const App: React.FC = () => {
       // MAIN
       case 'dashboard': return <DashboardView onNavigate={handleNavigate} />;
       case 'projects': return <ProjectsView onProjectSelect={(id) => handleNavigate('project-detail', id)} />;
-      case 'project-detail': 
+      case 'project-detail':
         return viewState.id ? <ProjectDetailView projectId={viewState.id} onNavigateBack={() => handleNavigate('projects')} /> : <ProjectsView onProjectSelect={(id) => handleNavigate('project-detail', id)} />;
       case 'campaigns': return <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
-      case 'campaign-detail': 
+      case 'campaign-detail':
         return viewState.id ? <CampaignDetailView campaignId={viewState.id} onNavigateBack={() => handleNavigate('campaigns')} /> : <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
       case 'tasks': return <TasksView />;
       case 'assets': return <AssetsView />;
+      case 'asset-library': return <AssetLibraryView />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;
@@ -153,7 +155,7 @@ const App: React.FC = () => {
       case 'gold-standard-benchmark': return <GoldStandardBenchmarkView />;
       case 'competitor-benchmark-master': return <CompetitorBenchmarkMasterView />;
       case 'qc-dashboard': return <QcView />;
-      
+
       // ANALYTICS & HR
       case 'performance-dashboard': return <ProjectAnalyticsView />;
       case 'kpi-tracking': return <KpiTrackingView />;
@@ -191,8 +193,8 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-slate-50/50">
-        <Header 
-          onNavigate={(view, id) => handleNavigate(view, id)} 
+        <Header
+          onNavigate={(view, id) => handleNavigate(view, id)}
           onLogout={handleLogout}
         />
 
@@ -205,7 +207,7 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
-      
+
       <div className="print:hidden z-50">
         <Chatbot />
       </div>
