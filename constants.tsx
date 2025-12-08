@@ -52,7 +52,6 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'campaigns', name: 'Campaigns', icon: <CampaignIcon /> },
             { id: 'tasks', name: 'Tasks', icon: <TaskIcon /> },
             { id: 'assets', name: 'Assets', icon: <AssetIcon /> },
-            { id: 'asset-library', name: 'Asset Library', icon: <RepoIcon /> },
         ]
     },
     {

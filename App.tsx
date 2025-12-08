@@ -39,7 +39,6 @@ const CompetitorBenchmarkMasterView = React.lazy(() => import('./views/Competito
 const UxIssuesView = React.lazy(() => import('./views/UxIssuesView'));
 const TasksView = React.lazy(() => import('./views/TasksView'));
 const AssetsView = React.lazy(() => import('./views/AssetsView'));
-const AssetLibraryView = React.lazy(() => import('./views/AssetLibraryView'));
 const OnPageErrorsView = React.lazy(() => import('./views/OnPageErrorsView'));
 const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView'));
 const PromotionRepositoryView = React.lazy(() => import('./views/PromotionRepositoryView'));
@@ -111,7 +110,6 @@ const App: React.FC = () => {
         return viewState.id ? <CampaignDetailView campaignId={viewState.id} onNavigateBack={() => handleNavigate('campaigns')} /> : <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
       case 'tasks': return <TasksView />;
       case 'assets': return <AssetsView />;
-      case 'asset-library': return <AssetLibraryView />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;
