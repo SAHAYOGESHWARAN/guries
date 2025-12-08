@@ -2,10 +2,12 @@ import React, { useState, useRef, useMemo, useCallback } from 'react';
 import Table from '../components/Table';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
-import type { AssetLibraryItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem } from '../types';
 
 const AssetsView: React.FC = () => {
     const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: services = [] } = useData<Service>('services');
+    const { data: subServices = [] } = useData<SubServiceItem>('subServices');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
@@ -530,20 +532,123 @@ const AssetsView: React.FC = () => {
                                     </select>
                                 </div>
 
-                                {/* Row 5: Mapped To (Service/Sub-service/Page) */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                {/* Row 5: Mapped To - Enhanced with Links */}
+                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-6">
+                                    <label className="block text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                        </svg>
                                         Mapped To
-                                        <span className="text-xs font-normal text-slate-500 ml-2">(Service / Sub-service / Page)</span>
+                                        <span className="text-xs font-normal text-blue-600 ml-auto">Linked Services & Sub-Services</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={newAsset.mapped_to || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, mapped_to: e.target.value })}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                        placeholder="e.g., Service Name / Sub-service Name / Page Title"
-                                    />
-                                    <p className="text-xs text-slate-500 mt-1">You can also link this asset to services later from the Services page</p>
+
+                                    {/* Display Linked Services */}
+                                    {(newAsset.linked_service_ids && newAsset.linked_service_ids.length > 0) ||
+                                        (newAsset.linked_sub_service_ids && newAsset.linked_sub_service_ids.length > 0) ? (
+                                        <div className="space-y-3 mb-4">
+                                            {/* Linked Services */}
+                                            {newAsset.linked_service_ids && newAsset.linked_service_ids.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Services ({newAsset.linked_service_ids.length})</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {newAsset.linked_service_ids.map(serviceId => {
+                                                            const service = services.find(s => s.id === serviceId);
+                                                            return service ? (
+                                                                <div key={serviceId} className="inline-flex items-center gap-2 bg-white border-2 border-blue-300 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all group">
+                                                                    <span className="text-xs font-medium text-blue-900">{service.service_name}</span>
+                                                                    <a
+                                                                        href={`#/services/${service.id}`}
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            window.location.hash = `/services/${service.id}`;
+                                                                        }}
+                                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                                                        title="Go to Service"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                        </svg>
+                                                                    </a>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const updated = (newAsset.linked_service_ids || []).filter(id => id !== serviceId);
+                                                                            setNewAsset({ ...newAsset, linked_service_ids: updated });
+                                                                        }}
+                                                                        className="text-slate-400 hover:text-red-600 transition-colors"
+                                                                        title="Remove link"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Linked Sub-Services */}
+                                            {newAsset.linked_sub_service_ids && newAsset.linked_sub_service_ids.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Sub-Services ({newAsset.linked_sub_service_ids.length})</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {newAsset.linked_sub_service_ids.map(subServiceId => {
+                                                            const subService = subServices.find(s => s.id === subServiceId);
+                                                            return subService ? (
+                                                                <div key={subServiceId} className="inline-flex items-center gap-2 bg-white border-2 border-purple-300 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all group">
+                                                                    <span className="text-xs font-medium text-purple-900">{subService.sub_service_name}</span>
+                                                                    <a
+                                                                        href={`#/sub-services/${subService.id}`}
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            window.location.hash = `/sub-services/${subService.id}`;
+                                                                        }}
+                                                                        className="text-purple-600 hover:text-purple-800 transition-colors"
+                                                                        title="Go to Sub-Service"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                        </svg>
+                                                                    </a>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const updated = (newAsset.linked_sub_service_ids || []).filter(id => id !== subServiceId);
+                                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: updated });
+                                                                        }}
+                                                                        className="text-slate-400 hover:text-red-600 transition-colors"
+                                                                        title="Remove link"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-4 text-center mb-4">
+                                            <svg className="w-8 h-8 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                            <p className="text-xs text-slate-600">No linked services or sub-services yet</p>
+                                            <p className="text-xs text-slate-500 mt-1">Link this asset from the Services or Sub-Services pages</p>
+                                        </div>
+                                    )}
+
+                                    {/* Info Note */}
+                                    <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 flex items-start gap-2">
+                                        <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p className="text-xs text-blue-800 leading-relaxed">
+                                            <strong>Tip:</strong> To link this asset to services or sub-services, go to the Services or Sub-Services page and use the "Linking" tab to connect assets.
+                                        </p>
+                                    </div>
                                 </div>
 
                                 {/* Row 6: Status & Usage Status */}

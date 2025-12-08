@@ -1302,10 +1302,10 @@ const ServiceMasterView: React.FC = () => {
                                         </Tooltip>
                                     </div>
 
-                                    {/* Body Content Section - Large Professional Editor */}
+                                    {/* Body Content Section - Redesigned Clean Editor */}
                                     <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
                                         <Tooltip content="Main body copy. Supports Markdown formatting for rich text editing.">
-                                            <div className="flex flex-col h-full">
+                                            <div className="flex flex-col">
                                                 {/* Editor Header */}
                                                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 border-b-2 border-indigo-700">
                                                     <div className="flex items-center justify-between">
@@ -1335,167 +1335,94 @@ const ServiceMasterView: React.FC = () => {
 
                                                 {/* Markdown Toolbar */}
                                                 <div className="bg-gradient-to-r from-slate-50 to-indigo-50 px-6 py-3 border-b border-slate-200">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wide mr-2">Quick Format:</span>
-                                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Bold">**B**</button>
-                                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono italic text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Italic">*I*</button>
-                                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Heading"># H</button>
-                                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="List">• List</button>
-                                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Link">[Link]</button>
-                                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Code">`Code`</button>
-                                                        <div className="ml-auto flex items-center gap-2">
-                                                            <span className="text-xs text-slate-500">Tip: Use Markdown syntax for formatting</span>
+                                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide mr-2">Quick Format:</span>
+                                                            <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Bold">**B**</button>
+                                                            <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono italic text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Italic">*I*</button>
+                                                            <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Heading"># H</button>
+                                                            <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="List">• List</button>
+                                                            <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Link">[Link]</button>
+                                                            <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 hover:border-indigo-400 transition-all shadow-sm" title="Code">`Code`</button>
                                                         </div>
+                                                        <span className="text-xs text-slate-500">Tip: Use Markdown syntax for formatting</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Large Text Editor */}
-                                                <div className="relative flex-1 bg-white">
+                                                {/* Clean Text Editor - No Line Numbers */}
+                                                <div className="bg-white">
                                                     <textarea
                                                         value={formData.body_content}
                                                         onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
-                                                        className="w-full h-full px-6 py-5 border-0 font-mono text-sm leading-relaxed focus:ring-0 focus:outline-none transition-all resize-none bg-white placeholder:text-slate-400"
-                                                        placeholder="# Start writing your content here...
+                                                        className="w-full px-6 py-5 border-0 font-mono text-sm leading-relaxed focus:ring-0 focus:outline-none transition-all resize-none bg-white placeholder:text-slate-400"
+                                                        placeholder="Start writing your content here...
 
-## Use Markdown for formatting:
-
+Use Markdown for formatting:
 **Bold text** for emphasis
 *Italic text* for subtle emphasis
 [Link text](https://example.com) for hyperlinks
 
-### Lists:
+Lists:
 - Bullet point 1
 - Bullet point 2
-- Bullet point 3
 
 1. Numbered item 1
-2. Numbered item 2
-
-> Blockquote for important notes
-
-`Inline code` for technical terms
-
----
-
-Write naturally and format as you go. The editor supports full Markdown syntax for rich content creation."
-                                                        style={{ minHeight: '500px', maxHeight: '800px' }}
+2. Numbered item 2"
+                                                        rows={20}
                                                     />
-
-                                                    {/* Line numbers indicator (optional visual enhancement) */}
-                                                    <div className="absolute top-0 left-0 w-12 h-full bg-slate-50 border-r border-slate-200 pointer-events-none opacity-50">
-                                                        {Array.from({ length: 30 }, (_, i) => (
-                                                            <div key={i} className="text-[10px] text-slate-400 text-right pr-2 font-mono leading-relaxed" style={{ height: '1.5rem' }}>
-                                                                {i + 1}
-                                                            </div>
-                                                        ))}
-                                                    </div>
                                                 </div>
 
-                                                {/* Editor Footer with Stats */}
-                                                <div className="bg-gradient-to-r from-slate-50 to-indigo-50 px-6 py-4 border-t-2 border-slate-200">
-                                                    <div className="flex items-center justify-between">
-                                                        {/* Left side - Stats */}
-                                                        <div className="flex items-center gap-6">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="bg-indigo-100 p-2 rounded-lg">
-                                                                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-slate-500 font-medium">Words</p>
-                                                                    <p className="text-lg font-bold text-slate-800">
-                                                                        {formData.body_content ? formData.body_content.split(/\s+/).filter(Boolean).length : 0}
-                                                                    </p>
-                                                                </div>
+                                                {/* Compact Editor Footer with Stats */}
+                                                <div className="bg-gradient-to-r from-slate-50 to-indigo-50 px-6 py-3 border-t-2 border-slate-200">
+                                                    <div className="flex items-center justify-between flex-wrap gap-4">
+                                                        {/* Left side - Compact Stats */}
+                                                        <div className="flex items-center gap-4 flex-wrap">
+                                                            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
+                                                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                                                </svg>
+                                                                <span className="text-xs text-slate-500">Words</span>
+                                                                <span className="text-sm font-bold text-slate-800">
+                                                                    {formData.body_content ? formData.body_content.split(/\s+/).filter(Boolean).length : 0}
+                                                                </span>
                                                             </div>
 
-                                                            <div className="h-12 w-px bg-slate-300"></div>
-
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="bg-purple-100 p-2 rounded-lg">
-                                                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-slate-500 font-medium">Read Time</p>
-                                                                    <p className="text-lg font-bold text-slate-800">
-                                                                        {formData.body_content ? Math.ceil((formData.body_content.split(/\s+/).filter(Boolean).length || 0) / 200) : 0} min
-                                                                    </p>
-                                                                </div>
+                                                            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
+                                                                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <span className="text-xs text-slate-500">Read Time</span>
+                                                                <span className="text-sm font-bold text-slate-800">
+                                                                    {formData.body_content ? Math.ceil((formData.body_content.split(/\s+/).filter(Boolean).length || 0) / 200) : 0} min
+                                                                </span>
                                                             </div>
 
-                                                            <div className="h-12 w-px bg-slate-300"></div>
-
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="bg-blue-100 p-2 rounded-lg">
-                                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-slate-500 font-medium">Characters</p>
-                                                                    <p className="text-lg font-bold text-slate-800 font-mono">
-                                                                        {formData.body_content?.length || 0}
-                                                                    </p>
-                                                                </div>
+                                                            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
+                                                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                                </svg>
+                                                                <span className="text-xs text-slate-500">Characters</span>
+                                                                <span className="text-sm font-bold text-slate-800 font-mono">
+                                                                    {formData.body_content?.length || 0}
+                                                                </span>
                                                             </div>
 
-                                                            <div className="h-12 w-px bg-slate-300"></div>
-
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="bg-green-100 p-2 rounded-lg">
-                                                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-slate-500 font-medium">Lines</p>
-                                                                    <p className="text-lg font-bold text-slate-800">
-                                                                        {formData.body_content ? formData.body_content.split('\n').length : 0}
-                                                                    </p>
-                                                                </div>
+                                                            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
+                                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                                <span className="text-xs text-slate-500">Lines</span>
+                                                                <span className="text-sm font-bold text-slate-800">
+                                                                    {formData.body_content ? formData.body_content.split('\n').length : 0}
+                                                                </span>
                                                             </div>
                                                         </div>
 
                                                         {/* Right side - Status indicator */}
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-                                                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                                                <span className="text-xs font-semibold text-slate-700">Auto-saved</span>
-                                                            </div>
+                                                        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+                                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                                            <span className="text-xs font-semibold text-slate-700">Auto-saved</span>
                                                         </div>
-                                                    </div>
-
-                                                    {/* Markdown Guide */}
-                                                    <div className="mt-4 pt-4 border-t border-slate-200">
-                                                        <details className="group">
-                                                            <summary className="cursor-pointer text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors flex items-center gap-2">
-                                                                <svg className="w-4 h-4 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                                </svg>
-                                                                Markdown Quick Reference
-                                                            </summary>
-                                                            <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                                                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                                                                    <p className="font-bold text-slate-700 mb-1">Headers</p>
-                                                                    <code className="text-slate-600 font-mono text-[10px]"># H1<br />## H2<br />### H3</code>
-                                                                </div>
-                                                                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                                                                    <p className="font-bold text-slate-700 mb-1">Emphasis</p>
-                                                                    <code className="text-slate-600 font-mono text-[10px]">**bold**<br />*italic*<br />~~strike~~</code>
-                                                                </div>
-                                                                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                                                                    <p className="font-bold text-slate-700 mb-1">Lists</p>
-                                                                    <code className="text-slate-600 font-mono text-[10px]">- item<br />1. numbered<br />- [ ] todo</code>
-                                                                </div>
-                                                                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                                                                    <p className="font-bold text-slate-700 mb-1">Links</p>
-                                                                    <code className="text-slate-600 font-mono text-[10px]">[text](url)<br />![img](url)</code>
-                                                                </div>
-                                                            </div>
-                                                        </details>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1935,7 +1862,20 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                         {/* --- TAB: LINKING (ASSETS) --- */}
                         {activeTab === 'Linking' && (
                             <div className="space-y-10">
-                                {/* 1. LINKING METADATA CARD */}
+                                {/* 1. ASSET LIBRARY MANAGEMENT - FIRST */}
+                                <ServiceAssetLinker
+                                    linkedAssets={linkedLibraryAssets}
+                                    availableAssets={availableLibraryAssets}
+                                    assetSearch={assetSearch}
+                                    setAssetSearch={setAssetSearch}
+                                    onToggle={handleToggleLibraryLink}
+                                    totalAssets={libraryAssets.length}
+                                    repositoryFilter={repositoryFilter}
+                                    setRepositoryFilter={setRepositoryFilter}
+                                    allAssets={libraryAssets}
+                                />
+
+                                {/* 2. LINKING METADATA - SECOND */}
                                 <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                                     {/* Header */}
                                     <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-10 text-white overflow-hidden">
@@ -1944,7 +1884,7 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                         </div>
                                         <div className="relative z-10">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📋</span>
                                                 <h3 className="text-2xl font-bold">Linking Metadata</h3>
                                             </div>
                                             <p className="text-blue-100 text-sm">Manage relationships with sub-services, assets, and knowledge topics</p>
@@ -1976,20 +1916,24 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                                     </div>
                                                 </Tooltip>
 
-                                                <Tooltip content="Rollup count of sub-services under this service">
-                                                    <div className="bg-white rounded-xl border-2 border-indigo-100 p-6 hover:border-indigo-300 transition-colors">
+                                                <Tooltip content="Auto-calculated count of sub-services under this service">
+                                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 p-6 hover:border-indigo-300 transition-colors">
                                                         <label className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">
                                                             <span className="text-sm">🔢</span>
                                                             Sub-Service Count
+                                                            <span className="ml-auto text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">AUTO</span>
                                                         </label>
-                                                        <input
-                                                            type="number"
-                                                            value={formData.subservice_count || 0}
-                                                            onChange={(e) => setFormData({ ...formData, subservice_count: parseInt(e.target.value) || 0 })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
-                                                            placeholder="0"
-                                                            min="0"
-                                                        />
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex-1 bg-white rounded-lg border-2 border-indigo-200 px-4 py-3 flex items-center justify-between">
+                                                                <span className="text-3xl font-bold text-indigo-600">
+                                                                    {editingItem ? getSubServicesCount(editingItem.id) : 0}
+                                                                </span>
+                                                                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs text-indigo-600 mt-2 font-medium">Calculated automatically</p>
                                                     </div>
                                                 </Tooltip>
 
@@ -2028,23 +1972,24 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                                     </div>
                                                 </Tooltip>
 
-                                                <Tooltip content="Number of linked assets (rollup)">
-                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6 hover:border-orange-300 transition-colors">
+                                                <Tooltip content="Auto-calculated count of linked assets from both content and library repositories">
+                                                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200 p-6 hover:border-orange-300 transition-colors">
                                                         <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
                                                             <span className="text-sm">📦</span>
                                                             Asset Count
+                                                            <span className="ml-auto text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">AUTO</span>
                                                         </label>
-                                                        <input
-                                                            type="number"
-                                                            value={formData.asset_count || 0}
-                                                            onChange={(e) => setFormData({ ...formData, asset_count: parseInt(e.target.value) || 0 })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white"
-                                                            placeholder="0"
-                                                            min="0"
-                                                            readOnly
-                                                            title="Auto-calculated from linked assets"
-                                                        />
-                                                        <p className="text-xs text-slate-500 mt-2">Auto-calculated</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex-1 bg-white rounded-lg border-2 border-orange-200 px-4 py-3 flex items-center justify-between">
+                                                                <span className="text-3xl font-bold text-orange-600">
+                                                                    {editingItem ? getLinkedAssetsCount(editingItem.id) : 0}
+                                                                </span>
+                                                                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs text-orange-600 mt-2 font-medium">Calculated automatically</p>
                                                     </div>
                                                 </Tooltip>
 
@@ -2067,19 +2012,6 @@ Write naturally and format as you go. The editor supports full Markdown syntax f
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* 2. ASSET LINKER */}
-                                <ServiceAssetLinker
-                                    linkedAssets={linkedLibraryAssets}
-                                    availableAssets={availableLibraryAssets}
-                                    assetSearch={assetSearch}
-                                    setAssetSearch={setAssetSearch}
-                                    onToggle={handleToggleLibraryLink}
-                                    totalAssets={libraryAssets.length}
-                                    repositoryFilter={repositoryFilter}
-                                    setRepositoryFilter={setRepositoryFilter}
-                                    allAssets={libraryAssets}
-                                />
                             </div>
                         )}
 

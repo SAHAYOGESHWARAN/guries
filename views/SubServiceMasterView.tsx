@@ -827,38 +827,123 @@ const SubServiceMasterView: React.FC = () => {
                         )}
 
                         {/* --- TAB: LINKING --- */}
-                        {activeTab === 'Linking' && editingItem && (
+                        {activeTab === 'Linking' && (
                             <div className="space-y-10">
-                                <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-10 text-white overflow-hidden">
-                                        <div className="absolute top-0 right-0 opacity-10">
-                                            <span className="text-9xl">🔗</span>
-                                        </div>
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📎</span>
-                                                <h3 className="text-2xl font-bold">Content Assets</h3>
+                                {editingItem ? (
+                                    <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                        <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-10 text-white overflow-hidden">
+                                            <div className="absolute top-0 right-0 opacity-10">
+                                                <span className="text-9xl">🔗</span>
                                             </div>
-                                            <p className="text-purple-100 text-sm">Link related content assets to this sub-service</p>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📎</span>
+                                                    <h3 className="text-2xl font-bold">Content Assets</h3>
+                                                </div>
+                                                <p className="text-purple-100 text-sm">Link related content assets to this sub-service</p>
+                                            </div>
+                                        </div>
+
+                                        <AssetLinker
+                                            linkedAssets={linkedAssets}
+                                            availableAssets={availableAssets}
+                                            assetSearch={assetSearch}
+                                            setAssetSearch={setAssetSearch}
+                                            onToggle={handleToggleAssetLink}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-2xl border-2 border-amber-300 shadow-lg overflow-hidden">
+                                        <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-6 text-white overflow-hidden">
+                                            <div className="absolute top-0 right-0 opacity-10">
+                                                <span className="text-9xl">💾</span>
+                                            </div>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">💡</span>
+                                                    <h3 className="text-2xl font-bold">Asset Linking Unavailable</h3>
+                                                </div>
+                                                <p className="text-amber-100 text-sm">Complete the setup steps below to enable asset linking</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-10">
+                                            <div className="max-w-3xl mx-auto">
+                                                <div className="text-center mb-8">
+                                                    <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-100 rounded-full mb-4">
+                                                        <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                        </svg>
+                                                    </div>
+                                                    <h4 className="text-xl font-bold text-slate-800 mb-3">Save Sub-Service First</h4>
+                                                    <p className="text-sm text-slate-600 leading-relaxed">
+                                                        You need to save this sub-service before you can link content assets to it.
+                                                        This ensures all relationships are properly tracked in the system.
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-white rounded-xl border-2 border-amber-200 p-6 mb-6">
+                                                    <h5 className="text-sm font-bold text-amber-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                                        </svg>
+                                                        Steps to Enable Asset Linking
+                                                    </h5>
+                                                    <ol className="space-y-3">
+                                                        <li className="flex items-start gap-3">
+                                                            <span className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-slate-800">Fill in Required Fields</p>
+                                                                <p className="text-xs text-slate-600 mt-1">Complete the <strong>Parent Service</strong> and <strong>Sub-Service Name</strong> in the Core tab</p>
+                                                            </div>
+                                                        </li>
+                                                        <li className="flex items-start gap-3">
+                                                            <span className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-slate-800">Save the Sub-Service</p>
+                                                                <p className="text-xs text-slate-600 mt-1">Click the <strong>"Save Sub-Service"</strong> button at the top right</p>
+                                                            </div>
+                                                        </li>
+                                                        <li className="flex items-start gap-3">
+                                                            <span className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-slate-800">Return to Linking Tab</p>
+                                                                <p className="text-xs text-slate-600 mt-1">After saving, edit the sub-service again and navigate to this Linking tab to connect assets</p>
+                                                            </div>
+                                                        </li>
+                                                    </ol>
+                                                </div>
+
+                                                <div className="text-center">
+                                                    <button
+                                                        onClick={() => setActiveTab('Core')}
+                                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl hover:from-amber-600 hover:to-orange-600 transition-all"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+                                                        </svg>
+                                                        Go to Core Tab
+                                                    </button>
+                                                </div>
+
+                                                <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        <div className="flex-1">
+                                                            <p className="text-xs font-semibold text-blue-900 mb-1">Why is this required?</p>
+                                                            <p className="text-xs text-blue-700 leading-relaxed">
+                                                                Asset linking requires a valid sub-service ID to create proper database relationships.
+                                                                Once saved, you'll be able to link images, videos, documents, and other media assets from your content repository.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <AssetLinker
-                                        linkedAssets={linkedAssets}
-                                        availableAssets={availableAssets}
-                                        assetSearch={assetSearch}
-                                        setAssetSearch={setAssetSearch}
-                                        onToggle={handleToggleAssetLink}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'Linking' && !editingItem && (
-                            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-8 text-center">
-                                <span className="text-5xl mb-4 block">💡</span>
-                                <h3 className="text-lg font-bold text-amber-900 mb-2">Save First to Link Assets</h3>
-                                <p className="text-sm text-amber-700">You need to save this sub-service before you can link content assets to it.</p>
+                                )}
                             </div>
                         )}
 
@@ -968,7 +1053,7 @@ const SubServiceMasterView: React.FC = () => {
 
                     </div>
                 </div>
-            </div>
+            </div >
         );
     }
 
