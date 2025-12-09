@@ -73,28 +73,57 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
 
 // Singleton socket instance to manage connection
 let socketInstance: Socket | null = null;
+let backendAvailable = false;
+let backendCheckDone = false;
+
+// Check if backend is available before attempting socket connection
+const checkBackendAvailability = async (): Promise<boolean> => {
+    if (backendCheckDone) return backendAvailable;
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 500);
+
+        const response = await fetch('http://localhost:3001/api/v1/users', {
+            signal: controller.signal,
+            method: 'HEAD'
+        });
+
+        clearTimeout(timeoutId);
+        backendAvailable = response.ok;
+    } catch (e) {
+        backendAvailable = false;
+    }
+
+    backendCheckDone = true;
+    return backendAvailable;
+};
 
 const getSocket = () => {
+    // Don't create socket if backend is not available
+    if (!backendAvailable) {
+        return null;
+    }
+
     if (!socketInstance) {
         try {
             socketInstance = io('http://localhost:3001', {
-                reconnectionAttempts: 1,
-                reconnectionDelay: 5000,
+                reconnectionAttempts: 0, // No reconnection attempts
                 timeout: 1000,
                 autoConnect: false,
                 transports: ['websocket', 'polling']
             });
 
-            // Suppress connection error logs
+            // Suppress all connection error logs
             socketInstance.on('connect_error', () => {
-                // Silently handle connection errors - backend is offline
+                backendAvailable = false;
             });
 
             socketInstance.on('error', () => {
-                // Silently handle errors
+                backendAvailable = false;
             });
         } catch (e) {
-            console.warn("Socket.io client initialization failed, running in offline mode.");
+            // Silently fail
         }
     }
     return socketInstance;
@@ -178,13 +207,25 @@ export function useData<T>(collection: string) {
     }, [collection, resource, loadLocal]);
 
     useEffect(() => {
-        fetchData();
+        // Check backend availability first, then fetch data
+        const initializeData = async () => {
+            await checkBackendAvailability();
+            fetchData();
+        };
+
+        initializeData();
+
+        // Only attempt socket connection if backend is available
+        if (!backendAvailable) {
+            setIsOffline(true);
+            return;
+        }
 
         const socket = getSocket();
 
         if (resource && socket) {
-            // Only try to connect if we're not already offline
-            if (!isOffline && !socket.connected) {
+            // Only try to connect if backend is available
+            if (!socket.connected) {
                 try {
                     socket.connect();
                 } catch (e) {
@@ -210,7 +251,7 @@ export function useData<T>(collection: string) {
             socket.on(`${resource.event}_deleted`, handleDelete);
             socket.on('connect_error', () => {
                 setIsOffline(true);
-                // Don't retry if backend is down
+                backendAvailable = false;
                 socket.disconnect();
             });
 
