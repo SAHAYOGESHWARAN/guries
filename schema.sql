@@ -372,9 +372,17 @@ CREATE TABLE IF NOT EXISTS assets (
 	id SERIAL PRIMARY KEY,
 	asset_name VARCHAR(255) NOT NULL,
 	asset_type VARCHAR(100),
+	asset_category VARCHAR(100),
+	asset_format VARCHAR(50),
 	file_url VARCHAR(1000),
 	description TEXT,
 	tags TEXT, -- JSON array
+	status VARCHAR(50),
+	thumbnail_url VARCHAR(1000),
+	file_size INTEGER,
+	file_type VARCHAR(100),
+	linked_service_ids TEXT, -- JSON array
+	linked_sub_service_ids TEXT, -- JSON array
 	-- Content block
 	h1 VARCHAR(500),
 	h2_list TEXT, -- JSON array
@@ -392,6 +400,27 @@ CREATE TABLE IF NOT EXISTS assets (
 	og_title VARCHAR(500),
 	og_description TEXT,
 	og_image_url VARCHAR(1000),
+	-- Asset Applications
+	application_type VARCHAR(50),
+	-- Web Application fields
+	web_title VARCHAR(500),
+	web_description TEXT,
+	web_keywords TEXT,
+	web_url VARCHAR(1000),
+	web_h1 VARCHAR(500),
+	web_h2_1 VARCHAR(500),
+	web_h2_2 VARCHAR(500),
+	web_thumbnail VARCHAR(1000),
+	web_body_content TEXT,
+	-- SMM Application fields
+	smm_platform VARCHAR(100),
+	smm_title VARCHAR(500),
+	smm_tag VARCHAR(500),
+	smm_url VARCHAR(1000),
+	smm_description TEXT,
+	smm_hashtags TEXT,
+	smm_media_url VARCHAR(1000),
+	smm_media_type VARCHAR(50),
 	-- Linking
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW()

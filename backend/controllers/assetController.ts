@@ -79,15 +79,36 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 id,
                 asset_name as name,
                 asset_type as type,
+                asset_category,
+                asset_format,
                 tags as repository,
                 description as usage_status,
+                status,
                 file_url,
                 COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
                 file_size,
                 file_type,
                 created_at as date,
                 linked_service_ids,
-                linked_sub_service_ids
+                linked_sub_service_ids,
+                application_type,
+                web_title,
+                web_description,
+                web_keywords,
+                web_url,
+                web_h1,
+                web_h2_1,
+                web_h2_2,
+                web_thumbnail,
+                web_body_content,
+                smm_platform,
+                smm_title,
+                smm_tag,
+                smm_url,
+                smm_description,
+                smm_hashtags,
+                smm_media_url,
+                smm_media_type
             FROM assets 
             ORDER BY created_at DESC
         `);
@@ -108,27 +129,62 @@ export const getAssetLibrary = async (req: any, res: any) => {
 };
 
 export const createAssetLibraryItem = async (req: any, res: any) => {
-    const { name, type, repository, usage_status, file_url, thumbnail_url, file_size, file_type, date } = req.body;
+    const {
+        name, type, repository, usage_status, file_url, thumbnail_url, file_size, file_type, date,
+        asset_category, asset_format, status, linked_service_ids, linked_sub_service_ids,
+        application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+        web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+        smm_hashtags, smm_media_url, smm_media_type
+    } = req.body;
 
     try {
         const result = await pool.query(
             `INSERT INTO assets (
-                asset_name, asset_type, tags, description, file_url, og_image_url, thumbnail_url, file_size, file_type, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING 
+                asset_name, asset_type, asset_category, asset_format, tags, description, status,
+                file_url, og_image_url, thumbnail_url, file_size, file_type,
+                linked_service_ids, linked_sub_service_ids, created_at,
+                application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+                smm_hashtags, smm_media_url, smm_media_type
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
+                asset_category,
+                asset_format,
                 tags as repository,
                 description as usage_status,
+                status,
                 file_url,
                 COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
                 file_size,
                 file_type,
-                created_at as date`,
-            [name, type, repository, usage_status, file_url, thumbnail_url, thumbnail_url, file_size, file_type, date || new Date().toISOString()]
+                linked_service_ids,
+                linked_sub_service_ids,
+                created_at as date,
+                application_type,
+                web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
+                smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type`,
+            [
+                name, type, asset_category, asset_format, repository, usage_status, status,
+                file_url, thumbnail_url, thumbnail_url, file_size, file_type,
+                linked_service_ids ? JSON.stringify(linked_service_ids) : null,
+                linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
+                date || new Date().toISOString(),
+                application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+                smm_hashtags, smm_media_url, smm_media_type
+            ]
         );
 
-        const newAsset = result.rows[0];
+        const newAsset = {
+            ...result.rows[0],
+            repository: result.rows[0].repository || 'Content Repository',
+            usage_status: result.rows[0].usage_status || 'Available',
+            linked_service_ids: result.rows[0].linked_service_ids ? JSON.parse(result.rows[0].linked_service_ids) : [],
+            linked_sub_service_ids: result.rows[0].linked_sub_service_ids ? JSON.parse(result.rows[0].linked_sub_service_ids) : []
+        };
+
         getSocket().emit('assetLibrary_created', newAsset);
         res.status(201).json(newAsset);
     } catch (error: any) {
@@ -138,45 +194,75 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
 
 export const updateAssetLibraryItem = async (req: any, res: any) => {
     const { id } = req.params;
-    const { name, type, repository, usage_status, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids } = req.body;
+    const {
+        name, type, repository, usage_status, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids,
+        asset_category, asset_format, status,
+        application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+        web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+        smm_hashtags, smm_media_url, smm_media_type
+    } = req.body;
 
     try {
         const result = await pool.query(
             `UPDATE assets SET 
                 asset_name = COALESCE($1, asset_name), 
-                asset_type = COALESCE($2, asset_type), 
-                tags = COALESCE($3, tags),
-                description = COALESCE($4, description),
-                file_url = COALESCE($5, file_url),
-                og_image_url = COALESCE($6, og_image_url),
-                thumbnail_url = COALESCE($7, thumbnail_url),
-                linked_service_ids = COALESCE($8, linked_service_ids),
-                linked_sub_service_ids = COALESCE($9, linked_sub_service_ids),
+                asset_type = COALESCE($2, asset_type),
+                asset_category = COALESCE($3, asset_category),
+                asset_format = COALESCE($4, asset_format),
+                tags = COALESCE($5, tags),
+                description = COALESCE($6, description),
+                status = COALESCE($7, status),
+                file_url = COALESCE($8, file_url),
+                og_image_url = COALESCE($9, og_image_url),
+                thumbnail_url = COALESCE($10, thumbnail_url),
+                linked_service_ids = COALESCE($11, linked_service_ids),
+                linked_sub_service_ids = COALESCE($12, linked_sub_service_ids),
+                application_type = COALESCE($13, application_type),
+                web_title = COALESCE($14, web_title),
+                web_description = COALESCE($15, web_description),
+                web_keywords = COALESCE($16, web_keywords),
+                web_url = COALESCE($17, web_url),
+                web_h1 = COALESCE($18, web_h1),
+                web_h2_1 = COALESCE($19, web_h2_1),
+                web_h2_2 = COALESCE($20, web_h2_2),
+                web_thumbnail = COALESCE($21, web_thumbnail),
+                web_body_content = COALESCE($22, web_body_content),
+                smm_platform = COALESCE($23, smm_platform),
+                smm_title = COALESCE($24, smm_title),
+                smm_tag = COALESCE($25, smm_tag),
+                smm_url = COALESCE($26, smm_url),
+                smm_description = COALESCE($27, smm_description),
+                smm_hashtags = COALESCE($28, smm_hashtags),
+                smm_media_url = COALESCE($29, smm_media_url),
+                smm_media_type = COALESCE($30, smm_media_type),
                 updated_at = NOW()
-            WHERE id = $10 RETURNING 
+            WHERE id = $31 RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
+                asset_category,
+                asset_format,
                 tags as repository,
                 description as usage_status,
+                status,
                 file_url,
                 COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
                 file_size,
                 file_type,
                 created_at as date,
                 linked_service_ids,
-                linked_sub_service_ids`,
+                linked_sub_service_ids,
+                application_type,
+                web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
+                smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type`,
             [
-                name,
-                type,
-                repository,
-                usage_status,
-                file_url,
-                thumbnail_url,
-                thumbnail_url,
+                name, type, asset_category, asset_format, repository, usage_status, status,
+                file_url, thumbnail_url, thumbnail_url,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
-                id
+                application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+                smm_hashtags, smm_media_url, smm_media_type, id
             ]
         );
 

@@ -534,6 +534,30 @@ export interface AssetLibraryItem {
     linked_sub_service_ids?: number[];
     linked_page_ids?: number[]; // For mapping to specific pages
     mapped_to?: string; // Display string: "Service / Sub-service / Page"
+
+    // Asset Applications
+    application_type?: 'web' | 'seo' | 'smm';
+
+    // Web Application Fields
+    web_title?: string;
+    web_description?: string;
+    web_keywords?: string;
+    web_url?: string;
+    web_h1?: string;
+    web_h2_1?: string;
+    web_h2_2?: string;
+    web_thumbnail?: string;
+    web_body_content?: string;
+
+    // SMM Application Fields
+    smm_platform?: 'facebook_instagram' | 'twitter' | 'linkedin';
+    smm_title?: string;
+    smm_tag?: string;
+    smm_url?: string;
+    smm_description?: string;
+    smm_hashtags?: string;
+    smm_media_url?: string;
+    smm_media_type?: 'image' | 'video' | 'carousel' | 'gif';
 }
 
 export interface Integration {
