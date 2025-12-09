@@ -78,9 +78,20 @@ const getSocket = () => {
     if (!socketInstance) {
         try {
             socketInstance = io('http://localhost:3001', {
-                reconnectionAttempts: 2,
-                timeout: 2000,
-                autoConnect: false
+                reconnectionAttempts: 1,
+                reconnectionDelay: 5000,
+                timeout: 1000,
+                autoConnect: false,
+                transports: ['websocket', 'polling']
+            });
+
+            // Suppress connection error logs
+            socketInstance.on('connect_error', () => {
+                // Silently handle connection errors - backend is offline
+            });
+
+            socketInstance.on('error', () => {
+                // Silently handle errors
             });
         } catch (e) {
             console.warn("Socket.io client initialization failed, running in offline mode.");
@@ -172,7 +183,15 @@ export function useData<T>(collection: string) {
         const socket = getSocket();
 
         if (resource && socket) {
-            if (!socket.connected) socket.connect();
+            // Only try to connect if we're not already offline
+            if (!isOffline && !socket.connected) {
+                try {
+                    socket.connect();
+                } catch (e) {
+                    // Silently fail - we're in offline mode
+                    setIsOffline(true);
+                }
+            }
 
             const handleCreate = (newItem: T) => {
                 setData(prev => [newItem, ...prev]);
@@ -189,7 +208,11 @@ export function useData<T>(collection: string) {
             socket.on(`${resource.event}_created`, handleCreate);
             socket.on(`${resource.event}_updated`, handleUpdate);
             socket.on(`${resource.event}_deleted`, handleDelete);
-            socket.on('connect_error', () => setIsOffline(true));
+            socket.on('connect_error', () => {
+                setIsOffline(true);
+                // Don't retry if backend is down
+                socket.disconnect();
+            });
 
             return () => {
                 socket.off(`${resource.event}_created`, handleCreate);

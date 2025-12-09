@@ -45,6 +45,10 @@ const AssetsView: React.FC = () => {
     const thumbnailInputRef = useRef<HTMLInputElement>(null);
     const mediaInputRef = useRef<HTMLInputElement>(null);
 
+    // Preview modal state
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [showDemoPreview, setShowDemoPreview] = useState(true);
+
     // Auto-refresh on mount to ensure latest data
     React.useEffect(() => {
         refresh?.();
@@ -302,9 +306,6 @@ const AssetsView: React.FC = () => {
             web_thumbnail: asset.web_thumbnail,
             web_body_content: asset.web_body_content,
             smm_platform: asset.smm_platform,
-            smm_title: asset.smm_title,
-            smm_tag: asset.smm_tag,
-            smm_url: asset.smm_url,
             smm_description: asset.smm_description,
             smm_hashtags: asset.smm_hashtags,
             smm_media_url: asset.smm_media_url,
@@ -1167,39 +1168,6 @@ const AssetsView: React.FC = () => {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Title</label>
-                                                    <input
-                                                        type="text"
-                                                        value={newAsset.smm_title || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_title: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="Enter post title..."
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tag</label>
-                                                    <input
-                                                        type="text"
-                                                        value={newAsset.smm_tag || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_tag: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="Enter tag..."
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">URL</label>
-                                                    <input
-                                                        type="url"
-                                                        value={newAsset.smm_url || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_url: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="https://example.com"
-                                                    />
-                                                </div>
-
-                                                <div>
                                                     <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
                                                     <textarea
                                                         value={newAsset.smm_description || ''}
@@ -1276,12 +1244,17 @@ const AssetsView: React.FC = () => {
                                                 </div>
 
                                                 {/* Preview Button */}
-                                                {(newAsset.smm_title || newAsset.smm_description || newAsset.smm_media_url) && (
+                                                {(newAsset.smm_description || newAsset.smm_media_url) && (
                                                     <div className="mt-4 pt-4 border-t-2 border-blue-200">
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                alert('Preview functionality - This would show a mock preview of the social media post');
+                                                                setShowDemoPreview(true);
+                                                                setShowPreviewModal(true);
+                                                                // Transition to actual content after 2 seconds
+                                                                setTimeout(() => {
+                                                                    setShowDemoPreview(false);
+                                                                }, 2000);
                                                             }}
                                                             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                                                         >
@@ -1397,6 +1370,359 @@ const AssetsView: React.FC = () => {
                     />
                 </div>
             </div>
+
+            {/* SMM Preview Modal */}
+            {showPreviewModal && (() => {
+                // Demo data for initial preview
+                const demoData = {
+                    facebook_instagram: {
+                        name: 'Marketing Pro',
+                        description: '🚀 Boost Your Marketing ROI in 2025\n\nDiscover proven strategies to maximize your marketing return on investment.\n\n✅ Data-driven decisions\n✅ Customer-centric approach\n✅ Measurable results\n\nLearn more in our latest guide! 👇',
+                        hashtags: '#Marketing #ROI #BusinessGrowth #DigitalMarketing #Success',
+                        media: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop'
+                    },
+                    twitter: {
+                        name: 'Marketing Insights',
+                        description: '🎯 Marketing ROI Tips\n\nWant to maximize your marketing ROI?\n\nHere are 5 proven strategies:\n\n1️⃣ Track everything\n2️⃣ Test continuously\n3️⃣ Focus on quality\n4️⃣ Optimize campaigns\n5️⃣ Measure results\n\nFull guide 👇',
+                        hashtags: '#MarketingTips #ROI #GrowthHacking',
+                        media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop'
+                    },
+                    linkedin: {
+                        name: 'Business Growth Solutions',
+                        description: 'Maximizing Marketing ROI: A Strategic Approach\n\nIn today\'s competitive landscape, understanding and optimizing your marketing ROI is crucial for sustainable business growth.\n\nOur latest research reveals key insights:\n\n📊 Data-driven strategies increase ROI by 40%\n🎯 Targeted campaigns outperform by 3x\n💡 Continuous optimization is essential\n\nRead our comprehensive guide to learn actionable strategies for your business.',
+                        hashtags: '#Marketing #ROI #BusinessStrategy #Leadership #Growth',
+                        media: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=600&fit=crop'
+                    }
+                };
+
+                // Use demo data if showing demo, otherwise use actual data
+                const platform = newAsset.smm_platform || 'facebook_instagram';
+                const demo = demoData[platform as keyof typeof demoData];
+
+                const displayData = showDemoPreview ? {
+                    name: demo.name,
+                    description: demo.description,
+                    hashtags: demo.hashtags,
+                    media: demo.media
+                } : {
+                    name: newAsset.name || demo.name,
+                    description: newAsset.smm_description || demo.description,
+                    hashtags: newAsset.smm_hashtags || demo.hashtags,
+                    media: newAsset.smm_media_url || demo.media
+                };
+
+                return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreviewModal(false)}>
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                            {/* Modal Header */}
+                            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <div>
+                                        <h3 className="text-lg font-bold">Social Media Post Preview</h3>
+                                        <p className="text-xs text-blue-100">
+                                            {newAsset.smm_platform === 'facebook_instagram' && 'Facebook / Instagram'}
+                                            {newAsset.smm_platform === 'twitter' && 'Twitter'}
+                                            {newAsset.smm_platform === 'linkedin' && 'LinkedIn'}
+                                            {showDemoPreview && ' - Demo Preview'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Transition Banner */}
+                            {showDemoPreview && (
+                                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 text-center text-sm font-medium animate-pulse">
+                                    📱 Showing demo preview... Your content will appear in a moment
+                                </div>
+                            )}
+
+                            {/* Modal Body - Post Preview */}
+                            <div className="p-6 transition-all duration-500">
+                                {/* Platform-specific preview */}
+                                {newAsset.smm_platform === 'facebook_instagram' && (
+                                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 max-w-[500px] mx-auto">
+                                        {/* Facebook/Instagram Post Header */}
+                                        <div className="p-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                {/* Profile Picture */}
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-[2px]">
+                                                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                                                        <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                                            {displayData.name?.charAt(0)?.toUpperCase() || 'A'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {/* Account Info */}
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <p className="font-semibold text-[15px] text-slate-900">{displayData.name || 'Your Page'}</p>
+                                                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                                                        <span>Just now</span>
+                                                        <span>·</span>
+                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* More Options */}
+                                            <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2">
+                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        {/* Post Caption */}
+                                        {(displayData.description || displayData.hashtags) && (
+                                            <div className="px-3 pb-2">
+                                                {displayData.description && (
+                                                    <p className="text-[15px] text-slate-900 whitespace-pre-wrap leading-5 mb-1">
+                                                        {displayData.description}
+                                                    </p>
+                                                )}
+                                                {displayData.hashtags && (
+                                                    <p className="text-[15px] text-blue-600 font-normal">
+                                                        {displayData.hashtags}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Post Media */}
+                                        {displayData.media && (
+                                            <div className="bg-black relative">
+                                                {newAsset.smm_media_type === 'video' ? (
+                                                    <video
+                                                        src={displayData.media}
+                                                        controls
+                                                        className="w-full max-h-[600px] object-contain"
+                                                        poster={displayData.media}
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={displayData.media}
+                                                        alt="Post content"
+                                                        className="w-full object-cover"
+                                                        style={{ maxHeight: '600px' }}
+                                                    />
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Engagement Stats */}
+                                        <div className="px-3 py-2">
+                                            <div className="flex items-center justify-between text-[13px] text-slate-600">
+                                                <div className="flex items-center gap-1">
+                                                    <div className="flex -space-x-1">
+                                                        <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white">
+                                                            <span className="text-white text-[10px]">👍</span>
+                                                        </div>
+                                                        <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white">
+                                                            <span className="text-white text-[10px]">❤️</span>
+                                                        </div>
+                                                        <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white">
+                                                            <span className="text-white text-[10px]">😊</span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="ml-1">1.2K</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span>89 comments</span>
+                                                    <span>·</span>
+                                                    <span>24 shares</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="border-t border-slate-200 px-2 py-1">
+                                            <div className="flex items-center justify-around">
+                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                                    </svg>
+                                                    Like
+                                                </button>
+                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                    </svg>
+                                                    Comment
+                                                </button>
+                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                                    </svg>
+                                                    Share
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Comment Section Preview */}
+                                        <div className="border-t border-slate-200 px-3 py-2 bg-slate-50">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-bold">
+                                                    U
+                                                </div>
+                                                <div className="flex-1 bg-white border border-slate-200 rounded-full px-4 py-2">
+                                                    <p className="text-sm text-slate-400">Write a comment...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {newAsset.smm_platform === 'twitter' && (
+                                    <div className="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-lg">
+                                        {/* Twitter Header */}
+                                        <div className="p-4 flex gap-3">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                                {newAsset.name?.charAt(0) || 'A'}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-sm">{newAsset.name || 'Your Account'}</p>
+                                                    <span className="text-blue-500">✓</span>
+                                                    <p className="text-slate-500 text-sm">@{(newAsset.name || 'account').toLowerCase().replace(/\s/g, '')} · 1m</p>
+                                                </div>
+
+                                                {/* Tweet Content */}
+                                                {newAsset.smm_description && (
+                                                    <p className="text-sm text-slate-900 whitespace-pre-wrap mb-2">{newAsset.smm_description}</p>
+                                                )}
+                                                {newAsset.smm_hashtags && (
+                                                    <p className="text-sm text-blue-500 mb-2">{newAsset.smm_hashtags}</p>
+                                                )}
+
+                                                {/* Media */}
+                                                {newAsset.smm_media_url && (
+                                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
+                                                        {newAsset.smm_media_type === 'video' ? (
+                                                            <video src={newAsset.smm_media_url} controls className="w-full" />
+                                                        ) : (
+                                                            <img src={newAsset.smm_media_url} alt="Tweet media" className="w-full" />
+                                                        )}
+                                                    </div>
+                                                )}
+
+
+
+                                                {/* Engagement */}
+                                                <div className="flex justify-between mt-3 text-slate-500 text-sm">
+                                                    <button className="flex items-center gap-2 hover:text-blue-500">
+                                                        <span>💬</span> 24
+                                                    </button>
+                                                    <button className="flex items-center gap-2 hover:text-green-500">
+                                                        <span>🔁</span> 12
+                                                    </button>
+                                                    <button className="flex items-center gap-2 hover:text-red-500">
+                                                        <span>❤️</span> 156
+                                                    </button>
+                                                    <button className="flex items-center gap-2 hover:text-blue-500">
+                                                        <span>📊</span> 2.1K
+                                                    </button>
+                                                    <button className="flex items-center gap-2 hover:text-blue-500">
+                                                        <span>↗️</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {newAsset.smm_platform === 'linkedin' && (
+                                    <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg">
+                                        {/* LinkedIn Header */}
+                                        <div className="p-4 flex items-start gap-3 border-b border-slate-200">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                                {newAsset.name?.charAt(0) || 'A'}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-sm">{newAsset.name || 'Your Company'}</p>
+                                                <p className="text-xs text-slate-500">1,234 followers</p>
+                                                <p className="text-xs text-slate-500">1m · 🌐</p>
+                                            </div>
+                                            <button className="text-slate-500 hover:bg-slate-100 p-2 rounded">
+                                                <span>⋯</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Post Content */}
+                                        <div className="p-4">
+                                            {newAsset.smm_description && (
+                                                <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{newAsset.smm_description}</p>
+                                            )}
+                                            {newAsset.smm_hashtags && (
+                                                <p className="text-sm text-blue-700 mb-2">{newAsset.smm_hashtags}</p>
+                                            )}
+                                        </div>
+
+                                        {/* Media */}
+                                        {newAsset.smm_media_url && (
+                                            <div className="bg-slate-100">
+                                                {newAsset.smm_media_type === 'video' ? (
+                                                    <video src={newAsset.smm_media_url} controls className="w-full" />
+                                                ) : (
+                                                    <img src={newAsset.smm_media_url} alt="Post media" className="w-full" />
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Engagement Bar */}
+                                        <div className="p-4 border-t border-slate-200">
+                                            <div className="flex justify-between text-xs text-slate-600 mb-3">
+                                                <span>👍 💡 ❤️ 89</span>
+                                                <span>12 comments · 5 reposts</span>
+                                            </div>
+                                            <div className="flex justify-around border-t border-slate-200 pt-3">
+                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                    <span className="text-lg">👍</span> Like
+                                                </button>
+                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                    <span className="text-lg">💬</span> Comment
+                                                </button>
+                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                    <span className="text-lg">🔁</span> Repost
+                                                </button>
+                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                    <span className="text-lg">↗️</span> Send
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 rounded-b-2xl flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            })()}
         </div>
     );
 };
