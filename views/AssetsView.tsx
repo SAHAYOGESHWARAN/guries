@@ -1244,25 +1244,28 @@ const AssetsView: React.FC = () => {
                                                 </div>
 
                                                 {/* Preview Button */}
-                                                {(newAsset.smm_description || newAsset.smm_media_url) && (
-                                                    <div className="mt-4 pt-4 border-t-2 border-blue-200">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                // Show real content immediately, no demo delay
-                                                                setShowDemoPreview(false);
-                                                                setShowPreviewModal(true);
-                                                            }}
-                                                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                            </svg>
-                                                            Preview {newAsset.smm_platform === 'facebook_instagram' ? 'Facebook/Instagram' : newAsset.smm_platform === 'twitter' ? 'Twitter' : 'LinkedIn'} Post
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                <div className="mt-4 pt-4 border-t-2 border-blue-200">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            // Validate that user has entered some content
+                                                            if (!newAsset.smm_description && !newAsset.smm_media_url) {
+                                                                alert('Please add a description or upload media to preview your post.');
+                                                                return;
+                                                            }
+                                                            // Show real content immediately, no demo delay
+                                                            setShowDemoPreview(false);
+                                                            setShowPreviewModal(true);
+                                                        }}
+                                                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                        Preview {newAsset.smm_platform === 'facebook_instagram' ? 'Facebook/Instagram' : newAsset.smm_platform === 'twitter' ? 'Twitter' : 'LinkedIn'} Post
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
