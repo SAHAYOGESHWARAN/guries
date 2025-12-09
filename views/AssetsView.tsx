@@ -35,10 +35,73 @@ const AssetsView: React.FC = () => {
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
 
+    // Markdown editor state
+    const [markdownContent, setMarkdownContent] = useState('');
+    const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
+    const markdownTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // File upload refs
+    const thumbnailInputRef = useRef<HTMLInputElement>(null);
+    const mediaInputRef = useRef<HTMLInputElement>(null);
+
     // Auto-refresh on mount to ensure latest data
     React.useEffect(() => {
         refresh?.();
     }, []);
+
+    // Calculate markdown stats
+    const markdownStats = useMemo(() => {
+        const text = markdownContent || '';
+        const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+        const characters = text.length;
+        const lines = text.split('\n').length;
+        const readTime = Math.ceil(words / 200); // Average reading speed: 200 words/min
+
+        return { words, characters, lines, readTime };
+    }, [markdownContent]);
+
+    // Markdown formatting helpers
+    const insertMarkdown = useCallback((before: string, after: string = '') => {
+        const textarea = markdownTextareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = markdownContent.substring(start, end);
+        const newText = markdownContent.substring(0, start) + before + selectedText + after + markdownContent.substring(end);
+
+        setMarkdownContent(newText);
+        setNewAsset({ ...newAsset, web_body_content: newText });
+
+        // Restore focus and selection
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + before.length, end + before.length);
+        }, 0);
+    }, [markdownContent, newAsset]);
+
+    // File upload handler for thumbnails and media
+    const handleFileUpload = useCallback(async (file: File, type: 'thumbnail' | 'media') => {
+        // Convert to base64 for storage
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+
+            if (type === 'thumbnail') {
+                setNewAsset({
+                    ...newAsset,
+                    web_thumbnail: base64String,
+                    thumbnail_url: base64String
+                });
+            } else {
+                setNewAsset({
+                    ...newAsset,
+                    smm_media_url: base64String
+                });
+            }
+        };
+        reader.readAsDataURL(file);
+    }, [newAsset]);
 
     // Get unique repositories and types
     const repositories = useMemo(() => {
