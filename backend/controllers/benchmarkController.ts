@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db';
+import { pool } from '../config/db-sqlite';
 
 // --- OKRs (Performance & Benchmark) ---
 export const getOkrs = async (req: any, res: any) => {

@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db';
+import { pool } from '../config/db-sqlite';
 
 // --- Keywords ---
 export const getKeywords = async (req: any, res: any) => {

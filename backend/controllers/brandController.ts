@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { pool } from '../config/db';
+import { pool } from '../config/db-sqlite';
 
 // Safe fallback brands when DB table is not present or empty
 const FALLBACK_BRANDS = [

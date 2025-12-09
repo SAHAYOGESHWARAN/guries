@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db';
+import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // Helper function to parse JSON fields for services

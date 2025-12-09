@@ -1,4 +1,4 @@
-import { pool } from '../config/db';
+import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 export const getForms = async (_req: any, res: any) => {

@@ -8,7 +8,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
 import migrationRoutes from './routes/migration';
-import { pool } from './config/db';
+import { db, initDatabase } from './config/db-sqlite';
 import { initSocket } from './socket';
 
 // Load environment variables
@@ -37,22 +37,13 @@ app.use(morgan('dev') as any);
 app.use(express.json({ limit: '100mb' }) as any); // Increased limit for file uploads
 app.use(express.urlencoded({ limit: '100mb', extended: true }) as any);
 
-// Robust Database Connection Check
-const connectDB = async (retries = 5) => {
-    while (retries) {
-        try {
-            await pool.connect();
-            console.log('✅ Connected to PostgreSQL Database');
-            break;
-        } catch (err) {
-            console.error('❌ Database connection failed:', err);
-            retries -= 1;
-            console.log(`Retries left: ${retries}`);
-            await new Promise(res => setTimeout(res, 5000));
-        }
-    }
-    if (retries === 0) {
-        console.error('Could not connect to database. Exiting...');
+// Initialize SQLite Database
+const connectDB = async () => {
+    try {
+        initDatabase();
+        console.log('✅ Connected to SQLite Database');
+    } catch (err) {
+        console.error('❌ Database initialization failed:', err);
         (process as any).exit(1);
     }
 };
