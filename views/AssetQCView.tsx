@@ -504,61 +504,58 @@ const AssetQCView: React.FC = () => {
                                             </td>
                                             <td className="py-4 px-4">
                                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${asset.status === 'Pending QC Review'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : asset.status === 'Rework Required'
-                                                            ? 'bg-orange-100 text-orange-800'
-                                                            : 'bg-gray-100 text-gray-800'
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : asset.status === 'Rework Required'
+                                                        ? 'bg-orange-100 text-orange-800'
+                                                        : 'bg-gray-100 text-gray-800'
                                                     }`}>
                                                     {asset.status}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-4 text-sm text-center">
                                                 <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${(asset.rework_count || 0) > 0
-                                                        ? 'bg-orange-100 text-orange-800'
-                                                        : 'bg-slate-100 text-slate-600'
+                                                    ? 'bg-orange-100 text-orange-800'
+                                                    : 'bg-slate-100 text-slate-600'
                                                     }`}>
                                                     {asset.rework_count || 0}
                                                 </span>
-                                            </td>t-xs font-bold">
-                                            0
-                                        </span>
                                             </td>
-                                <td className="py-4 px-4 text-sm text-slate-600">
-                                    {asset.submitted_at ? new Date(asset.submitted_at).toLocaleDateString('en-US', {
-                                        month: '2-digit',
-                                        day: '2-digit',
-                                        year: 'numeric'
-                                    }) : 'N/A'}
-                                </td>
-                                <td className="py-4 px-4">
-                                    <div className="flex gap-1">
-                                        {asset.seo_score && (
-                                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                SEO: {asset.seo_score}
-                                            </span>
-                                        )}
-                                        {asset.grammar_score && (
-                                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                G: {asset.grammar_score}
-                                            </span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="py-4 px-4">
-                                    <button
-                                        onClick={() => handleAssetSelect(asset)}
-                                        className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                                    >
-                                        Review
-                                    </button>
-                                </td>
-                            </tr>
+                                            <td className="py-4 px-4 text-sm text-slate-600">
+                                                {asset.submitted_at ? new Date(asset.submitted_at).toLocaleDateString('en-US', {
+                                                    month: '2-digit',
+                                                    day: '2-digit',
+                                                    year: 'numeric'
+                                                }) : 'N/A'}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex gap-1">
+                                                    {asset.seo_score && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                            SEO: {asset.seo_score}
+                                                        </span>
+                                                    )}
+                                                    {asset.grammar_score && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                            G: {asset.grammar_score}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <button
+                                                    onClick={() => handleAssetSelect(asset)}
+                                                    className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                                                >
+                                                    Review
+                                                </button>
+                                            </td>
+                                        </tr>
                                     ))}
-                        </tbody>
+                                </tbody>
                             </table>
-            </div>
+                        </div>
                     )}
-        </div>
+                </div>
             </div >
         </div >
     );
