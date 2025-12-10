@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import Table from '../components/Table';
 import MarkdownEditor from '../components/MarkdownEditor';
+import CircularScore from '../components/CircularScore';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem, Service, SubServiceItem } from '../types';
@@ -27,10 +28,14 @@ const AssetsView: React.FC = () => {
         type: 'Image',
         repository: 'Content Repository',
         usage_status: 'Available',
+        status: 'Draft',
         linked_service_ids: [],
         linked_sub_service_ids: [],
         application_type: undefined,
-        smm_platform: undefined
+        smm_platform: undefined,
+        keywords: [],
+        seo_score: undefined,
+        grammar_score: undefined
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -195,15 +200,32 @@ const AssetsView: React.FC = () => {
         }
     }, []);
 
-    const handleUpload = useCallback(async () => {
+    const handleUpload = useCallback(async (submitForQC: boolean = false) => {
         if (!newAsset.name?.trim()) {
             alert('Please enter an asset name');
+            return;
+        }
+
+        if (!newAsset.application_type) {
+            alert('Please select an application type (WEB, SEO, or SMM)');
             return;
         }
 
         if (!selectedFile && !newAsset.file_url && viewMode !== 'edit') {
             alert('Please select a file to upload');
             return;
+        }
+
+        // If submitting for QC, validate required scores
+        if (submitForQC) {
+            if (!newAsset.seo_score || newAsset.seo_score < 0 || newAsset.seo_score > 100) {
+                alert('SEO score (0-100) is required for submission');
+                return;
+            }
+            if (!newAsset.grammar_score || newAsset.grammar_score < 0 || newAsset.grammar_score > 100) {
+                alert('Grammar score (0-100) is required for submission');
+                return;
+            }
         }
 
         setIsUploading(true);
@@ -235,7 +257,9 @@ const AssetsView: React.FC = () => {
                 date: new Date().toISOString(),
                 linked_service_ids: linkedServiceIds,
                 linked_sub_service_ids: linkedSubServiceIds,
-                mapped_to: mappedToString || newAsset.mapped_to
+                mapped_to: mappedToString || newAsset.mapped_to,
+                status: submitForQC ? 'Pending QC Review' : (newAsset.status || 'Draft'),
+                submitted_by: submitForQC ? 1 : undefined // TODO: Get from auth context
             };
 
             if (viewMode === 'edit' && editingAsset) {
@@ -257,14 +281,23 @@ const AssetsView: React.FC = () => {
                 type: 'Image',
                 repository: 'Content Repository',
                 usage_status: 'Available',
+                status: 'Draft',
                 linked_service_ids: [],
                 linked_sub_service_ids: [],
                 application_type: undefined,
-                smm_platform: undefined
+                smm_platform: undefined,
+                keywords: [],
+                seo_score: undefined,
+                grammar_score: undefined
             });
 
             // Switch to list view immediately
             setViewMode('list');
+
+            // Show success message
+            if (submitForQC) {
+                alert('Asset submitted for QC review successfully!');
+            }
 
             // Force refresh to ensure data is up to date
             setTimeout(() => refresh?.(), 100);
@@ -289,6 +322,9 @@ const AssetsView: React.FC = () => {
             asset_format: asset.asset_format,
             mapped_to: asset.mapped_to,
             qc_score: asset.qc_score,
+            seo_score: asset.seo_score,
+            grammar_score: asset.grammar_score,
+            keywords: asset.keywords || [],
             file_url: asset.file_url,
             thumbnail_url: asset.thumbnail_url,
             file_size: asset.file_size,
@@ -403,7 +439,45 @@ const AssetsView: React.FC = () => {
         },
         {
             header: 'Status',
-            accessor: (item: AssetLibraryItem) => getStatusBadge(item.usage_status)
+            accessor: (item: AssetLibraryItem) => (
+                <div className="space-y-1">
+                    {getStatusBadge(item.status)}
+                    <div className="text-xs text-slate-500">
+                        Usage: {getStatusBadge(item.usage_status)}
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Scores',
+            accessor: (item: AssetLibraryItem) => (
+                <div className="flex gap-2">
+                    {item.seo_score && (
+                        <CircularScore
+                            score={item.seo_score}
+                            label="SEO"
+                            size="sm"
+                        />
+                    )}
+                    {item.grammar_score && (
+                        <CircularScore
+                            score={item.grammar_score}
+                            label="Grammar"
+                            size="sm"
+                        />
+                    )}
+                    {item.qc_score && (
+                        <CircularScore
+                            score={item.qc_score}
+                            label="QC"
+                            size="sm"
+                        />
+                    )}
+                    {!item.seo_score && !item.grammar_score && !item.qc_score && (
+                        <span className="text-xs text-slate-400 italic">No scores</span>
+                    )}
+                </div>
+            )
         },
         {
             header: 'Linked To',
@@ -540,23 +614,42 @@ const AssetsView: React.FC = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button
-                                    onClick={handleUpload}
-                                    disabled={isUploading}
-                                    className={`bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-colors text-sm flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    {isUploading ? (
-                                        <>
-                                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            {viewMode === 'edit' ? 'Saving...' : 'Uploading...'}
-                                        </>
-                                    ) : (
-                                        viewMode === 'edit' ? 'Save Changes' : 'Confirm Upload'
-                                    )}
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleUpload(false)}
+                                        disabled={isUploading}
+                                        className={`bg-slate-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-slate-700 transition-colors text-sm flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {isUploading ? (
+                                            <>
+                                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            viewMode === 'edit' ? 'Save as Draft' : 'Save as Draft'
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpload(true)}
+                                        disabled={isUploading || !newAsset.seo_score || !newAsset.grammar_score}
+                                        className={`bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-colors text-sm flex items-center gap-2 ${isUploading || !newAsset.seo_score || !newAsset.grammar_score ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {isUploading ? (
+                                            <>
+                                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            'Submit for QC Review'
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -701,6 +794,25 @@ const AssetsView: React.FC = () => {
                                             <option value="SEO Repository">SEO Repository</option>
                                             <option value="Design Repository">Design Repository</option>
                                         </select>
+                                    </div>
+
+                                    {/* Row 4.5: Keywords (Link with keyword master table) */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            Keywords
+                                            <span className="text-xs font-normal text-slate-500 ml-2">(Link with keyword master table)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.keywords?.join(', ') || ''}
+                                            onChange={(e) => {
+                                                const keywordArray = e.target.value.split(',').map(k => k.trim()).filter(k => k.length > 0);
+                                                setNewAsset({ ...newAsset, keywords: keywordArray });
+                                            }}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                            placeholder="Enter keywords separated by commas..."
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">Keywords will be linked with the keyword master table</p>
                                     </div>
 
                                     {/* Row 5: Link to Service/Sub-service */}
@@ -1271,6 +1383,129 @@ const AssetsView: React.FC = () => {
                                             )}
                                         </div>
                                     )}
+                                </div>
+
+                                {/* AI Scores Section - Required for Submission */}
+                                <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 p-6 space-y-4 shadow-sm">
+                                    <div className="flex items-center gap-3 pb-3 border-b-2 border-green-200">
+                                        <div className="bg-green-600 p-2 rounded-lg">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-green-900">AI Quality Scores</h3>
+                                            <p className="text-xs text-green-600">Required for QC submission</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Score Display Section */}
+                                    {(newAsset.seo_score || newAsset.grammar_score) && (
+                                        <div className="flex justify-center gap-8 py-4">
+                                            {newAsset.seo_score && (
+                                                <CircularScore
+                                                    score={newAsset.seo_score}
+                                                    label="SEO Score"
+                                                    size="md"
+                                                    showEmbedButton={true}
+                                                />
+                                            )}
+                                            {newAsset.grammar_score && (
+                                                <CircularScore
+                                                    score={newAsset.grammar_score}
+                                                    label="Grammar Score"
+                                                    size="md"
+                                                    showEmbedButton={true}
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                SEO Score (0-100)
+                                                <span className="text-red-500 ml-1">*</span>
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={newAsset.seo_score || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
+                                                    className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                    placeholder="0-100"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const response = await fetch('/api/v1/assetLibrary/ai-scores', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    content: newAsset.web_body_content || newAsset.smm_description,
+                                                                    keywords: newAsset.web_keywords || newAsset.keywords,
+                                                                    title: newAsset.web_title || newAsset.name,
+                                                                    description: newAsset.web_description || newAsset.smm_description
+                                                                })
+                                                            });
+                                                            if (response.ok) {
+                                                                const scores = await response.json();
+                                                                setNewAsset({
+                                                                    ...newAsset,
+                                                                    seo_score: scores.seo_score,
+                                                                    grammar_score: scores.grammar_score
+                                                                });
+                                                            }
+                                                        } catch (error) {
+                                                            console.error('Failed to generate AI scores:', error);
+                                                        }
+                                                    }}
+                                                    className="px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                                    </svg>
+                                                    Generate AI Scores
+                                                </button>
+                                            </div>
+                                            {newAsset.seo_score && (
+                                                <div className={`mt-2 text-xs font-bold ${newAsset.seo_score >= 80 ? 'text-green-600' : newAsset.seo_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                    {newAsset.seo_score >= 80 ? '✓ Excellent SEO' : newAsset.seo_score >= 60 ? '⚠ Good SEO' : '✗ Needs SEO improvement'}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                Grammar Score (0-100)
+                                                <span className="text-red-500 ml-1">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={newAsset.grammar_score || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                placeholder="0-100"
+                                            />
+                                            {newAsset.grammar_score && (
+                                                <div className={`mt-2 text-xs font-bold ${newAsset.grammar_score >= 90 ? 'text-green-600' : newAsset.grammar_score >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                    {newAsset.grammar_score >= 90 ? '✓ Excellent grammar' : newAsset.grammar_score >= 70 ? '⚠ Good grammar' : '✗ Needs grammar improvement'}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-lg p-4 border border-green-200">
+                                        <p className="text-xs text-slate-600">
+                                            <strong>Note:</strong> SEO and Grammar scores are mandatory before submitting for QC review.
+                                            Use the "Generate" button to get AI-powered scores based on your content.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

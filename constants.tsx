@@ -52,6 +52,7 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'campaigns', name: 'Campaigns', icon: <CampaignIcon /> },
             { id: 'tasks', name: 'Tasks', icon: <TaskIcon /> },
             { id: 'assets', name: 'Assets', icon: <AssetIcon /> },
+            { id: 'asset-qc', name: 'Asset QC Review', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
         ]
     },
     {
@@ -158,11 +159,18 @@ export const getStatusBadge = (status: string) => {
         in_design: 'bg-purple-100 text-purple-800',
         archived: 'bg-gray-100 text-gray-800',
         idea: 'bg-indigo-100 text-indigo-800',
-        // QC
+        // QC & Asset Workflow
         under_qc: 'bg-orange-100 text-orange-800',
         approved: 'bg-green-100 text-green-800',
         rejected: 'bg-red-100 text-red-800',
         rework: 'bg-yellow-100 text-yellow-800',
+        'pending qc review': 'bg-orange-100 text-orange-800',
+        'qc approved': 'bg-green-100 text-green-800',
+        'qc rejected': 'bg-red-100 text-red-800',
+        'rework required': 'bg-yellow-100 text-yellow-800',
+        // Asset Usage Status
+        available: 'bg-green-100 text-green-800',
+        'in use': 'bg-blue-100 text-blue-800',
         // SMM
         ready_for_design: 'bg-indigo-100 text-indigo-800',
         // Default

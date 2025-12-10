@@ -376,13 +376,26 @@ CREATE TABLE IF NOT EXISTS assets (
 	asset_format VARCHAR(50),
 	file_url VARCHAR(1000),
 	description TEXT,
-	tags TEXT, -- JSON array
-	status VARCHAR(50),
+	tags TEXT, -- JSON array (repository)
+	status VARCHAR(50) DEFAULT 'Draft', -- Draft, Pending QC Review, QC Approved, QC Rejected, Rework Required, Published
+	usage_status VARCHAR(50) DEFAULT 'Available', -- Available, In Use, Archived
 	thumbnail_url VARCHAR(1000),
 	file_size INTEGER,
 	file_type VARCHAR(100),
 	linked_service_ids TEXT, -- JSON array
 	linked_sub_service_ids TEXT, -- JSON array
+	-- Workflow fields
+	submitted_by INTEGER REFERENCES users(id),
+	submitted_at TIMESTAMP,
+	qc_reviewer_id INTEGER REFERENCES users(id),
+	qc_reviewed_at TIMESTAMP,
+	qc_score INTEGER, -- 0-100
+	qc_checklist_completion BOOLEAN DEFAULT false,
+	qc_remarks TEXT,
+	rework_count INTEGER DEFAULT 0, -- Number of times sent for rework
+	-- SEO and Grammar AI scores (mandatory before submission)
+	seo_score INTEGER, -- 0-100, AI generated
+	grammar_score INTEGER, -- 0-100, AI generated
 	-- Content block
 	h1 VARCHAR(500),
 	h2_list TEXT, -- JSON array
@@ -400,8 +413,10 @@ CREATE TABLE IF NOT EXISTS assets (
 	og_title VARCHAR(500),
 	og_description TEXT,
 	og_image_url VARCHAR(1000),
-	-- Asset Applications
-	application_type VARCHAR(50),
+	-- Asset Applications (in order as specified)
+	application_type VARCHAR(50), -- WEB, SEO, SMM
+	-- Service/Sub-Service Linking (keywords should link with keyword master table)
+	keywords TEXT, -- JSON array - should link with keyword master table
 	-- Web Application fields
 	web_title VARCHAR(500),
 	web_description TEXT,
@@ -421,6 +436,10 @@ CREATE TABLE IF NOT EXISTS assets (
 	smm_hashtags TEXT,
 	smm_media_url VARCHAR(1000),
 	smm_media_type VARCHAR(50),
+	-- Linking becomes active only after QC approval
+	linking_active BOOLEAN DEFAULT false,
+	-- Workflow log
+	workflow_log TEXT, -- JSON array of workflow events
 	-- Linking
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW()
@@ -449,7 +468,7 @@ CREATE TABLE IF NOT EXISTS subservice_asset_links (
 -- QC Runs Table
 CREATE TABLE IF NOT EXISTS qc_runs (
 	id SERIAL PRIMARY KEY,
-	target_type VARCHAR(100), -- 'content', 'service', 'task', etc.
+	target_type VARCHAR(100), -- 'content', 'service', 'task', 'asset', etc.
 	target_id INTEGER,
 	qc_status VARCHAR(50),
 	qc_owner_id INTEGER REFERENCES users(id),
@@ -458,6 +477,20 @@ CREATE TABLE IF NOT EXISTS qc_runs (
 	analysis_report TEXT, -- JSON object
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Asset QC Reviews Table (dedicated for asset workflow)
+CREATE TABLE IF NOT EXISTS asset_qc_reviews (
+	id SERIAL PRIMARY KEY,
+	asset_id INTEGER REFERENCES assets(id),
+	qc_reviewer_id INTEGER REFERENCES users(id),
+	qc_score INTEGER, -- 0-100
+	checklist_completion BOOLEAN DEFAULT false,
+	qc_remarks TEXT,
+	qc_decision VARCHAR(50), -- 'approved', 'rejected', 'rework'
+	checklist_items TEXT, -- JSON object storing checklist completion status
+	reviewed_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- QC Checklists Table

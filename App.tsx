@@ -52,6 +52,7 @@ const IntegrationsView = React.lazy(() => import('./views/IntegrationsView'));
 const DeveloperNotesView = React.lazy(() => import('./views/DeveloperNotesView'));
 const GraphicsPlanView = React.lazy(() => import('./views/GraphicsPlanView'));
 const QcView = React.lazy(() => import('./views/QcView'));
+const AssetQCView = React.lazy(() => import('./views/AssetQCView'));
 const TeamLeaderDashboardView = React.lazy(() => import('./views/TeamLeaderDashboardView'));
 const AiEvaluationView = React.lazy(() => import('./views/AiEvaluationView'));
 const TrafficRankingView = React.lazy(() => import('./views/TrafficRankingView'));
@@ -110,6 +111,7 @@ const App: React.FC = () => {
         return viewState.id ? <CampaignDetailView campaignId={viewState.id} onNavigateBack={() => handleNavigate('campaigns')} /> : <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
       case 'tasks': return <TasksView />;
       case 'assets': return <AssetsView />;
+      case 'asset-qc': return <AssetQCView />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;

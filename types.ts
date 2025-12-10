@@ -521,8 +521,22 @@ export interface AssetLibraryItem {
     asset_format?: string; // e.g., "image", "video", "pdf"
     repository: string;
     usage_status: 'Available' | 'In Use' | 'Archived';
-    status?: 'Draft' | 'Published' | 'Archived' | 'In Progress' | 'QC' | 'Approved';
-    qc_score?: number; // Quality control score
+    status?: 'Draft' | 'Pending QC Review' | 'QC Approved' | 'QC Rejected' | 'Rework Required' | 'Published' | 'Archived';
+
+    // Workflow fields
+    submitted_by?: number;
+    submitted_at?: string;
+    qc_reviewer_id?: number;
+    qc_reviewed_at?: string;
+    qc_score?: number; // Quality control score (0-100)
+    qc_remarks?: string;
+    rework_count?: number; // Number of times sent for rework
+    linking_active?: boolean; // Only active after QC approval
+
+    // AI Scores (mandatory before submission)
+    seo_score?: number; // 0-100, AI generated
+    grammar_score?: number; // 0-100, AI generated
+
     date: string;
     linked_task?: number;
     owner_id?: number;
@@ -535,8 +549,11 @@ export interface AssetLibraryItem {
     linked_page_ids?: number[]; // For mapping to specific pages
     mapped_to?: string; // Display string: "Service / Sub-service / Page"
 
-    // Asset Applications
+    // Asset Applications (in order: WEB, SEO, SMM)
     application_type?: 'web' | 'seo' | 'smm';
+
+    // Keywords (should link with keyword master table)
+    keywords?: string[];
 
     // Web Application Fields
     web_title?: string;

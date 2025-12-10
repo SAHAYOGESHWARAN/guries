@@ -90,6 +90,12 @@ router.post('/assetLibrary', assetController.createAssetLibraryItem);
 router.put('/assetLibrary/:id', assetController.updateAssetLibraryItem);
 router.delete('/assetLibrary/:id', assetController.deleteAssetLibraryItem);
 
+// Asset QC Workflow
+router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);
+router.get('/assetLibrary/qc/pending', assetController.getAssetsForQC);
+router.post('/assetLibrary/:id/qc-review', assetController.reviewAsset);
+router.post('/assetLibrary/ai-scores', assetController.generateAIScores);
+
 // --- Content Repository ---
 router.get('/content', contentController.getContent);
 router.post('/content', contentController.createContent);
