@@ -40,6 +40,14 @@ import * as systemController from '../controllers/systemController';
 import * as reportController from '../controllers/reportController';
 import * as personaController from '../controllers/personaController';
 import * as formController from '../controllers/formController';
+import * as performanceDashboardController from '../controllers/performanceDashboardController';
+import * as effortDashboardController from '../controllers/effortDashboardController';
+import * as employeeScorecardController from '../controllers/employeeScorecardController';
+import * as employeeComparisonController from '../controllers/employeeComparisonController';
+import * as teamLeaderDashboardController from '../controllers/teamLeaderDashboardController';
+import * as aiEvaluationController from '../controllers/aiEvaluationController';
+import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
+import * as workloadPredictionController from '../controllers/workloadPredictionController';
 
 const router = Router();
 
@@ -86,6 +94,7 @@ router.delete('/assets/:id', assetController.deleteAsset);
 
 // --- Asset Library ---
 router.get('/assetLibrary', assetController.getAssetLibrary);
+router.get('/assetLibrary/:id', assetController.getAssetLibraryItem);
 router.post('/assetLibrary', assetController.createAssetLibraryItem);
 router.put('/assetLibrary/:id', assetController.updateAssetLibraryItem);
 router.delete('/assetLibrary/:id', assetController.deleteAssetLibraryItem);
@@ -95,6 +104,10 @@ router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);
 router.get('/assetLibrary/qc/pending', assetController.getAssetsForQC);
 router.post('/assetLibrary/:id/qc-review', assetController.reviewAsset);
 router.post('/assetLibrary/ai-scores', assetController.generateAIScores);
+
+// User actions during QC review stage
+router.put('/assetLibrary/:id/qc-edit', assetController.editAssetInQC);
+router.delete('/assetLibrary/:id/qc-delete', assetController.deleteAssetInQC);
 
 // --- Content Repository ---
 router.get('/content', contentController.getContent);
@@ -335,5 +348,42 @@ router.get('/compliance/rules', complianceController.getRules);
 router.post('/compliance/rules', complianceController.createRule);
 router.get('/compliance/audits', complianceController.getAudits);
 router.post('/compliance/audits', complianceController.logAudit);
+
+// --- Master Dashboard Pack ---
+// Performance Dashboard (OKR + KPI + Competitor + Gold Standard)
+router.get('/dashboards/performance', performanceDashboardController.getPerformanceDashboard);
+router.post('/dashboards/performance/export', performanceDashboardController.exportPerformanceData);
+
+// Effort Dashboard (Work Completion & Productivity)
+router.get('/dashboards/effort', effortDashboardController.getEffortDashboard);
+router.get('/dashboards/effort/workload-prediction', effortDashboardController.getWorkloadPrediction);
+
+// Employee Scorecard Dashboard (Individual Performance)
+router.get('/dashboards/employee-scorecard', employeeScorecardController.getEmployeeScorecard);
+router.get('/dashboards/employees', employeeScorecardController.getEmployeeList);
+
+// Employee Comparison Dashboard
+router.get('/dashboards/employee-comparison', employeeComparisonController.getEmployeeComparison);
+router.get('/dashboards/team-performance-stats', employeeComparisonController.getTeamPerformanceStats);
+
+// Team Leader Dashboard
+router.get('/dashboards/team-leader', teamLeaderDashboardController.getTeamLeaderDashboard);
+router.post('/dashboards/team-leader/task-assignment', teamLeaderDashboardController.updateTaskAssignment);
+router.get('/dashboards/team-leader/capacity-forecast', teamLeaderDashboardController.getTeamCapacityForecast);
+
+// AI Evaluation Engine Dashboard
+router.get('/dashboards/ai-evaluation', aiEvaluationController.getAiEvaluation);
+router.post('/dashboards/ai-evaluation/generate', aiEvaluationController.generateNewEvaluation);
+router.get('/dashboards/ai-evaluation/history', aiEvaluationController.getEvaluationHistory);
+
+// Reward & Penalty Dashboard
+router.get('/dashboards/rewards-penalties', rewardPenaltyController.getRewardsPenalties);
+router.post('/dashboards/rewards-penalties/automation-rules', rewardPenaltyController.createAutomationRule);
+router.put('/dashboards/rewards-penalties/approvals/:id', rewardPenaltyController.updateApprovalStatus);
+
+// Workload Prediction & Allocation Dashboard
+router.get('/dashboards/workload-prediction', workloadPredictionController.getWorkloadPrediction);
+router.post('/dashboards/workload-prediction/implement-suggestion', workloadPredictionController.implementAllocationSuggestion);
+router.get('/dashboards/workload-prediction/capacity-forecast', workloadPredictionController.getCapacityForecast);
 
 export default router;

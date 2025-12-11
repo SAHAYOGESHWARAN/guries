@@ -15,9 +15,10 @@ interface TableProps {
   actionButton?: React.ReactNode;
   emptyMessage?: string;
   rowClassName?: (item: any) => string;
+  onRowClick?: (item: any) => void;
 }
 
-function Table({ columns, data = [], title, actionButton, emptyMessage, rowClassName }: TableProps) {
+function Table({ columns, data = [], title, actionButton, emptyMessage, rowClassName, onRowClick }: TableProps) {
   const renderCell = (item: any, column: Column<any>) => {
     if (!item) return '';
     if (typeof column.accessor === 'function') {
@@ -66,7 +67,8 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
               data.map((item, idx) => (
                 <tr
                   key={item.id || idx}
-                  className={`hover:bg-slate-50/80 transition-colors duration-150 group ${rowClassName ? rowClassName(item) : ''}`}
+                  className={`hover:bg-slate-50/80 transition-colors duration-150 group ${rowClassName ? rowClassName(item) : ''} ${onRowClick ? 'cursor-pointer' : ''}`}
+                  onClick={() => onRowClick && onRowClick(item)}
                 >
                   {columns.map((col, index) => (
                     <td key={index} className={`px-6 py-3 text-sm text-slate-600 font-medium ${col.className || ''}`}>

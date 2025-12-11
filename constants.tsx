@@ -108,6 +108,16 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'ai-evaluation-engine', name: 'AI Evaluation Engine', icon: <SparkIcon /> },
             { id: 'reward-penalty', name: 'Reward & Penalty', icon: <AnalyticsIcon /> },
             { id: 'workload-prediction', name: 'Workload Prediction', icon: <AnalyticsIcon /> },
+
+            // Master Dashboard Pack - All 8 Dashboards
+            { id: 'performance-dashboard', name: '📊 Performance Dashboard', icon: <AnalyticsIcon /> },
+            { id: 'effort-dashboard', name: '⚡ Effort Dashboard', icon: <AnalyticsIcon /> },
+            { id: 'employee-scorecard-dashboard', name: '👤 Employee Scorecard', icon: <AnalyticsIcon /> },
+            { id: 'employee-comparison-dashboard', name: '👥 Employee Comparison', icon: <AnalyticsIcon /> },
+            { id: 'team-leader-dashboard-new', name: '👨‍💼 Team Leader Dashboard', icon: <AnalyticsIcon /> },
+            { id: 'ai-evaluation-dashboard', name: '🤖 AI Evaluation Engine', icon: <SparkIcon /> },
+            { id: 'reward-penalty-dashboard', name: '🏆 Reward & Penalty', icon: <AnalyticsIcon /> },
+            { id: 'workload-prediction-dashboard', name: '📈 Workload Prediction', icon: <AnalyticsIcon /> },
         ]
     },
     {

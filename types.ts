@@ -558,6 +558,7 @@ export interface AssetLibraryItem {
     // Web Application Fields
     web_title?: string;
     web_description?: string;
+    web_meta_description?: string; // SEO meta description
     web_keywords?: string;
     web_url?: string;
     web_h1?: string;

@@ -139,6 +139,81 @@ export const getAssetLibrary = async (req: any, res: any) => {
     }
 };
 
+export const getAssetLibraryItem = async (req: any, res: any) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT 
+                id,
+                asset_name as name,
+                asset_type as type,
+                asset_category,
+                asset_format,
+                tags as repository,
+                usage_status,
+                status,
+                file_url,
+                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+                file_size,
+                file_type,
+                created_at as date,
+                linked_service_ids,
+                linked_sub_service_ids,
+                application_type,
+                keywords,
+                seo_score,
+                grammar_score,
+                qc_score,
+                submitted_by,
+                submitted_at,
+                qc_reviewer_id,
+                qc_reviewed_at,
+                qc_remarks,
+                linking_active,
+                web_title,
+                web_description,
+                web_keywords,
+                web_url,
+                web_h1,
+                web_h2_1,
+                web_h2_2,
+                web_thumbnail,
+                web_body_content,
+                smm_platform,
+                smm_title,
+                smm_tag,
+                smm_url,
+                smm_description,
+                smm_hashtags,
+                smm_media_url,
+                smm_media_type,
+                updated_at,
+                mapped_to,
+                rework_count
+            FROM asset_library 
+            WHERE id = $1
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const asset = result.rows[0];
+
+        // Parse JSON fields
+        const parsed = {
+            ...asset,
+            linked_service_ids: asset.linked_service_ids ? JSON.parse(asset.linked_service_ids) : [],
+            linked_sub_service_ids: asset.linked_sub_service_ids ? JSON.parse(asset.linked_sub_service_ids) : [],
+            keywords: asset.keywords ? JSON.parse(asset.keywords) : []
+        };
+
+        res.status(200).json(parsed);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const createAssetLibraryItem = async (req: any, res: any) => {
     const {
         name, type, repository, usage_status, file_url, thumbnail_url, file_size, file_type, date,
@@ -453,12 +528,17 @@ export const getAssetsForQC = async (req: any, res: any) => {
     }
 };
 
-// QC Review - Approve, Reject, or Rework asset
+// QC Review - Approve, Reject, or Rework asset (Admin only)
 export const reviewAsset = async (req: any, res: any) => {
     const { id } = req.params;
-    const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, checklist_completion, checklist_items } = req.body;
+    const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, checklist_completion, checklist_items, user_role } = req.body;
 
     try {
+        // Role-based access control - only admins can perform QC review
+        if (user_role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied. Only administrators can perform QC reviews.' });
+        }
+
         // Validate QC decision
         if (!['approved', 'rejected', 'rework'].includes(qc_decision)) {
             return res.status(400).json({ error: 'QC decision must be "approved", "rejected", or "rework"' });
@@ -566,6 +646,71 @@ export const generateAIScores = async (req: any, res: any) => {
                 grammar_feedback: grammarScore < 90 ? 'Minor grammar improvements needed' : 'Excellent grammar and readability'
             }
         });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// User Edit Asset (Only during QC review stage)
+export const editAssetInQC = async (req: any, res: any) => {
+    const { id } = req.params;
+    const { user_role, user_id, ...updateData } = req.body;
+
+    try {
+        // Check if asset is in QC review stage
+        const assetCheck = await pool.query('SELECT status, submitted_by FROM assets WHERE id = $1', [id]);
+        if (assetCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const asset = assetCheck.rows[0];
+
+        // Only allow editing if asset is in QC review stage
+        if (!['Pending QC Review', 'Rework Required'].includes(asset.status)) {
+            return res.status(400).json({ error: 'Asset can only be edited during QC review stage' });
+        }
+
+        // Users can only edit their own assets
+        if (user_role === 'user' && asset.submitted_by !== user_id) {
+            return res.status(403).json({ error: 'You can only edit assets you submitted' });
+        }
+
+        // Update the asset
+        const result = await updateAssetLibraryItem(req, res);
+        return result;
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// User Delete Asset (Only during QC review stage)
+export const deleteAssetInQC = async (req: any, res: any) => {
+    const { id } = req.params;
+    const { user_role, user_id } = req.body;
+
+    try {
+        // Check if asset is in QC review stage
+        const assetCheck = await pool.query('SELECT status, submitted_by FROM assets WHERE id = $1', [id]);
+        if (assetCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const asset = assetCheck.rows[0];
+
+        // Only allow deletion if asset is in QC review stage
+        if (!['Pending QC Review', 'Rework Required'].includes(asset.status)) {
+            return res.status(400).json({ error: 'Asset can only be deleted during QC review stage' });
+        }
+
+        // Users can only delete their own assets
+        if (user_role === 'user' && asset.submitted_by !== user_id) {
+            return res.status(403).json({ error: 'You can only delete assets you submitted' });
+        }
+
+        // Delete the asset
+        await pool.query('DELETE FROM assets WHERE id = $1', [id]);
+        getSocket().emit('assetLibrary_deleted', { id });
+        res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
