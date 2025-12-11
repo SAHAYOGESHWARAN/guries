@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, AlertTriangle, Users, Target, Lightbulb, CheckCircle, Clock, BarChart3, Activity } from 'lucide-react';
+
+// Custom icon components to replace lucide-react
+const TrendingUp = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
+const AlertTriangle = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
+const Users = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" /></svg>;
+const Target = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" /></svg>;
+const Lightbulb = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>;
+const CheckCircle = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const Clock = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const BarChart3 = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
+const Activity = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
 
 interface WorkloadPredictionDashboardProps {
     onNavigate?: (view: string, id?: string) => void;
@@ -167,8 +177,8 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                                 <p className="text-sm text-slate-600">{employee.role}</p>
                                             </div>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${employee.status === 'overload' ? 'bg-red-100 text-red-700' :
-                                                    employee.status === 'balanced' ? 'bg-emerald-100 text-emerald-700' :
-                                                        'bg-blue-100 text-blue-700'
+                                                employee.status === 'balanced' ? 'bg-emerald-100 text-emerald-700' :
+                                                    'bg-blue-100 text-blue-700'
                                                 }`}>
                                                 {employee.status === 'overload' ? 'Overload' :
                                                     employee.status === 'balanced' ? 'Balanced' : 'Underutilized'}
@@ -204,8 +214,8 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                         </div>
 
                                         <div className={`mt-3 text-xs font-medium px-2 py-1 rounded-full w-fit ${employee.riskLevel === 'high' ? 'bg-red-100 text-red-700' :
-                                                employee.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                                    'bg-emerald-100 text-emerald-700'
+                                            employee.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-emerald-100 text-emerald-700'
                                             }`}>
                                             {employee.riskLevel} risk
                                         </div>
@@ -331,13 +341,13 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${suggestion.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                                            'bg-amber-100 text-amber-700'
+                                                        'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {suggestion.priority} priority
                                                     </span>
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${suggestion.effort === 'Low' ? 'bg-emerald-100 text-emerald-700' :
-                                                            suggestion.effort === 'Medium' ? 'bg-amber-100 text-amber-700' :
-                                                                'bg-red-100 text-red-700'
+                                                        suggestion.effort === 'Medium' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-red-100 text-red-700'
                                                         }`}>
                                                         {suggestion.effort} effort
                                                     </span>
@@ -391,8 +401,8 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                         <div className="flex justify-between items-start mb-3">
                                             <h3 className="font-semibold text-slate-900">{team.team}</h3>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${team.status === 'overload' ? 'bg-red-100 text-red-700' :
-                                                    team.status === 'balanced' ? 'bg-emerald-100 text-emerald-700' :
-                                                        'bg-blue-100 text-blue-700'
+                                                team.status === 'balanced' ? 'bg-emerald-100 text-emerald-700' :
+                                                    'bg-blue-100 text-blue-700'
                                                 }`}>
                                                 {team.status}
                                             </span>
@@ -418,8 +428,8 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                             <div className="flex justify-between">
                                                 <span className="text-slate-600">Next Week:</span>
                                                 <span className={`font-medium ${team.forecastedUtilization.nextWeek >= 100 ? 'text-red-600' :
-                                                        team.forecastedUtilization.nextWeek >= 85 ? 'text-amber-600' :
-                                                            'text-emerald-600'
+                                                    team.forecastedUtilization.nextWeek >= 85 ? 'text-amber-600' :
+                                                        'text-emerald-600'
                                                     }`}>
                                                     {team.forecastedUtilization.nextWeek}%
                                                 </span>
@@ -427,8 +437,8 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                             <div className="flex justify-between">
                                                 <span className="text-slate-600">Next Month:</span>
                                                 <span className={`font-medium ${team.forecastedUtilization.nextMonth >= 100 ? 'text-red-600' :
-                                                        team.forecastedUtilization.nextMonth >= 85 ? 'text-amber-600' :
-                                                            'text-emerald-600'
+                                                    team.forecastedUtilization.nextMonth >= 85 ? 'text-amber-600' :
+                                                        'text-emerald-600'
                                                     }`}>
                                                     {team.forecastedUtilization.nextMonth}%
                                                 </span>

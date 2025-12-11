@@ -45,8 +45,8 @@ const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView')
 const PromotionRepositoryView = React.lazy(() => import('./views/PromotionRepositoryView'));
 const CompetitorRepositoryView = React.lazy(() => import('./views/CompetitorRepositoryView'));
 const CompetitorBacklinksView = React.lazy(() => import('./views/CompetitorBacklinksView'));
-const EmployeeScorecardView = React.lazy(() => import('./views/EmployeeScorecardView'));
-const EmployeeComparisonView = React.lazy(() => import('./views/EmployeeComparisonView'));
+// Removed - using EmployeeScorecardDashboard instead
+// Removed - using EmployeeComparisonDashboard instead
 // Master Dashboard Pack - All 8 Dashboards
 const PerformanceDashboard = React.lazy(() => import('./views/PerformanceDashboard'));
 const EffortDashboard = React.lazy(() => import('./views/EffortDashboard'));
@@ -166,7 +166,6 @@ const App: React.FC = () => {
       case 'qc-dashboard': return <QcView />;
 
       // ANALYTICS & HR
-      case 'performance-dashboard': return <ProjectAnalyticsView />;
       case 'kpi-tracking': return <KpiTrackingView />;
       case 'traffic-ranking': return <TrafficRankingView />;
       case 'okr-dashboard': return <ProjectAnalyticsView />;

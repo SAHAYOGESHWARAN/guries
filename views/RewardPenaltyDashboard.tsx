@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Award, AlertTriangle, Settings, DollarSign, TrendingUp, CheckCircle, XCircle, Clock, Star, Target } from 'lucide-react';
+
+// Custom icon components to replace lucide-react
+const Award = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>;
+const AlertTriangle = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
+const Settings = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const DollarSign = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /></svg>;
+const TrendingUp = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
+const CheckCircle = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const XCircle = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const Clock = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const Star = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
+const Target = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" /></svg>;
 
 interface RewardPenaltyDashboardProps {
     onNavigate?: (view: string, id?: string) => void;
@@ -113,8 +124,8 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                             <button
                                 onClick={() => setActiveTab('rewards')}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'rewards'
-                                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                     }`}
                             >
                                 <Award className="w-4 h-4 inline mr-2" />
@@ -123,8 +134,8 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                             <button
                                 onClick={() => setActiveTab('penalties')}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'penalties'
-                                        ? 'bg-red-100 text-red-700 border border-red-200'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                    ? 'bg-red-100 text-red-700 border border-red-200'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                     }`}
                             >
                                 <AlertTriangle className="w-4 h-4 inline mr-2" />
@@ -133,8 +144,8 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                             <button
                                 onClick={() => setActiveTab('automation')}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'automation'
-                                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                     }`}
                             >
                                 <Settings className="w-4 h-4 inline mr-2" />
@@ -282,7 +293,7 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className="text-lg font-bold text-blue-600">{recommendation.compositeScore}%</span>
                                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${recommendation.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-amber-100 text-amber-700'
+                                                                'bg-amber-100 text-amber-700'
                                                                 }`}>
                                                                 {recommendation.priority} priority
                                                             </span>
@@ -357,13 +368,13 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                                                         <h3 className="font-semibold text-slate-900">{trigger.name}</h3>
                                                         <p className="text-sm text-slate-600">{trigger.role}</p>
                                                         <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-2 ${trigger.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                                                'bg-amber-100 text-amber-700'
+                                                            'bg-amber-100 text-amber-700'
                                                             }`}>
                                                             {trigger.priority} priority
                                                         </span>
                                                     </div>
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${trigger.status === 'action-required' ? 'bg-red-100 text-red-700' :
-                                                            'bg-amber-100 text-amber-700'
+                                                        'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {trigger.status === 'action-required' ? 'Action Required' : 'Monitoring'}
                                                     </span>
@@ -441,7 +452,7 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                                                     </div>
                                                     <div className="text-right">
                                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${rule.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                                                                'bg-slate-100 text-slate-700'
+                                                            'bg-slate-100 text-slate-700'
                                                             }`}>
                                                             {rule.status}
                                                         </span>
@@ -495,7 +506,7 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                                             <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
                                                 <td className="py-3 px-4">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.type === 'reward' ? 'bg-emerald-100 text-emerald-700' :
-                                                            'bg-red-100 text-red-700'
+                                                        'bg-red-100 text-red-700'
                                                         }`}>
                                                         {item.type}
                                                     </span>
@@ -506,8 +517,8 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                                                 <td className="py-3 px-4 text-slate-600">{item.submittedBy}</td>
                                                 <td className="py-3 px-4">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                                                            item.status.includes('pending') ? 'bg-amber-100 text-amber-700' :
-                                                                'bg-red-100 text-red-700'
+                                                        item.status.includes('pending') ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-red-100 text-red-700'
                                                         }`}>
                                                         {item.status.replace(/-/g, ' ')}
                                                     </span>

@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Filter, Download, RefreshCw, Target, Award, AlertTriangle, Info } from 'lucide-react';
+
+// Custom icon components to replace lucide-react
+const TrendingUp = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
+const TrendingDown = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>;
+const Filter = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>;
+const Download = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
+const RefreshCw = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>;
+const Target = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" /></svg>;
+const Award = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>;
+const AlertTriangle = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
+const Info = ({ className = "w-5 h-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 
 interface PerformanceDashboardProps {
     onNavigate?: (view: string, id?: string) => void;
@@ -361,11 +371,11 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ onNavigate 
                                                 </td>
                                                 <td className="py-3 px-4">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${kpi.metricType === 'Traffic' ? 'bg-blue-100 text-blue-700' :
-                                                            kpi.metricType === 'Ranking' ? 'bg-purple-100 text-purple-700' :
-                                                                kpi.metricType === 'Engagement' ? 'bg-orange-100 text-orange-700' :
-                                                                    kpi.metricType === 'Conversion' ? 'bg-emerald-100 text-emerald-700' :
-                                                                        kpi.metricType === 'Technical' ? 'bg-red-100 text-red-700' :
-                                                                            'bg-slate-100 text-slate-700'
+                                                        kpi.metricType === 'Ranking' ? 'bg-purple-100 text-purple-700' :
+                                                            kpi.metricType === 'Engagement' ? 'bg-orange-100 text-orange-700' :
+                                                                kpi.metricType === 'Conversion' ? 'bg-emerald-100 text-emerald-700' :
+                                                                    kpi.metricType === 'Technical' ? 'bg-red-100 text-red-700' :
+                                                                        'bg-slate-100 text-slate-700'
                                                         }`}>
                                                         {kpi.metricType}
                                                     </span>
@@ -420,8 +430,8 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ onNavigate 
                                                 </td>
                                                 <td className="py-3 px-4 text-center">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${kpi.status === 'on-track' ? 'bg-emerald-100 text-emerald-700' :
-                                                            kpi.status === 'warning' ? 'bg-amber-100 text-amber-700' :
-                                                                'bg-red-100 text-red-700'
+                                                        kpi.status === 'warning' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-red-100 text-red-700'
                                                         }`}>
                                                         {kpi.status === 'on-track' ? 'On Track' :
                                                             kpi.status === 'warning' ? 'Warning' : 'Off Track'}
