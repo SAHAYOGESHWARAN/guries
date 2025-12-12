@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
 import type { AssetLibraryItem, Service, SubServiceItem } from '../types';
 
@@ -49,6 +49,29 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
+
+    // Footer options state
+    const [viewVendorHistory, setViewVendorHistory] = useState(false);
+    const [replaceExistingVersion, setReplaceExistingVersion] = useState(false);
+
+    // Helper function to check if asset is ready for QC submission
+    const isQcReady = useMemo(() => {
+        if (!newAsset.name?.trim() || !newAsset.application_type) return false;
+
+        // Check if file is provided (for new uploads)
+        if (!selectedFile && !newAsset.file_url) return false;
+
+        // Application-specific validation
+        if (newAsset.application_type === 'web' || newAsset.application_type === 'seo') {
+            return newAsset.web_title?.trim() && newAsset.web_description?.trim();
+        }
+
+        if (newAsset.application_type === 'smm') {
+            return newAsset.smm_platform && newAsset.smm_description?.trim() && newAsset.smm_media_type;
+        }
+
+        return true;
+    }, [newAsset, selectedFile]);
 
     // File upload handler for SMM media
     const handleFileUpload = useCallback((file: File, type: 'thumbnail' | 'media') => {
@@ -109,37 +132,72 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         }
     }, []);
 
-    const handleUpload = useCallback(async () => {
+    const handleUpload = useCallback(async (uploadMode: 'draft' | 'qc' = 'qc') => {
+        // Basic validation for all uploads
         if (!newAsset.name?.trim()) {
             alert('Please enter an asset name');
             return;
         }
 
-        if (!selectedFile && !newAsset.file_url) {
-            alert('Please select a file to upload');
+        // File validation - more lenient for drafts
+        if (!selectedFile && !newAsset.file_url && uploadMode === 'qc') {
+            alert('Please select a file to upload for QC submission');
             return;
         }
 
-        // Web/SEO-specific validation
-        if (newAsset.application_type === 'web' || newAsset.application_type === 'seo') {
-            if (!newAsset.web_title?.trim()) {
-                alert('Please enter a title');
+        // QC-specific validation (stricter requirements)
+        if (uploadMode === 'qc') {
+            // Application type is required for QC
+            if (!newAsset.application_type) {
+                alert('Please select an application type (WEB, SEO, or SMM) for QC submission');
+                return;
+            }
+
+            // Web/SEO-specific validation for QC
+            if (newAsset.application_type === 'web' || newAsset.application_type === 'seo') {
+                if (!newAsset.web_title?.trim()) {
+                    alert('Please enter a title for QC submission');
+                    return;
+                }
+                if (!newAsset.web_description?.trim()) {
+                    alert('Please enter a description for QC submission');
+                    return;
+                }
+            }
+
+            // SMM-specific validation for QC
+            if (newAsset.application_type === 'smm') {
+                if (!newAsset.smm_platform) {
+                    alert('Please select a social media platform for QC submission');
+                    return;
+                }
+                if (!newAsset.smm_description?.trim()) {
+                    alert('Please enter a post caption/description for QC submission');
+                    return;
+                }
+                if (!newAsset.smm_media_type) {
+                    alert('Please select a content type for QC submission');
+                    return;
+                }
+            }
+
+            // AI scores validation for QC (optional but recommended)
+            if (newAsset.seo_score && (newAsset.seo_score < 0 || newAsset.seo_score > 100)) {
+                alert('SEO score must be between 0-100');
+                return;
+            }
+            if (newAsset.grammar_score && (newAsset.grammar_score < 0 || newAsset.grammar_score > 100)) {
+                alert('Grammar score must be between 0-100');
                 return;
             }
         }
 
-        // SMM-specific validation
-        if (newAsset.application_type === 'smm') {
-            if (!newAsset.smm_platform) {
-                alert('Please select a social media platform');
-                return;
-            }
-            if (!newAsset.smm_description?.trim()) {
-                alert('Please enter a post caption/description');
-                return;
-            }
-            if (!newAsset.smm_media_type) {
-                alert('Please select a content type');
+        // Draft validation (more lenient)
+        if (uploadMode === 'draft') {
+            // For drafts, we only need basic info
+            // Application type validation is relaxed for drafts
+            if (newAsset.application_type === 'smm' && newAsset.smm_platform && !newAsset.smm_media_type) {
+                alert('Please select a content type when platform is selected');
                 return;
             }
         }
@@ -174,16 +232,31 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                 linked_service_ids: linkedServiceIds,
                 linked_sub_service_ids: linkedSubServiceIds,
                 mapped_to: mappedToString || newAsset.mapped_to,
-                linking_active: false
+                linking_active: false,
+                status: uploadMode === 'qc' ? 'Pending QC Review' : 'Draft',
+                submitted_by: uploadMode === 'qc' ? 1 : undefined, // TODO: Get from auth context
+                submitted_at: uploadMode === 'qc' ? new Date().toISOString() : undefined,
+                // Add vendor history and version replacement flags
+                vendor_history_viewed: viewVendorHistory,
+                is_version_replacement: replaceExistingVersion
             };
 
             await createAsset(assetPayload as AssetLibraryItem);
+
+            // Show success message based on upload mode
+            if (uploadMode === 'qc') {
+                alert(`✅ Asset "${newAsset.name}" has been successfully submitted to QC Queue for review!`);
+            } else {
+                alert(`✅ Asset "${newAsset.name}" has been saved as draft successfully!`);
+            }
 
             // Reset form
             setSelectedFile(null);
             setPreviewUrl('');
             setSelectedServiceId(null);
             setSelectedSubServiceIds([]);
+            setViewVendorHistory(false);
+            setReplaceExistingVersion(false);
             setNewAsset({
                 name: '',
                 type: 'article',
@@ -215,7 +288,10 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
             onClose();
         } catch (error) {
             console.error('Upload failed:', error);
-            alert('Failed to upload asset. Please try again.');
+            const errorMessage = uploadMode === 'qc'
+                ? 'Failed to submit asset to QC Queue. Please check your inputs and try again.'
+                : 'Failed to save asset as draft. Please try again.';
+            alert(`❌ ${errorMessage}`);
         } finally {
             setIsUploading(false);
         }
@@ -1420,48 +1496,221 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>View Vendor History</span>
-                        <input type="checkbox" className="ml-2" />
-                        <span className="ml-4">Replace Existing Version</span>
-                        <input type="checkbox" className="ml-2" />
+                {/* Enhanced Footer */}
+                <div className="border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+                    {/* Options Row */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                        <div className="flex items-center gap-6 text-sm">
+                            {/* View Vendor History */}
+                            <label className="flex items-center gap-2 text-slate-600 hover:text-slate-800 cursor-pointer transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={viewVendorHistory}
+                                    onChange={(e) => setViewVendorHistory(e.target.checked)}
+                                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                />
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="font-medium">View Vendor History</span>
+                            </label>
+
+                            {/* Replace Existing Version */}
+                            <label className="flex items-center gap-2 text-slate-600 hover:text-slate-800 cursor-pointer transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={replaceExistingVersion}
+                                    onChange={(e) => setReplaceExistingVersion(e.target.checked)}
+                                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                />
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span className="font-medium">Replace Existing Version</span>
+                            </label>
+                        </div>
+
+                        {/* QC Readiness Indicator */}
+                        {!isUploading && (
+                            <div className="flex items-center gap-2 text-sm">
+                                {isQcReady ? (
+                                    <div className="flex items-center gap-2 text-green-600">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span className="font-medium">✅ Ready for QC Queue</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-amber-600">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        <span className="font-medium">⚠️ Complete required fields for QC</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Upload Progress Indicator */}
+                        {isUploading && (
+                            <div className="flex items-center gap-2 text-sm text-indigo-600">
+                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span className="font-medium">Processing upload...</span>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={onClose}
-                            disabled={isUploading}
-                            className="px-6 py-2 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleUpload}
-                            disabled={isUploading || !newAsset.name?.trim()}
-                            className={`px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:shadow-md transition-all flex items-center gap-2 ${isUploading || !newAsset.name?.trim() ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                        >
-                            {isUploading ? (
-                                <>
-                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Uploading...
-                                </>
-                            ) : (
-                                <>
+
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            {/* Cancel Button */}
+                            <button
+                                onClick={onClose}
+                                disabled={isUploading}
+                                className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Cancel
+                            </button>
+
+                            {/* Upload Asset as Draft Button */}
+                            <button
+                                onClick={() => handleUpload('draft')}
+                                disabled={isUploading || !newAsset.name?.trim()}
+                                className={`px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2 ${isUploading || !newAsset.name?.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                Save as Draft
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {/* Update Asset Button (for existing assets) */}
+                            <button
+                                onClick={() => handleUpload('draft')}
+                                disabled={isUploading || !newAsset.name?.trim()}
+                                className={`px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg hover:shadow-md transition-all flex items-center gap-2 ${isUploading || !newAsset.name?.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Updating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        Update Asset
+                                    </>
+                                )}
+                            </button>
+
+                            {/* Save to QC Queue Button (Primary) */}
+                            <button
+                                onClick={() => handleUpload('qc')}
+                                disabled={isUploading || !isQcReady}
+                                className={`px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:shadow-md transition-all flex items-center gap-2 ${isUploading || !isQcReady ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                title={!isQcReady ? 'Please complete all required fields for QC submission' : 'Submit asset to QC Queue'}
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                        </svg>
+                                        Save to QC Queue
+                                    </>
+                                )}
+                            </button>
+
+                            {/* Quick Upload Dropdown */}
+                            <div className="relative group">
+                                <button
+                                    disabled={isUploading}
+                                    className="px-3 py-2 text-sm font-medium text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                                >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                                     </svg>
-                                    Save to QC Queue
-                                </>
-                            )}
-                        </button>
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                {/* Quick Actions Dropdown */}
+                                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                    <div className="p-2">
+                                        <div className="text-xs font-semibold text-slate-600 px-2 py-1 border-b border-slate-100 mb-1">
+                                            Quick Actions
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                setViewVendorHistory(true);
+                                                handleUpload('qc');
+                                            }}
+                                            disabled={isUploading || !newAsset.name?.trim()}
+                                            className="w-full flex items-center gap-2 px-2 py-2 text-left hover:bg-slate-50 rounded-md transition-colors text-sm disabled:opacity-50"
+                                        >
+                                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span>Upload with History</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setReplaceExistingVersion(true);
+                                                handleUpload('qc');
+                                            }}
+                                            disabled={isUploading || !newAsset.name?.trim()}
+                                            className="w-full flex items-center gap-2 px-2 py-2 text-left hover:bg-slate-50 rounded-md transition-colors text-sm disabled:opacity-50"
+                                        >
+                                            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            <span>Replace & Upload</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setViewVendorHistory(true);
+                                                setReplaceExistingVersion(true);
+                                                handleUpload('qc');
+                                            }}
+                                            disabled={isUploading || !newAsset.name?.trim()}
+                                            className="w-full flex items-center gap-2 px-2 py-2 text-left hover:bg-slate-50 rounded-md transition-colors text-sm disabled:opacity-50"
+                                        >
+                                            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            <span>Full Replace & Upload</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -820,15 +820,47 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </div>
                                 </div>
 
-                                {/* Action Buttons */}
+                                {/* Enhanced Action Buttons */}
                                 <div className="flex items-center gap-3">
+                                    {/* Cancel Button */}
                                     <button
                                         onClick={() => setViewMode('list')}
                                         disabled={isUploading}
-                                        className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 flex items-center gap-2"
                                     >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
                                         Cancel
                                     </button>
+
+                                    {/* Update Asset Button (for edit mode) */}
+                                    {viewMode === 'edit' && (
+                                        <button
+                                            onClick={() => handleUpload(false)}
+                                            disabled={isUploading}
+                                            className={`bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-2 rounded-lg font-medium shadow-sm hover:shadow-md transition-all text-sm flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Updating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                    Update Asset
+                                                </>
+                                            )}
+                                        </button>
+                                    )}
+
+                                    {/* Save as Draft Button */}
                                     <button
                                         onClick={() => handleUpload(false)}
                                         disabled={isUploading}
@@ -847,10 +879,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
-                                                Save as Draft
+                                                {viewMode === 'edit' ? 'Save Changes' : 'Save as Draft'}
                                             </>
                                         )}
                                     </button>
+
+                                    {/* Submit for QC Review Button */}
                                     <button
                                         onClick={() => handleUpload(true)}
                                         disabled={isUploading || !newAsset.seo_score || !newAsset.grammar_score}
@@ -869,7 +903,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
-                                                Submit for QC Review
+                                                {viewMode === 'edit' ? 'Update & Submit for QC' : 'Submit for QC Review'}
                                             </>
                                         )}
                                     </button>
@@ -2911,6 +2945,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </p>
                                 </div>
                                 <div className="flex gap-2">
+                                    {/* Quick Upload Button in QC View */}
+                                    <button
+                                        onClick={() => setShowUploadModal(true)}
+                                        className="px-4 py-2 text-sm font-medium text-indigo-600 border-2 border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
+                                        title="Upload New Asset"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Upload Asset
+                                    </button>
+
                                     <button
                                         onClick={() => {
                                             setQcReviewAsset(null);
@@ -3288,12 +3334,25 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             Track your submitted assets and their QC status
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => setViewMode('list')}
-                                        className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
-                                    >
-                                        Back to Assets
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        {/* Upload Asset Button in My Submissions */}
+                                        <button
+                                            onClick={() => setShowUploadModal(true)}
+                                            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-md transition-all flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Upload Asset
+                                        </button>
+
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
+                                        >
+                                            Back to Assets
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Submission Statistics */}
@@ -4483,6 +4542,103 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 </svg>
                                 My Submissions
                             </button>
+
+                            {/* Quick Upload Toolbar */}
+                            <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-2 shadow-sm">
+                                <span className="text-xs font-medium text-slate-600 px-2">Quick Upload:</span>
+
+                                <button
+                                    onClick={() => {
+                                        setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                    title="Upload Web Content"
+                                >
+                                    🌐 Web
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                                    title="Upload SEO Content"
+                                >
+                                    🔍 SEO
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                                    title="Upload Social Media Content"
+                                >
+                                    📱 SMM
+                                </button>
+                            </div>
+
+                            {/* Quick Update Toolbar */}
+                            <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-2 shadow-sm">
+                                <span className="text-xs font-medium text-orange-700 px-2">Quick Update:</span>
+
+                                <button
+                                    onClick={() => {
+                                        // Find the most recent asset to update
+                                        const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                                        if (recentAsset) {
+                                            handleEdit({ stopPropagation: () => { } } as any, recentAsset);
+                                        } else {
+                                            alert('No assets available to update');
+                                        }
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors"
+                                    title="Update Most Recent Asset"
+                                >
+                                    🔄 Recent
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        // Find assets pending updates (drafts or rejected)
+                                        const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
+                                        if (pendingAssets.length > 0) {
+                                            handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
+                                        } else {
+                                            alert('No assets pending updates');
+                                        }
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors"
+                                    title="Update Pending Assets"
+                                >
+                                    ⏳ Pending
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        // Show a modal or dropdown to select asset to update
+                                        const assetName = prompt('Enter asset name or ID to update:');
+                                        if (assetName) {
+                                            const asset = assets.find(a =>
+                                                a.name.toLowerCase().includes(assetName.toLowerCase()) ||
+                                                a.id.toString() === assetName
+                                            );
+                                            if (asset) {
+                                                handleEdit({ stopPropagation: () => { } } as any, asset);
+                                            } else {
+                                                alert('Asset not found');
+                                            }
+                                        }
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors"
+                                    title="Search & Update Asset"
+                                >
+                                    🔍 Search
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -4730,7 +4886,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {getStatusBadge(asset.status || 'Draft')}
                                                     </div>
 
-                                                    {/* Actions Overlay */}
+                                                    {/* Enhanced Actions Overlay */}
                                                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                                         {(asset.file_url || asset.thumbnail_url) && (
                                                             <button
@@ -4758,18 +4914,31 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             </button>
                                                         )}
 
+                                                        {/* Update Asset Button - More Prominent */}
                                                         {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
                                                             <button
                                                                 onClick={(e) => handleEdit(e, asset)}
-                                                                className="p-2 bg-white/90 backdrop-blur-sm text-indigo-600 hover:bg-white rounded-lg shadow-sm transition-all"
-                                                                title="Edit"
+                                                                className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
+                                                                title="Update Asset"
                                                             >
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                                 </svg>
                                                             </button>
                                                         )}
                                                     </div>
+
+                                                    {/* Quick Update Badge */}
+                                                    {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
+                                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                </svg>
+                                                                Update Ready
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Asset Info */}
@@ -4904,9 +5073,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         </span>
                                                         {asset.application_type && (
                                                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
-                                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
-                                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
-                                                                            'bg-slate-100 text-slate-700'
+                                                                asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
+                                                                    asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
+                                                                        'bg-slate-100 text-slate-700'
                                                                 }`}>
                                                                 {asset.application_type === 'web' && '🌐 WEB'}
                                                                 {asset.application_type === 'seo' && '🔍 SEO'}
@@ -4968,11 +5137,78 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 </div>
             )}
 
-            {/* Floating Action Button for Quick Upload */}
+            {/* Enhanced Floating Action Button for Upload & Update */}
             {viewMode === 'list' && (
-                <div className="fixed bottom-6 right-6 z-40">
+                <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+                    {/* Update Asset FAB */}
                     <div className="relative group">
-                        {/* Main FAB */}
+                        <button
+                            onClick={() => {
+                                const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                                if (recentAsset) {
+                                    handleEdit({ stopPropagation: () => { } } as any, recentAsset);
+                                } else {
+                                    alert('No assets available to update');
+                                }
+                            }}
+                            className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
+                            title="Quick Update Asset"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+
+                        {/* Update Action Menu */}
+                        <div className="absolute bottom-0 right-14 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                            <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[220px]">
+                                <div className="text-xs font-semibold text-orange-700 px-3 py-2 border-b border-slate-100">
+                                    Quick Update
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                                        if (recentAsset) {
+                                            handleEdit({ stopPropagation: () => { } } as any, recentAsset);
+                                        }
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
+                                >
+                                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        🔄
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-slate-900">Recent Asset</div>
+                                        <div className="text-xs text-slate-500">Update latest asset</div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
+                                        if (pendingAssets.length > 0) {
+                                            handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
+                                        } else {
+                                            alert('No assets pending updates');
+                                        }
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
+                                >
+                                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        ⏳
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-slate-900">Pending Updates</div>
+                                        <div className="text-xs text-slate-500">Drafts & rejected assets</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Upload Asset FAB */}
+                    <div className="relative group">
                         <button
                             onClick={() => setShowUploadModal(true)}
                             className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
@@ -4983,8 +5219,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </svg>
                         </button>
 
-                        {/* Quick Action Menu */}
-                        <div className="absolute bottom-16 right-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 space-y-2">
+                        {/* Upload Action Menu */}
+                        <div className="absolute bottom-0 right-16 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                             <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[200px]">
                                 <div className="text-xs font-semibold text-slate-600 px-3 py-2 border-b border-slate-100">
                                     Quick Upload
