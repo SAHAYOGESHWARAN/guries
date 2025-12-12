@@ -59,7 +59,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         // Internal fields
         linked_service_ids: [],
         linked_sub_service_ids: [],
-        smm_platform: undefined
+        smm_platform: undefined,
+        smm_additional_pages: []
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -329,7 +330,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 smm_platform: undefined,
                 keywords: [],
                 seo_score: undefined,
-                grammar_score: undefined
+                grammar_score: undefined,
+                smm_additional_pages: []
             });
 
             // Switch to list view immediately
@@ -387,7 +389,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             smm_description: asset.smm_description,
             smm_hashtags: asset.smm_hashtags,
             smm_media_url: asset.smm_media_url,
-            smm_media_type: asset.smm_media_type
+            smm_media_type: asset.smm_media_type,
+            smm_additional_pages: asset.smm_additional_pages || []
         });
 
         // Set selected service and sub-services for the UI
@@ -1851,7 +1854,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </svg>
                                             </div>
                                             <div>
-                                                
+
                                                 <h4 className="text-lg font-bold text-purple-900">📱 SMM Application Fields</h4>
                                                 <p className="text-sm text-purple-600">Configure your social media content</p>
                                             </div>
@@ -2126,7 +2129,133 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         )}
                                                     </label>
 
-                                                    {/* Upload Area */}
+                                                    {/* SMM Pages Upload Button - Enhanced for Multiple Pages */}
+                                                    {(newAsset.smm_media_type === 'carousel' || newAsset.smm_media_type === 'image') && (
+                                                        <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <div className="bg-purple-600 p-2 rounded-lg">
+                                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-lg font-bold text-purple-900">📱 SMM Pages Upload</h4>
+                                                                    <p className="text-sm text-purple-600">Upload multiple pages/images for your SMM content</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const input = document.createElement('input');
+                                                                        input.type = 'file';
+                                                                        input.multiple = true;
+                                                                        input.accept = 'image/*';
+                                                                        input.onchange = (e) => {
+                                                                            const files = (e.target as HTMLInputElement).files;
+                                                                            if (files && files.length > 0) {
+                                                                                // Handle multiple files for carousel
+                                                                                const fileArray = Array.from(files);
+                                                                                Promise.all(fileArray.map(file => {
+                                                                                    return new Promise<string>((resolve) => {
+                                                                                        const reader = new FileReader();
+                                                                                        reader.onloadend = () => resolve(reader.result as string);
+                                                                                        reader.readAsDataURL(file);
+                                                                                    });
+                                                                                })).then(base64Array => {
+                                                                                    // Store first image as main media, others as additional pages
+                                                                                    setNewAsset({
+                                                                                        ...newAsset,
+                                                                                        smm_media_url: base64Array[0],
+                                                                                        smm_additional_pages: base64Array.slice(1)
+                                                                                    });
+                                                                                });
+                                                                            }
+                                                                        };
+                                                                        input.click();
+                                                                    }}
+                                                                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 hover:scale-105"
+                                                                >
+                                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                                    </svg>
+                                                                    Upload Multiple Pages
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const input = document.createElement('input');
+                                                                        input.type = 'file';
+                                                                        input.accept = 'image/*';
+                                                                        input.onchange = (e) => {
+                                                                            const file = (e.target as HTMLInputElement).files?.[0];
+                                                                            if (file) {
+                                                                                handleFileUpload(file, 'media');
+                                                                            }
+                                                                        };
+                                                                        input.click();
+                                                                    }}
+                                                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 hover:scale-105"
+                                                                >
+                                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                    </svg>
+                                                                    Upload Single Image
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Display uploaded pages */}
+                                                            {(newAsset.smm_additional_pages && newAsset.smm_additional_pages.length > 0) && (
+                                                                <div className="mt-4">
+                                                                    <p className="text-sm font-bold text-purple-900 mb-2">
+                                                                        📄 Additional Pages ({newAsset.smm_additional_pages.length})
+                                                                    </p>
+                                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                                        {newAsset.smm_additional_pages.map((page, index) => (
+                                                                            <div key={index} className="relative group">
+                                                                                <img
+                                                                                    src={page}
+                                                                                    alt={`Page ${index + 2}`}
+                                                                                    className="w-full h-20 object-cover rounded-lg border-2 border-purple-200"
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        const updatedPages = [...(newAsset.smm_additional_pages || [])];
+                                                                                        updatedPages.splice(index, 1);
+                                                                                        setNewAsset({
+                                                                                            ...newAsset,
+                                                                                            smm_additional_pages: updatedPages
+                                                                                        });
+                                                                                    }}
+                                                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                >
+                                                                                    ×
+                                                                                </button>
+                                                                                <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                                                                                    {index + 2}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="mt-3 text-xs text-purple-700 bg-purple-100 p-3 rounded-lg">
+                                                                <p className="font-bold mb-1">💡 SMM Pages Upload Tips:</p>
+                                                                <ul className="space-y-1">
+                                                                    <li>• Upload multiple images for carousel posts</li>
+                                                                    <li>• Recommended: 1080x1080px for Instagram, 1200x630px for Facebook</li>
+                                                                    <li>• Maximum 10 images per carousel</li>
+                                                                    <li>• Supported formats: JPG, PNG, WebP</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Standard Upload Area */}
                                                     <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
                                                         onClick={() => mediaInputRef.current?.click()}>
                                                         <input
@@ -2564,6 +2693,31 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <div className="bg-black relative">
                                                 {newAsset.smm_media_type === 'video' ? (
                                                     <video src={displayData.media} controls className="w-full max-h-[600px] object-contain" poster={displayData.media} />
+                                                ) : newAsset.smm_media_type === 'carousel' && newAsset.smm_additional_pages && newAsset.smm_additional_pages.length > 0 ? (
+                                                    <div className="relative">
+                                                        {/* Carousel Display */}
+                                                        <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                                            <div className="flex-shrink-0 w-full snap-center">
+                                                                <img src={displayData.media} alt="Post content 1" className="w-full object-cover" style={{ maxHeight: '600px' }} />
+                                                            </div>
+                                                            {newAsset.smm_additional_pages.map((page, index) => (
+                                                                <div key={index} className="flex-shrink-0 w-full snap-center">
+                                                                    <img src={page} alt={`Post content ${index + 2}`} className="w-full object-cover" style={{ maxHeight: '600px' }} />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        {/* Carousel Indicators */}
+                                                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                                                            <div className="w-2 h-2 bg-white rounded-full opacity-100"></div>
+                                                            {newAsset.smm_additional_pages.map((_, index) => (
+                                                                <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
+                                                            ))}
+                                                        </div>
+                                                        {/* Page Counter */}
+                                                        <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+                                                            1/{newAsset.smm_additional_pages.length + 1}
+                                                        </div>
+                                                    </div>
                                                 ) : (
                                                     <img src={displayData.media} alt="Post content" className="w-full object-cover" style={{ maxHeight: '600px' }} />
                                                 )}
@@ -4416,8 +4570,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </div>
 
                                                 {/* Asset Info */}
-                                                <div className="p-4">
-                                                    <div className="flex items-start justify-between mb-2">
+                                                <div className="p-4 space-y-3">
+                                                    {/* Asset Name & ID */}
+                                                    <div className="flex items-start justify-between">
                                                         <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
                                                             {asset.name}
                                                         </h3>
@@ -4426,19 +4581,134 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         </span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 mb-3">
+                                                    {/* Campaign/Project Name */}
+                                                    {asset.web_title && (
+                                                        <div className="text-sm text-slate-700 font-medium">
+                                                            {asset.web_title}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Service Linking */}
+                                                    <div className="space-y-1">
+                                                        {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
+                                                                <div className="text-slate-700 font-medium">
+                                                                    {asset.linked_service_ids.map(serviceId => {
+                                                                        const service = services.find(s => s.id === serviceId);
+                                                                        return service?.service_name;
+                                                                    }).filter(Boolean).join(', ')}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
+                                                                <div className="text-slate-700 font-medium">
+                                                                    {asset.linked_sub_service_ids.map(ssId => {
+                                                                        const subService = subServices.find(ss => ss.id === ssId);
+                                                                        return subService?.sub_service_name;
+                                                                    }).filter(Boolean).join(', ')}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {asset.repository && (
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
+                                                                <div className="text-slate-700 font-medium">{asset.repository}</div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Keywords */}
+                                                    {asset.keywords && asset.keywords.length > 0 && (
+                                                        <div className="text-xs">
+                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">Keywords Tagged</span>
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {asset.keywords.slice(0, 3).map((keyword, index) => (
+                                                                    <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                                                                        {keyword}
+                                                                    </span>
+                                                                ))}
+                                                                {asset.keywords.length > 3 && (
+                                                                    <span className="text-xs text-slate-500">+{asset.keywords.length - 3} more</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* QC Panel */}
+                                                    {asset.qc_score && (
+                                                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <CircularScore
+                                                                        score={asset.qc_score}
+                                                                        label=""
+                                                                        size="xs"
+                                                                    />
+                                                                    <span className="text-xs font-bold text-slate-700">
+                                                                        {asset.qc_score}/100
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                <div>
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
+                                                                    <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                                        {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
+                                                                    </div>
+                                                                </div>
+
+                                                                {asset.qc_reviewed_at && (
+                                                                    <div>
+                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
+                                                                        <div className="text-slate-700 font-medium">
+                                                                            {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
+                                                                                year: 'numeric',
+                                                                                month: '2-digit',
+                                                                                day: '2-digit'
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Reviewer Info */}
+                                                            {asset.qc_reviewer_id && (
+                                                                <div className="mt-2 text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
+                                                                    <div className="text-slate-700 font-medium">
+                                                                        {(() => {
+                                                                            const reviewer = users.find(u => u.id === asset.qc_reviewer_id);
+                                                                            return reviewer ? reviewer.name : 'Unknown Reviewer';
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Type and Repository Tags */}
+                                                    <div className="flex items-center gap-2">
                                                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
                                                             <span>{getAssetIcon(asset.type)}</span>
                                                             {asset.type}
                                                         </span>
-                                                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-                                                            {asset.repository}
-                                                        </span>
+                                                        {asset.application_type && (
+                                                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full uppercase font-medium">
+                                                                {asset.application_type}
+                                                            </span>
+                                                        )}
                                                     </div>
 
-                                                    {/* Scores */}
-                                                    {(asset.seo_score || asset.grammar_score || asset.qc_score) && (
-                                                        <div className="flex gap-2 mb-3">
+                                                    {/* AI Scores */}
+                                                    {(asset.seo_score || asset.grammar_score) && (
+                                                        <div className="flex gap-2">
                                                             {asset.seo_score && (
                                                                 <CircularScore
                                                                     score={asset.seo_score}
@@ -4453,27 +4723,29 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     size="xs"
                                                                 />
                                                             )}
-                                                            {asset.qc_score && (
-                                                                <CircularScore
-                                                                    score={asset.qc_score}
-                                                                    label="QC"
-                                                                    size="xs"
-                                                                />
-                                                            )}
                                                         </div>
                                                     )}
 
-                                                    {/* Date and Workflow */}
-                                                    <div className="flex items-center justify-between text-xs text-slate-500">
-                                                        <span>
-                                                            {asset.date ? new Date(asset.date).toLocaleDateString('en-US', {
-                                                                month: 'short',
-                                                                day: 'numeric'
-                                                            }) : '-'}
-                                                        </span>
-                                                        {asset.linking_active && (
-                                                            <span className="text-green-600 font-medium">🔗 Linked</span>
-                                                        )}
+                                                    {/* Usage Panel */}
+                                                    <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                        <div className="text-xs">
+                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">Usage Panel</span>
+                                                            <div className="flex items-center justify-between mt-1">
+                                                                <span className="text-slate-700 font-medium">Status: {asset.usage_status}</span>
+                                                                {asset.linking_active && (
+                                                                    <span className="text-green-600 font-medium text-xs">🔗 Active</span>
+                                                                )}
+                                                            </div>
+                                                            {asset.date && (
+                                                                <div className="text-slate-500 text-xs mt-1">
+                                                                    Created: {new Date(asset.date).toLocaleDateString('en-US', {
+                                                                        month: 'short',
+                                                                        day: 'numeric',
+                                                                        year: 'numeric'
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

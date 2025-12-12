@@ -579,6 +579,7 @@ export interface AssetLibraryItem {
     smm_hashtags?: string;
     smm_media_url?: string;
     smm_media_type?: 'image' | 'video' | 'carousel' | 'gif';
+    smm_additional_pages?: string[]; // Additional pages/images for carousel posts
 }
 
 export interface Integration {
