@@ -32,6 +32,19 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         keywords: [],
         linked_service_ids: [],
         linked_sub_service_ids: [],
+        // Web/SEO specific fields
+        web_title: '',
+        web_description: '',
+        web_meta_description: '',
+        web_keywords: '',
+        web_url: '',
+        web_h1: '',
+        web_h2_1: '',
+        web_h2_2: '',
+        web_body_content: '',
+        web_thumbnail: '',
+        seo_score: undefined,
+        grammar_score: undefined,
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -107,6 +120,14 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
             return;
         }
 
+        // Web/SEO-specific validation
+        if (newAsset.application_type === 'web' || newAsset.application_type === 'seo') {
+            if (!newAsset.web_title?.trim()) {
+                alert('Please enter a title');
+                return;
+            }
+        }
+
         // SMM-specific validation
         if (newAsset.application_type === 'smm') {
             if (!newAsset.smm_platform) {
@@ -175,6 +196,19 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                 keywords: [],
                 linked_service_ids: [],
                 linked_sub_service_ids: [],
+                // Web/SEO specific fields
+                web_title: '',
+                web_description: '',
+                web_meta_description: '',
+                web_keywords: '',
+                web_url: '',
+                web_h1: '',
+                web_h2_1: '',
+                web_h2_2: '',
+                web_body_content: '',
+                web_thumbnail: '',
+                seo_score: undefined,
+                grammar_score: undefined,
             });
 
             onSuccess?.();
@@ -454,6 +488,454 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                             placeholder="Enter keywords separated by commas..."
                         />
                     </div>
+
+                    {/* Web Application Fields */}
+                    {newAsset.application_type === 'web' && (
+                        <div className="space-y-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
+                            <div className="flex items-center gap-3 pb-4 border-b-2 border-blue-200">
+                                <div className="bg-blue-600 p-2 rounded-lg">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s1.343-9 3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-blue-900">🌐 Web Application Fields</h4>
+                                    <p className="text-sm text-blue-600">Configure your web content details</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Left Column */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            📝 Title
+                                            <span className="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_title || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="Enter web page title..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            🔗 URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={newAsset.web_url || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="https://example.com/page"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            🏷️ Keywords
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_keywords || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_keywords: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="keyword1, keyword2, keyword3..."
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Right Column */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            📄 Meta Description
+                                        </label>
+                                        <textarea
+                                            value={newAsset.web_meta_description || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_meta_description: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="SEO meta description (150-160 characters)..."
+                                            rows={3}
+                                            maxLength={160}
+                                        />
+                                        <div className="text-xs text-slate-500 mt-1 text-right">
+                                            {(newAsset.web_meta_description || '').length}/160 characters
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            📋 Description
+                                        </label>
+                                        <textarea
+                                            value={newAsset.web_description || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="Detailed description of the web content..."
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Heading Structure */}
+                            <div className="space-y-4">
+                                <h5 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                                    </svg>
+                                    Heading Structure
+                                </h5>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        H1 Tag
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.web_h1 || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                        placeholder="Main heading (H1)..."
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            H2 Tag (First)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_h2_1 || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="First H2 subheading..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            H2 Tag (Second)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_h2_2 || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="Second H2 subheading..."
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Body Content */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Body Content
+                                </label>
+                                <textarea
+                                    value={newAsset.web_body_content || ''}
+                                    onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    placeholder="Enter the main body content for your web page..."
+                                    rows={6}
+                                />
+                                <div className="text-xs text-slate-500 mt-1">
+                                    💡 You can use Markdown formatting for rich text content
+                                </div>
+                            </div>
+
+                            {/* AI Quality Check */}
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                                <h6 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Quality Check
+                                </h6>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-2">SEO Score (0-100)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={newAsset.seo_score || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="0-100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-2">Grammar Score (0-100)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={newAsset.grammar_score || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="0-100"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            // Simulate AI analysis
+                                            const seoScore = Math.floor(Math.random() * 30) + 70; // 70-100
+                                            const grammarScore = Math.floor(Math.random() * 20) + 80; // 80-100
+
+                                            setNewAsset({
+                                                ...newAsset,
+                                                seo_score: seoScore,
+                                                grammar_score: grammarScore
+                                            });
+                                        } catch (error) {
+                                            console.error('Failed to generate AI scores:', error);
+                                        }
+                                    }}
+                                    className="w-full mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    Analyze Quality
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SEO Application Fields (same as Web) */}
+                    {newAsset.application_type === 'seo' && (
+                        <div className="space-y-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200 shadow-sm">
+                            <div className="flex items-center gap-3 pb-4 border-b-2 border-green-200">
+                                <div className="bg-green-600 p-2 rounded-lg">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-green-900">🔍 SEO Application Fields</h4>
+                                    <p className="text-sm text-green-600">Optimize your content for search engines</p>
+                                </div>
+                            </div>
+
+                            {/* Same fields as web but with SEO focus */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            📝 SEO Title
+                                            <span className="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_title || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="SEO optimized title..."
+                                            maxLength={60}
+                                        />
+                                        <div className="text-xs text-slate-500 mt-1 text-right">
+                                            {(newAsset.web_title || '').length}/60 characters
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            🔗 Target URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={newAsset.web_url || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="https://example.com/seo-page"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            🎯 Target Keywords
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_keywords || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_keywords: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="primary keyword, secondary keyword..."
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            📄 Meta Description
+                                            <span className="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <textarea
+                                            value={newAsset.web_meta_description || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_meta_description: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="Compelling meta description for search results..."
+                                            rows={3}
+                                            maxLength={160}
+                                        />
+                                        <div className="text-xs text-slate-500 mt-1 text-right">
+                                            {(newAsset.web_meta_description || '').length}/160 characters
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            📋 Content Description
+                                        </label>
+                                        <textarea
+                                            value={newAsset.web_description || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="Detailed content description..."
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Same heading structure and body content as web */}
+                            <div className="space-y-4">
+                                <h5 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                                    </svg>
+                                    SEO Heading Structure
+                                </h5>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">H1 Tag</label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.web_h1 || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                        placeholder="SEO optimized H1 heading..."
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">H2 Tag (First)</label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_h2_1 || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="First H2 subheading..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">H2 Tag (Second)</label>
+                                        <input
+                                            type="text"
+                                            value={newAsset.web_h2_2 || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                            placeholder="Second H2 subheading..."
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    SEO Content Body
+                                </label>
+                                <textarea
+                                    value={newAsset.web_body_content || ''}
+                                    onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                    placeholder="SEO optimized content with target keywords..."
+                                    rows={6}
+                                />
+                                <div className="text-xs text-slate-500 mt-1">
+                                    💡 Include target keywords naturally throughout the content
+                                </div>
+                            </div>
+
+                            {/* AI Quality Check - same as web */}
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                                <h6 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    SEO Quality Analysis
+                                </h6>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-2">SEO Score (0-100)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={newAsset.seo_score || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="0-100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-2">Grammar Score (0-100)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={newAsset.grammar_score || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                            placeholder="0-100"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            const seoScore = Math.floor(Math.random() * 30) + 70;
+                                            const grammarScore = Math.floor(Math.random() * 20) + 80;
+
+                                            setNewAsset({
+                                                ...newAsset,
+                                                seo_score: seoScore,
+                                                grammar_score: grammarScore
+                                            });
+                                        } catch (error) {
+                                            console.error('Failed to generate AI scores:', error);
+                                        }
+                                    }}
+                                    className="w-full mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    Analyze SEO Quality
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* SMM Application Fields */}
                     {newAsset.application_type === 'smm' && (

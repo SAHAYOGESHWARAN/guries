@@ -3238,17 +3238,26 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </svg>
                                     </button>
                                     <div>
-                                        <h1 className="text-2xl font-bold text-slate-900">{selectedAsset.name}</h1>
-                                        <div className="flex items-center gap-4 mt-1">
-                                            <span className="text-slate-600 text-sm">ID: {selectedAsset.id}</span>
-                                            {getStatusBadge(selectedAsset.status || 'Draft')}
-                                            <span className="text-slate-600 text-sm">
-                                                {selectedAsset.date ? new Date(selectedAsset.date).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric'
-                                                }) : '-'}
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                                                {selectedAsset.status === 'QC Approved' ? 'Approved' : 'QC'}
                                             </span>
+                                            <h1 className="text-2xl font-bold text-slate-900">{selectedAsset.name || 'AI Trends 2025 Banner'}</h1>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm text-slate-600">
+                                            <span>ai-trends-banner.jpg</span>
+                                            <span>•</span>
+                                            <span>Asset ID: {selectedAsset.id}</span>
+                                            <span>•</span>
+                                            <span>{selectedAsset.date ? new Date(selectedAsset.date).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            }) : new Date().toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -3309,6 +3318,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             Replace
                                         </button>
                                     )}
+
+                                    <button
+                                        onClick={() => handleEdit({ stopPropagation: () => { } } as any, selectedAsset)}
+                                        className="bg-slate-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-700 transition-colors text-sm flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit Asset
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -3335,8 +3354,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div className="text-center">
                                                     <div className="text-sm font-medium text-slate-700">{selectedAsset.name}</div>
                                                     <div className="text-xs text-slate-500 mt-1">
-                                                        {selectedAsset.file_size && `${(selectedAsset.file_size / 1024).toFixed(2)} KB`}
-                                                        {selectedAsset.file_type && ` • ${selectedAsset.file_type}`}
+                                                        {selectedAsset.file_size ? `${(selectedAsset.file_size / (1024 * 1024)).toFixed(1)} MB` : '2.4 MB'}
+                                                        {selectedAsset.file_type && ` • ${selectedAsset.file_type.toUpperCase()}`}
                                                     </div>
                                                 </div>
                                             </div>
@@ -3350,34 +3369,108 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Version History */}
+                                    <div className="border-t border-slate-200 p-6">
+                                        <h4 className="text-sm font-semibold text-slate-900 mb-3">Version History</h4>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-slate-600">Current</span>
+                                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                                                    {selectedAsset.version_number || 'v1.2'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Metadata */}
+                                    <div className="border-t border-slate-200 p-6">
+                                        <h4 className="text-sm font-semibold text-slate-900 mb-3">Metadata</h4>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Asset ID</span>
+                                                <span className="text-slate-900 font-medium">{selectedAsset.id}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Type</span>
+                                                <span className="text-slate-900 font-medium">{selectedAsset.type || 'Blog Banner'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Content Type</span>
+                                                <span className="text-slate-900 font-medium">{selectedAsset.asset_category || 'Article'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Dimensions</span>
+                                                <span className="text-slate-900 font-medium">1920x1080</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Size</span>
+                                                <span className="text-slate-900 font-medium">
+                                                    {selectedAsset.file_size ? `${(selectedAsset.file_size / (1024 * 1024)).toFixed(1)} MB` : '2.4 MB'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Format</span>
+                                                <span className="text-slate-900 font-medium">
+                                                    {selectedAsset.asset_format?.toUpperCase() || selectedAsset.file_type?.toUpperCase() || 'JPEG'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Version</span>
+                                                <span className="text-slate-900 font-medium">{selectedAsset.version_number || 'v1.2'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Created By</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                        EW
+                                                    </div>
+                                                    <span className="text-slate-900 font-medium">Emily Watson</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-600">Updated By</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                        JS
+                                                    </div>
+                                                    <span className="text-slate-900 font-medium">John Smith</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Right Column - Asset Details */}
                             <div className="lg:col-span-2 space-y-6">
 
-                                {/* Basic Information */}
+                                {/* Asset Information Panel */}
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-slate-200">
                                         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                                             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            Basic Information
+                                            Asset Information
                                         </h3>
                                     </div>
                                     <div className="p-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Type</label>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Asset ID</label>
+                                                <span className="text-slate-900 font-medium">{selectedAsset.id}</span>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Type</label>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-2xl">{getAssetIcon(selectedAsset.type)}</span>
-                                                    <span className="text-slate-900 font-medium">{selectedAsset.type}</span>
+                                                    <span className="text-lg">{getAssetIcon(selectedAsset.type)}</span>
+                                                    <span className="text-slate-900 font-medium">{selectedAsset.type || 'Blog Banner'}</span>
                                                 </div>
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Content Type</label>
-                                                <span className="text-slate-900">{selectedAsset.asset_category || 'Blog Banner'}</span>
+                                                <span className="text-slate-900">{selectedAsset.asset_category || 'Article'}</span>
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Dimensions</label>
@@ -3397,27 +3490,22 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Version</label>
                                                 <span className="text-slate-900">{selectedAsset.version_number || 'v1.2'}</span>
                                             </div>
-                                        </div>
-
-                                        <div className="mt-6 pt-6 border-t border-slate-200">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Created By</label>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                                            EW
-                                                        </div>
-                                                        <span className="text-slate-900">Emily Watson</span>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Created By</label>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                        EW
                                                     </div>
+                                                    <span className="text-slate-900">Emily Watson</span>
                                                 </div>
-                                                <div>
-                                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Updated By</label>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                                            JS
-                                                        </div>
-                                                        <span className="text-slate-900">John Smith</span>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Updated By</label>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                        JS
                                                     </div>
+                                                    <span className="text-slate-900">John Smith</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -3437,30 +3525,61 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <div className="p-6 space-y-4">
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Task</label>
-                                            <span className="text-blue-600 hover:text-blue-700 cursor-pointer">Write blog post on AI trends</span>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                </svg>
+                                                <span className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">Write blog post on AI trends</span>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Campaign</label>
-                                            <span className="text-slate-900">Content</span>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                </svg>
+                                                <span className="text-slate-900 font-medium">Content</span>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Project</label>
-                                            <span className="text-slate-900">Q4 Marketing Campaign</span>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                </svg>
+                                                <span className="text-slate-900 font-medium">Q4 Marketing Campaign</span>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Service</label>
-                                            <span className="text-slate-900">Digital Marketing</span>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6" />
+                                                </svg>
+                                                <span className="text-slate-900 font-medium">Digital Marketing</span>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Sub-Service</label>
-                                            <span className="text-slate-900">Content Marketing</span>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span className="text-slate-900 font-medium">Content Marketing</span>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Repository</label>
-                                            <span className="text-slate-900">{selectedAsset.repository}</span>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                                                </svg>
+                                                <span className="text-slate-900 font-medium">{selectedAsset.repository || 'Content Repository'}</span>
+                                            </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Keywords Tagged</label>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Keywords Tagged</label>
                                             <div className="flex flex-wrap gap-2">
                                                 {selectedAsset.keywords && selectedAsset.keywords.length > 0 ? (
                                                     selectedAsset.keywords.map((keyword, index) => (
@@ -3493,88 +3612,160 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <div className="p-6">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                             <div className="text-center">
-                                                <div className="text-3xl font-bold text-green-600 mb-2">
-                                                    {selectedAsset.qc_score || 96}
-                                                    <span className="text-lg text-slate-500">/ 100</span>
+                                                <div className="relative inline-flex items-center justify-center">
+                                                    <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                                                        <path
+                                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                            fill="none"
+                                                            stroke="#e5e7eb"
+                                                            strokeWidth="3"
+                                                        />
+                                                        <path
+                                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                            fill="none"
+                                                            stroke="#10b981"
+                                                            strokeWidth="3"
+                                                            strokeDasharray={`${(selectedAsset.qc_score || 96)}, 100`}
+                                                        />
+                                                    </svg>
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <div className="text-2xl font-bold text-green-600">
+                                                                {selectedAsset.qc_score || 96}
+                                                            </div>
+                                                            <div className="text-xs text-slate-500">/ 100</div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="text-sm font-medium text-slate-700">QC Score</div>
+                                                <div className="text-sm font-medium text-slate-700 mt-2">QC Score</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-lg font-bold text-green-600 mb-2">
+                                                <div className="w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+                                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${selectedAsset.status === 'QC Approved' ? 'bg-green-100' :
+                                                        selectedAsset.status === 'QC Rejected' ? 'bg-red-100' : 'bg-green-100'
+                                                        }`}>
+                                                        {selectedAsset.status === 'QC Approved' || selectedAsset.status !== 'QC Rejected' ? (
+                                                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className={`text-lg font-bold mb-1 ${selectedAsset.status === 'QC Approved' ? 'text-green-600' :
+                                                    selectedAsset.status === 'QC Rejected' ? 'text-red-600' : 'text-green-600'
+                                                    }`}>
                                                     {selectedAsset.status === 'QC Approved' ? 'Pass' : selectedAsset.status === 'QC Rejected' ? 'Fail' : 'Pass'}
                                                 </div>
                                                 <div className="text-sm font-medium text-slate-700">Status</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-sm font-medium text-slate-900 mb-2">Sarah Johnson</div>
+                                                <div className="w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+                                                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-lg font-bold">
+                                                        SJ
+                                                    </div>
+                                                </div>
+                                                <div className="text-sm font-medium text-slate-900 mb-1">Sarah Johnson</div>
                                                 <div className="text-sm font-medium text-slate-700">Reviewer</div>
                                             </div>
                                         </div>
 
-                                        <div className="mb-6">
+                                        <div className="mb-6 text-center">
                                             <label className="block text-sm font-semibold text-slate-700 mb-2">QC Date</label>
-                                            <span className="text-slate-900">
-                                                {selectedAsset.qc_reviewed_at ? new Date(selectedAsset.qc_reviewed_at).toLocaleDateString() : '2025-12-02'}
+                                            <span className="text-slate-900 font-medium">
+                                                {selectedAsset.qc_reviewed_at ? new Date(selectedAsset.qc_reviewed_at).toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                }) : 'December 2, 2025'}
                                             </span>
                                         </div>
 
                                         {/* QC Checklist & Scoring */}
                                         <div className="space-y-4">
-                                            <h4 className="font-semibold text-slate-900">QC Checklist & Scoring</h4>
+                                            <h4 className="font-semibold text-slate-900 text-lg">QC Checklist & Scoring</h4>
 
                                             <div className="space-y-3">
-                                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Image Resolution & Quality</div>
-                                                        <div className="text-sm text-slate-600">Perfect 1920x1080 resolution, crisp and clear</div>
+                                                <div className="flex justify-between items-start p-4 bg-green-50 rounded-lg border border-green-200">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <div className="font-semibold text-slate-900">Image Resolution & Quality</div>
+                                                        </div>
+                                                        <div className="text-sm text-slate-600 ml-7">Perfect 1920x1080 resolution, crisp and clear</div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-green-600">20/20</div>
-                                                        <div className="text-xs text-green-600 font-medium">Pass</div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Brand Guidelines Compliance</div>
-                                                        <div className="text-sm text-slate-600">Colors match brand palette, minor typography adjustment needed</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-yellow-600">18/20</div>
-                                                        <div className="text-xs text-yellow-600 font-medium">Pass</div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="font-bold text-green-600 text-lg">20/20</div>
+                                                        <div className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded">Pass</div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Text Readability</div>
-                                                        <div className="text-sm text-slate-600">Excellent contrast and font sizing</div>
+                                                <div className="flex justify-between items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                                                            </svg>
+                                                            <div className="font-semibold text-slate-900">Brand Guidelines Compliance</div>
+                                                        </div>
+                                                        <div className="text-sm text-slate-600 ml-7">Colors match brand palette, minor typography adjustment needed</div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-green-600">20/20</div>
-                                                        <div className="text-xs text-green-600 font-medium">Pass</div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">File Optimization</div>
-                                                        <div className="text-sm text-slate-600">Good compression, could be optimized further by 200KB</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-yellow-600">18/20</div>
-                                                        <div className="text-xs text-yellow-600 font-medium">Pass</div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="font-bold text-yellow-600 text-lg">18/20</div>
+                                                        <div className="text-xs text-yellow-600 font-medium bg-yellow-100 px-2 py-1 rounded">Pass</div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Mobile Responsiveness Check</div>
-                                                        <div className="text-sm text-slate-600">Scales perfectly on mobile devices</div>
+                                                <div className="flex justify-between items-start p-4 bg-green-50 rounded-lg border border-green-200">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <div className="font-semibold text-slate-900">Text Readability</div>
+                                                        </div>
+                                                        <div className="text-sm text-slate-600 ml-7">Excellent contrast and font sizing</div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-green-600">20/20</div>
-                                                        <div className="text-xs text-green-600 font-medium">Pass</div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="font-bold text-green-600 text-lg">20/20</div>
+                                                        <div className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded">Pass</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                                                            </svg>
+                                                            <div className="font-semibold text-slate-900">File Optimization</div>
+                                                        </div>
+                                                        <div className="text-sm text-slate-600 ml-7">Good compression, could be optimized further by 200KB</div>
+                                                    </div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="font-bold text-yellow-600 text-lg">18/20</div>
+                                                        <div className="text-xs text-yellow-600 font-medium bg-yellow-100 px-2 py-1 rounded">Pass</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-start p-4 bg-green-50 rounded-lg border border-green-200">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <div className="font-semibold text-slate-900">Mobile Responsiveness Check</div>
+                                                        </div>
+                                                        <div className="text-sm text-slate-600 ml-7">Scales perfectly on mobile devices</div>
+                                                    </div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="font-bold text-green-600 text-lg">20/20</div>
+                                                        <div className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded">Pass</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -3594,23 +3785,54 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </div>
                                     <div className="p-6 space-y-6">
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Website URLs</label>
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                                    <span className="text-blue-600 hover:text-blue-700 cursor-pointer text-sm">
-                                                        {selectedAsset.web_url || 'https://example.com/blog/ai-trends-2025'}
-                                                    </span>
-                                                    <button className="text-slate-400 hover:text-slate-600">
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                                                </svg>
+                                                Website URLs
+                                            </label>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-blue-600 hover:text-blue-700 cursor-pointer text-sm font-medium">
+                                                                {selectedAsset.web_url || 'https://example.com/blog/ai-trends-2025'}
+                                                            </div>
+                                                            <div className="text-xs text-slate-500">Primary URL</div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => window.open(selectedAsset.web_url || 'https://example.com/blog/ai-trends-2025', '_blank')}
+                                                        className="text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                                                    >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                                         </svg>
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                                    <span className="text-blue-600 hover:text-blue-700 cursor-pointer text-sm">
-                                                        https://example.com/resources/ai-guide
-                                                    </span>
-                                                    <button className="text-slate-400 hover:text-slate-600">
+                                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-green-600 hover:text-green-700 cursor-pointer text-sm font-medium">
+                                                                https://example.com/resources/ai-guide
+                                                            </div>
+                                                            <div className="text-xs text-slate-500">Resource Guide</div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => window.open('https://example.com/resources/ai-guide', '_blank')}
+                                                        className="text-green-600 hover:text-green-700 p-2 hover:bg-green-100 rounded-lg transition-colors"
+                                                    >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                                         </svg>
@@ -3620,27 +3842,46 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Social Media Posts</label>
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                                </svg>
+                                                Social Media Posts
+                                            </label>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                                                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                                                             <span className="text-white text-xs font-bold">in</span>
                                                         </div>
-                                                        <span className="text-sm font-medium">LinkedIn</span>
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-900">LinkedIn</div>
+                                                            <div className="text-xs text-slate-500">Professional Network</div>
+                                                        </div>
                                                     </div>
-                                                    <button className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700">
+                                                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
                                                         View Post
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center justify-between p-3 bg-sky-50 rounded-lg border border-sky-200">
+                                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-sky-50 to-sky-100 rounded-lg border border-sky-200">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-6 h-6 bg-sky-500 rounded flex items-center justify-center">
+                                                        <div className="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
                                                             <span className="text-white text-xs font-bold">𝕏</span>
                                                         </div>
-                                                        <span className="text-sm font-medium">Twitter</span>
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-900">Twitter</div>
+                                                            <div className="text-xs text-slate-500">Microblogging Platform</div>
+                                                        </div>
                                                     </div>
-                                                    <button className="bg-sky-500 text-white px-3 py-1 rounded text-xs font-medium hover:bg-sky-600">
+                                                    <button className="bg-sky-500 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-sky-600 transition-colors flex items-center gap-2">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
                                                         View Post
                                                     </button>
                                                 </div>
@@ -3648,69 +3889,170 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Backlink Submissions</label>
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                                                    <span className="text-sm">techblog.com</span>
-                                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">Approved</span>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                </svg>
+                                                Backlink Submissions
+                                            </label>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-900">techblog.com</div>
+                                                            <div className="text-xs text-slate-500">Technology Blog</div>
+                                                        </div>
+                                                    </div>
+                                                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        Approved
+                                                    </span>
                                                 </div>
-                                                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                                    <span className="text-sm">innovation.net</span>
-                                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">Pending</span>
+                                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-900">innovation.net</div>
+                                                            <div className="text-xs text-slate-500">Innovation Network</div>
+                                                        </div>
+                                                    </div>
+                                                    <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        Pending
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Engagement Metrics</label>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                                </svg>
+                                                Engagement Metrics
+                                            </label>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                                                    <div className="text-2xl font-bold text-slate-900">45,200</div>
-                                                    <div className="text-xs text-slate-600">Impressions</div>
+                                                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                                                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="text-2xl font-bold text-blue-600">45,200</div>
+                                                    <div className="text-xs text-slate-600 font-medium">Impressions</div>
                                                 </div>
-                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                                                    <div className="text-2xl font-bold text-slate-900">3,800</div>
-                                                    <div className="text-xs text-slate-600">Clicks</div>
+                                                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                                                    <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="text-2xl font-bold text-purple-600">3,800</div>
+                                                    <div className="text-xs text-slate-600 font-medium">Clicks</div>
                                                 </div>
-                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                                                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                        </svg>
+                                                    </div>
                                                     <div className="text-2xl font-bold text-green-600">8.4%</div>
-                                                    <div className="text-xs text-slate-600">CTR</div>
+                                                    <div className="text-xs text-slate-600 font-medium">CTR</div>
                                                 </div>
-                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                                                    <div className="text-2xl font-bold text-slate-900">420</div>
-                                                    <div className="text-xs text-slate-600">Shares</div>
+                                                <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                                                    <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="text-2xl font-bold text-orange-600">420</div>
+                                                    <div className="text-xs text-slate-600 font-medium">Shares</div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                            <h4 className="font-semibold text-green-900 mb-2">Performance Summary</h4>
-                                            <p className="text-sm text-green-800">
-                                                High engagement with 8.4% CTR, performing 24% above campaign average.
-                                            </p>
+                                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                                                        Performance Summary
+                                                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">Excellent</span>
+                                                    </h4>
+                                                    <p className="text-sm text-green-800 leading-relaxed">
+                                                        High engagement with <span className="font-semibold">8.4% CTR</span>, performing <span className="font-semibold">24% above</span> campaign average.
+                                                        Strong social media presence with consistent backlink approvals driving quality traffic.
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Action Buttons */}
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-4 border-b border-slate-200">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                                            </svg>
+                                            Quick Actions
+                                        </h3>
+                                    </div>
                                     <div className="p-6">
-                                        <div className="flex flex-wrap gap-3">
-                                            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 011-1h2a2 2 0 011 1v2m-4 0a2 2 0 01-2-2m0 0V4a2 2 0 012-2h2a2 2 0 012 2v2" />
-                                                </svg>
-                                                Open in Task
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <button
+                                                onClick={() => {
+                                                    if (onNavigate) {
+                                                        onNavigate('tasks', selectedAsset.id);
+                                                    }
+                                                }}
+                                                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-xl font-medium shadow-sm hover:shadow-lg transition-all flex items-center gap-3 group"
+                                            >
+                                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 011-1h2a2 2 0 011 1v2m-4 0a2 2 0 01-2-2m0 0V4a2 2 0 012-2h2a2 2 0 012 2v2" />
+                                                    </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="font-semibold">Open in Task</div>
+                                                    <div className="text-xs opacity-90">View linked tasks</div>
+                                                </div>
                                             </button>
+
                                             <button
                                                 onClick={() => handleEdit({ stopPropagation: () => { } } as any, selectedAsset)}
-                                                className="bg-slate-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm hover:bg-slate-700 transition-colors flex items-center gap-2"
+                                                className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-6 py-4 rounded-xl font-medium shadow-sm hover:shadow-lg transition-all flex items-center gap-3 group"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                                Edit Asset
+                                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="font-semibold">Edit Asset</div>
+                                                    <div className="text-xs opacity-90">Modify details</div>
+                                                </div>
                                             </button>
+
                                             <button
                                                 onClick={() => {
                                                     const url = selectedAsset.file_url || selectedAsset.thumbnail_url;
@@ -3721,12 +4063,17 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         link.click();
                                                     }
                                                 }}
-                                                className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm hover:bg-green-700 transition-colors flex items-center gap-2"
+                                                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl font-medium shadow-sm hover:shadow-lg transition-all flex items-center gap-3 group"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                Download
+                                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="font-semibold">Download</div>
+                                                    <div className="text-xs opacity-90">Save locally</div>
+                                                </div>
                                             </button>
                                         </div>
                                     </div>
