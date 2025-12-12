@@ -221,6 +221,178 @@ export const initDatabase = () => {
             assets_linked INTEGER DEFAULT 0,
             FOREIGN KEY (parent_service_id) REFERENCES services(id)
         );
+
+        CREATE TABLE IF NOT EXISTS campaigns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_name TEXT NOT NULL,
+            campaign_type TEXT,
+            status TEXT DEFAULT 'draft',
+            start_date DATE,
+            end_date DATE,
+            budget REAL,
+            description TEXT,
+            target_audience TEXT,
+            goals TEXT,
+            kpis TEXT,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_name TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'pending',
+            priority TEXT DEFAULT 'medium',
+            assigned_to INTEGER,
+            project_id INTEGER,
+            due_date DATE,
+            completed_at DATETIME,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS analytics_daily_traffic (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date DATE NOT NULL,
+            value INTEGER DEFAULT 0,
+            source TEXT,
+            page_url TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Insert sample data if tables are empty
+        INSERT OR IGNORE INTO campaigns (id, campaign_name, campaign_type, status, description) VALUES 
+        (1, 'Sample Campaign', 'Digital Marketing', 'active', 'Sample campaign for testing');
+
+        INSERT OR IGNORE INTO tasks (id, task_name, description, status, priority, due_date) VALUES 
+        (1, 'Sample Task', 'Sample task for testing', 'pending', 'medium', date('now', '+7 days'));
+
+        CREATE TABLE IF NOT EXISTS content (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content_type TEXT,
+            status TEXT DEFAULT 'draft',
+            body_content TEXT,
+            meta_title TEXT,
+            meta_description TEXT,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS content_repository (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            brand_id INTEGER,
+            content_title_clean TEXT,
+            asset_type TEXT,
+            status TEXT DEFAULT 'draft',
+            asset_category TEXT,
+            asset_format TEXT,
+            slug TEXT,
+            full_url TEXT,
+            linked_service_ids TEXT,
+            linked_sub_service_ids TEXT,
+            h1 TEXT,
+            h2_list TEXT,
+            h3_list TEXT,
+            body_content TEXT,
+            meta_title TEXT,
+            meta_description TEXT,
+            focus_keywords TEXT,
+            og_title TEXT,
+            og_description TEXT,
+            og_image_url TEXT,
+            social_meta TEXT,
+            thumbnail_url TEXT,
+            context TEXT,
+            linked_campaign_id INTEGER,
+            promotion_channels TEXT,
+            campaign_name TEXT,
+            assigned_to_id INTEGER,
+            ai_qc_report TEXT,
+            last_status_update_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS brands (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            code TEXT,
+            industry TEXT,
+            website TEXT,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            role TEXT,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS content_types (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content_type TEXT NOT NULL,
+            description TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS keywords (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            keyword TEXT NOT NULL,
+            keyword_type TEXT,
+            search_volume INTEGER DEFAULT 0,
+            competition TEXT,
+            mapped_service TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO analytics_daily_traffic (id, date, value, source) VALUES 
+        (1, date('now'), 100, 'organic'),
+        (2, date('now', '-1 day'), 95, 'organic'),
+        (3, date('now', '-2 days'), 110, 'organic');
+
+        -- Insert sample data for other tables
+        INSERT OR IGNORE INTO brands (id, name, code, industry, website) VALUES 
+        (1, 'Sample Brand', 'SB', 'Technology', 'https://example.com');
+
+        INSERT OR IGNORE INTO users (id, name, email, role) VALUES 
+        (1, 'Admin User', 'admin@example.com', 'admin');
+
+        INSERT OR IGNORE INTO content_types (id, content_type, description) VALUES 
+        (1, 'Pillar', 'Pillar content type'),
+        (2, 'Cluster', 'Cluster content type'),
+        (3, 'Landing', 'Landing page content type'),
+        (4, 'Blog', 'Blog content type');
+
+        INSERT OR IGNORE INTO keywords (id, keyword, keyword_type, search_volume, competition) VALUES 
+        (1, 'sample keyword', 'primary', 1000, 'medium');
+
+        CREATE TABLE IF NOT EXISTS industry_sectors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            industry TEXT NOT NULL,
+            sector TEXT,
+            application TEXT,
+            country TEXT,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO industry_sectors (id, industry, sector, application, country, status) VALUES 
+        (1, 'Technology', 'Software Development', 'Web Services', 'Global', 'active'),
+        (2, 'Healthcare', 'Medical Services', 'Patient Care', 'US', 'active'),
+        (3, 'Finance', 'Banking', 'Digital Banking', 'Global', 'active'),
+        (4, 'E-commerce', 'Retail', 'Online Shopping', 'Global', 'active');
     `);
 
     console.log('✅ SQLite database initialized');

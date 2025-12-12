@@ -3,7 +3,7 @@ import React from 'react';
 interface CircularScoreProps {
     score: number;
     label: string;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
     showEmbedButton?: boolean;
     className?: string;
 }
@@ -19,7 +19,7 @@ const CircularScore: React.FC<CircularScoreProps> = ({
     const normalizedScore = Math.max(0, Math.min(100, score));
 
     // Calculate stroke dash array for the progress circle
-    const radius = size === 'sm' ? 30 : size === 'lg' ? 50 : 40;
+    const radius = size === 'xs' ? 20 : size === 'sm' ? 30 : size === 'lg' ? 50 : 40;
     const circumference = 2 * Math.PI * radius;
     const strokeDasharray = circumference;
     const strokeDashoffset = circumference - (normalizedScore / 100) * circumference;
@@ -35,6 +35,13 @@ const CircularScore: React.FC<CircularScoreProps> = ({
 
     // Size configurations
     const sizeConfig = {
+        xs: {
+            container: 'w-12 h-12',
+            svg: 'w-12 h-12',
+            text: 'text-xs font-bold',
+            label: 'text-[10px]',
+            strokeWidth: 3
+        },
         sm: {
             container: 'w-20 h-20',
             svg: 'w-20 h-20',

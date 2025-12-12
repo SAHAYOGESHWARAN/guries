@@ -20,9 +20,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [typeFilter, setTypeFilter] = useState('All');
-    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [qcMode, setQcMode] = useState(false); // Toggle between user and QC mode
+    const [displayMode, setDisplayMode] = useState<'table' | 'grid'>('table'); // List vs Large view toggle
+    const [isRefreshing, setIsRefreshing] = useState(false); // Refresh state
     const [currentUser] = useState({ id: 1, role: 'user' }); // TODO: Get from auth context
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
@@ -81,6 +83,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [qcScore, setQcScore] = useState<number | undefined>(undefined);
     const [qcRemarks, setQcRemarks] = useState('');
     const [checklistCompleted, setChecklistCompleted] = useState(false);
+
+    // Detailed view state
+    const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
 
     // Auto-refresh on mount to ensure latest data
     React.useEffect(() => {
@@ -469,6 +474,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             alert('Failed to submit QC review. Please try again.');
         }
     }, [qcReviewAsset, qcScore, qcRemarks, checklistCompleted, currentUser.id, updateAsset, refresh]);
+
+    // Handle row click to show detailed view
+    const handleRowClick = useCallback((asset: AssetLibraryItem) => {
+        setSelectedAsset(asset);
+        setViewMode('detail');
+    }, []);
 
     const getAssetIcon = useCallback((type: string) => {
         const icons: Record<string, string> = {
@@ -1832,118 +1843,415 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                 {/* SMM Application Fields */}
                                 {newAsset.application_type === 'smm' && (
-                                    <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                                            </svg>
-                                            <h4 className="font-bold text-purple-900">SMM Application Fields</h4>
+                                    <div className="space-y-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 shadow-sm">
+                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200">
+                                            <div className="bg-purple-600 p-2 rounded-lg">
+                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-bold text-purple-900">📱 SMM Application Fields</h4>
+                                                <p className="text-sm text-purple-600">Configure your social media content</p>
+                                            </div>
                                         </div>
 
-                                        {/* Platform Selector */}
+                                        {/* Platform Selector - Enhanced */}
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Social Media Platform</label>
-                                            <select
-                                                value={newAsset.smm_platform || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
-                                            >
-                                                <option value="">Select platform...</option>
-                                                <option value="facebook_instagram">Facebook / Instagram</option>
-                                                <option value="twitter">Twitter</option>
-                                                <option value="linkedin">LinkedIn</option>
-                                            </select>
+                                            <label className="block text-sm font-bold text-slate-700 mb-3">
+                                                🌐 Social Media Platform
+                                                <span className="text-red-500 ml-1">*</span>
+                                            </label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                                                {[
+                                                    { value: 'facebook', label: 'Facebook', icon: '📘', color: 'from-blue-600 to-blue-700', description: 'Share with friends and family' },
+                                                    { value: 'instagram', label: 'Instagram', icon: '📷', color: 'from-pink-500 to-purple-600', description: 'Visual storytelling platform' },
+                                                    { value: 'twitter', label: 'Twitter/X', icon: '🐦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
+                                                    { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
+                                                    { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' },
+                                                    { value: 'tiktok', label: 'TikTok', icon: '🎵', color: 'from-black to-gray-800', description: 'Short-form video content' },
+                                                    { value: 'pinterest', label: 'Pinterest', icon: '📌', color: 'from-red-500 to-pink-500', description: 'Visual discovery engine' },
+                                                    { value: 'snapchat', label: 'Snapchat', icon: '👻', color: 'from-yellow-400 to-yellow-500', description: 'Ephemeral content sharing' },
+                                                    { value: 'whatsapp', label: 'WhatsApp', icon: '💬', color: 'from-green-500 to-green-600', description: 'Messaging and status updates' }
+                                                ].map((platform) => (
+                                                    <button
+                                                        key={platform.value}
+                                                        type="button"
+                                                        onClick={() => setNewAsset({ ...newAsset, smm_platform: platform.value as any })}
+                                                        className={`p-4 rounded-xl border-2 transition-all text-left hover:scale-105 ${newAsset.smm_platform === platform.value
+                                                            ? `bg-gradient-to-r ${platform.color} text-white border-transparent shadow-lg`
+                                                            : 'bg-white border-slate-200 hover:border-purple-300 hover:shadow-md'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <span className="text-2xl">{platform.icon}</span>
+                                                            <span className={`font-bold text-sm ${newAsset.smm_platform === platform.value ? 'text-white' : 'text-slate-800'
+                                                                }`}>
+                                                                {platform.label}
+                                                            </span>
+                                                        </div>
+                                                        <p className={`text-xs ${newAsset.smm_platform === platform.value ? 'text-white/90' : 'text-slate-500'
+                                                            }`}>
+                                                            {platform.description}
+                                                        </p>
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* Fallback dropdown for additional platforms */}
+                                            <div className="mt-4">
+                                                <label className="block text-xs font-medium text-slate-600 mb-2">Or select from dropdown:</label>
+                                                <select
+                                                    value={newAsset.smm_platform || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
+                                                >
+                                                    <option value="">Select platform...</option>
+                                                    <option value="facebook">📘 Facebook</option>
+                                                    <option value="instagram">📷 Instagram</option>
+                                                    <option value="twitter">🐦 Twitter/X</option>
+                                                    <option value="linkedin">💼 LinkedIn</option>
+                                                    <option value="youtube">🎥 YouTube</option>
+                                                    <option value="tiktok">🎵 TikTok</option>
+                                                    <option value="pinterest">📌 Pinterest</option>
+                                                    <option value="snapchat">👻 Snapchat</option>
+                                                    <option value="whatsapp">💬 WhatsApp</option>
+                                                    <option value="telegram">✈️ Telegram</option>
+                                                    <option value="discord">🎮 Discord</option>
+                                                    <option value="reddit">🤖 Reddit</option>
+                                                    <option value="tumblr">📝 Tumblr</option>
+                                                    <option value="other">🌐 Other Platform</option>
+                                                </select>
+                                            </div>
                                         </div>
 
                                         {/* Platform-specific fields */}
                                         {newAsset.smm_platform && (
-                                            <div className="space-y-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">
-                                                        {newAsset.smm_platform === 'facebook_instagram' && '📘 Facebook / Instagram'}
-                                                        {newAsset.smm_platform === 'twitter' && '🐦 Twitter'}
-                                                        {newAsset.smm_platform === 'linkedin' && '💼 LinkedIn'}
-                                                    </span>
+                                            <div className="space-y-6 bg-white rounded-xl p-6 border-2 border-slate-200 shadow-sm">
+                                                <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg">
+                                                        {newAsset.smm_platform === 'facebook' && '📘'}
+                                                        {newAsset.smm_platform === 'instagram' && '📷'}
+                                                        {newAsset.smm_platform === 'twitter' && '�'}
+                                                        {newAsset.smm_platform === 'linkedin' && '💼'}
+                                                        {newAsset.smm_platform === 'youtube' && '🎥'}
+                                                        {newAsset.smm_platform === 'tiktok' && '🎵'}
+                                                        {newAsset.smm_platform === 'pinterest' && '📌'}
+                                                        {newAsset.smm_platform === 'snapchat' && '👻'}
+                                                        {newAsset.smm_platform === 'whatsapp' && '💬'}
+                                                        {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'tiktok', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && '🌐'}
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="text-lg font-bold text-slate-800 capitalize">
+                                                            {newAsset.smm_platform === 'twitter' ? 'Twitter/X' : newAsset.smm_platform} Content
+                                                        </h5>
+                                                        <p className="text-sm text-slate-600">
+                                                            {newAsset.smm_platform === 'facebook' && 'Engage with your Facebook community'}
+                                                            {newAsset.smm_platform === 'instagram' && 'Share visual stories on Instagram'}
+                                                            {newAsset.smm_platform === 'twitter' && 'Join real-time conversations'}
+                                                            {newAsset.smm_platform === 'linkedin' && 'Connect with professionals'}
+                                                            {newAsset.smm_platform === 'youtube' && 'Create engaging video content'}
+                                                            {newAsset.smm_platform === 'tiktok' && 'Create viral short-form videos'}
+                                                            {newAsset.smm_platform === 'pinterest' && 'Inspire with visual content'}
+                                                            {newAsset.smm_platform === 'snapchat' && 'Share moments that disappear'}
+                                                            {newAsset.smm_platform === 'whatsapp' && 'Connect through messaging'}
+                                                            {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'tiktok', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && 'Create engaging social content'}
+                                                        </p>
+                                                    </div>
                                                 </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
-                                                    <textarea
-                                                        value={newAsset.smm_description || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="Enter post description..."
-                                                        rows={4}
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Hashtags</label>
-                                                    <input
-                                                        type="text"
-                                                        value={newAsset.smm_hashtags || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="#hashtag1 #hashtag2 #hashtag3"
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Media Type</label>
-                                                    <select
-                                                        value={newAsset.smm_media_type || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_media_type: e.target.value as any })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer"
-                                                    >
-                                                        <option value="">Select media type...</option>
-                                                        <option value="image">Image</option>
-                                                        <option value="video">Video</option>
-                                                        <option value="carousel">Carousel</option>
-                                                        <option value="gif">GIF</option>
-                                                    </select>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Media Upload</label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="url"
-                                                            value={newAsset.smm_media_url || ''}
-                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_media_url: e.target.value })}
-                                                            className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                            placeholder="https://example.com/media.jpg or upload file"
+                                                {/* Content Fields */}
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                            📝 Post Caption/Description
+                                                            <span className="text-red-500 ml-1">*</span>
+                                                        </label>
+                                                        <textarea
+                                                            value={newAsset.smm_description || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                            placeholder={
+                                                                newAsset.smm_platform === 'twitter' ? 'What\'s happening? (280 characters)' :
+                                                                    newAsset.smm_platform === 'linkedin' ? 'Share your professional insights...' :
+                                                                        newAsset.smm_platform === 'instagram' ? 'Share your story with a captivating caption...' :
+                                                                            newAsset.smm_platform === 'facebook' ? 'What\'s on your mind?' :
+                                                                                newAsset.smm_platform === 'youtube' ? 'Describe your video content...' :
+                                                                                    newAsset.smm_platform === 'tiktok' ? 'Add a catchy description for your video...' :
+                                                                                        'Enter your post content...'
+                                                            }
+                                                            rows={5}
+                                                            maxLength={
+                                                                newAsset.smm_platform === 'twitter' ? 280 :
+                                                                    newAsset.smm_platform === 'instagram' ? 2200 :
+                                                                        newAsset.smm_platform === 'linkedin' ? 3000 :
+                                                                            undefined
+                                                            }
                                                         />
+                                                        {newAsset.smm_platform === 'twitter' && (
+                                                            <div className="text-xs text-slate-500 mt-1 text-right">
+                                                                {(newAsset.smm_description || '').length}/280 characters
+                                                            </div>
+                                                        )}
+                                                        {newAsset.smm_platform === 'instagram' && (
+                                                            <div className="text-xs text-slate-500 mt-1 text-right">
+                                                                {(newAsset.smm_description || '').length}/2,200 characters
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                            🏷️ Hashtags & Tags
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={newAsset.smm_hashtags || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                            placeholder={
+                                                                newAsset.smm_platform === 'twitter' ? '#hashtag1 #hashtag2 (max 2-3)' :
+                                                                    newAsset.smm_platform === 'instagram' ? '#hashtag1 #hashtag2 #hashtag3 (max 30)' :
+                                                                        newAsset.smm_platform === 'linkedin' ? '#hashtag1 #hashtag2 #hashtag3 (max 5)' :
+                                                                            newAsset.smm_platform === 'tiktok' ? '#hashtag1 #hashtag2 #hashtag3 (trending tags)' :
+                                                                                '#hashtag1 #hashtag2 #hashtag3'
+                                                            }
+                                                        />
+                                                        <div className="mt-2 text-xs text-slate-500">
+                                                            {newAsset.smm_platform === 'twitter' && '💡 Use 1-2 relevant hashtags for better engagement'}
+                                                            {newAsset.smm_platform === 'instagram' && '💡 Use 5-10 hashtags for optimal reach'}
+                                                            {newAsset.smm_platform === 'linkedin' && '💡 Use 3-5 professional hashtags'}
+                                                            {newAsset.smm_platform === 'tiktok' && '💡 Mix trending and niche hashtags'}
+                                                            {newAsset.smm_platform === 'youtube' && '💡 Use hashtags in description for discoverability'}
+                                                            {!['twitter', 'instagram', 'linkedin', 'tiktok', 'youtube'].includes(newAsset.smm_platform) && '💡 Use relevant hashtags for your platform'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-3">
+                                                        🎬 Content Type
+                                                        <span className="text-red-500 ml-1">*</span>
+                                                    </label>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                        {(() => {
+                                                            const getMediaTypes = (platform: string) => {
+                                                                switch (platform) {
+                                                                    case 'instagram':
+                                                                        return [
+                                                                            { value: 'image', label: 'Photo', icon: '📸' },
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' },
+                                                                            { value: 'story', label: 'Story', icon: '📱' },
+                                                                            { value: 'reel', label: 'Reel', icon: '🎬' }
+                                                                        ];
+                                                                    case 'facebook':
+                                                                        return [
+                                                                            { value: 'image', label: 'Photo', icon: '📸' },
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' },
+                                                                            { value: 'story', label: 'Story', icon: '📱' },
+                                                                            { value: 'live', label: 'Live', icon: '🔴' }
+                                                                        ];
+                                                                    case 'twitter':
+                                                                        return [
+                                                                            { value: 'text', label: 'Tweet', icon: '💬' },
+                                                                            { value: 'image', label: 'Photo', icon: '📸' },
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'gif', label: 'GIF', icon: '🎭' }
+                                                                        ];
+                                                                    case 'linkedin':
+                                                                        return [
+                                                                            { value: 'text', label: 'Post', icon: '📝' },
+                                                                            { value: 'image', label: 'Image', icon: '📸' },
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'document', label: 'Document', icon: '📄' },
+                                                                            { value: 'article', label: 'Article', icon: '📰' }
+                                                                        ];
+                                                                    case 'youtube':
+                                                                        return [
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'short', label: 'Short', icon: '📱' },
+                                                                            { value: 'live', label: 'Live Stream', icon: '🔴' }
+                                                                        ];
+                                                                    case 'tiktok':
+                                                                        return [
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'live', label: 'Live', icon: '🔴' }
+                                                                        ];
+                                                                    case 'pinterest':
+                                                                        return [
+                                                                            { value: 'image', label: 'Pin', icon: '📌' },
+                                                                            { value: 'video', label: 'Video Pin', icon: '🎥' },
+                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' }
+                                                                        ];
+                                                                    default:
+                                                                        return [
+                                                                            { value: 'image', label: 'Image', icon: '📸' },
+                                                                            { value: 'video', label: 'Video', icon: '🎥' },
+                                                                            { value: 'text', label: 'Text', icon: '📝' },
+                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' }
+                                                                        ];
+                                                                }
+                                                            };
+
+                                                            return getMediaTypes(newAsset.smm_platform).map((type) => (
+                                                                <button
+                                                                    key={type.value}
+                                                                    type="button"
+                                                                    onClick={() => setNewAsset({ ...newAsset, smm_media_type: type.value as any })}
+                                                                    className={`p-3 rounded-lg border-2 transition-all text-center hover:scale-105 ${newAsset.smm_media_type === type.value
+                                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                                                                        : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                                                                        }`}
+                                                                >
+                                                                    <div className="text-2xl mb-1">{type.icon}</div>
+                                                                    <div className={`text-xs font-bold ${newAsset.smm_media_type === type.value ? 'text-white' : 'text-slate-700'
+                                                                        }`}>
+                                                                        {type.label}
+                                                                    </div>
+                                                                </button>
+                                                            ));
+                                                        })()}
+                                                    </div>
+                                                </div>
+
+                                                {/* Media Upload Section */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-3">
+                                                        🎨 Media Upload
+                                                        {(newAsset.smm_media_type === 'image' || newAsset.smm_media_type === 'video' || newAsset.smm_media_type === 'carousel') && (
+                                                            <span className="text-red-500 ml-1">*</span>
+                                                        )}
+                                                    </label>
+
+                                                    {/* Upload Area */}
+                                                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
+                                                        onClick={() => mediaInputRef.current?.click()}>
                                                         <input
                                                             ref={mediaInputRef}
                                                             type="file"
-                                                            accept="image/*,video/*,.gif"
+                                                            accept={
+                                                                newAsset.smm_media_type === 'video' ? 'video/*' :
+                                                                    newAsset.smm_media_type === 'image' ? 'image/*' :
+                                                                        'image/*,video/*,.gif'
+                                                            }
                                                             onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
                                                             className="hidden"
                                                         />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => mediaInputRef.current?.click()}
-                                                            className="px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                            </svg>
-                                                            Upload
-                                                        </button>
+
+                                                        {newAsset.smm_media_url && newAsset.smm_media_url.startsWith('data:') ? (
+                                                            <div className="space-y-3">
+                                                                {newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
+                                                                    <video src={newAsset.smm_media_url} controls className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
+                                                                ) : (
+                                                                    <img src={newAsset.smm_media_url} alt="Media preview" className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setNewAsset({ ...newAsset, smm_media_url: '' });
+                                                                    }}
+                                                                    className="text-sm text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                                >
+                                                                    Remove Media
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-4">
+                                                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
+                                                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-base font-semibold text-slate-700 mb-2">
+                                                                        Drop your {newAsset.smm_media_type || 'media'} here or click to browse
+                                                                    </p>
+                                                                    <p className="text-sm text-slate-500">
+                                                                        {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB • Videos up to 60s'}
+                                                                        {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB • Videos up to 2:20'}
+                                                                        {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB • Videos up to 10min'}
+                                                                        {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB • Videos up to 240min'}
+                                                                        {newAsset.smm_platform === 'youtube' && 'Videos up to 15min (or longer with verification)'}
+                                                                        {newAsset.smm_platform === 'tiktok' && 'Videos 15s-10min • 9:16 aspect ratio recommended'}
+                                                                        {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube', 'tiktok'].includes(newAsset.smm_platform) && 'JPG, PNG, MP4, GIF up to 50MB'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    {newAsset.smm_media_url && newAsset.smm_media_url.startsWith('data:') && (
-                                                        <div className="mt-2">
-                                                            {newAsset.smm_media_type === 'video' ? (
-                                                                <video src={newAsset.smm_media_url} controls className="max-h-48 rounded-lg border-2 border-slate-200" />
-                                                            ) : (
-                                                                <img src={newAsset.smm_media_url} alt="Media preview" className="max-h-48 rounded-lg border-2 border-slate-200" />
-                                                            )}
-                                                        </div>
-                                                    )}
+
+                                                    {/* URL Input Alternative */}
+                                                    <div className="mt-4">
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Or paste media URL:</label>
+                                                        <input
+                                                            type="url"
+                                                            value={newAsset.smm_media_url && !newAsset.smm_media_url.startsWith('data:') ? newAsset.smm_media_url : ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_media_url: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                            placeholder="https://example.com/media.jpg"
+                                                        />
+                                                    </div>
                                                 </div>
 
-                                                {/* Preview Button */}
-                                                <div className="mt-4 pt-4 border-t-2 border-blue-200">
+                                                {/* Scheduling & Additional Options */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                            📅 Schedule Post (Optional)
+                                                        </label>
+                                                        <input
+                                                            type="datetime-local"
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-1">Leave empty to save as draft</p>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                            🎯 Target Audience (Optional)
+                                                        </label>
+                                                        <select className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                                                            <option value="">All Followers</option>
+                                                            <option value="location">By Location</option>
+                                                            <option value="age">By Age Group</option>
+                                                            <option value="interests">By Interests</option>
+                                                            <option value="custom">Custom Audience</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                {/* Call-to-Action */}
+                                                {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram' || newAsset.smm_platform === 'linkedin') && (
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                            🔗 Call-to-Action (Optional)
+                                                        </label>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {[
+                                                                { value: 'learn_more', label: 'Learn More' },
+                                                                { value: 'shop_now', label: 'Shop Now' },
+                                                                { value: 'sign_up', label: 'Sign Up' },
+                                                                { value: 'download', label: 'Download' },
+                                                                { value: 'contact_us', label: 'Contact Us' },
+                                                                { value: 'book_now', label: 'Book Now' }
+                                                            ].map((cta) => (
+                                                                <button
+                                                                    key={cta.value}
+                                                                    type="button"
+                                                                    className="p-2 text-sm border-2 border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-center"
+                                                                >
+                                                                    {cta.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Action Buttons */}
+                                                <div className="flex gap-4 pt-6 border-t-2 border-slate-200">
                                                     <button
                                                         type="button"
                                                         onClick={() => {
@@ -1956,14 +2264,94 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             setShowDemoPreview(false);
                                                             setShowPreviewModal(true);
                                                         }}
-                                                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                                                        className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                                                     >
                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                         </svg>
-                                                        Preview {newAsset.smm_platform === 'facebook_instagram' ? 'Facebook/Instagram' : newAsset.smm_platform === 'twitter' ? 'Twitter' : 'LinkedIn'} Post
+                                                        Preview {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Post
                                                     </button>
+
+                                                    <button
+                                                        type="button"
+                                                        className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold shadow-md hover:bg-green-700 transition-all flex items-center gap-2"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                                        </svg>
+                                                        AI Optimize
+                                                    </button>
+                                                </div>
+
+                                                {/* Platform-specific Tips */}
+                                                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="text-yellow-600 mt-0.5">💡</div>
+                                                        <div>
+                                                            <h6 className="font-bold text-yellow-800 mb-2">
+                                                                {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Best Practices
+                                                            </h6>
+                                                            <ul className="text-sm text-yellow-700 space-y-1">
+                                                                {newAsset.smm_platform === 'instagram' && (
+                                                                    <>
+                                                                        <li>• Use high-quality, visually appealing images</li>
+                                                                        <li>• Post consistently at optimal times (11 AM - 1 PM)</li>
+                                                                        <li>• Use 5-10 relevant hashtags for better reach</li>
+                                                                        <li>• Include a clear call-to-action in your caption</li>
+                                                                    </>
+                                                                )}
+                                                                {newAsset.smm_platform === 'twitter' && (
+                                                                    <>
+                                                                        <li>• Keep tweets concise and engaging</li>
+                                                                        <li>• Use 1-2 hashtags maximum</li>
+                                                                        <li>• Tweet during peak hours (9 AM - 3 PM)</li>
+                                                                        <li>• Include visuals to increase engagement by 150%</li>
+                                                                    </>
+                                                                )}
+                                                                {newAsset.smm_platform === 'linkedin' && (
+                                                                    <>
+                                                                        <li>• Share professional insights and industry news</li>
+                                                                        <li>• Post during business hours (8 AM - 6 PM)</li>
+                                                                        <li>• Use 3-5 professional hashtags</li>
+                                                                        <li>• Engage with comments to boost visibility</li>
+                                                                    </>
+                                                                )}
+                                                                {newAsset.smm_platform === 'facebook' && (
+                                                                    <>
+                                                                        <li>• Share engaging, community-focused content</li>
+                                                                        <li>• Post when your audience is most active</li>
+                                                                        <li>• Use Facebook-native video for better reach</li>
+                                                                        <li>• Encourage comments and shares</li>
+                                                                    </>
+                                                                )}
+                                                                {newAsset.smm_platform === 'youtube' && (
+                                                                    <>
+                                                                        <li>• Create compelling thumbnails and titles</li>
+                                                                        <li>• Upload consistently (2-3 times per week)</li>
+                                                                        <li>• Use relevant keywords in description</li>
+                                                                        <li>• Engage with comments within first hour</li>
+                                                                    </>
+                                                                )}
+                                                                {newAsset.smm_platform === 'tiktok' && (
+                                                                    <>
+                                                                        <li>• Create vertical videos (9:16 aspect ratio)</li>
+                                                                        <li>• Hook viewers in the first 3 seconds</li>
+                                                                        <li>• Use trending sounds and hashtags</li>
+                                                                        <li>• Post 1-4 times daily for best results</li>
+                                                                    </>
+                                                                )}
+                                                                {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube', 'tiktok'].includes(newAsset.smm_platform) && (
+                                                                    <>
+                                                                        <li>• Know your platform's optimal posting times</li>
+                                                                        <li>• Use platform-appropriate content formats</li>
+                                                                        <li>• Engage with your community regularly</li>
+                                                                        <li>• Monitor analytics to improve performance</li>
+                                                                    </>
+                                                                )}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
@@ -2119,7 +2507,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <div>
                                         <h3 className="text-lg font-bold">Social Media Post Preview</h3>
                                         <p className="text-xs text-blue-100">
-                                            {newAsset.smm_platform === 'facebook_instagram' && 'Facebook / Instagram'}
+                                            {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && 'Facebook / Instagram'}
                                             {newAsset.smm_platform === 'twitter' && 'Twitter'}
                                             {newAsset.smm_platform === 'linkedin' && 'LinkedIn'}
                                         </p>
@@ -2132,7 +2520,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 </button>
                             </div>
                             <div className="p-6">
-                                {newAsset.smm_platform === 'facebook_instagram' && (
+                                {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
                                     <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 max-w-[500px] mx-auto">
                                         <div className="p-3 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
@@ -2832,6 +3220,523 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 })()
             }
 
+            {/* Detailed Asset View */}
+            {viewMode === 'detail' && selectedAsset && (
+                <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+                    {/* Fixed Header */}
+                    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
+                        <div className="max-w-7xl mx-auto px-6 py-4">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                        title="Back to Assets"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </button>
+                                    <div>
+                                        <h1 className="text-2xl font-bold text-slate-900">{selectedAsset.name}</h1>
+                                        <div className="flex items-center gap-4 mt-1">
+                                            <span className="text-slate-600 text-sm">ID: {selectedAsset.id}</span>
+                                            {getStatusBadge(selectedAsset.status || 'Draft')}
+                                            <span className="text-slate-600 text-sm">
+                                                {selectedAsset.date ? new Date(selectedAsset.date).toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                }) : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-3">
+                                    {(selectedAsset.file_url || selectedAsset.thumbnail_url) && (
+                                        <button
+                                            onClick={() => {
+                                                const url = selectedAsset.file_url || selectedAsset.thumbnail_url;
+                                                if (url) {
+                                                    if (url.startsWith('data:')) {
+                                                        const win = window.open();
+                                                        if (win) {
+                                                            win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
+                                                        }
+                                                    } else {
+                                                        window.open(url, '_blank', 'noopener,noreferrer');
+                                                    }
+                                                }
+                                            }}
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            Large Preview
+                                        </button>
+                                    )}
+
+                                    <button
+                                        onClick={() => {
+                                            const url = selectedAsset.file_url || selectedAsset.thumbnail_url;
+                                            if (url) {
+                                                const link = document.createElement('a');
+                                                link.href = url;
+                                                link.download = selectedAsset.name || 'asset';
+                                                link.click();
+                                            }
+                                        }}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Download
+                                    </button>
+
+                                    {(selectedAsset.status === 'Draft' || selectedAsset.status === 'QC Rejected' || selectedAsset.submitted_by === currentUser.id) && (
+                                        <button
+                                            onClick={() => handleEdit({ stopPropagation: () => { } } as any, selectedAsset)}
+                                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-indigo-700 transition-colors text-sm flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Replace
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="max-w-7xl mx-auto px-6 py-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                            {/* Left Column - Asset Preview */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-24">
+                                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-slate-200">
+                                        <h3 className="text-lg font-semibold text-slate-900">Asset Preview</h3>
+                                    </div>
+                                    <div className="p-6">
+                                        {selectedAsset.thumbnail_url ? (
+                                            <div className="space-y-4">
+                                                <img
+                                                    src={selectedAsset.thumbnail_url}
+                                                    alt={selectedAsset.name}
+                                                    className="w-full rounded-lg border-2 border-slate-200 shadow-sm"
+                                                />
+                                                <div className="text-center">
+                                                    <div className="text-sm font-medium text-slate-700">{selectedAsset.name}</div>
+                                                    <div className="text-xs text-slate-500 mt-1">
+                                                        {selectedAsset.file_size && `${(selectedAsset.file_size / 1024).toFixed(2)} KB`}
+                                                        {selectedAsset.file_type && ` • ${selectedAsset.file_type}`}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12">
+                                                <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-3xl mx-auto mb-4">
+                                                    {getAssetIcon(selectedAsset.type)}
+                                                </div>
+                                                <div className="text-sm font-medium text-slate-700">{selectedAsset.name}</div>
+                                                <div className="text-xs text-slate-500 mt-1">No preview available</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Column - Asset Details */}
+                            <div className="lg:col-span-2 space-y-6">
+
+                                {/* Basic Information */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-slate-200">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Basic Information
+                                        </h3>
+                                    </div>
+                                    <div className="p-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Type</label>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-2xl">{getAssetIcon(selectedAsset.type)}</span>
+                                                    <span className="text-slate-900 font-medium">{selectedAsset.type}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Content Type</label>
+                                                <span className="text-slate-900">{selectedAsset.asset_category || 'Blog Banner'}</span>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Dimensions</label>
+                                                <span className="text-slate-900">1920x1080</span>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Size</label>
+                                                <span className="text-slate-900">
+                                                    {selectedAsset.file_size ? `${(selectedAsset.file_size / (1024 * 1024)).toFixed(1)} MB` : '2.4 MB'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Format</label>
+                                                <span className="text-slate-900">{selectedAsset.asset_format?.toUpperCase() || selectedAsset.file_type?.toUpperCase() || 'JPEG'}</span>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Version</label>
+                                                <span className="text-slate-900">{selectedAsset.version_number || 'v1.2'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-6 pt-6 border-t border-slate-200">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Created By</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                            EW
+                                                        </div>
+                                                        <span className="text-slate-900">Emily Watson</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Updated By</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                            JS
+                                                        </div>
+                                                        <span className="text-slate-900">John Smith</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Mapping & Links */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-slate-200">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                            Mapping & Links
+                                        </h3>
+                                    </div>
+                                    <div className="p-6 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Task</label>
+                                            <span className="text-blue-600 hover:text-blue-700 cursor-pointer">Write blog post on AI trends</span>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Campaign</label>
+                                            <span className="text-slate-900">Content</span>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Project</label>
+                                            <span className="text-slate-900">Q4 Marketing Campaign</span>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Service</label>
+                                            <span className="text-slate-900">Digital Marketing</span>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Sub-Service</label>
+                                            <span className="text-slate-900">Content Marketing</span>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Repository</label>
+                                            <span className="text-slate-900">{selectedAsset.repository}</span>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Keywords Tagged</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedAsset.keywords && selectedAsset.keywords.length > 0 ? (
+                                                    selectedAsset.keywords.map((keyword, index) => (
+                                                        <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                            {keyword}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <>
+                                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">AI</span>
+                                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Technology</span>
+                                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Blog</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* QC Panel */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-slate-200">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            QC Panel
+                                        </h3>
+                                    </div>
+                                    <div className="p-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                            <div className="text-center">
+                                                <div className="text-3xl font-bold text-green-600 mb-2">
+                                                    {selectedAsset.qc_score || 96}
+                                                    <span className="text-lg text-slate-500">/ 100</span>
+                                                </div>
+                                                <div className="text-sm font-medium text-slate-700">QC Score</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg font-bold text-green-600 mb-2">
+                                                    {selectedAsset.status === 'QC Approved' ? 'Pass' : selectedAsset.status === 'QC Rejected' ? 'Fail' : 'Pass'}
+                                                </div>
+                                                <div className="text-sm font-medium text-slate-700">Status</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-sm font-medium text-slate-900 mb-2">Sarah Johnson</div>
+                                                <div className="text-sm font-medium text-slate-700">Reviewer</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">QC Date</label>
+                                            <span className="text-slate-900">
+                                                {selectedAsset.qc_reviewed_at ? new Date(selectedAsset.qc_reviewed_at).toLocaleDateString() : '2025-12-02'}
+                                            </span>
+                                        </div>
+
+                                        {/* QC Checklist & Scoring */}
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold text-slate-900">QC Checklist & Scoring</h4>
+
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                                                    <div>
+                                                        <div className="font-medium text-slate-900">Image Resolution & Quality</div>
+                                                        <div className="text-sm text-slate-600">Perfect 1920x1080 resolution, crisp and clear</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-green-600">20/20</div>
+                                                        <div className="text-xs text-green-600 font-medium">Pass</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                    <div>
+                                                        <div className="font-medium text-slate-900">Brand Guidelines Compliance</div>
+                                                        <div className="text-sm text-slate-600">Colors match brand palette, minor typography adjustment needed</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-yellow-600">18/20</div>
+                                                        <div className="text-xs text-yellow-600 font-medium">Pass</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                                                    <div>
+                                                        <div className="font-medium text-slate-900">Text Readability</div>
+                                                        <div className="text-sm text-slate-600">Excellent contrast and font sizing</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-green-600">20/20</div>
+                                                        <div className="text-xs text-green-600 font-medium">Pass</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                    <div>
+                                                        <div className="font-medium text-slate-900">File Optimization</div>
+                                                        <div className="text-sm text-slate-600">Good compression, could be optimized further by 200KB</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-yellow-600">18/20</div>
+                                                        <div className="text-xs text-yellow-600 font-medium">Pass</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                                                    <div>
+                                                        <div className="font-medium text-slate-900">Mobile Responsiveness Check</div>
+                                                        <div className="text-sm text-slate-600">Scales perfectly on mobile devices</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-green-600">20/20</div>
+                                                        <div className="text-xs text-green-600 font-medium">Pass</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Usage Panel */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-orange-50 to-red-50 px-6 py-4 border-b border-slate-200">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                            Usage Panel
+                                        </h3>
+                                    </div>
+                                    <div className="p-6 space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Website URLs</label>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                                    <span className="text-blue-600 hover:text-blue-700 cursor-pointer text-sm">
+                                                        {selectedAsset.web_url || 'https://example.com/blog/ai-trends-2025'}
+                                                    </span>
+                                                    <button className="text-slate-400 hover:text-slate-600">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                                    <span className="text-blue-600 hover:text-blue-700 cursor-pointer text-sm">
+                                                        https://example.com/resources/ai-guide
+                                                    </span>
+                                                    <button className="text-slate-400 hover:text-slate-600">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Social Media Posts</label>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                                                            <span className="text-white text-xs font-bold">in</span>
+                                                        </div>
+                                                        <span className="text-sm font-medium">LinkedIn</span>
+                                                    </div>
+                                                    <button className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700">
+                                                        View Post
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center justify-between p-3 bg-sky-50 rounded-lg border border-sky-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-6 h-6 bg-sky-500 rounded flex items-center justify-center">
+                                                            <span className="text-white text-xs font-bold">𝕏</span>
+                                                        </div>
+                                                        <span className="text-sm font-medium">Twitter</span>
+                                                    </div>
+                                                    <button className="bg-sky-500 text-white px-3 py-1 rounded text-xs font-medium hover:bg-sky-600">
+                                                        View Post
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Backlink Submissions</label>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                                    <span className="text-sm">techblog.com</span>
+                                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">Approved</span>
+                                                </div>
+                                                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                    <span className="text-sm">innovation.net</span>
+                                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">Pending</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Engagement Metrics</label>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                                    <div className="text-2xl font-bold text-slate-900">45,200</div>
+                                                    <div className="text-xs text-slate-600">Impressions</div>
+                                                </div>
+                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                                    <div className="text-2xl font-bold text-slate-900">3,800</div>
+                                                    <div className="text-xs text-slate-600">Clicks</div>
+                                                </div>
+                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                                    <div className="text-2xl font-bold text-green-600">8.4%</div>
+                                                    <div className="text-xs text-slate-600">CTR</div>
+                                                </div>
+                                                <div className="text-center p-3 bg-slate-50 rounded-lg">
+                                                    <div className="text-2xl font-bold text-slate-900">420</div>
+                                                    <div className="text-xs text-slate-600">Shares</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                            <h4 className="font-semibold text-green-900 mb-2">Performance Summary</h4>
+                                            <p className="text-sm text-green-800">
+                                                High engagement with 8.4% CTR, performing 24% above campaign average.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="p-6">
+                                        <div className="flex flex-wrap gap-3">
+                                            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 011-1h2a2 2 0 011 1v2m-4 0a2 2 0 01-2-2m0 0V4a2 2 0 012-2h2a2 2 0 012 2v2" />
+                                                </svg>
+                                                Open in Task
+                                            </button>
+                                            <button
+                                                onClick={() => handleEdit({ stopPropagation: () => { } } as any, selectedAsset)}
+                                                className="bg-slate-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm hover:bg-slate-700 transition-colors flex items-center gap-2"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                Edit Asset
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const url = selectedAsset.file_url || selectedAsset.thumbnail_url;
+                                                    if (url) {
+                                                        const link = document.createElement('a');
+                                                        link.href = url;
+                                                        link.download = selectedAsset.name || 'asset';
+                                                        link.click();
+                                                    }
+                                                }}
+                                                className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm hover:bg-green-700 transition-colors flex items-center gap-2"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* List View */}
             {viewMode === 'list' && (
                 <div className="h-full flex flex-col w-full p-6 overflow-hidden">
@@ -2844,6 +3749,44 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </div>
 
                         <div className="flex items-center gap-4">
+                            {/* Refresh Button */}
+                            <button
+                                onClick={async () => {
+                                    setIsRefreshing(true);
+                                    try {
+                                        await refresh?.();
+                                        // Show success feedback briefly
+                                        setTimeout(() => {
+                                            setIsRefreshing(false);
+                                        }, 800);
+                                    } catch (error) {
+                                        console.error('Refresh failed:', error);
+                                        setIsRefreshing(false);
+                                    }
+                                }}
+                                disabled={isRefreshing}
+                                className={`bg-green-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-green-700 hover:shadow-lg transition-all flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : ''
+                                    }`}
+                                title="Refresh Assets Data"
+                            >
+                                {isRefreshing ? (
+                                    <>
+                                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Refreshing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        Refresh
+                                    </>
+                                )}
+                            </button>
+
                             {/* Upload Button */}
                             <button
                                 onClick={() => setShowUploadModal(true)}
@@ -2854,6 +3797,36 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 </svg>
                                 Upload Asset
                             </button>
+
+                            {/* View Mode Toggle */}
+                            <div className="bg-slate-100 p-1 rounded-lg flex">
+                                <button
+                                    onClick={() => setDisplayMode('table')}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${displayMode === 'table'
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                    title="List View"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                    </svg>
+                                    List
+                                </button>
+                                <button
+                                    onClick={() => setDisplayMode('grid')}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${displayMode === 'grid'
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                    title="Large View"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                    </svg>
+                                    Large
+                                </button>
+                            </div>
 
                             {/* Mode Toggle */}
                             <div className="bg-slate-100 p-1 rounded-lg flex">
@@ -2904,51 +3877,262 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
 
                     <div className="mb-6 space-y-4">
-                        {/* Filters */}
-                        <div className="flex gap-4">
-                            <select
-                                value={repositoryFilter}
-                                onChange={(e) => setRepositoryFilter(e.target.value)}
-                                className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                            >
-                                {repositories.map(repo => (
-                                    <option key={repo} value={repo}>{repo}</option>
-                                ))}
-                            </select>
+                        {/* Enhanced Filters */}
+                        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                            <div className="flex flex-wrap gap-4 items-center">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    </svg>
+                                    <span className="text-sm font-medium text-slate-700">Filters:</span>
+                                </div>
 
-                            <select
-                                value={typeFilter}
-                                onChange={(e) => setTypeFilter(e.target.value)}
-                                className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                            >
-                                {assetTypes.map(type => (
-                                    <option key={type} value={type}>{type}</option>
-                                ))}
-                            </select>
+                                <select
+                                    value={repositoryFilter}
+                                    onChange={(e) => setRepositoryFilter(e.target.value)}
+                                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[150px]"
+                                >
+                                    {repositories.map(repo => (
+                                        <option key={repo} value={repo}>
+                                            {repo === 'All' ? '📁 All Repositories' : `📁 ${repo}`}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    value={typeFilter}
+                                    onChange={(e) => setTypeFilter(e.target.value)}
+                                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[120px]"
+                                >
+                                    {assetTypes.map(type => (
+                                        <option key={type} value={type}>
+                                            {type === 'All' ? '🏷️ All Types' : `🏷️ ${type}`}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* Clear Filters Button */}
+                                {(repositoryFilter !== 'All' || typeFilter !== 'All' || searchQuery) && (
+                                    <button
+                                        onClick={() => {
+                                            setRepositoryFilter('All');
+                                            setTypeFilter('All');
+                                            setSearchQuery('');
+                                        }}
+                                        className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Clear Filters
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Results Summary */}
                         <div className="flex justify-between items-center">
-                            <p className="text-sm text-slate-600">
-                                {qcMode ? (
-                                    <>
-                                        Showing <span className="font-bold text-purple-600">{filteredAssets.length}</span> assets pending QC review
-                                    </>
-                                ) : (
-                                    <>
-                                        Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
-                                    </>
-                                )}
-                            </p>
+                            <div className="flex items-center gap-4">
+                                <p className="text-sm text-slate-600">
+                                    {qcMode ? (
+                                        <>
+                                            Showing <span className="font-bold text-purple-600">{filteredAssets.length}</span> assets pending QC review
+                                        </>
+                                    ) : (
+                                        <>
+                                            Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                                            {(repositoryFilter !== 'All' || typeFilter !== 'All' || searchQuery) && (
+                                                <span className="text-slate-500"> (filtered from {assets.length} total)</span>
+                                            )}
+                                        </>
+                                    )}
+                                </p>
+
+                                {/* Last Updated Indicator */}
+                                <div className="flex items-center gap-1 text-xs text-slate-500">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Updated {new Date().toLocaleTimeString()}</span>
+                                </div>
+                            </div>
+
+                            {/* Sort Options */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-slate-500">Sort by:</span>
+                                <select className="px-3 py-1 border border-slate-300 rounded-lg text-sm bg-white">
+                                    <option>Date (Newest)</option>
+                                    <option>Date (Oldest)</option>
+                                    <option>Name (A-Z)</option>
+                                    <option>Name (Z-A)</option>
+                                    <option>Status</option>
+                                    <option>Type</option>
+                                </select>
+                            </div>
                         </div>
+
+                        {/* Display Content Based on View Mode */}
                         <div className="flex-1 overflow-hidden">
-                            <Table
-                                columns={columns}
-                                data={filteredAssets}
-                                title=""
-                                emptyMessage={qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}
-                                onRowClick={(asset) => onNavigate && onNavigate('asset-detail', asset.id)}
-                            />
+                            {displayMode === 'table' ? (
+                                <Table
+                                    columns={columns}
+                                    data={filteredAssets}
+                                    title=""
+                                    emptyMessage={qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}
+                                    onRowClick={handleRowClick}
+                                />
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {filteredAssets.length === 0 ? (
+                                        <div className="col-span-full text-center py-12">
+                                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-slate-500 text-lg font-medium">
+                                                {qcMode ? "No assets pending QC review." : "No assets yet."}
+                                            </p>
+                                            <p className="text-slate-400 text-sm mt-1">
+                                                {!qcMode && "Click 'Upload Asset' to add your first file!"}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        filteredAssets.map((asset) => (
+                                            <div
+                                                key={asset.id}
+                                                onClick={() => handleRowClick(asset)}
+                                                className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
+                                            >
+                                                {/* Asset Preview */}
+                                                <div className="aspect-video bg-slate-100 relative overflow-hidden">
+                                                    {asset.thumbnail_url ? (
+                                                        <img
+                                                            src={asset.thumbnail_url}
+                                                            alt={asset.name}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                                                            <span className="text-4xl text-white">
+                                                                {getAssetIcon(asset.type)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Status Badge */}
+                                                    <div className="absolute top-3 left-3">
+                                                        {getStatusBadge(asset.status || 'Draft')}
+                                                    </div>
+
+                                                    {/* Actions Overlay */}
+                                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                                        {(asset.file_url || asset.thumbnail_url) && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const url = asset.file_url || asset.thumbnail_url;
+                                                                    if (url) {
+                                                                        if (url.startsWith('data:')) {
+                                                                            const win = window.open();
+                                                                            if (win) {
+                                                                                win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
+                                                                            }
+                                                                        } else {
+                                                                            window.open(url, '_blank', 'noopener,noreferrer');
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
+                                                                title="View Asset"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+
+                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
+                                                            <button
+                                                                onClick={(e) => handleEdit(e, asset)}
+                                                                className="p-2 bg-white/90 backdrop-blur-sm text-indigo-600 hover:bg-white rounded-lg shadow-sm transition-all"
+                                                                title="Edit"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Asset Info */}
+                                                <div className="p-4">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
+                                                            {asset.name}
+                                                        </h3>
+                                                        <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
+                                                            ID: {asset.id}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
+                                                            <span>{getAssetIcon(asset.type)}</span>
+                                                            {asset.type}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                                                            {asset.repository}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Scores */}
+                                                    {(asset.seo_score || asset.grammar_score || asset.qc_score) && (
+                                                        <div className="flex gap-2 mb-3">
+                                                            {asset.seo_score && (
+                                                                <CircularScore
+                                                                    score={asset.seo_score}
+                                                                    label="SEO"
+                                                                    size="xs"
+                                                                />
+                                                            )}
+                                                            {asset.grammar_score && (
+                                                                <CircularScore
+                                                                    score={asset.grammar_score}
+                                                                    label="Grammar"
+                                                                    size="xs"
+                                                                />
+                                                            )}
+                                                            {asset.qc_score && (
+                                                                <CircularScore
+                                                                    score={asset.qc_score}
+                                                                    label="QC"
+                                                                    size="xs"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Date and Workflow */}
+                                                    <div className="flex items-center justify-between text-xs text-slate-500">
+                                                        <span>
+                                                            {asset.date ? new Date(asset.date).toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric'
+                                                            }) : '-'}
+                                                        </span>
+                                                        {asset.linking_active && (
+                                                            <span className="text-green-600 font-medium">🔗 Linked</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -540,6 +540,9 @@ export interface AssetLibraryItem {
     date: string;
     linked_task?: number;
     owner_id?: number;
+    created_by?: number; // User who created the asset
+    designed_by?: number; // User who designed the asset
+    version_number?: string; // Version number like "v1.0"
     file_url?: string;
     thumbnail_url?: string;
     file_size?: number;
@@ -568,7 +571,7 @@ export interface AssetLibraryItem {
     web_body_content?: string;
 
     // SMM Application Fields
-    smm_platform?: 'facebook_instagram' | 'twitter' | 'linkedin';
+    smm_platform?: 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'youtube' | 'tiktok' | 'pinterest' | 'snapchat' | 'whatsapp' | 'telegram' | 'discord' | 'reddit' | 'tumblr' | 'other';
     smm_title?: string;
     smm_tag?: string;
     smm_url?: string;

@@ -4,13 +4,6 @@ import { getStatusBadge } from '../constants';
 import CircularScore from '../components/CircularScore';
 import type { AssetLibraryItem, User } from '../types';
 
-// Mock user context - replace with actual auth context
-const getCurrentUser = () => ({
-    id: 1,
-    role: 'admin', // 'admin' or 'user'
-    name: 'QC Reviewer'
-});
-
 const AssetQCView: React.FC = () => {
     const [assetsForQC, setAssetsForQC] = useState<AssetLibraryItem[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
@@ -24,7 +17,7 @@ const AssetQCView: React.FC = () => {
     const [qcDecision, setQcDecision] = useState<'approved' | 'rejected' | 'rework' | ''>('');
 
     const { data: users = [] } = useData<User>('users');
-    const currentUser = getCurrentUser();
+    const currentUser = { id: 1, role: 'admin', name: 'Current User' }; // TODO: Get from auth context
 
     // Application-specific quality checklists
     const getQualityChecklist = (applicationType: string) => {

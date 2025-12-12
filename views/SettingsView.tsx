@@ -45,20 +45,21 @@ const ProfileTab: React.FC<{ user: User | null; refresh: () => void }> = ({ user
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
-                    <input 
-                        type="text" 
-                        value={formData.name || ''} 
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" 
+                    <input
+                        type="text"
+                        value={formData.name || ''}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
-                    <input 
-                        type="email" 
-                        value={formData.email || ''} 
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" 
+                    <input
+                        type="email"
+                        autoComplete="email"
+                        value={formData.email || ''}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
             </div>
@@ -80,12 +81,12 @@ const SecurityTab: React.FC = () => (
                 <p className="text-xs text-yellow-700 mt-0.5">Enable Multi-Factor Authentication (MFA) to enhance your account security.</p>
             </div>
         </div>
-        
+
         <div>
             <h3 className="text-sm font-bold text-slate-800 mb-3">Password</h3>
             <div className="space-y-3 w-full">
-                <input type="password" placeholder="Current Password" className="w-full p-2 border border-slate-300 rounded-lg text-sm" />
-                <input type="password" placeholder="New Password" className="w-full p-2 border border-slate-300 rounded-lg text-sm" />
+                <input type="password" placeholder="Current Password" autoComplete="current-password" className="w-full p-2 border border-slate-300 rounded-lg text-sm" />
+                <input type="password" placeholder="New Password" autoComplete="new-password" className="w-full p-2 border border-slate-300 rounded-lg text-sm" />
                 <button className="text-indigo-600 font-medium text-xs hover:underline">Update Password</button>
             </div>
         </div>
@@ -157,7 +158,7 @@ const AdminConsole: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavi
                         { label: 'Content Types', view: 'content-type-master', icon: '📄' },
                         { label: 'Asset Types', view: 'asset-type-master', icon: '🖼️' },
                     ].map((item) => (
-                        <button 
+                        <button
                             key={item.view}
                             onClick={() => onNavigate(item.view)}
                             className="flex items-center p-2.5 bg-slate-50 hover:bg-white border border-slate-200 hover:border-indigo-300 rounded-lg transition-all shadow-sm group"
@@ -196,26 +197,26 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
                 <div className="w-full md:w-56 flex-shrink-0">
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-0">
                         <nav className="flex flex-col p-2 space-y-0.5">
-                            <button 
+                            <button
                                 onClick={() => setActiveTab('profile')}
                                 className={`text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
                             >
                                 Profile
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setActiveTab('security')}
                                 className={`text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${activeTab === 'security' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
                             >
                                 Security
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setActiveTab('notifications')}
                                 className={`text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${activeTab === 'notifications' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
                             >
                                 Notifications
                             </button>
                             <div className="h-px bg-slate-100 my-1 mx-2"></div>
-                            <button 
+                            <button
                                 onClick={() => setActiveTab('admin')}
                                 className={`text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center ${activeTab === 'admin' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
                             >
