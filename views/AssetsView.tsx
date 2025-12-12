@@ -20,6 +20,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [typeFilter, setTypeFilter] = useState('All');
+    const [contentTypeFilter, setContentTypeFilter] = useState('All');
     const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [qcMode, setQcMode] = useState(false); // Toggle between user and QC mode
@@ -181,6 +182,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // Type filter
             if (typeFilter !== 'All' && a.type !== typeFilter) return false;
 
+            // Content Type filter
+            if (contentTypeFilter !== 'All' && a.application_type !== contentTypeFilter) return false;
+
             // Search query
             if (!query) return true;
 
@@ -194,7 +198,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 repository.includes(query) ||
                 status.includes(query);
         });
-    }, [assets, searchQuery, repositoryFilter, typeFilter, qcMode, currentUser.id]);
+    }, [assets, searchQuery, repositoryFilter, typeFilter, contentTypeFilter, qcMode, currentUser.id]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -4289,16 +4293,133 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 )}
                             </button>
 
-                            {/* Upload Button */}
-                            <button
-                                onClick={() => setShowUploadModal(true)}
-                                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Upload Asset
-                            </button>
+                            {/* Enhanced Upload Button with Content Type Selection */}
+                            <div className="relative group">
+                                <button
+                                    onClick={() => setShowUploadModal(true)}
+                                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Upload Asset
+                                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                {/* Quick Content Type Dropdown */}
+                                <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                    <div className="p-4">
+                                        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                            Quick Upload by Content Type
+                                        </h3>
+
+                                        <div className="space-y-2">
+                                            {/* WEB Content */}
+                                            <button
+                                                onClick={() => {
+                                                    setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                    setShowUploadModal(true);
+                                                }}
+                                                className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all group/item"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s1.343-9 3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="font-semibold text-slate-900 text-sm">🌐 Web Content</div>
+                                                        <div className="text-xs text-slate-600">Landing pages, web articles, blog posts</div>
+                                                    </div>
+                                                    <svg className="w-4 h-4 text-slate-400 group-hover/item:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </button>
+
+                                            {/* SEO Content */}
+                                            <button
+                                                onClick={() => {
+                                                    setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                    setShowUploadModal(true);
+                                                }}
+                                                className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-green-300 hover:bg-green-50 transition-all group/item"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="font-semibold text-slate-900 text-sm">🔍 SEO Content</div>
+                                                        <div className="text-xs text-slate-600">Search optimized content, meta descriptions</div>
+                                                    </div>
+                                                    <svg className="w-4 h-4 text-slate-400 group-hover/item:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </button>
+
+                                            {/* SMM Content */}
+                                            <button
+                                                onClick={() => {
+                                                    setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                    setShowUploadModal(true);
+                                                }}
+                                                className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 transition-all group/item"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="font-semibold text-slate-900 text-sm">📱 Social Media</div>
+                                                        <div className="text-xs text-slate-600">Posts, stories, videos for social platforms</div>
+                                                    </div>
+                                                    <svg className="w-4 h-4 text-slate-400 group-hover/item:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </button>
+
+                                            {/* General Upload */}
+                                            <div className="border-t border-slate-200 pt-2 mt-3">
+                                                <button
+                                                    onClick={() => {
+                                                        setNewAsset(prev => ({ ...prev, application_type: undefined }));
+                                                        setShowUploadModal(true);
+                                                    }}
+                                                    className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all group/item"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-r from-slate-500 to-slate-600 rounded-lg flex items-center justify-center">
+                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="font-semibold text-slate-900 text-sm">📁 General Upload</div>
+                                                            <div className="text-xs text-slate-600">Choose content type during upload</div>
+                                                        </div>
+                                                        <svg className="w-4 h-4 text-slate-400 group-hover/item:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* View Mode Toggle */}
                             <div className="bg-slate-100 p-1 rounded-lg flex">
@@ -4413,12 +4534,25 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     ))}
                                 </select>
 
+                                {/* Content Type Filter */}
+                                <select
+                                    value={contentTypeFilter}
+                                    onChange={(e) => setContentTypeFilter(e.target.value)}
+                                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[140px]"
+                                >
+                                    <option value="All">📋 All Content</option>
+                                    <option value="web">🌐 Web Content</option>
+                                    <option value="seo">🔍 SEO Content</option>
+                                    <option value="smm">📱 Social Media</option>
+                                </select>
+
                                 {/* Clear Filters Button */}
-                                {(repositoryFilter !== 'All' || typeFilter !== 'All' || searchQuery) && (
+                                {(repositoryFilter !== 'All' || typeFilter !== 'All' || contentTypeFilter !== 'All' || searchQuery) && (
                                     <button
                                         onClick={() => {
                                             setRepositoryFilter('All');
                                             setTypeFilter('All');
+                                            setContentTypeFilter('All');
                                             setSearchQuery('');
                                         }}
                                         className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
@@ -4443,12 +4577,46 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     ) : (
                                         <>
                                             Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
-                                            {(repositoryFilter !== 'All' || typeFilter !== 'All' || searchQuery) && (
+                                            {(repositoryFilter !== 'All' || typeFilter !== 'All' || contentTypeFilter !== 'All' || searchQuery) && (
                                                 <span className="text-slate-500"> (filtered from {assets.length} total)</span>
                                             )}
                                         </>
                                     )}
                                 </p>
+
+                                {/* Content Type Indicators */}
+                                {!qcMode && assets.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-500">Content Types:</span>
+                                        <div className="flex gap-1">
+                                            {(() => {
+                                                const webCount = assets.filter(a => a.application_type === 'web').length;
+                                                const seoCount = assets.filter(a => a.application_type === 'seo').length;
+                                                const smmCount = assets.filter(a => a.application_type === 'smm').length;
+
+                                                return (
+                                                    <>
+                                                        {webCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                                                                🌐 {webCount}
+                                                            </span>
+                                                        )}
+                                                        {seoCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                                                🔍 {seoCount}
+                                                            </span>
+                                                        )}
+                                                        {smmCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">
+                                                                📱 {smmCount}
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Last Updated Indicator */}
                                 <div className="flex items-center gap-1 text-xs text-slate-500">
@@ -4492,12 +4660,47 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
                                             </div>
-                                            <p className="text-slate-500 text-lg font-medium">
+                                            <p className="text-slate-500 text-lg font-medium mb-4">
                                                 {qcMode ? "No assets pending QC review." : "No assets yet."}
                                             </p>
-                                            <p className="text-slate-400 text-sm mt-1">
-                                                {!qcMode && "Click 'Upload Asset' to add your first file!"}
-                                            </p>
+                                            {!qcMode && (
+                                                <div className="space-y-4">
+                                                    <p className="text-slate-400 text-sm">
+                                                        Get started by uploading your first asset
+                                                    </p>
+
+                                                    {/* Quick Upload Options */}
+                                                    <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            🌐 Web Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                                        >
+                                                            🔍 SEO Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                                                        >
+                                                            📱 Social Media
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         filteredAssets.map((asset) => (
@@ -4694,14 +4897,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     )}
 
                                                     {/* Type and Repository Tags */}
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 flex-wrap">
                                                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
                                                             <span>{getAssetIcon(asset.type)}</span>
                                                             {asset.type}
                                                         </span>
                                                         {asset.application_type && (
-                                                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full uppercase font-medium">
-                                                                {asset.application_type}
+                                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
+                                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
+                                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
+                                                                            'bg-slate-100 text-slate-700'
+                                                                }`}>
+                                                                {asset.application_type === 'web' && '🌐 WEB'}
+                                                                {asset.application_type === 'seo' && '🔍 SEO'}
+                                                                {asset.application_type === 'smm' && '📱 SMM'}
+                                                                {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
                                                             </span>
                                                         )}
                                                     </div>
@@ -4753,6 +4963,81 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Floating Action Button for Quick Upload */}
+            {viewMode === 'list' && (
+                <div className="fixed bottom-6 right-6 z-40">
+                    <div className="relative group">
+                        {/* Main FAB */}
+                        <button
+                            onClick={() => setShowUploadModal(true)}
+                            className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
+                            title="Quick Upload"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+
+                        {/* Quick Action Menu */}
+                        <div className="absolute bottom-16 right-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 space-y-2">
+                            <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[200px]">
+                                <div className="text-xs font-semibold text-slate-600 px-3 py-2 border-b border-slate-100">
+                                    Quick Upload
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-blue-50 rounded-md transition-colors text-sm"
+                                >
+                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        🌐
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-slate-900">Web Content</div>
+                                        <div className="text-xs text-slate-500">Landing pages, articles</div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-green-50 rounded-md transition-colors text-sm"
+                                >
+                                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                        🔍
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-slate-900">SEO Content</div>
+                                        <div className="text-xs text-slate-500">Optimized content</div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-purple-50 rounded-md transition-colors text-sm"
+                                >
+                                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        📱
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-slate-900">Social Media</div>
+                                        <div className="text-xs text-slate-500">Posts, stories, videos</div>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
