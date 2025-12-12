@@ -1851,6 +1851,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </svg>
                                             </div>
                                             <div>
+                                                
                                                 <h4 className="text-lg font-bold text-purple-900">📱 SMM Application Fields</h4>
                                                 <p className="text-sm text-purple-600">Configure your social media content</p>
                                             </div>
