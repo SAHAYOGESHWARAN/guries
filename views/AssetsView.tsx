@@ -791,6 +791,80 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         }
     ], [getAssetIcon, handleEdit, handleDelete, deletingId]);
 
+    // My Submissions logic
+    const mySubmissions = useMemo(() => {
+        return assets.filter(asset => asset.submitted_by === currentUser.id);
+    }, [assets, currentUser.id]);
+
+    const mySubmissionsColumns = useMemo(() => [
+        {
+            header: 'Title',
+            accessor: (item: AssetLibraryItem) => (
+                <div>
+                    <div className="font-bold text-slate-900 text-sm">{item.name}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">ID: {item.id}</div>
+                </div>
+            )
+        },
+        {
+            header: 'Status',
+            accessor: (item: AssetLibraryItem) => (
+                <div className="space-y-2">
+                    <div className="flex flex-col gap-1">
+                        {getStatusBadge(item.status || 'Draft')}
+                        {item.status === 'Pending QC Review' && (
+                            <div className="text-xs text-purple-600 font-medium">
+                                ⏳ Awaiting QC Review
+                            </div>
+                        )}
+                        {item.status === 'QC Approved' && (
+                            <div className="text-xs text-green-600 font-medium">
+                                ✅ Approved
+                            </div>
+                        )}
+                        {item.status === 'QC Rejected' && (
+                            <div className="text-xs text-red-600 font-medium">
+                                ❌ Needs Rework
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Submitted',
+            accessor: (item: AssetLibraryItem) => (
+                <span className="text-xs text-slate-600">
+                    {item.submitted_at ? new Date(item.submitted_at).toLocaleDateString() : '-'}
+                </span>
+            )
+        },
+        {
+            header: 'Actions',
+            accessor: (item: AssetLibraryItem) => (
+                <div className="flex gap-2">
+                    <button
+                        onClick={(e) => handleEdit(e, item)}
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="Edit"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
+                </div>
+            )
+        }
+    ], [handleEdit]);
+
+    // SMM Preview Modal logic
+    const smmPreviewData = useMemo(() => ({
+        name: newAsset.name || 'Your Page',
+        description: newAsset.smm_description || '',
+        hashtags: newAsset.smm_hashtags || '',
+        media: newAsset.smm_media_url || ''
+    }), [newAsset.name, newAsset.smm_description, newAsset.smm_hashtags, newAsset.smm_media_url]);
+
     return (
         <>
             {(viewMode === 'upload' || viewMode === 'edit') && (
@@ -2655,788 +2729,632 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             )}
 
             {/* SMM Preview Modal */}
-            {showPreviewModal && (() => {
-                const displayData = {
-                    name: newAsset.name || 'Your Page',
-                    description: newAsset.smm_description || '',
-                    hashtags: newAsset.smm_hashtags || '',
-                    media: newAsset.smm_media_url || ''
-                };
-
-                return (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreviewModal(false)}>
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    <div>
-                                        <h3 className="text-lg font-bold">Social Media Post Preview</h3>
-                                        <p className="text-xs text-blue-100">
-                                            {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && 'Facebook / Instagram'}
-                                            {newAsset.smm_platform === 'twitter' && 'Twitter'}
-                                            {newAsset.smm_platform === 'linkedin' && 'LinkedIn'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setShowPreviewModal(false)} className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="p-6">
-                                {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
-                                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 max-w-[500px] mx-auto">
-                                        <div className="p-3 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-[2px]">
-                                                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                                                        <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                                                            {displayData.name?.charAt(0)?.toUpperCase() || 'A'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-1">
-                                                        <p className="font-semibold text-[15px] text-slate-900">{displayData.name || 'Your Page'}</p>
-                                                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                                                        <span>Just now</span>
-                                                        <span>·</span>
-                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2">
-                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        {(displayData.description || displayData.hashtags) && (
-                                            <div className="px-3 pb-2">
-                                                {displayData.description && <p className="text-[15px] text-slate-900 whitespace-pre-wrap leading-5 mb-1">{displayData.description}</p>}
-                                                {displayData.hashtags && <p className="text-[15px] text-blue-600 font-normal">{displayData.hashtags}</p>}
-                                            </div>
-                                        )}
-                                        {displayData.media && (
-                                            <div className="bg-black relative">
-                                                {newAsset.smm_media_type === 'video' ? (
-                                                    <video src={displayData.media} controls className="w-full max-h-[600px] object-contain" poster={displayData.media} />
-                                                ) : newAsset.smm_media_type === 'carousel' && newAsset.smm_additional_pages && newAsset.smm_additional_pages.length > 0 ? (
-                                                    <div className="relative">
-                                                        {/* Carousel Display */}
-                                                        <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                                            <div className="flex-shrink-0 w-full snap-center">
-                                                                <img src={displayData.media} alt="Post content 1" className="w-full object-cover" style={{ maxHeight: '600px' }} />
-                                                            </div>
-                                                            {newAsset.smm_additional_pages.map((page, index) => (
-                                                                <div key={index} className="flex-shrink-0 w-full snap-center">
-                                                                    <img src={page} alt={`Post content ${index + 2}`} className="w-full object-cover" style={{ maxHeight: '600px' }} />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                        {/* Carousel Indicators */}
-                                                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                                                            <div className="w-2 h-2 bg-white rounded-full opacity-100"></div>
-                                                            {newAsset.smm_additional_pages.map((_, index) => (
-                                                                <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
-                                                            ))}
-                                                        </div>
-                                                        {/* Page Counter */}
-                                                        <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
-                                                            1/{newAsset.smm_additional_pages.length + 1}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <img src={displayData.media} alt="Post content" className="w-full object-cover" style={{ maxHeight: '600px' }} />
-                                                )}
-                                            </div>
-                                        )}
-                                        <div className="px-3 py-2">
-                                            <div className="flex items-center justify-between text-[13px] text-slate-600">
-                                                <div className="flex items-center gap-1">
-                                                    <div className="flex -space-x-1">
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">👍</span></div>
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">❤️</span></div>
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">😊</span></div>
-                                                    </div>
-                                                    <span className="ml-1">1.2K</span>
-                                                </div>
-                                                <div className="flex items-center gap-2"><span>89 comments</span><span>·</span><span>24 shares</span></div>
-                                            </div>
-                                        </div>
-                                        <div className="border-t border-slate-200 px-2 py-1">
-                                            <div className="flex items-center justify-around">
-                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
-                                                    Like
-                                                </button>
-                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                                    Comment
-                                                </button>
-                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                                                    Share
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="border-t border-slate-200 px-3 py-2 bg-slate-50">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-bold">U</div>
-                                                <div className="flex-1 bg-white border border-slate-200 rounded-full px-4 py-2"><p className="text-sm text-slate-400">Write a comment...</p></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {newAsset.smm_platform === 'twitter' && (
-                                    <div className="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-lg">
-                                        <div className="p-4 flex gap-3">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">{displayData.name?.charAt(0) || 'A'}</div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <p className="font-bold text-sm">{displayData.name || 'Your Account'}</p>
-                                                    <span className="text-blue-500">✓</span>
-                                                    <span className="text-slate-500 text-sm font-normal">@{displayData.name?.toLowerCase().replace(/\s+/g, '') || 'account'}</span>
-                                                    <span className="text-slate-500 text-sm">· 2m</span>
-                                                </div>
-
-                                                {/* Tweet Text */}
-                                                {displayData.description && (
-                                                    <p className="text-sm text-slate-900 mb-2 whitespace-pre-wrap">{displayData.description}</p>
-                                                )}
-
-                                                {/* Hashtags */}
-                                                {displayData.hashtags && (
-                                                    <p className="text-sm text-blue-500 mb-2">{displayData.hashtags}</p>
-                                                )}
-
-                                                {/* Media */}
-                                                {displayData.media && (
-                                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
-                                                        {newAsset.smm_media_type === 'video' ? (
-                                                            <video src={displayData.media} controls className="w-full" />
-                                                        ) : (
-                                                            <img src={displayData.media} alt="Tweet media" className="w-full" />
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                {/* Engagement */}
-                                                <div className="flex justify-between mt-3 text-slate-500 text-sm">
-                                                    <button className="flex items-center gap-2 hover:text-blue-500">
-                                                        <span>💬</span> 24
-                                                    </button>
-                                                    <button className="flex items-center gap-2 hover:text-green-500">
-                                                        <span>🔁</span> 12
-                                                    </button>
-                                                    <button className="flex items-center gap-2 hover:text-red-500">
-                                                        <span>❤️</span> 156
-                                                    </button>
-                                                    <button className="flex items-center gap-2 hover:text-blue-500">
-                                                        <span>📊</span> 2.1K
-                                                    </button>
-                                                    <button className="flex items-center gap-2 hover:text-blue-500">
-                                                        <span>↗️</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {newAsset.smm_platform === 'linkedin' && (
-                                    <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg">
-                                        {/* LinkedIn Header */}
-                                        <div className="p-4 flex items-start gap-3 border-b border-slate-200">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                                {displayData.name?.charAt(0) || 'A'}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-bold text-sm">{displayData.name || 'Your Company'}</p>
-                                                <p className="text-xs text-slate-500">1,234 followers</p>
-                                                <p className="text-xs text-slate-500">1m · 🌐</p>
-                                            </div>
-                                            <button className="text-slate-500 hover:bg-slate-100 p-2 rounded">
-                                                <span>⋯</span>
-                                            </button>
-                                        </div>
-
-                                        {/* Post Content */}
-                                        <div className="p-4">
-                                            {displayData.description && (
-                                                <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{displayData.description}</p>
-                                            )}
-                                            {displayData.hashtags && (
-                                                <p className="text-sm text-blue-700 mb-2">{displayData.hashtags}</p>
-                                            )}
-                                        </div>
-
-                                        {/* Media */}
-                                        {displayData.media && (
-                                            <div className="bg-slate-100">
-                                                {newAsset.smm_media_type === 'video' ? (
-                                                    <video src={displayData.media} controls className="w-full" />
-                                                ) : (
-                                                    <img src={displayData.media} alt="Post media" className="w-full" />
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Engagement Bar */}
-                                        <div className="p-4 border-t border-slate-200">
-                                            <div className="flex justify-between text-xs text-slate-600 mb-3">
-                                                <span>👍 💡 ❤️ 89</span>
-                                                <span>12 comments · 5 reposts</span>
-                                            </div>
-                                            <div className="flex justify-around border-t border-slate-200 pt-3">
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">👍</span> Like
-                                                </button>
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">💬</span> Comment
-                                                </button>
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">🔁</span> Repost
-                                                </button>
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">↗️</span> Send
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Modal Footer */}
-                            <div className="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 rounded-b-2xl flex justify-end gap-3">
-                                <button
-                                    onClick={() => setShowPreviewModal(false)}
-                                    className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
-                                >
-                                    Close
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()
-            }
-
-            {/* QC Review View */}
-            {viewMode === 'qc' && qcReviewAsset && (() => {
-                return (
-                    <div className="h-full flex flex-col w-full p-6 overflow-hidden">
-                        <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                            <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 w-full flex-shrink-0">
+            {showPreviewModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreviewModal(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900">QC Review</h2>
-                                    <p className="text-slate-600 text-xs mt-0.5">
-                                        Review asset for quality control approval
+                                    <h3 className="text-lg font-bold">Social Media Post Preview</h3>
+                                    <p className="text-xs text-blue-100">
+                                        {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && 'Facebook / Instagram'}
+                                        {newAsset.smm_platform === 'twitter' && 'Twitter'}
+                                        {newAsset.smm_platform === 'linkedin' && 'LinkedIn'}
                                     </p>
                                 </div>
-                                <div className="flex gap-2">
-                                    {/* Quick Upload Button in QC View */}
-                                    <button
-                                        onClick={() => setShowUploadModal(true)}
-                                        className="px-4 py-2 text-sm font-medium text-indigo-600 border-2 border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
-                                        title="Upload New Asset"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Upload Asset
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setQcReviewAsset(null);
-                                            setViewMode('list');
-                                        }}
-                                        className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => handleQcSubmit(false)}
-                                        disabled={!qcScore || !checklistCompleted}
-                                        className={`bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-red-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        Reject Asset
-                                    </button>
-                                    <button
-                                        onClick={() => handleQcSubmit(true)}
-                                        disabled={!qcScore || !checklistCompleted}
-                                        className={`bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        Approve Asset
-                                    </button>
-                                </div>
                             </div>
-
-                            <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
-                                <div className="max-w-4xl mx-auto space-y-6">
-                                    {/* Asset Information (Read-Only) */}
-                                    <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
-                                            <div className="bg-indigo-600 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-indigo-900">Asset Information</h3>
-                                                <p className="text-xs text-indigo-600">Read-only view for QC review</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.name || 'N/A'}
+                            <button onClick={() => setShowPreviewModal(false)} className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
+                                <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 max-w-[500px] mx-auto">
+                                    <div className="p-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-[2px]">
+                                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                                                    <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                                        {smmPreviewData.name?.charAt(0)?.toUpperCase() || 'A'}
+                                                    </div>
                                                 </div>
                                             </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Application Type</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700 uppercase">
-                                                    {qcReviewAsset?.application_type || 'Not specified'}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-1">
+                                                    <p className="font-semibold text-[15px] text-slate-900">{smmPreviewData.name || 'Your Page'}</p>
+                                                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
                                                 </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Asset Type</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.type || 'N/A'}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Asset Category</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.asset_category || 'Not specified'}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Keywords</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.keywords?.join(', ') || 'No keywords'}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.repository || 'N/A'}
+                                                <div className="flex items-center gap-1 text-xs text-slate-500">
+                                                    <span>Just now</span>
+                                                    <span>·</span>
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+                                                    </svg>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* AI Scores Display */}
-                                        {(qcReviewAsset?.seo_score || qcReviewAsset?.grammar_score) && (
-                                            <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                <h4 className="text-sm font-bold text-slate-700 mb-4">AI Quality Scores</h4>
-                                                <div className="flex justify-center gap-8">
-                                                    {qcReviewAsset?.seo_score && qcReviewAsset.seo_score > 0 && (
-                                                        <CircularScore
-                                                            score={qcReviewAsset.seo_score}
-                                                            label="SEO Score"
-                                                            size="md"
-                                                        />
-                                                    )}
-                                                    {qcReviewAsset?.grammar_score && qcReviewAsset.grammar_score > 0 && (
-                                                        <CircularScore
-                                                            score={qcReviewAsset.grammar_score}
-                                                            label="Grammar Score"
-                                                            size="md"
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Content Preview */}
-                                        {qcReviewAsset?.web_body_content && (
-                                            <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                <h4 className="text-sm font-bold text-slate-700 mb-4">Body Content</h4>
-                                                <div className="max-h-64 overflow-y-auto bg-slate-50 border-2 border-slate-200 rounded-lg p-4">
-                                                    <div className="prose prose-sm max-w-none text-slate-700">
-                                                        {qcReviewAsset?.web_body_content?.split('\n').map((line, index) => (
-                                                            <p key={index} className="mb-2">{line}</p>
+                                        <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2">
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {(smmPreviewData.description || smmPreviewData.hashtags) && (
+                                        <div className="px-3 pb-2">
+                                            {smmPreviewData.description && <p className="text-[15px] text-slate-900 whitespace-pre-wrap leading-5 mb-1">{smmPreviewData.description}</p>}
+                                            {smmPreviewData.hashtags && <p className="text-[15px] text-blue-600 font-normal">{smmPreviewData.hashtags}</p>}
+                                        </div>
+                                    )}
+                                    {smmPreviewData.media && (
+                                        <div className="bg-black relative">
+                                            {newAsset.smm_media_type === 'video' ? (
+                                                <video src={smmPreviewData.media} controls className="w-full max-h-[600px] object-contain" poster={smmPreviewData.media} />
+                                            ) : newAsset.smm_media_type === 'carousel' && newAsset.smm_additional_pages && newAsset.smm_additional_pages.length > 0 ? (
+                                                <div className="relative">
+                                                    {/* Carousel Display */}
+                                                    <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                                        <div className="flex-shrink-0 w-full snap-center">
+                                                            <img src={smmPreviewData.media} alt="Post content 1" className="w-full object-cover" style={{ maxHeight: '600px' }} />
+                                                        </div>
+                                                        {newAsset.smm_additional_pages.map((page, index) => (
+                                                            <div key={index} className="flex-shrink-0 w-full snap-center">
+                                                                <img src={page} alt={`Post content ${index + 2}`} className="w-full object-cover" style={{ maxHeight: '600px' }} />
+                                                            </div>
                                                         ))}
                                                     </div>
+                                                    {/* Carousel Indicators */}
+                                                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                                                        <div className="w-2 h-2 bg-white rounded-full opacity-100"></div>
+                                                        {newAsset.smm_additional_pages.map((_, index) => (
+                                                            <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
+                                                        ))}
+                                                    </div>
+                                                    {/* Page Counter */}
+                                                    <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+                                                        1/{newAsset.smm_additional_pages.length + 1}
+                                                    </div>
                                                 </div>
+                                            ) : (
+                                                <img src={smmPreviewData.media} alt="Post content" className="w-full object-cover" style={{ maxHeight: '600px' }} />
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="px-3 py-2">
+                                        <div className="flex items-center justify-between text-[13px] text-slate-600">
+                                            <div className="flex items-center gap-1">
+                                                <div className="flex -space-x-1">
+                                                    <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">👍</span></div>
+                                                    <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">❤️</span></div>
+                                                    <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">😊</span></div>
+                                                </div>
+                                                <span className="ml-1">1.2K</span>
                                             </div>
-                                        )}
+                                            <div className="flex items-center gap-2"><span>89 comments</span><span>·</span><span>24 shares</span></div>
+                                        </div>
+                                    </div>
+                                    <div className="border-t border-slate-200 px-2 py-1">
+                                        <div className="flex items-center justify-around">
+                                            <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                                                Like
+                                            </button>
+                                            <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                                Comment
+                                            </button>
+                                            <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                                Share
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="border-t border-slate-200 px-3 py-2 bg-slate-50">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-bold">U</div>
+                                            <div className="flex-1 bg-white border border-slate-200 rounded-full px-4 py-2"><p className="text-sm text-slate-400">Write a comment...</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {newAsset.smm_platform === 'twitter' && (
+                                <div className="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-lg">
+                                    <div className="p-4 flex gap-3">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">{smmPreviewData.name?.charAt(0) || 'A'}</div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className="font-bold text-sm">{smmPreviewData.name || 'Your Account'}</p>
+                                                <span className="text-blue-500">✓</span>
+                                                <span className="text-slate-500 text-sm font-normal">@{smmPreviewData.name?.toLowerCase().replace(/\s+/g, '') || 'account'}</span>
+                                                <span className="text-slate-500 text-sm">· 2m</span>
+                                            </div>
 
-                                        {/* Media Preview */}
-                                        {(qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url) && (
-                                            <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                <h4 className="text-sm font-bold text-slate-700 mb-4">Asset Preview</h4>
-                                                <div className="flex justify-center">
-                                                    <img
-                                                        src={qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url || ''}
-                                                        alt="Asset preview"
-                                                        className="max-h-64 rounded-lg border-2 border-slate-200 shadow-sm"
-                                                    />
+                                            {/* Tweet Text */}
+                                            {smmPreviewData.description && (
+                                                <p className="text-sm text-slate-900 mb-2 whitespace-pre-wrap">{smmPreviewData.description}</p>
+                                            )}
+
+                                            {/* Hashtags */}
+                                            {smmPreviewData.hashtags && (
+                                                <p className="text-sm text-blue-500 mb-2">{smmPreviewData.hashtags}</p>
+                                            )}
+
+                                            {/* Media */}
+                                            {smmPreviewData.media && (
+                                                <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
+                                                    {newAsset.smm_media_type === 'video' ? (
+                                                        <video src={smmPreviewData.media} controls className="w-full" />
+                                                    ) : (
+                                                        <img src={smmPreviewData.media} alt="Tweet media" className="w-full" />
+                                                    )}
                                                 </div>
+                                            )}
+
+                                            {/* Engagement */}
+                                            <div className="flex justify-between mt-3 text-slate-500 text-sm">
+                                                <button className="flex items-center gap-2 hover:text-blue-500">
+                                                    <span>💬</span> 24
+                                                </button>
+                                                <button className="flex items-center gap-2 hover:text-green-500">
+                                                    <span>🔁</span> 12
+                                                </button>
+                                                <button className="flex items-center gap-2 hover:text-red-500">
+                                                    <span>❤️</span> 156
+                                                </button>
+                                                <button className="flex items-center gap-2 hover:text-blue-500">
+                                                    <span>📊</span> 2.1K
+                                                </button>
+                                                <button className="flex items-center gap-2 hover:text-blue-500">
+                                                    <span>↗️</span>
+                                                </button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {newAsset.smm_platform === 'linkedin' && (
+                                <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg">
+                                    {/* LinkedIn Header */}
+                                    <div className="p-4 flex items-start gap-3 border-b border-slate-200">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                            {smmPreviewData.name?.charAt(0) || 'A'}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-sm">{smmPreviewData.name || 'Your Company'}</p>
+                                            <p className="text-xs text-slate-500">1,234 followers</p>
+                                            <p className="text-xs text-slate-500">1m · 🌐</p>
+                                        </div>
+                                        <button className="text-slate-500 hover:bg-slate-100 p-2 rounded">
+                                            <span>⋯</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Post Content */}
+                                    <div className="p-4">
+                                        {smmPreviewData.description && (
+                                            <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{smmPreviewData.description}</p>
+                                        )}
+                                        {smmPreviewData.hashtags && (
+                                            <p className="text-sm text-blue-700 mb-2">{smmPreviewData.hashtags}</p>
                                         )}
                                     </div>
 
-                                    {/* QC Input Section */}
-                                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 shadow-sm">
-                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200 mb-6">
-                                            <div className="bg-purple-600 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-purple-900">QC Review Input</h3>
-                                                <p className="text-xs text-purple-600">Provide your quality control assessment</p>
+                                    {/* Media */}
+                                    {smmPreviewData.media && (
+                                        <div className="bg-slate-100">
+                                            {newAsset.smm_media_type === 'video' ? (
+                                                <video src={smmPreviewData.media} controls className="w-full" />
+                                            ) : (
+                                                <img src={smmPreviewData.media} alt="Post media" className="w-full" />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Engagement Bar */}
+                                    <div className="p-4 border-t border-slate-200">
+                                        <div className="flex justify-between text-xs text-slate-600 mb-3">
+                                            <span>👍 💡 ❤️ 89</span>
+                                            <span>12 comments · 5 reposts</span>
+                                        </div>
+                                        <div className="flex justify-around border-t border-slate-200 pt-3">
+                                            <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                <span className="text-lg">👍</span> Like
+                                            </button>
+                                            <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                <span className="text-lg">💬</span> Comment
+                                            </button>
+                                            <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                <span className="text-lg">🔁</span> Repost
+                                            </button>
+                                            <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                <span className="text-lg">↗️</span> Send
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 rounded-b-2xl flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowPreviewModal(false)}
+                                className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* QC Review View */}
+            {viewMode === 'qc' && qcReviewAsset && (
+                <div className="h-full flex flex-col w-full p-6 overflow-hidden">
+                    <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
+                        <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 w-full flex-shrink-0">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">QC Review</h2>
+                                <p className="text-slate-600 text-xs mt-0.5">
+                                    Review asset for quality control approval
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                {/* Quick Upload Button in QC View */}
+                                <button
+                                    onClick={() => setShowUploadModal(true)}
+                                    className="px-4 py-2 text-sm font-medium text-indigo-600 border-2 border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
+                                    title="Upload New Asset"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Upload Asset
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setQcReviewAsset(null);
+                                        setViewMode('list');
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleQcSubmit(false)}
+                                    disabled={!qcScore || !checklistCompleted}
+                                    className={`bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-red-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    Reject Asset
+                                </button>
+                                <button
+                                    onClick={() => handleQcSubmit(true)}
+                                    disabled={!qcScore || !checklistCompleted}
+                                    className={`bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    Approve Asset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
+                            <div className="max-w-4xl mx-auto space-y-6">
+                                {/* Asset Information (Read-Only) */}
+                                <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+                                    <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
+                                        <div className="bg-indigo-600 p-2 rounded-lg">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-indigo-900">Asset Information</h3>
+                                            <p className="text-xs text-indigo-600">Read-only view for QC review</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
+                                            <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {qcReviewAsset?.name || 'N/A'}
                                             </div>
                                         </div>
 
-                                        <div className="space-y-6">
-                                            {/* QC Score */}
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                    QC Score (0-100)
-                                                    <span className="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    value={qcScore || ''}
-                                                    onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="Enter QC score (0-100)"
-                                                />
-                                                {qcScore && qcScore > 0 && (
-                                                    <div className={`mt-2 text-xs font-bold ${qcScore >= 80 ? 'text-green-600' : qcScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                        {qcScore >= 80 ? '✓ Excellent quality' : qcScore >= 60 ? '⚠ Good quality' : '✗ Needs improvement'}
-                                                    </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Application Type</label>
+                                            <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700 uppercase">
+                                                {qcReviewAsset?.application_type || 'Not specified'}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Asset Type</label>
+                                            <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {qcReviewAsset?.type || 'N/A'}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Asset Category</label>
+                                            <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {qcReviewAsset?.asset_category || 'Not specified'}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Keywords</label>
+                                            <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {qcReviewAsset?.keywords?.join(', ') || 'No keywords'}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
+                                            <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {qcReviewAsset?.repository || 'N/A'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* AI Scores Display */}
+                                    {(qcReviewAsset?.seo_score || qcReviewAsset?.grammar_score) && (
+                                        <div className="mt-6 pt-6 border-t-2 border-slate-200">
+                                            <h4 className="text-sm font-bold text-slate-700 mb-4">AI Quality Scores</h4>
+                                            <div className="flex justify-center gap-8">
+                                                {qcReviewAsset?.seo_score && qcReviewAsset.seo_score > 0 && (
+                                                    <CircularScore
+                                                        score={qcReviewAsset.seo_score}
+                                                        label="SEO Score"
+                                                        size="md"
+                                                    />
+                                                )}
+                                                {qcReviewAsset?.grammar_score && qcReviewAsset.grammar_score > 0 && (
+                                                    <CircularScore
+                                                        score={qcReviewAsset.grammar_score}
+                                                        label="Grammar Score"
+                                                        size="md"
+                                                    />
                                                 )}
                                             </div>
+                                        </div>
+                                    )}
 
-                                            {/* Checklist Completion */}
-                                            <div>
-                                                <label className="flex items-center gap-3 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checklistCompleted}
-                                                        onChange={(e) => setChecklistCompleted(e.target.checked)}
-                                                        className="w-5 h-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
-                                                    />
-                                                    <span className="text-sm font-bold text-slate-700">
-                                                        QC Checklist Completed
-                                                        <span className="text-red-500 ml-1">*</span>
-                                                    </span>
-                                                </label>
-                                                <p className="text-xs text-slate-500 mt-1 ml-8">
-                                                    Confirm that all quality control checks have been completed
-                                                </p>
+                                    {/* Content Preview */}
+                                    {qcReviewAsset?.web_body_content && (
+                                        <div className="mt-6 pt-6 border-t-2 border-slate-200">
+                                            <h4 className="text-sm font-bold text-slate-700 mb-4">Body Content</h4>
+                                            <div className="max-h-64 overflow-y-auto bg-slate-50 border-2 border-slate-200 rounded-lg p-4">
+                                                <div className="prose prose-sm max-w-none text-slate-700">
+                                                    {qcReviewAsset?.web_body_content?.split('\n').map((line, index) => (
+                                                        <p key={index} className="mb-2">{line}</p>
+                                                    ))}
+                                                </div>
                                             </div>
+                                        </div>
+                                    )}
 
-                                            {/* QC Remarks */}
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                    QC Remarks / Comments
-                                                </label>
-                                                <textarea
-                                                    value={qcRemarks}
-                                                    onChange={(e) => setQcRemarks(e.target.value)}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="Enter your QC remarks and comments..."
-                                                    rows={4}
+                                    {/* Media Preview */}
+                                    {(qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url) && (
+                                        <div className="mt-6 pt-6 border-t-2 border-slate-200">
+                                            <h4 className="text-sm font-bold text-slate-700 mb-4">Asset Preview</h4>
+                                            <div className="flex justify-center">
+                                                <img
+                                                    src={qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url || ''}
+                                                    alt="Asset preview"
+                                                    className="max-h-64 rounded-lg border-2 border-slate-200 shadow-sm"
                                                 />
-                                                <p className="text-xs text-slate-500 mt-1">
-                                                    Provide detailed feedback for the asset creator
-                                                </p>
                                             </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* QC Input Section */}
+                                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 shadow-sm">
+                                    <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200 mb-6">
+                                        <div className="bg-purple-600 p-2 rounded-lg">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-purple-900">QC Review Input</h3>
+                                            <p className="text-xs text-purple-600">Provide your quality control assessment</p>
                                         </div>
                                     </div>
 
-                                    {/* Workflow Information */}
-                                    <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                        <h3 className="text-lg font-bold text-slate-900 mb-4">Workflow Information</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="font-bold text-slate-700">Submitted by:</span>
-                                                <span className="ml-2 text-slate-600">
-                                                    {users.find(u => u.id === qcReviewAsset?.submitted_by)?.name || 'Unknown'}
+                                    <div className="space-y-6">
+                                        {/* QC Score */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                QC Score (0-100)
+                                                <span className="text-red-500 ml-1">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={qcScore || ''}
+                                                onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                placeholder="Enter QC score (0-100)"
+                                            />
+                                            {qcScore && qcScore > 0 && (
+                                                <div className={`mt-2 text-xs font-bold ${qcScore >= 80 ? 'text-green-600' : qcScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                    {qcScore >= 80 ? '✓ Excellent quality' : qcScore >= 60 ? '⚠ Good quality' : '✗ Needs improvement'}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Checklist Completion */}
+                                        <div>
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checklistCompleted}
+                                                    onChange={(e) => setChecklistCompleted(e.target.checked)}
+                                                    className="w-5 h-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                                                />
+                                                <span className="text-sm font-bold text-slate-700">
+                                                    QC Checklist Completed
+                                                    <span className="text-red-500 ml-1">*</span>
                                                 </span>
-                                            </div>
-                                            <div>
-                                                <span className="font-bold text-slate-700">Submitted at:</span>
-                                                <span className="ml-2 text-slate-600">
-                                                    {qcReviewAsset?.submitted_at ? new Date(qcReviewAsset.submitted_at).toLocaleString() : 'Unknown'}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="font-bold text-slate-700">Current status:</span>
-                                                <span className="ml-2">{getStatusBadge(qcReviewAsset?.status || 'Draft')}</span>
-                                            </div>
-                                            <div>
-                                                <span className="font-bold text-slate-700">Rework count:</span>
-                                                <span className="ml-2 text-slate-600">{qcReviewAsset?.rework_count || 0}</span>
-                                            </div>
+                                            </label>
+                                            <p className="text-xs text-slate-500 mt-1 ml-8">
+                                                Confirm that all quality control checks have been completed
+                                            </p>
+                                        </div>
+
+                                        {/* QC Remarks */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                QC Remarks / Comments
+                                            </label>
+                                            <textarea
+                                                value={qcRemarks}
+                                                onChange={(e) => setQcRemarks(e.target.value)}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                placeholder="Enter your QC remarks and comments..."
+                                                rows={4}
+                                            />
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                Provide detailed feedback for the asset creator
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Workflow Information */}
+                                <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+                                    <h3 className="text-lg font-bold text-slate-900 mb-4">Workflow Information</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="font-bold text-slate-700">Submitted by:</span>
+                                            <span className="ml-2 text-slate-600">
+                                                {users.find(u => u.id === qcReviewAsset?.submitted_by)?.name || 'Unknown'}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-700">Submitted at:</span>
+                                            <span className="ml-2 text-slate-600">
+                                                {qcReviewAsset?.submitted_at ? new Date(qcReviewAsset.submitted_at).toLocaleString() : 'Unknown'}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-700">Current status:</span>
+                                            <span className="ml-2">{getStatusBadge(qcReviewAsset?.status || 'Draft')}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-700">Rework count:</span>
+                                            <span className="ml-2 text-slate-600">{qcReviewAsset?.rework_count || 0}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                );
-            })()
-            }
+                </div>
+            )}
 
             {/* My Submissions View */}
-            {
-                viewMode === 'mysubmissions' && (() => {
-                    const mySubmissions = assets.filter(asset => asset.submitted_by === currentUser.id);
+            {viewMode === 'mysubmissions' && (
+                <div className="h-full flex flex-col w-full p-6 overflow-hidden">
+                    <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
+                        <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-green-50 to-emerald-50 w-full flex-shrink-0">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">My Submissions</h2>
+                                <p className="text-slate-600 text-xs mt-0.5">
+                                    Track your submitted assets and their review status
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                title="Back to Assets"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                        </div>
 
-                    const mySubmissionsColumns = [
-                        {
-                            header: 'Title',
-                            accessor: (item: AssetLibraryItem) => (
-                                <div>
-                                    <div className="font-bold text-slate-900 text-sm">{item.name}</div>
-                                    <div className="text-xs text-slate-500 mt-0.5">ID: {item.id}</div>
-                                </div>
-                            )
-                        },
-                        {
-                            header: 'Status',
-                            accessor: (item: AssetLibraryItem) => (
-                                <div className="space-y-2">
-                                    {getStatusBadge(item.status || 'Draft')}
-                                    {item.rework_count && item.rework_count > 0 && (
-                                        <div className="text-xs text-orange-600 font-medium">
-                                            🔄 Rework: {item.rework_count}
+                        {/* Stats Cards */}
+                        <div className="p-6 border-b border-slate-200 bg-slate-50">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Total</p>
+                                            <p className="text-2xl font-bold text-slate-900">{mySubmissions.length}</p>
                                         </div>
-                                    )}
-                                </div>
-                            )
-                        },
-                        {
-                            header: 'Date Submitted',
-                            accessor: (item: AssetLibraryItem) => (
-                                <span className="text-xs text-slate-600">
-                                    {item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    }) : '-'}
-                                </span>
-                            )
-                        },
-                        {
-                            header: 'QC Remarks',
-                            accessor: (item: AssetLibraryItem) => (
-                                <div className="max-w-xs">
-                                    {item.qc_remarks ? (
-                                        <div className="text-xs text-slate-700 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                                            {item.qc_remarks}
-                                        </div>
-                                    ) : (
-                                        <span className="text-xs text-slate-400 italic">No remarks yet</span>
-                                    )}
-                                </div>
-                            )
-                        },
-                        {
-                            header: 'QC Score',
-                            accessor: (item: AssetLibraryItem) => (
-                                <div>
-                                    {item.qc_score ? (
-                                        <CircularScore
-                                            score={item.qc_score}
-                                            label="QC"
-                                            size="sm"
-                                        />
-                                    ) : (
-                                        <span className="text-xs text-slate-400 italic">Not scored</span>
-                                    )}
-                                </div>
-                            )
-                        },
-                        {
-                            header: 'Actions',
-                            accessor: (item: AssetLibraryItem) => (
-                                <div className="flex gap-2">
-                                    {/* View Button */}
-                                    {(item.file_url || item.thumbnail_url) && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const url = item.file_url || item.thumbnail_url;
-                                                if (url) {
-                                                    if (url.startsWith('data:')) {
-                                                        const win = window.open();
-                                                        if (win) {
-                                                            win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
-                                                        }
-                                                    } else {
-                                                        window.open(url, '_blank', 'noopener,noreferrer');
-                                                    }
-                                                }
-                                            }}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                            title="View Asset"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                        </button>
-                                    )}
-
-                                    {/* Edit Button - Only for Draft or Rejected status */}
-                                    {(item.status === 'Draft' || item.status === 'QC Rejected') && (
-                                        <button
-                                            onClick={(e) => handleEdit(e, item)}
-                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                            title="Edit"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                            )
-                        }
-                    ];
-
-                    return (
-                        <div className="h-full flex flex-col w-full p-6 overflow-hidden">
-                            <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                                <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 w-full flex-shrink-0">
-                                    <div>
-                                        <h2 className="text-lg font-bold text-slate-900">My Submissions</h2>
-                                        <p className="text-slate-600 text-xs mt-0.5">
-                                            Track your submitted assets and their QC status
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {/* Upload Asset Button in My Submissions */}
-                                        <button
-                                            onClick={() => setShowUploadModal(true)}
-                                            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-md transition-all flex items-center gap-2"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Upload Asset
-                                        </button>
-
-                                        <button
-                                            onClick={() => setViewMode('list')}
-                                            className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
-                                        >
-                                            Back to Assets
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Submission Statistics */}
-                                <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                        <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-slate-100 p-1.5 rounded">
-                                                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <p className="text-lg font-bold text-slate-900">
-                                                        {mySubmissions.length}
-                                                    </p>
-                                                    <p className="text-xs text-slate-600">Total Submissions</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white rounded-lg border border-purple-200 p-3 shadow-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-purple-100 p-1.5 rounded">
-                                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <p className="text-lg font-bold text-purple-900">
-                                                        {mySubmissions.filter(a => a.status === 'Pending QC Review').length}
-                                                    </p>
-                                                    <p className="text-xs text-purple-600">Pending Review</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white rounded-lg border border-green-200 p-3 shadow-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-green-100 p-1.5 rounded">
-                                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <p className="text-lg font-bold text-green-900">
-                                                        {mySubmissions.filter(a => a.status === 'QC Approved').length}
-                                                    </p>
-                                                    <p className="text-xs text-green-600">Approved</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white rounded-lg border border-red-200 p-3 shadow-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-red-100 p-1.5 rounded">
-                                                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <p className="text-lg font-bold text-red-900">
-                                                        {mySubmissions.filter(a => a.status === 'QC Rejected').length}
-                                                    </p>
-                                                    <p className="text-xs text-red-600">Needs Rework</p>
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex-1 overflow-hidden">
-                                    <Table
-                                        columns={mySubmissionsColumns}
-                                        data={mySubmissions}
-                                        title=""
-                                        emptyMessage="You haven't submitted any assets yet. Upload and submit an asset to see it here!"
-                                    />
+                                <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Pending</p>
+                                            <p className="text-2xl font-bold text-purple-600">{mySubmissions.filter(a => a.status === 'Pending QC Review').length}</p>
+                                        </div>
+                                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Approved</p>
+                                            <p className="text-2xl font-bold text-green-600">{mySubmissions.filter(a => a.status === 'QC Approved').length}</p>
+                                        </div>
+                                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Rejected</p>
+                                            <p className="text-2xl font-bold text-red-600">{mySubmissions.filter(a => a.status === 'QC Rejected').length}</p>
+                                            <p className="text-xs text-red-600">Needs Rework</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    );
-                })()
-            }
+
+                        <div className="flex-1 overflow-hidden">
+                            <Table
+                                columns={mySubmissionsColumns}
+                                data={mySubmissions}
+                                title=""
+                                emptyMessage="You haven't submitted any assets yet. Upload and submit an asset to see it here!"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Detailed Asset View */}
             {viewMode === 'detail' && selectedAsset && (
@@ -4304,34 +4222,349 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
             {/* List View */}
             {viewMode === 'list' && (
-                <div className="h-full flex flex-col w-full p-6 overflow-hidden">
-                    <div className="flex justify-between items-start flex-shrink-0 w-full mb-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
-                            <p className="text-slate-600 text-sm mt-1">
-                                {qcMode ? 'QC Review Mode - Review assets for quality control' : 'Manage and organize all your marketing assets'}
-                            </p>
+                <>
+                    <div className="h-full flex flex-col w-full overflow-hidden">
+                        {/* Enhanced Header Section */}
+                        <div className="bg-gradient-to-r from-slate-50 via-white to-indigo-50 border-b border-slate-200 shadow-sm">
+                            <div className="max-w-7xl mx-auto px-6 py-6">
+                                {/* Title Row */}
+                                <div className="flex justify-between items-center mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 rounded-xl shadow-lg">
+                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Assets</h1>
+                                            <p className="text-slate-600 text-sm mt-1 flex items-center gap-2">
+                                                {qcMode ? (
+                                                    <>
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            QC Review Mode
+                                                        </span>
+                                                        Review assets for quality control
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                                                            </svg>
+                                                            Management Mode
+                                                        </span>
+                                                        Manage and organize all your marketing assets
+                                                    </>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Primary Actions */}
+                                    <div className="flex items-center gap-3">
+                                        {/* Refresh Button */}
+                                        <button
+                                            onClick={async () => {
+                                                setIsRefreshing(true);
+                                                try {
+                                                    await refresh?.();
+                                                    setTimeout(() => setIsRefreshing(false), 800);
+                                                } catch (error) {
+                                                    console.error('Refresh failed:', error);
+                                                    setIsRefreshing(false);
+                                                }
+                                            }}
+                                            disabled={isRefreshing}
+                                            className={`bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 hover:shadow-md transition-all flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                            title="Refresh Assets Data"
+                                        >
+                                            {isRefreshing ? (
+                                                <>
+                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Refreshing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                    Refresh
+                                                </>
+                                            )}
+                                        </button>
+
+                                        {/* Upload Asset Button */}
+                                        <button
+                                            onClick={() => setShowUploadModal(true)}
+                                            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:shadow-md transition-all flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Upload Asset
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Control Bar */}
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    {/* Left Side - View Controls */}
+                                    <div className="flex items-center gap-3">
+                                        {/* View Mode Toggle */}
+                                        <div className="bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+                                            <button
+                                                onClick={() => setDisplayMode('table')}
+                                                className={`px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${displayMode === 'table'
+                                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                                    }`}
+                                                title="List View"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                                </svg>
+                                                List
+                                            </button>
+                                            <button
+                                                onClick={() => setDisplayMode('grid')}
+                                                className={`px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${displayMode === 'grid'
+                                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                                    }`}
+                                                title="Grid View"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                                </svg>
+                                                Large
+                                            </button>
+                                        </div>
+
+                                        {/* Mode Toggle */}
+                                        <div className="bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+                                            <button
+                                                onClick={() => setQcMode(false)}
+                                                className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${!qcMode
+                                                    ? 'bg-blue-600 text-white shadow-sm'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                User Mode
+                                            </button>
+                                            <button
+                                                onClick={() => setQcMode(true)}
+                                                className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${qcMode
+                                                    ? 'bg-purple-600 text-white shadow-sm'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                QC Mode
+                                            </button>
+                                        </div>
+
+                                        {/* My Submissions Button */}
+                                        <button
+                                            onClick={() => setViewMode('mysubmissions')}
+                                            className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 hover:shadow-md transition-all flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                            My Submissions
+                                        </button>
+                                    </div>
+
+                                    {/* Right Side - Quick Actions */}
+                                    <div className="flex items-center gap-3">
+                                        {/* Quick Upload Toolbar */}
+                                        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+                                            <span className="text-xs font-medium text-slate-600">Quick Upload:</span>
+                                            <button
+                                                onClick={() => {
+                                                    setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                    setShowUploadModal(true);
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                                                title="Upload Web Content"
+                                            >
+                                                🌐 Web
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                    setShowUploadModal(true);
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
+                                                title="Upload SEO Content"
+                                            >
+                                                🔍 SEO
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                    setShowUploadModal(true);
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
+                                                title="Upload Social Media Content"
+                                            >
+                                                📱 SMM
+                                            </button>
+                                        </div>
+
+                                        {/* Quick Update Toolbar */}
+                                        <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg px-3 py-2 shadow-sm">
+                                            <span className="text-xs font-medium text-orange-700">Quick Update:</span>
+                                            <button
+                                                onClick={() => {
+                                                    const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                                                    if (recentAsset) {
+                                                        handleEdit({ stopPropagation: () => { } } as any, recentAsset);
+                                                    } else {
+                                                        alert('No assets available to update');
+                                                    }
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-md transition-colors"
+                                                title="Update Most Recent Asset"
+                                            >
+                                                🔄 Recent
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
+                                                    if (pendingAssets.length > 0) {
+                                                        handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
+                                                    } else {
+                                                        alert('No assets pending updates');
+                                                    }
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-md transition-colors"
+                                                title="Update Pending Assets"
+                                            >
+                                                ⏳ Pending
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const assetName = prompt('Enter asset name or ID to update:');
+                                                    if (assetName) {
+                                                        const asset = assets.find(a =>
+                                                            a.name.toLowerCase().includes(assetName.toLowerCase()) ||
+                                                            a.id.toString() === assetName
+                                                        );
+                                                        if (asset) {
+                                                            handleEdit({ stopPropagation: () => { } } as any, asset);
+                                                        } else {
+                                                            alert('Asset not found');
+                                                        }
+                                                    }
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-md transition-colors"
+                                                title="Search & Update Asset"
+                                            >
+                                                🔍 Search
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        {/* Content Area */}
+                        <div className="flex-1 p-6 overflow-hidden">
+                            {/* Search Bar */}
+                            <div className="relative mb-6">
+                                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder={qcMode ? "Search assets pending QC review..." : "Search assets by name, type, repository, or status..."}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all shadow-sm"
+                                />
+                            </div>
+
+                            {/* Filters Section */}
+                            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm mb-6">
+                                <div className="flex flex-wrap gap-4 items-center">
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        </svg>
+                                        <span className="text-sm font-medium text-slate-700">Filters:</span>
+                                    </div>
+
+                                    <select
+                                        value={repositoryFilter}
+                                        onChange={(e) => setRepositoryFilter(e.target.value)}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[150px]"
+                                    >
+                                        {repositories.map(repo => (
+                                            <option key={repo} value={repo}>
+                                                {repo === 'All' ? '📁 All Repositories' : `📁 ${repo}`}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    <select
+                                        value={typeFilter}
+                                        onChange={(e) => setTypeFilter(e.target.value)}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[120px]"
+                                    >
+                                        {assetTypes.map(type => (
+                                            <option key={type} value={type}>
+                                                {type === 'All' ? '🏷️ All Types' : `🏷️ ${type}`}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    <select
+                                        value={contentTypeFilter}
+                                        onChange={(e) => setContentTypeFilter(e.target.value)}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[140px]"
+                                    >
+                                        <option value="All">📋 All Content</option>
+                                        <option value="web">🌐 Web Content</option>
+                                        <option value="seo">🔍 SEO Content</option>
+                                        <option value="smm">📱 Social Media</option>
+                                    </select>
+
+                                    {/* Clear Filters Button */}
+                                    <button
+                                        onClick={() => {
+                                            setRepositoryFilter('All');
+                                            setTypeFilter('All');
+                                            setContentTypeFilter('All');
+                                            setSearchQuery('');
+                                        }}
+                                        className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Clear All
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Refresh Button */}
                             <button
                                 onClick={async () => {
                                     setIsRefreshing(true);
                                     try {
                                         await refresh?.();
-                                        // Show success feedback briefly
-                                        setTimeout(() => {
-                                            setIsRefreshing(false);
-                                        }, 800);
-                                    } catch (error) {
-                                        console.error('Refresh failed:', error);
+                                    } finally {
                                         setIsRefreshing(false);
                                     }
                                 }}
                                 disabled={isRefreshing}
-                                className={`bg-green-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-green-700 hover:shadow-lg transition-all flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : ''
-                                    }`}
+                                className={`bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 hover:shadow-md transition-all flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : ''}`}
                                 title="Refresh Assets Data"
                             >
                                 {isRefreshing ? (
@@ -4642,18 +4875,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    <div className="relative">
-                        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                            type="text"
-                            placeholder={qcMode ? "Search assets pending QC review..." : "Search assets by name, type, repository, or status..."}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
-                        />
-                    </div>
+
 
                     <div className="mb-6 space-y-4">
                         {/* Enhanced Filters */}
@@ -5134,7 +5356,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             )}
                         </div>
                     </div>
-                </div>
+                </>
             )}
 
             {/* Enhanced Floating Action Button for Upload & Update */}
@@ -5277,7 +5499,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Upload Asset Modal */}
             <UploadAssetModal
