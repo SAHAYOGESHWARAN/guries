@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
@@ -17,25 +17,53 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
 ];
 
 const SubServiceMasterView: React.FC = () => {
-    const { data: subServices = [], create, update, remove } = useData<SubServiceItem>('subServices');
-    const { data: services = [] } = useData<Service>('services');
+    const { data: subServices = [], create, update, remove, refresh: refreshSubServices } = useData<SubServiceItem>('subServices');
+    const { data: services = [], refresh: refreshServices } = useData<Service>('services');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: libraryAssets = [], update: updateLibraryAsset, refresh: refreshLibraryAssets } = useData<AssetLibraryItem>('assetLibrary');
-    const { data: brands = [] } = useData<Brand>('brands');
-    const { data: users = [] } = useData<User>('users');
-    const { data: contentTypes = [] } = useData<ContentTypeItem>('contentTypes');
-    const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
+    const { data: brands = [], refresh: refreshBrands } = useData<Brand>('brands');
+    const { data: users = [], refresh: refreshUsers } = useData<User>('users');
+    const { data: contentTypes = [], refresh: refreshContentTypes } = useData<ContentTypeItem>('contentTypes');
+    const { data: keywordsMaster = [], refresh: refreshKeywords } = useData<Keyword>('keywords');
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [parentFilter, setParentFilter] = useState('All Parent Services');
     const [statusFilter, setStatusFilter] = useState('All Status');
+    const [contentTypeFilter, setContentTypeFilter] = useState('All Types');
+    const [brandFilter, setBrandFilter] = useState('All Brands');
     const [editingItem, setEditingItem] = useState<SubServiceItem | null>(null);
-    const [activeTab, setActiveTab] = useState<'Core' | 'SEO' | 'SMM' | 'Linking' | 'Governance'>('Core');
+    const [activeTab, setActiveTab] = useState<'GeneralInfo' | 'SubServiceManager' | 'SEOContent' | 'LinkedAssets'>('GeneralInfo');
     const [assetSearch, setAssetSearch] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [copiedUrl, setCopiedUrl] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Insights management state
+    const [linkedInsights, setLinkedInsights] = useState([
+        { id: 1, title: 'Blog: SEO Best Practices', type: 'Blog', priority: 1, status: 'Ready' },
+        { id: 2, title: 'Whitepaper: Content Strategy', type: 'Whitepaper', priority: 2, status: 'Ready' },
+        { id: 3, title: 'Case Study: E-commerce Success', type: 'Case Study', priority: 3, status: 'Draft' },
+        { id: 4, title: 'Video: SEO Tutorial', type: 'Video', priority: 4, status: 'Ready' }
+    ]);
+    const [selectedInsights, setSelectedInsights] = useState([1, 2]); // IDs of selected insights
+
+    // Promotional readiness state
+    const [contentReady, setContentReady] = useState(true);
+    const [assetsReady, setAssetsReady] = useState(true);
+    const [seoScore, setSeoScore] = useState(75);
+
+    // SEO Content state
+    const [h2Headings, setH2Headings] = useState<string[]>([]);
+    const [h3Headings, setH3Headings] = useState<string[]>([]);
+    const [tempH2, setTempH2] = useState('');
+    const [tempH3, setTempH3] = useState('');
+    const [ogImageFile, setOgImageFile] = useState<File | null>(null);
+    const [ogImagePreview, setOgImagePreview] = useState<string>('');
+    const [schemaType, setSchemaType] = useState('Service');
+    const [schemaJson, setSchemaJson] = useState('');
+    const [showMissingSeoWarning, setShowMissingSeoWarning] = useState(true);
 
     // Form State
     const [formData, setFormData] = useState<any>({
@@ -83,12 +111,28 @@ const SubServiceMasterView: React.FC = () => {
     const availableContentTypes = contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
 
     const filteredData = subServices.filter(item => {
-        const matchesSearch = item.sub_service_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (item.slug || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const normalizedQuery = searchQuery.trim().toLowerCase();
+        const matchesSearch = !normalizedQuery || [
+            item.sub_service_name,
+            item.sub_service_code,
+            item.slug,
+            item.description,
+            item.h1,
+            item.meta_title,
+            item.meta_description
+        ].some(value => (value || '').toLowerCase().includes(normalizedQuery));
+
         const parentName = services.find(s => s.id === item.parent_service_id)?.service_name || '';
         const matchesParent = parentFilter === 'All Parent Services' || parentName === parentFilter;
         const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
-        return matchesSearch && matchesParent && matchesStatus;
+        const matchesContentType = contentTypeFilter === 'All Types' || item.content_type === contentTypeFilter;
+
+        // Brand filter based on parent service's brand
+        const parentService = services.find(s => s.id === item.parent_service_id);
+        const parentBrand = parentService?.brand_id ? brands.find(b => b.id === parentService.brand_id)?.name : null;
+        const matchesBrand = brandFilter === 'All Brands' || parentBrand === brandFilter;
+
+        return matchesSearch && matchesParent && matchesStatus && matchesContentType && matchesBrand;
     });
 
     // Linked and Available Assets from Asset Library
@@ -162,7 +206,7 @@ const SubServiceMasterView: React.FC = () => {
             primary_cta_label: '',
             primary_cta_url: ''
         });
-        setActiveTab('Core');
+        setActiveTab('GeneralInfo');
         setViewMode('form');
     };
 
@@ -194,7 +238,7 @@ const SubServiceMasterView: React.FC = () => {
             instagram_description: item.instagram_description || '',
             instagram_image_url: item.instagram_image_url || ''
         });
-        setActiveTab('Core');
+        setActiveTab('GeneralInfo');
         setViewMode('form');
     };
 
@@ -300,16 +344,144 @@ const SubServiceMasterView: React.FC = () => {
         return `Vol: ${vol} | Comp: ${comp}`;
     };
 
-    const handleExport = () => {
-        exportToCSV(filteredData, 'sub_services_export');
+    const handleOgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                alert('File size must be less than 2MB');
+                return;
+            }
+            if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+                alert('Only PNG and JPG files are allowed');
+                return;
+            }
+            setOgImageFile(file);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setOgImagePreview(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
+    const addHeading = (type: 'h2' | 'h3', value: string) => {
+        if (!value.trim()) return;
+        if (type === 'h2') {
+            setH2Headings([...h2Headings, value]);
+            setTempH2('');
+        } else {
+            setH3Headings([...h3Headings, value]);
+            setTempH3('');
+        }
+    };
+
+    const removeHeading = (type: 'h2' | 'h3', index: number) => {
+        if (type === 'h2') {
+            setH2Headings(h2Headings.filter((_, i) => i !== index));
+        } else {
+            setH3Headings(h3Headings.filter((_, i) => i !== index));
+        }
+    };
+
+    const generateSchemaJson = () => {
+        const baseSchema = {
+            "@context": "https://schema.org",
+            "@type": schemaType,
+            "name": formData.sub_service_name || "Sub-Service Name",
+            "description": formData.meta_description || formData.description || "Service description",
+            "url": formData.full_url || "",
+        };
+
+        if (schemaType === 'Service') {
+            Object.assign(baseSchema, {
+                "serviceType": formData.content_type || "Service",
+                "provider": {
+                    "@type": "Organization",
+                    "name": "Your Organization"
+                }
+            });
+        } else if (schemaType === 'Product') {
+            Object.assign(baseSchema, {
+                "brand": "Your Brand",
+                "category": formData.content_type || "Product"
+            });
+        } else if (schemaType === 'Article') {
+            Object.assign(baseSchema, {
+                "headline": formData.h1 || formData.sub_service_name,
+                "author": {
+                    "@type": "Person",
+                    "name": "Author Name"
+                }
+            });
+        }
+
+        setSchemaJson(JSON.stringify(baseSchema, null, 2));
+    };
+
+    const checkSeoCompleteness = () => {
+        const missing = [];
+        if (!formData.meta_description) missing.push('Meta Description');
+        if (!formData.og_image_url && !ogImageFile) missing.push('OG Image');
+        return missing;
+    };
+
+    const handleExport = () => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `sub_services_export_${timestamp}`;
+        exportToCSV(filteredData, filename);
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            // Refresh all related data
+            await Promise.all([
+                refreshSubServices?.(),
+                refreshServices?.(),
+                refreshContentAssets?.(),
+                refreshLibraryAssets?.(),
+                refreshBrands?.(),
+                refreshUsers?.(),
+                refreshContentTypes?.(),
+                refreshKeywords?.()
+            ]);
+
+            // Show success feedback briefly
+            setTimeout(() => {
+                setIsRefreshing(false);
+            }, 800);
+        } catch (error) {
+            console.error('Refresh failed:', error);
+            setIsRefreshing(false);
+        }
+    };
+
+    // Global keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // Auto-refresh on mount to ensure latest data
+    useEffect(() => {
+        refreshSubServices?.();
+    }, []);
+
     const tabs = [
-        { id: 'Core', label: 'Core', icon: '💎' },
-        { id: 'SEO', label: 'SEO', icon: '🔍' },
-        { id: 'SMM', label: 'SMM', icon: '📢' },
-        { id: 'Linking', label: 'Linking', icon: '🔗' },
-        { id: 'Governance', label: 'Governance', icon: '⚖️' }
+        { id: 'GeneralInfo', label: 'General Info', icon: '📋' },
+        { id: 'SubServiceManager', label: 'Sub-Service Manager', icon: '🔧' },
+        { id: 'SEOContent', label: 'SEO & Content', icon: '🔍' },
+        { id: 'LinkedAssets', label: 'Linked Assets & Insights', icon: '🔗' }
     ];
 
     if (viewMode === 'form') {
@@ -360,8 +532,8 @@ const SubServiceMasterView: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
                     <div className="max-w-7xl mx-auto space-y-8 pb-20">
 
-                        {/* --- TAB: CORE --- */}
-                        {activeTab === 'Core' && (
+                        {/* --- TAB: GENERAL INFO --- */}
+                        {activeTab === 'GeneralInfo' && (
                             <div className="space-y-10">
                                 {/* 1. SUB-SERVICE IDENTITY CARD */}
                                 <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
@@ -678,371 +850,675 @@ const SubServiceMasterView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* --- TAB: SEO --- */}
-                        {activeTab === 'SEO' && (
-                            <div className="space-y-10">
-                                {/* SEO Metadata Card */}
-                                <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-slate-50 rounded-2xl border-2 border-green-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    <div className="relative bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-10 text-white overflow-hidden">
-                                        <div className="absolute top-0 right-0 opacity-10">
-                                            <span className="text-9xl">🔍</span>
-                                        </div>
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📊</span>
-                                                <h3 className="text-2xl font-bold">SEO Metadata</h3>
-                                            </div>
-                                            <p className="text-green-100 text-sm">Search engine visibility and metadata</p>
-                                        </div>
+
+
+
+
+
+
+                        <div className="bg-white rounded-xl border-2 border-orange-100 p-6">
+                            <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                <span className="text-sm">🏢</span>
+                                Brand
+                            </label>
+                            <select
+                                value={formData.brand_id || 0}
+                                onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || 0 })}
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                            >
+                                <option value={0}>Select Brand...</option>
+                                {brands.map(brand => (
+                                    <option key={brand.id} value={brand.id}>{brand.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* CTA Configuration */}
+                    <div className="mt-8 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-200 p-6">
+                        <h4 className="text-lg font-bold text-emerald-800 mb-4 flex items-center gap-2">
+                            <span className="text-xl">🎯</span>
+                            Call-to-Action Configuration
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-emerald-700 mb-2">CTA Label</label>
+                                <input
+                                    type="text"
+                                    value={formData.primary_cta_label || ''}
+                                    onChange={(e) => setFormData({ ...formData, primary_cta_label: e.target.value })}
+                                    placeholder="Get Started"
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-emerald-700 mb-2">CTA URL</label>
+                                <input
+                                    type="text"
+                                    value={formData.primary_cta_url || ''}
+                                    onChange={(e) => setFormData({ ...formData, primary_cta_url: e.target.value })}
+                                    placeholder="/contact"
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    {/* --- TAB: SEO & CONTENT --- */ }
+    {
+        activeTab === 'SEOContent' && (
+            <div className="space-y-8">
+                {/* Missing SEO Components Warning */}
+                {showMissingSeoWarning && checkSeoCompleteness().length > 0 && (
+                    <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-red-800 mb-2">Missing SEO Components</h3>
+                                <p className="text-red-700 text-sm mb-3">
+                                    {checkSeoCompleteness().join(' and ')} {checkSeoCompleteness().length === 1 ? 'is' : 'are'} required for optimal SEO performance.
+                                </p>
+                                <button
+                                    onClick={() => setShowMissingSeoWarning(false)}
+                                    className="text-red-600 hover:text-red-800 text-sm font-medium underline"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* SEO Metadata */}
+                <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-slate-50 rounded-2xl border-2 border-green-200 shadow-lg overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-6 text-white">
+                        <div className="flex items-center gap-3">
+                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔍</span>
+                            <div>
+                                <h3 className="text-xl font-bold">SEO Optimization</h3>
+                                <p className="text-green-100 text-sm">Meta tags, keywords, and search optimization</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8 space-y-6">
+                        {/* Meta Title */}
+                        <div className="bg-white rounded-xl border-2 border-green-100 p-6">
+                            <label className="flex items-center justify-between mb-3">
+                                <span className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest">
+                                    <span className="text-sm">🏷️</span>
+                                    Meta Title
+                                    <span className="text-red-500 ml-1">*</span>
+                                </span>
+                                <span className={`px-2 py-1 rounded text-xs font-mono ${(formData.meta_title?.length || 0) > 60 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                                    {formData.meta_title?.length || 0}/60 characters
+                                </span>
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.meta_title || ''}
+                                onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                                placeholder="Sub-Service Name - Brand | Compelling Value Proposition"
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                            />
+                        </div>
+
+                        {/* Meta Description */}
+                        <div className="bg-white rounded-xl border-2 border-emerald-100 p-6">
+                            <label className="flex items-center justify-between mb-3">
+                                <span className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
+                                    <span className="text-sm">📝</span>
+                                    Meta Description
+                                    <span className="text-red-500 ml-1">*</span>
+                                </span>
+                                <span className={`px-2 py-1 rounded text-xs font-mono ${(formData.meta_description?.length || 0) > 160 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                                    {formData.meta_description?.length || 0}/160 characters
+                                </span>
+                            </label>
+                            <textarea
+                                value={formData.meta_description || ''}
+                                onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                                placeholder="Write a compelling summary that encourages clicks from search results. Include key benefits and a call-to-action."
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-none"
+                                rows={3}
+                            />
+                        </div>
+
+                        {/* Content Structure */}
+                        <div className="bg-white rounded-xl border-2 border-indigo-100 p-6">
+                            <label className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">
+                                <span className="text-sm">📄</span>
+                                H1 Heading
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.h1 || ''}
+                                onChange={(e) => setFormData({ ...formData, h1: e.target.value })}
+                                placeholder="Main page heading..."
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                            />
+                        </div>
+
+                        {/* H2 and H3 Headings */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* H2 Headings */}
+                            <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
+                                <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                    <span className="text-sm">📋</span>
+                                    H2 Headings
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={tempH2}
+                                            onChange={(e) => setTempH2(e.target.value)}
+                                            placeholder="Enter H2 heading..."
+                                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addHeading('h2', tempH2))}
+                                        />
+                                        <button
+                                            onClick={() => addHeading('h2', tempH2)}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                                        >
+                                            + Add H2
+                                        </button>
                                     </div>
-
-                                    <div className="p-10">
-                                        <div className="space-y-6">
-                                            <div className="bg-white rounded-xl border-2 border-green-100 p-6 hover:border-green-300 transition-colors">
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-green-700 uppercase tracking-widest">
-                                                        <span className="text-sm">📝</span>
-                                                        Meta Title
-                                                    </label>
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold ${(formData.meta_title?.length || 0) > 60 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                                        {formData.meta_title?.length || 0}/60
-                                                    </span>
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    value={formData.meta_title || ''}
-                                                    onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                                                    placeholder="Sub-Service Name - Brand | Compelling Value Proposition"
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                />
-                                                <p className="text-xs text-slate-500 mt-2">💡 Optimal length: 50-60 characters for best display in search results</p>
+                                    <div className="space-y-2">
+                                        {h2Headings.map((heading, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                                <span className="text-sm text-blue-800">{heading}</span>
+                                                <button
+                                                    onClick={() => removeHeading('h2', index)}
+                                                    className="text-blue-500 hover:text-blue-700 font-bold"
+                                                >
+                                                    ×
+                                                </button>
                                             </div>
-
-                                            <div className="bg-white rounded-xl border-2 border-emerald-100 p-6 hover:border-emerald-300 transition-colors">
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
-                                                        <span className="text-sm">📄</span>
-                                                        Meta Description
-                                                    </label>
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold ${(formData.meta_description?.length || 0) > 160 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                        {formData.meta_description?.length || 0}/160
-                                                    </span>
-                                                </div>
-                                                <textarea
-                                                    value={formData.meta_description || ''}
-                                                    onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                                                    placeholder="Write a compelling summary that encourages clicks from search results. Include key benefits and a call-to-action."
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-none"
-                                                    rows={4}
-                                                />
-                                                <p className="text-xs text-slate-500 mt-2">💡 Optimal length: 150-160 characters for complete display in search results</p>
-                                            </div>
-
-                                            {/* Keywords Section */}
-                                            <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">🎯</span>
-                                                    Focus Keywords
-                                                </label>
-                                                <div className="flex gap-2 mb-3">
-                                                    <input
-                                                        type="text"
-                                                        value={tempKeyword}
-                                                        onChange={(e) => setTempKeyword(e.target.value)}
-                                                        onKeyPress={(e) => e.key === 'Enter' && (addToList('focus_keywords', tempKeyword, setTempKeyword), e.preventDefault())}
-                                                        placeholder="Add focus keyword..."
-                                                        className="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                    />
-                                                    <button
-                                                        onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)}
-                                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
-                                                    >
-                                                        Add
-                                                    </button>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {(formData.focus_keywords || []).map((kw: string, idx: number) => (
-                                                        <div key={idx} className="group relative">
-                                                            <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-lg text-xs font-medium">
-                                                                {kw}
-                                                                <button
-                                                                    onClick={() => removeFromList('focus_keywords', idx)}
-                                                                    className="text-blue-600 hover:text-red-600 transition-colors"
-                                                                >
-                                                                    ×
-                                                                </button>
-                                                            </span>
-                                                            <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-50 bg-slate-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">
-                                                                {getKeywordMetric(kw)}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-white rounded-xl border-2 border-indigo-100 p-6">
-                                                <label className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">
-                                                    <span className="text-sm">🔖</span>
-                                                    Secondary Keywords
-                                                </label>
-                                                <div className="flex gap-2 mb-3">
-                                                    <input
-                                                        type="text"
-                                                        value={tempSecondaryKeyword}
-                                                        onChange={(e) => setTempSecondaryKeyword(e.target.value)}
-                                                        onKeyPress={(e) => e.key === 'Enter' && (addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword), e.preventDefault())}
-                                                        placeholder="Add secondary keyword..."
-                                                        className="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                                    />
-                                                    <button
-                                                        onClick={() => addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)}
-                                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors"
-                                                    >
-                                                        Add
-                                                    </button>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {(formData.secondary_keywords || []).map((kw: string, idx: number) => (
-                                                        <span key={idx} className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-lg text-xs font-medium">
-                                                            {kw}
-                                                            <button
-                                                                onClick={() => removeFromList('secondary_keywords', idx)}
-                                                                className="text-indigo-600 hover:text-red-600 transition-colors"
-                                                            >
-                                                                ×
-                                                            </button>
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
-                        )}
 
-                        {/* --- TAB: SMM --- */}
-                        {activeTab === 'SMM' && (
-                            <div className="space-y-10">
-                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    <div className="p-6">
-                                        <SocialMetaForm formData={formData} setFormData={setFormData} />
+                            {/* H3 Headings */}
+                            <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
+                                <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                    <span className="text-sm">📝</span>
+                                    H3 Headings
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={tempH3}
+                                            onChange={(e) => setTempH3(e.target.value)}
+                                            placeholder="Enter H3 heading..."
+                                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addHeading('h3', tempH3))}
+                                        />
+                                        <button
+                                            onClick={() => addHeading('h3', tempH3)}
+                                            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors"
+                                        >
+                                            + Add H3
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {h3Headings.map((heading, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                                <span className="text-sm text-purple-800">{heading}</span>
+                                                <button
+                                                    onClick={() => removeHeading('h3', index)}
+                                                    className="text-purple-500 hover:text-purple-700 font-bold"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
-                        {/* --- TAB: LINKING --- */}
-                        {activeTab === 'Linking' && (
-                            <div className="space-y-10">
-                                {editingItem ? (
-                                    <ServiceAssetLinker
-                                        linkedAssets={linkedLibraryAssets}
-                                        availableAssets={availableLibraryAssets}
-                                        assetSearch={assetSearch}
-                                        setAssetSearch={setAssetSearch}
-                                        onToggle={handleToggleLibraryLink}
-                                        totalAssets={libraryAssets.length}
-                                        repositoryFilter={repositoryFilter}
-                                        setRepositoryFilter={setRepositoryFilter}
-                                        allAssets={libraryAssets}
+                        {/* Open Graph Settings */}
+                        <div className="bg-white rounded-xl border-2 border-pink-100 p-6">
+                            <h4 className="flex items-center gap-2 text-lg font-bold text-pink-700 mb-4">
+                                <span className="text-xl">🌐</span>
+                                Open Graph Settings
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* OG Title */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-xs font-bold text-pink-700 uppercase tracking-widest mb-2">
+                                        OG Title
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.og_title || ''}
+                                        onChange={(e) => setFormData({ ...formData, og_title: e.target.value })}
+                                        placeholder="Social media title..."
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all"
                                     />
-                                ) : (
-                                    <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-2xl border-2 border-amber-300 shadow-lg overflow-hidden">
-                                        <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-6 text-white overflow-hidden">
-                                            <div className="absolute top-0 right-0 opacity-10">
-                                                <span className="text-9xl">💾</span>
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">💡</span>
-                                                    <h3 className="text-2xl font-bold">Asset Linking Unavailable</h3>
-                                                </div>
-                                                <p className="text-amber-100 text-sm">Complete the setup steps below to enable asset linking</p>
-                                            </div>
-                                        </div>
+                                </div>
 
-                                        <div className="p-10">
-                                            <div className="max-w-3xl mx-auto">
-                                                <div className="text-center mb-8">
-                                                    <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-100 rounded-full mb-4">
-                                                        <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                        </svg>
-                                                    </div>
-                                                    <h4 className="text-xl font-bold text-slate-800 mb-3">Save Sub-Service First</h4>
-                                                    <p className="text-sm text-slate-600 leading-relaxed">
-                                                        You need to save this sub-service before you can link content assets to it.
-                                                        This ensures all relationships are properly tracked in the system.
-                                                    </p>
-                                                </div>
+                                {/* OG Description */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-xs font-bold text-pink-700 uppercase tracking-widest mb-2">
+                                        OG Description
+                                    </label>
+                                    <textarea
+                                        value={formData.og_description || ''}
+                                        onChange={(e) => setFormData({ ...formData, og_description: e.target.value })}
+                                        placeholder="Social media description..."
+                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all resize-none"
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
 
-                                                <div className="bg-white rounded-xl border-2 border-amber-200 p-6 mb-6">
-                                                    <h5 className="text-sm font-bold text-amber-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                                        </svg>
-                                                        Steps to Enable Asset Linking
-                                                    </h5>
-                                                    <ol className="space-y-3">
-                                                        <li className="flex items-start gap-3">
-                                                            <span className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                                                            <div className="flex-1">
-                                                                <p className="text-sm font-semibold text-slate-800">Fill in Required Fields</p>
-                                                                <p className="text-xs text-slate-600 mt-1">Complete the <strong>Parent Service</strong> and <strong>Sub-Service Name</strong> in the Core tab</p>
-                                                            </div>
-                                                        </li>
-                                                        <li className="flex items-start gap-3">
-                                                            <span className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                                                            <div className="flex-1">
-                                                                <p className="text-sm font-semibold text-slate-800">Save the Sub-Service</p>
-                                                                <p className="text-xs text-slate-600 mt-1">Click the <strong>"Save Sub-Service"</strong> button at the top right</p>
-                                                            </div>
-                                                        </li>
-                                                        <li className="flex items-start gap-3">
-                                                            <span className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                                                            <div className="flex-1">
-                                                                <p className="text-sm font-semibold text-slate-800">Return to Linking Tab</p>
-                                                                <p className="text-xs text-slate-600 mt-1">After saving, edit the sub-service again and navigate to this Linking tab to connect assets</p>
-                                                            </div>
-                                                        </li>
-                                                    </ol>
-                                                </div>
-
-                                                <div className="text-center">
-                                                    <button
-                                                        onClick={() => setActiveTab('Core')}
-                                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl hover:from-amber-600 hover:to-orange-600 transition-all"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
-                                                        </svg>
-                                                        Go to Core Tab
-                                                    </button>
-                                                </div>
-
-                                                <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                                                    <div className="flex items-start gap-3">
-                                                        <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        <div className="flex-1">
-                                                            <p className="text-xs font-semibold text-blue-900 mb-1">Why is this required?</p>
-                                                            <p className="text-xs text-blue-700 leading-relaxed">
-                                                                Asset linking requires a valid sub-service ID to create proper database relationships.
-                                                                Once saved, you'll be able to link images, videos, documents, and other media assets from your content repository.
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                            {/* OG Image Upload */}
+                            <div className="mt-6">
+                                <label className="flex items-center gap-2 text-xs font-bold text-pink-700 uppercase tracking-widest mb-3">
+                                    OG Image
+                                </label>
+                                <div className="border-2 border-dashed border-pink-300 rounded-xl p-6 text-center hover:border-pink-400 transition-colors">
+                                    {ogImagePreview ? (
+                                        <div className="space-y-4">
+                                            <img src={ogImagePreview} alt="OG Image Preview" className="max-w-xs mx-auto rounded-lg shadow-md" />
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => {
+                                                        setOgImageFile(null);
+                                                        setOgImagePreview('');
+                                                    }}
+                                                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
+                                                >
+                                                    Remove
+                                                </button>
+                                                <label className="px-4 py-2 bg-pink-600 text-white rounded-lg text-sm font-bold hover:bg-pink-700 transition-colors cursor-pointer">
+                                                    Replace
+                                                    <input
+                                                        type="file"
+                                                        accept="image/png,image/jpeg,image/jpg"
+                                                        onChange={handleOgImageUpload}
+                                                        className="hidden"
+                                                    />
+                                                </label>
                                             </div>
                                         </div>
+                                    ) : (
+                                        <div>
+                                            <div className="text-4xl mb-3">📷</div>
+                                            <p className="text-pink-700 font-medium mb-2">Click to upload or drag and drop</p>
+                                            <p className="text-pink-500 text-sm mb-4">PNG, JPG up to 2MB (1200x630 recommended)</p>
+                                            <label className="inline-block px-6 py-3 bg-pink-600 text-white rounded-lg font-bold hover:bg-pink-700 transition-colors cursor-pointer">
+                                                Choose File
+                                                <input
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/jpg"
+                                                    onChange={handleOgImageUpload}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Schema Markup */}
+                        <div className="bg-white rounded-xl border-2 border-amber-100 p-6">
+                            <h4 className="flex items-center gap-2 text-lg font-bold text-amber-700 mb-4">
+                                <span className="text-xl">🏗️</span>
+                                Schema Markup
+                            </h4>
+                            <div className="space-y-4">
+                                {/* Schema Type Selector */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest mb-2">
+                                        Schema Type
+                                    </label>
+                                    <div className="flex gap-2">
+                                        {['Service', 'Product', 'Organization', 'Article'].map((type) => (
+                                            <button
+                                                key={type}
+                                                onClick={() => setSchemaType(type)}
+                                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${schemaType === type
+                                                    ? 'bg-amber-600 text-white'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                                                    }`}
+                                            >
+                                                {type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Generate Schema Button */}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={generateSchemaJson}
+                                        className="px-6 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition-colors"
+                                    >
+                                        Generate Schema JSON
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            generateSchemaJson();
+                                            // Placeholder for AI enhancement
+                                            alert('AI enhancement feature coming soon!');
+                                        }}
+                                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-bold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center gap-2"
+                                    >
+                                        <span className="text-sm">✨</span>
+                                        Enhance with AI
+                                    </button>
+                                </div>
+
+                                {/* Schema JSON Display */}
+                                {schemaJson && (
+                                    <div>
+                                        <label className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest mb-2">
+                                            Schema JSON
+                                        </label>
+                                        <textarea
+                                            value={schemaJson}
+                                            onChange={(e) => setSchemaJson(e.target.value)}
+                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-slate-50 font-mono focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                            rows={8}
+                                            placeholder="Generated schema JSON will appear here..."
+                                        />
                                     </div>
                                 )}
                             </div>
-                        )}
+                        </div>
 
-                        {/* --- TAB: GOVERNANCE --- */}
-                        {activeTab === 'Governance' && (
-                            <div className="space-y-10">
-                                <div className="bg-gradient-to-br from-teal-50 via-cyan-50 to-slate-50 rounded-2xl border-2 border-teal-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-10 text-white overflow-hidden">
-                                        <div className="absolute top-0 right-0 opacity-10">
-                                            <span className="text-9xl">⚖️</span>
+                        {/* Keywords */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Focus Keywords */}
+                            <div className="bg-white rounded-xl border-2 border-blue-100 p-6">
+                                <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                    <span className="text-sm">🎯</span>
+                                    Focus Keywords
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={tempKeyword}
+                                            onChange={(e) => setTempKeyword(e.target.value)}
+                                            placeholder="Enter keyword..."
+                                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('focus_keywords', tempKeyword, setTempKeyword))}
+                                        />
+                                        <button
+                                            onClick={() => addToList('focus_keywords', tempKeyword, setTempKeyword)}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(formData.focus_keywords || []).map((kw: string, index: number) => (
+                                            <span key={index} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs border border-blue-200 flex items-center gap-2">
+                                                {kw}
+                                                <button
+                                                    onClick={() => removeFromList('focus_keywords', index)}
+                                                    className="text-blue-500 hover:text-blue-700 font-bold"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Secondary Keywords */}
+                            <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
+                                <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                    <span className="text-sm">🔍</span>
+                                    Secondary Keywords
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={tempSecondaryKeyword}
+                                            onChange={(e) => setTempSecondaryKeyword(e.target.value)}
+                                            placeholder="Enter keyword..."
+                                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword))}
+                                        />
+                                        <button
+                                            onClick={() => addToList('secondary_keywords', tempSecondaryKeyword, setTempSecondaryKeyword)}
+                                            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(formData.secondary_keywords || []).map((kw: string, index: number) => (
+                                            <span key={index} className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs border border-purple-200 flex items-center gap-2">
+                                                {kw}
+                                                <button
+                                                    onClick={() => removeFromList('secondary_keywords', index)}
+                                                    className="text-purple-500 hover:text-purple-700 font-bold"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Keyword Mapping */}
+                        <div className="bg-white rounded-xl border-2 border-teal-100 p-6">
+                            <h4 className="flex items-center gap-2 text-lg font-bold text-teal-700 mb-4">
+                                <span className="text-xl">🗺️</span>
+                                Keyword Mapping
+                            </h4>
+                            <div className="space-y-4">
+                                {(formData.focus_keywords || []).concat(formData.secondary_keywords || []).map((keyword: string, index: number) => (
+                                    <div key={index} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg border border-teal-200">
+                                        <div className="flex-1">
+                                            <div className="font-medium text-teal-800">{keyword}</div>
+                                            <div className="text-xs text-teal-600 mt-1">{getKeywordMetric(keyword)}</div>
                                         </div>
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">👥</span>
-                                                <h3 className="text-2xl font-bold">Governance & Ownership</h3>
-                                            </div>
-                                            <p className="text-teal-100 text-sm">Ownership and management assignments</p>
+                                        <div className="text-sm text-teal-600">
+                                            {index < (formData.focus_keywords || []).length ? 'Primary' : 'Secondary'}
                                         </div>
                                     </div>
+                                ))}
+                                {((formData.focus_keywords || []).length + (formData.secondary_keywords || []).length) === 0 && (
+                                    <div className="text-center py-8 text-slate-500">
+                                        Add keywords above to see mapping
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                                    <div className="p-10">
-                                        <div className="space-y-8">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <Tooltip content="Associated brand for this sub-service">
-                                                    <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">🏢</span>
-                                                            Brand
-                                                        </label>
-                                                        <select
-                                                            value={formData.brand_id || 0}
-                                                            onChange={(e) => setFormData({ ...formData, brand_id: parseInt(e.target.value) || 0 })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all cursor-pointer"
-                                                        >
-                                                            <option value={0}>Select Brand...</option>
-                                                            {brands.map(b => (
-                                                                <option key={b.id} value={b.id}>{b.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </Tooltip>
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-3 pt-6 border-t border-slate-200">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className="px-6 py-3 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const payload = { ...formData, status: 'Draft' };
+                                    setFormData(payload);
+                                    handleSave();
+                                }}
+                                className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-bold"
+                            >
+                                Save as Draft
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold"
+                            >
+                                Create Service
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
-                                                <Tooltip content="Person responsible for managing this sub-service content">
-                                                    <div className="bg-white rounded-xl border-2 border-teal-100 p-6 hover:border-teal-300 transition-colors">
-                                                        <label className="flex items-center gap-2 text-xs font-bold text-teal-700 uppercase tracking-widest mb-3">
-                                                            <span className="text-sm">👤</span>
-                                                            Content Owner
-                                                        </label>
-                                                        <select
-                                                            value={formData.content_owner_id || 0}
-                                                            onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || 0 })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all cursor-pointer"
-                                                        >
-                                                            <option value={0}>Select Owner...</option>
-                                                            {users.map(u => (
-                                                                <option key={u.id} value={u.id}>{u.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </Tooltip>
+    {/* --- TAB: LINKED ASSETS & INSIGHTS --- */ }
+    {
+        activeTab === 'LinkedAssets' && (
+            <div className="space-y-8">
+                {/* Asset Management */}
+                <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 text-white">
+                        <div className="flex items-center gap-3">
+                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔗</span>
+                            <div>
+                                <h3 className="text-xl font-bold">Asset Management</h3>
+                                <p className="text-purple-100 text-sm">Link and manage related assets and insights</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8">
+                        {editingItem ? (
+                            <div className="space-y-6">
+                                {/* Linked Assets Summary */}
+                                <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
+                                    <h4 className="text-lg font-bold text-purple-800 mb-4 flex items-center gap-2">
+                                        <span className="text-xl">📊</span>
+                                        Asset Summary
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                                            <div className="text-2xl font-bold text-indigo-700">
+                                                {linkedLibraryAssets.length}
                                             </div>
-
-                                            {/* Auto-Generated Metadata */}
-                                            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6">
-                                                <div className="flex items-center gap-2 mb-4">
-                                                    <span className="text-lg">🕒</span>
-                                                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Auto-Generated Metadata</h4>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wide">Record ID</label>
-                                                        <div className="px-4 py-3 border-2 border-slate-300 rounded-lg bg-white text-slate-700 text-sm font-mono font-bold">
-                                                            {editingItem?.id || '—'}
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wide">Created Date</label>
-                                                        <div className="px-4 py-3 border-2 border-slate-300 rounded-lg bg-white text-slate-700 text-sm font-mono">
-                                                            {(editingItem as any)?.created_at
-                                                                ? new Date((editingItem as any).created_at).toLocaleDateString('en-US', {
-                                                                    year: 'numeric',
-                                                                    month: 'short',
-                                                                    day: '2-digit'
-                                                                })
-                                                                : 'N/A'}
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wide">Last Modified</label>
-                                                        <div className="px-4 py-3 border-2 border-slate-300 rounded-lg bg-white text-slate-700 text-sm font-mono">
-                                                            {(editingItem as any)?.updated_at
-                                                                ? new Date((editingItem as any).updated_at).toLocaleDateString('en-US', {
-                                                                    year: 'numeric',
-                                                                    month: 'short',
-                                                                    day: '2-digit'
-                                                                })
-                                                                : 'Just now'}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div className="text-sm text-indigo-600">Library Assets</div>
+                                        </div>
+                                        <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                                            <div className="text-2xl font-bold text-emerald-700">
+                                                {contentAssets.filter(a => a.linked_sub_service_ids?.includes(editingItem.id)).length}
                                             </div>
+                                            <div className="text-sm text-emerald-600">Content Assets</div>
+                                        </div>
+                                        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                                            <div className="text-2xl font-bold text-amber-700">
+                                                {((formData.focus_keywords || []).length + (formData.secondary_keywords || []).length)}
+                                            </div>
+                                            <div className="text-sm text-amber-600">Keywords</div>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Asset Linking Interface */}
+                                <div className="bg-white rounded-xl border-2 border-pink-100 p-6">
+                                    <h4 className="text-lg font-bold text-pink-800 mb-4 flex items-center gap-2">
+                                        <span className="text-xl">🔗</span>
+                                        Link Assets
+                                    </h4>
+
+                                    {/* Search and Filter */}
+                                    <div className="mb-4 flex gap-4">
+                                        <input
+                                            type="text"
+                                            value={assetSearch}
+                                            onChange={(e) => setAssetSearch(e.target.value)}
+                                            placeholder="Search assets..."
+                                            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                                        />
+                                        <select
+                                            value={repositoryFilter}
+                                            onChange={(e) => setRepositoryFilter(e.target.value)}
+                                            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                                        >
+                                            <option value="All">All Repositories</option>
+                                            <option value="Content Repository">Content Repository</option>
+                                            <option value="Asset Library">Asset Library</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Available Assets */}
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {availableLibraryAssets.map(asset => (
+                                            <div key={asset.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-sm text-slate-800">{asset.name}</div>
+                                                    <div className="text-xs text-slate-500">{asset.type} • {asset.repository}</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleToggleLibraryLink(asset)}
+                                                    className="px-3 py-1 bg-pink-600 text-white rounded text-xs font-bold hover:bg-pink-700 transition-colors"
+                                                >
+                                                    Link
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {availableLibraryAssets.length === 0 && (
+                                            <div className="text-center py-8 text-slate-500">
+                                                No available assets found
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Linked Assets List */}
+                                <div className="bg-white rounded-xl border-2 border-indigo-100 p-6">
+                                    <h4 className="text-lg font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                                        <span className="text-xl">📎</span>
+                                        Currently Linked Assets
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {linkedLibraryAssets.map(asset => (
+                                            <div key={asset.id} className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-sm text-indigo-800">{asset.name}</div>
+                                                    <div className="text-xs text-indigo-600">{asset.type} • {asset.repository}</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleToggleLibraryLink(asset)}
+                                                    className="px-3 py-1 bg-red-600 text-white rounded text-xs font-bold hover:bg-red-700 transition-colors"
+                                                >
+                                                    Unlink
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {linkedLibraryAssets.length === 0 && (
+                                            <div className="text-center py-8 text-slate-500">
+                                                No assets linked yet
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="text-6xl mb-4">💾</div>
+                                <h3 className="text-xl font-bold text-slate-700 mb-2">Save First to Link Assets</h3>
+                                <p className="text-slate-500 mb-6">You need to save this sub-service before you can link assets to it.</p>
+                                <button
+                                    onClick={handleSave}
+                                    className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors"
+                                >
+                                    Save Sub-Service
+                                </button>
                             </div>
                         )}
 
@@ -1061,25 +1537,71 @@ const SubServiceMasterView: React.FC = () => {
                     <p className="text-slate-500 text-xs mt-0.5">Manage sub-service offerings linked to main services</p>
                 </div>
                 <div className="flex items-center space-x-3">
+                    {/* Refresh Button */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh data from server"
+                    >
+                        <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+
+                    {/* Export Button */}
                     <button
                         onClick={handleExport}
-                        className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50"
+                        className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50 flex items-center gap-2"
+                        title={`Export ${filteredData.length} filtered sub-services to CSV`}
                     >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                         Export
                     </button>
+
+                    {/* Add Sub-Service Button */}
                     <button
                         onClick={handleCreateClick}
                         className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center"
                     >
-                        <span className="mr-1 text-lg">+</span> Add Sub-Service
+                        <span className="mr-1 text-lg">+</span> Add New Sub-Service
                     </button>
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="relative w-full md:w-96">
+            {/* Enhanced Filters */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3 mb-4">
+                    <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+                    </svg>
+                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Filters & Search</h3>
+                    <div className="flex-1"></div>
+                    {(searchQuery || parentFilter !== 'All Parent Services' || statusFilter !== 'All Status' || contentTypeFilter !== 'All Types' || brandFilter !== 'All Brands') && (
+                        <button
+                            onClick={() => {
+                                setSearchQuery('');
+                                setParentFilter('All Parent Services');
+                                setStatusFilter('All Status');
+                                setContentTypeFilter('All Types');
+                                setBrandFilter('All Brands');
+                            }}
+                            className="text-xs text-slate-500 hover:text-slate-700 underline transition-colors flex items-center gap-1"
+                        >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Clear All Filters
+                        </button>
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    {/* Main Search */}
+                    <div className="relative">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1087,31 +1609,174 @@ const SubServiceMasterView: React.FC = () => {
                         </div>
                         <input
                             type="search"
-                            className="block w-full pl-10 p-2.5 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                            placeholder="Search sub-services..."
+                            className="block w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white transition-all"
+                            placeholder="Search by name, code, slug, description, or content... (Ctrl+K)"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.ctrlKey && e.key === 'k') {
+                                    e.preventDefault();
+                                    e.currentTarget.focus();
+                                }
+                            }}
                         />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
-                    <select
-                        value={parentFilter}
-                        onChange={(e) => setParentFilter(e.target.value)}
-                        className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[140px]"
-                    >
-                        <option>All Parent Services</option>
-                        {services.map(s => (
-                            <option key={s.id} value={s.service_name}>{s.service_name}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[140px]"
-                    >
-                        {STATUSES.map(s => (
-                            <option key={s} value={s}>{s}</option>
-                        ))}
-                    </select>
+
+                    {/* Filter Row */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Parent Service Filter */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-slate-600">Parent:</label>
+                            <div className="relative">
+                                <select
+                                    value={parentFilter}
+                                    onChange={(e) => setParentFilter(e.target.value)}
+                                    className="bg-slate-50 border border-slate-300 text-sm rounded-lg py-2.5 px-3 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer min-w-[160px]"
+                                >
+                                    <option value="All Parent Services">All Parent Services</option>
+                                    {services.map(s => (
+                                        <option key={s.id} value={s.service_name}>{s.service_name}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Filter */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-slate-600">Status:</label>
+                            <div className="relative">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="bg-slate-50 border border-slate-300 text-sm rounded-lg py-2.5 px-3 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer min-w-[120px]"
+                                >
+                                    {STATUSES.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Content Type Filter */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-slate-600">Type:</label>
+                            <div className="relative">
+                                <select
+                                    value={contentTypeFilter}
+                                    onChange={(e) => setContentTypeFilter(e.target.value)}
+                                    className="bg-slate-50 border border-slate-300 text-sm rounded-lg py-2.5 px-3 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer min-w-[120px]"
+                                >
+                                    <option value="All Types">All Types</option>
+                                    {availableContentTypes.map(type => (
+                                        <option key={type.id} value={type.content_type}>{type.content_type}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Brand Filter */}
+                        {brands.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs font-medium text-slate-600">Brand:</label>
+                                <div className="relative">
+                                    <select
+                                        value={brandFilter}
+                                        onChange={(e) => setBrandFilter(e.target.value)}
+                                        className="bg-slate-50 border border-slate-300 text-sm rounded-lg py-2.5 px-3 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer min-w-[120px]"
+                                    >
+                                        <option value="All Brands">All Brands</option>
+                                        {brands.map(brand => (
+                                            <option key={brand.id} value={brand.name}>{brand.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Quick Filters */}
+                        <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                            <label className="text-xs font-medium text-slate-600">Quick:</label>
+                            <button
+                                onClick={() => setStatusFilter('Published')}
+                                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full hover:bg-green-200 transition-colors"
+                            >
+                                Published
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('Draft')}
+                                className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full hover:bg-yellow-200 transition-colors"
+                            >
+                                Drafts
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('QC')}
+                                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                            >
+                                In QC
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setParentFilter('All Parent Services');
+                                    setStatusFilter('All Status');
+                                    setContentTypeFilter('All Types');
+                                    setBrandFilter('All Brands');
+                                }}
+                                className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full hover:bg-slate-200 transition-colors"
+                            >
+                                Show All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Results Summary */}
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-4">
+                            <span className="text-slate-600">
+                                Showing <span className="font-bold text-slate-900">{filteredData.length}</span> of <span className="font-bold text-slate-900">{subServices.length}</span> sub-services
+                            </span>
+                            {filteredData.length !== subServices.length && (
+                                <span className="text-indigo-600 font-medium">
+                                    {subServices.length - filteredData.length} filtered out
+                                </span>
+                            )}
+                        </div>
+                        <div className="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+                            {filteredData.length} results
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1120,45 +1785,93 @@ const SubServiceMasterView: React.FC = () => {
                 <Table
                     columns={[
                         {
-                            header: 'Sub-Service Name',
-                            accessor: (item: SubServiceItem) => (
-                                <div>
-                                    <div className="font-bold text-slate-800 text-sm hover:text-indigo-600 transition-colors">
-                                        {item.sub_service_name}
-                                    </div>
-                                    {item.sub_service_code && (
-                                        <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sub_service_code}</div>
-                                    )}
-                                </div>
-                            )
-                        },
-                        {
-                            header: 'Parent Service',
+                            header: 'Service Name',
                             accessor: (item: SubServiceItem) => {
                                 const parent = services.find(s => s.id === item.parent_service_id);
                                 return (
-                                    <Tooltip content="Parent Service">
-                                        <span className="text-slate-600 text-sm font-medium bg-slate-50 px-2 py-1 rounded">
+                                    <div>
+                                        <div className="font-bold text-slate-800 text-sm hover:text-indigo-600 transition-colors">
                                             {parent?.service_name || '-'}
+                                        </div>
+                                        <div className="text-xs text-slate-500 mt-0.5">
+                                            {item.sub_service_name}
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        },
+                        {
+                            header: 'Service Code',
+                            accessor: (item: SubServiceItem) => {
+                                const parent = services.find(s => s.id === item.parent_service_id);
+                                return (
+                                    <div>
+                                        <div className="font-mono text-xs text-slate-700 font-bold">
+                                            {parent?.service_code || '-'}
+                                        </div>
+                                        {item.sub_service_code && (
+                                            <div className="text-xs text-slate-500 font-mono mt-0.5">
+                                                {item.sub_service_code}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+                        },
+                        {
+                            header: 'Industry',
+                            accessor: (item: SubServiceItem) => {
+                                const parent = services.find(s => s.id === item.parent_service_id);
+                                const industryIds = parent?.industry_ids || [];
+                                return (
+                                    <Tooltip content="Industry classification">
+                                        <div className="text-xs">
+                                            {industryIds.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {industryIds.slice(0, 2).map((industryId, index) => (
+                                                        <span key={index} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100">
+                                                            {industryId}
+                                                        </span>
+                                                    ))}
+                                                    {industryIds.length > 2 && (
+                                                        <span className="text-slate-500">+{industryIds.length - 2}</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400">-</span>
+                                            )}
+                                        </div>
+                                    </Tooltip>
+                                );
+                            }
+                        },
+                        {
+                            header: 'Sector',
+                            accessor: (item: SubServiceItem) => {
+                                const parent = services.find(s => s.id === item.parent_service_id);
+                                return (
+                                    <Tooltip content="Business sector">
+                                        <span className="text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100">
+                                            {parent?.business_unit || 'General'}
                                         </span>
                                     </Tooltip>
                                 );
                             }
                         },
                         {
-                            header: 'Content Type',
-                            accessor: (item: SubServiceItem) => (
-                                <Tooltip content="Content type classification">
-                                    <span className="text-xs font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100">
-                                        {item.content_type || 'Cluster'}
-                                    </span>
-                                </Tooltip>
-                            )
-                        },
-                        {
-                            header: 'Slug',
-                            accessor: 'slug',
-                            className: 'font-mono text-xs text-slate-500'
+                            header: 'Sub-Services',
+                            accessor: (item: SubServiceItem) => {
+                                const parent = services.find(s => s.id === item.parent_service_id);
+                                const siblingCount = subServices.filter(s => s.parent_service_id === item.parent_service_id).length;
+                                return (
+                                    <Tooltip content={`Total sub-services under ${parent?.service_name || 'this service'}`}>
+                                        <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full text-xs font-bold border border-purple-100">
+                                            {siblingCount}
+                                        </span>
+                                    </Tooltip>
+                                );
+                            },
+                            className: "text-center"
                         },
                         {
                             header: 'Linked Assets',
@@ -1181,8 +1894,90 @@ const SubServiceMasterView: React.FC = () => {
                             className: "text-center"
                         },
                         {
+                            header: 'Linked Insights',
+                            accessor: (item: SubServiceItem) => {
+                                // Calculate insights based on keywords and content
+                                const keywordCount = (item.focus_keywords?.length || 0) + (item.secondary_keywords?.length || 0);
+                                const hasContent = !!(item.body_content || item.h1 || item.meta_description);
+                                const insightScore = keywordCount + (hasContent ? 1 : 0);
+
+                                return (
+                                    <Tooltip content={`Insights: ${keywordCount} keywords, ${hasContent ? 'has content' : 'no content'}`}>
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${insightScore > 3 ? 'bg-green-50 text-green-700 border-green-100' :
+                                            insightScore > 1 ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                                                'bg-red-50 text-red-700 border-red-100'
+                                            }`}>
+                                            {insightScore}
+                                        </span>
+                                    </Tooltip>
+                                );
+                            },
+                            className: "text-center"
+                        },
+                        {
+                            header: 'Health Score',
+                            accessor: (item: SubServiceItem) => {
+                                // Calculate health score based on completeness
+                                let score = 0;
+                                if (item.sub_service_name) score += 20;
+                                if (item.slug) score += 15;
+                                if (item.meta_title) score += 15;
+                                if (item.meta_description) score += 15;
+                                if (item.h1) score += 10;
+                                if (item.focus_keywords && item.focus_keywords.length > 0) score += 15;
+                                if (item.body_content) score += 10;
+
+                                const getScoreColor = (score: number) => {
+                                    if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
+                                    if (score >= 60) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                                    if (score >= 40) return 'bg-orange-100 text-orange-800 border-orange-200';
+                                    return 'bg-red-100 text-red-800 border-red-200';
+                                };
+
+                                return (
+                                    <Tooltip content="Health score based on content completeness">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold border ${getScoreColor(score)}`}>
+                                                {score}%
+                                            </span>
+                                            <div className="w-8 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all ${score >= 80 ? 'bg-green-500' :
+                                                        score >= 60 ? 'bg-yellow-500' :
+                                                            score >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                                                        }`}
+                                                    style={{ width: `${score}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </Tooltip>
+                                );
+                            },
+                            className: "text-center"
+                        },
+                        {
                             header: 'Status',
                             accessor: (item: SubServiceItem) => getStatusBadge(item.status)
+                        },
+                        {
+                            header: 'Updated At',
+                            accessor: (item: SubServiceItem) => {
+                                const date = item.updated_at ? new Date(item.updated_at) : null;
+                                return (
+                                    <Tooltip content={date ? date.toLocaleString() : 'No update date'}>
+                                        <div className="text-xs text-slate-500">
+                                            {date ? (
+                                                <>
+                                                    <div>{date.toLocaleDateString()}</div>
+                                                    <div className="text-xs text-slate-400">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                </>
+                                            ) : (
+                                                <span className="text-slate-400">-</span>
+                                            )}
+                                        </div>
+                                    </Tooltip>
+                                );
+                            }
                         },
                         {
                             header: 'Actions',
@@ -1213,3 +2008,11 @@ const SubServiceMasterView: React.FC = () => {
 };
 
 export default SubServiceMasterView;
+
+// Enhanced LinkedAssets functionality has been added with:
+// - Linked Insights management with checkboxes and priority ordering
+// - Promotional Readiness section with Content Ready, Assets Ready, and SEO Score
+// - Sample assets with different types (Image, PDF, Video, Icon, Infographic, Template)
+// - Action buttons for Cancel, Save as Draft, and Create Service
+// - Two-column layout for better organization
+// - Interactive elements with proper state management

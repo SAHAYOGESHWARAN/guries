@@ -20,7 +20,7 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
 ];
 
 const ServiceMasterView: React.FC = () => {
-    const { data: services = [], create, update, remove } = useData<Service>('services');
+    const { data: services = [], create, update, remove, refresh: refreshServices } = useData<Service>('services');
     const { data: subServices = [] } = useData<any>('subServices');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: libraryAssets = [], update: updateLibraryAsset, refresh: refreshLibraryAssets } = useData<AssetLibraryItem>('assetLibrary');
@@ -42,6 +42,8 @@ const ServiceMasterView: React.FC = () => {
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Status');
+    const [contentTypeFilter, setContentTypeFilter] = useState('All Types');
+    const [brandFilter, setBrandFilter] = useState('All Brands');
     const [editingItem, setEditingItem] = useState<Service | null>(null);
     const [activeTab, setActiveTab] = useState<'Core' | 'Navigation' | 'Strategic' | 'Content' | 'SEO' | 'SMM' | 'Technical' | 'Linking' | 'Governance'>('Core');
     const [copiedUrl, setCopiedUrl] = useState(false);
@@ -117,10 +119,16 @@ const ServiceMasterView: React.FC = () => {
             item.service_code,
             item.menu_heading,
             item.short_tagline,
-            item.full_url
+            item.full_url,
+            item.service_description,
+            item.business_unit
         ].some(value => (value || '').toLowerCase().includes(normalizedQuery));
+
         const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        const matchesContentType = contentTypeFilter === 'All Types' || item.content_type === contentTypeFilter;
+        const matchesBrand = brandFilter === 'All Brands' || (item.brand_id && brands.find(b => b.id === item.brand_id)?.name === brandFilter);
+
+        return matchesSearch && matchesStatus && matchesContentType && matchesBrand;
     });
 
     // Linked and Available Assets from Asset Library
@@ -435,7 +443,43 @@ const ServiceMasterView: React.FC = () => {
     const handleKeywordSuggest = () => alert('AI keyword suggestion coming soon.');
     const handleSecondaryKeywordSuggest = () => alert('AI keyword suggestion coming soon.');
 
-    const handleExport = () => exportToCSV(filteredData, 'services_master_export');
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Global keyboard shortcuts
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    const handleExport = () => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `services_master_export_${timestamp}`;
+        exportToCSV(filteredData, filename);
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await refreshServices();
+            // Also refresh related data
+            await refreshContentAssets();
+            await refreshLibraryAssets();
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     const tabs = [
         { id: 'Core', label: 'Core', icon: '💎' },
@@ -2239,7 +2283,27 @@ Lists:
                     <p className="text-slate-500 text-xs mt-0.5">Manage service offerings, metadata, content structures, and connectivity.</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <button onClick={handleExport} className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50">Export</button>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh data from server"
+                    >
+                        <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                    <button
+                        onClick={handleExport}
+                        className="text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50 flex items-center gap-2"
+                        title={`Export ${filteredData.length} filtered services to CSV`}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export
+                    </button>
                     <button onClick={handleCreateClick} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center">
                         <span className="mr-1 text-lg">+</span> Add Service
                     </button>
@@ -2247,19 +2311,134 @@ Lists:
             </div>
 
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="relative w-full md:w-96">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    {/* Search Input */}
+                    <div className="relative w-full lg:w-96">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
                         </div>
-                        <input type="search" className="block w-full pl-10 p-2.5 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <input
+                            type="search"
+                            className="block w-full pl-10 p-2.5 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="Search by name, code, tagline, URL, or description... (Ctrl+K)"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.ctrlKey && e.key === 'k') {
+                                    e.preventDefault();
+                                    e.currentTarget.focus();
+                                }
+                            }}
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[140px]">
-                        <option>All Status</option>
-                        {SERVICE_STATUS_OPTIONS.map(status => (
-                            <option key={status} value={status}>{status}</option>
-                        ))}
-                    </select>
+
+                    {/* Filter Controls */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Status Filter */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-slate-600">Status:</label>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[120px] focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option>All Status</option>
+                                {SERVICE_STATUS_OPTIONS.map(status => (
+                                    <option key={status} value={status}>{status}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Content Type Filter */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-slate-600">Type:</label>
+                            <select
+                                value={contentTypeFilter}
+                                onChange={(e) => setContentTypeFilter(e.target.value)}
+                                className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[120px] focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option>All Types</option>
+                                {availableContentTypes.map(type => (
+                                    <option key={type.id} value={type.content_type}>{type.content_type}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Brand Filter */}
+                        {brandsLoaded && (
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs font-medium text-slate-600">Brand:</label>
+                                <select
+                                    value={brandFilter}
+                                    onChange={(e) => setBrandFilter(e.target.value)}
+                                    className="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2.5 min-w-[120px] focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option>All Brands</option>
+                                    {brands.map(brand => (
+                                        <option key={brand.id} value={brand.name}>{brand.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Clear Filters */}
+                        {(searchQuery || statusFilter !== 'All Status' || contentTypeFilter !== 'All Types' || brandFilter !== 'All Brands') && (
+                            <button
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setStatusFilter('All Status');
+                                    setContentTypeFilter('All Types');
+                                    setBrandFilter('All Brands');
+                                }}
+                                className="text-xs text-slate-500 hover:text-slate-700 underline flex items-center gap-1"
+                            >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Clear Filters
+                            </button>
+                        )}
+
+                        {/* Quick Filters */}
+                        <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                            <label className="text-xs font-medium text-slate-600">Quick:</label>
+                            <button
+                                onClick={() => setStatusFilter('Published')}
+                                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full hover:bg-green-200 transition-colors"
+                            >
+                                Published
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('Draft')}
+                                className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full hover:bg-yellow-200 transition-colors"
+                            >
+                                Drafts
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('QC')}
+                                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                            >
+                                In QC
+                            </button>
+                        </div>
+
+                        {/* Results Count */}
+                        <div className="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+                            {filteredData.length} of {services.length} services
+                        </div>
+                    </div>
                 </div>
             </div>
 
