@@ -3440,7 +3440,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
             {/* Detailed Asset View */}
             {viewMode === 'detail' && selectedAsset && (
-                <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+                <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 overflow-y-auto h-screen">
                     {/* Fixed Header */}
                     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
                         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -3557,7 +3557,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                             {/* Left Column - Asset Preview */}
                             <div className="lg:col-span-1">
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-24">
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-24 max-h-[calc(100vh-6rem)]">
                                     <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-slate-200">
                                         <h3 className="text-lg font-semibold text-slate-900">Asset Preview</h3>
                                     </div>
@@ -3661,7 +3661,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </div>
 
                             {/* Right Column - Asset Details */}
-                            <div className="lg:col-span-2 space-y-6">
+                            <div className="lg:col-span-2 space-y-6 overflow-y-auto max-h-screen pb-20">
 
                                 {/* Asset Information Panel */}
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

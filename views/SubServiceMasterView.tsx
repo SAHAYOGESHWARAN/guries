@@ -17,7 +17,7 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
 ];
 
 const SubServiceMasterView: React.FC = () => {
-    const { data: subServices = [], create, update, remove, refresh: refreshSubServices } = useData<SubServiceItem>('subServices');
+    const { data: subServices = [], create, update, remove, refresh: refreshSubServices, loading } = useData<SubServiceItem>('subServices');
     const { data: services = [], refresh: refreshServices } = useData<Service>('services');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
     const { data: libraryAssets = [], update: updateLibraryAsset, refresh: refreshLibraryAssets } = useData<AssetLibraryItem>('assetLibrary');
@@ -27,7 +27,7 @@ const SubServiceMasterView: React.FC = () => {
     const { data: keywordsMaster = [], refresh: refreshKeywords } = useData<Keyword>('keywords');
 
     // UI State
-    const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'form' | 'view'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [parentFilter, setParentFilter] = useState('All Parent Services');
     const [statusFilter, setStatusFilter] = useState('All Status');
@@ -214,6 +214,38 @@ const SubServiceMasterView: React.FC = () => {
         });
         setActiveTab('GeneralInfo');
         setViewMode('form');
+    };
+
+    const handleView = (item: SubServiceItem) => {
+        setEditingItem(item);
+        setFormData({
+            ...item,
+            focus_keywords: item.focus_keywords || [],
+            secondary_keywords: item.secondary_keywords || [],
+            content_type: item.content_type || 'Cluster',
+            buyer_journey_stage: item.buyer_journey_stage || 'Consideration',
+            h1: item.h1 || '',
+            primary_cta_label: item.primary_cta_label || '',
+            primary_cta_url: item.primary_cta_url || '',
+            og_type: item.og_type || 'website',
+            og_title: item.og_title || '',
+            og_description: item.og_description || '',
+            og_image_url: item.og_image_url || '',
+            twitter_title: item.twitter_title || '',
+            twitter_description: item.twitter_description || '',
+            twitter_image_url: item.twitter_image_url || '',
+            linkedin_title: item.linkedin_title || '',
+            linkedin_description: item.linkedin_description || '',
+            linkedin_image_url: item.linkedin_image_url || '',
+            facebook_title: item.facebook_title || '',
+            facebook_description: item.facebook_description || '',
+            facebook_image_url: item.facebook_image_url || '',
+            instagram_title: item.instagram_title || '',
+            instagram_description: item.instagram_description || '',
+            instagram_image_url: item.instagram_image_url || ''
+        });
+        setActiveTab('GeneralInfo');
+        setViewMode('view');
     };
 
     const handleEdit = (item: SubServiceItem) => {
@@ -440,17 +472,19 @@ const SubServiceMasterView: React.FC = () => {
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            // Refresh all related data
-            await Promise.all([
-                refreshSubServices?.(),
-                refreshServices?.(),
-                refreshContentAssets?.(),
-                refreshLibraryAssets?.(),
-                refreshBrands?.(),
-                refreshUsers?.(),
-                refreshContentTypes?.(),
-                refreshKeywords?.()
-            ]);
+            // Refresh all related data with individual error handling
+            const refreshPromises = [
+                refreshSubServices?.().catch(e => console.warn('Failed to refresh sub-services:', e)),
+                refreshServices?.().catch(e => console.warn('Failed to refresh services:', e)),
+                refreshContentAssets?.().catch(e => console.warn('Failed to refresh content assets:', e)),
+                refreshLibraryAssets?.().catch(e => console.warn('Failed to refresh library assets:', e)),
+                refreshBrands?.().catch(e => console.warn('Failed to refresh brands:', e)),
+                refreshUsers?.().catch(e => console.warn('Failed to refresh users:', e)),
+                refreshContentTypes?.().catch(e => console.warn('Failed to refresh content types:', e)),
+                refreshKeywords?.().catch(e => console.warn('Failed to refresh keywords:', e))
+            ];
+
+            await Promise.allSettled(refreshPromises);
 
             // Show success feedback briefly
             setTimeout(() => {
@@ -480,7 +514,21 @@ const SubServiceMasterView: React.FC = () => {
 
     // Auto-refresh on mount to ensure latest data
     useEffect(() => {
-        refreshSubServices?.();
+        const loadData = async () => {
+            try {
+                await Promise.all([
+                    refreshSubServices?.(),
+                    refreshServices?.(),
+                    refreshBrands?.(),
+                    refreshUsers?.(),
+                    refreshContentTypes?.(),
+                    refreshKeywords?.()
+                ]);
+            } catch (error) {
+                console.error('Failed to load initial data:', error);
+            }
+        };
+        loadData();
     }, []);
 
     const tabs = [
@@ -490,15 +538,29 @@ const SubServiceMasterView: React.FC = () => {
         { id: 'LinkedAssets', label: 'Linked Assets & Insights', icon: '🔗' }
     ];
 
-    if (viewMode === 'form') {
+    // Define isViewMode at component level for consistent access
+    const isViewMode = viewMode === 'view';
+
+    // Helper function to get input classes based on view mode
+    const getInputClasses = (baseClasses: string) => {
+        return isViewMode
+            ? `${baseClasses} bg-slate-50 cursor-not-allowed opacity-75`
+            : baseClasses;
+    };
+
+    if (viewMode === 'form' || viewMode === 'view') {
         return (
             <div className="fixed inset-x-0 bottom-0 top-16 z-[60] bg-white flex flex-col overflow-hidden animate-slide-up">
                 {/* Header */}
                 <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-white shadow-sm z-40">
                     <div className="flex items-center gap-4">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">{editingItem ? 'Edit Service' : 'Add New Service'}</h2>
-                            <p className="text-sm text-slate-500 mt-1">Create a new service with complete SEO and content configuration</p>
+                            <h2 className="text-xl font-bold text-slate-900">
+                                {isViewMode ? 'View Service Details' : (editingItem ? 'Edit Service' : 'Add New Service')}
+                            </h2>
+                            <p className="text-sm text-slate-500 mt-1">
+                                {isViewMode ? 'View complete service information and configuration' : 'Create a new service with complete SEO and content configuration'}
+                            </p>
                         </div>
                     </div>
                     <div className="flex gap-3">
@@ -560,7 +622,8 @@ const SubServiceMasterView: React.FC = () => {
                                                         <select
                                                             value={formData.parent_service_id}
                                                             onChange={(e) => setFormData({ ...formData, parent_service_id: parseInt(e.target.value) })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+                                                            disabled={isViewMode}
+                                                            className={`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isViewMode ? 'bg-slate-50 cursor-not-allowed' : 'bg-white cursor-pointer'}`}
                                                         >
                                                             <option value={0}>Select Parent Service...</option>
                                                             {services.map(s => (
@@ -585,8 +648,9 @@ const SubServiceMasterView: React.FC = () => {
                                                                 setFormData({ ...formData, sub_service_name: val });
                                                                 if (!editingItem && !formData.slug) handleSlugChange(val);
                                                             }}
+                                                            disabled={isViewMode}
                                                             placeholder="Enter sub-service name..."
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                            className={`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${isViewMode ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'}`}
                                                         />
                                                     </div>
                                                 </Tooltip>
@@ -604,7 +668,8 @@ const SubServiceMasterView: React.FC = () => {
                                                             type="text"
                                                             value={formData.sub_service_code}
                                                             onChange={(e) => setFormData({ ...formData, sub_service_code: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                            disabled={isViewMode}
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white")}
                                                             placeholder="SUB-XXX"
                                                         />
                                                     </div>
@@ -619,7 +684,8 @@ const SubServiceMasterView: React.FC = () => {
                                                         <select
                                                             value={formData.status}
                                                             onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                            disabled={isViewMode}
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all")}
                                                         >
                                                             {STATUSES.filter(s => s !== 'All Status').map(status => (
                                                                 <option key={status} value={status}>{status}</option>
@@ -660,8 +726,9 @@ const SubServiceMasterView: React.FC = () => {
                                                             type="text"
                                                             value={formData.slug}
                                                             onChange={(e) => handleSlugChange(e.target.value)}
+                                                            disabled={isViewMode}
                                                             placeholder="auto-generated-from-name"
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all")}
                                                         />
                                                     </div>
                                                 </Tooltip>
@@ -677,8 +744,9 @@ const SubServiceMasterView: React.FC = () => {
                                                                 type="text"
                                                                 value={formData.full_url}
                                                                 onChange={(e) => setFormData({ ...formData, full_url: e.target.value })}
+                                                                disabled={isViewMode}
                                                                 placeholder="/services/sub-service-name"
-                                                                className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                                className={getInputClasses("flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all")}
                                                             />
                                                             {formData.full_url && (
                                                                 <button
@@ -714,8 +782,9 @@ const SubServiceMasterView: React.FC = () => {
                                                         <textarea
                                                             value={formData.description || ''}
                                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                            disabled={isViewMode}
                                                             placeholder="Describe the sub-service in detail...&#10;&#10;• What is this sub-service?&#10;• What problems does it solve?&#10;• What are the key features and benefits?&#10;• Who is the target audience?&#10;• How does it relate to the parent service?"
-                                                            className="w-full px-5 py-4 border-2 border-indigo-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 transition-all resize-none shadow-inner leading-relaxed"
+                                                            className={getInputClasses("w-full px-5 py-4 border-2 border-indigo-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 transition-all resize-none shadow-inner leading-relaxed")}
                                                             rows={12}
                                                         />
                                                         <div className="flex items-start gap-2 text-xs text-slate-600 bg-white rounded-lg p-3 border border-slate-200">
@@ -758,7 +827,8 @@ const SubServiceMasterView: React.FC = () => {
                                                         <select
                                                             value={formData.content_type}
                                                             onChange={(e) => setFormData({ ...formData, content_type: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                                            disabled={isViewMode}
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all")}
                                                         >
                                                             {availableContentTypes.map(ct => (
                                                                 <option key={ct.id} value={ct.content_type}>{ct.content_type}</option>
@@ -776,7 +846,8 @@ const SubServiceMasterView: React.FC = () => {
                                                         <select
                                                             value={formData.buyer_journey_stage}
                                                             onChange={(e) => setFormData({ ...formData, buyer_journey_stage: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                                                            disabled={isViewMode}
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all")}
                                                         >
                                                             <option value="Awareness">Awareness</option>
                                                             <option value="Consideration">Consideration</option>
@@ -799,8 +870,9 @@ const SubServiceMasterView: React.FC = () => {
                                                             type="text"
                                                             value={formData.h1}
                                                             onChange={(e) => setFormData({ ...formData, h1: e.target.value })}
+                                                            disabled={isViewMode}
                                                             placeholder="Main page heading..."
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all")}
                                                         />
                                                     </div>
                                                 </Tooltip>
@@ -818,8 +890,9 @@ const SubServiceMasterView: React.FC = () => {
                                                             type="text"
                                                             value={formData.primary_cta_label}
                                                             onChange={(e) => setFormData({ ...formData, primary_cta_label: e.target.value })}
+                                                            disabled={isViewMode}
                                                             placeholder="Get Started"
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all")}
                                                         />
                                                     </div>
                                                 </Tooltip>
@@ -834,8 +907,9 @@ const SubServiceMasterView: React.FC = () => {
                                                             type="text"
                                                             value={formData.primary_cta_url}
                                                             onChange={(e) => setFormData({ ...formData, primary_cta_url: e.target.value })}
+                                                            disabled={isViewMode}
                                                             placeholder="/contact"
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                                                            className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all")}
                                                         />
                                                     </div>
                                                 </Tooltip>
@@ -1445,24 +1519,36 @@ const SubServiceMasterView: React.FC = () => {
                                 onClick={() => setViewMode('list')}
                                 className="px-6 py-3 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-medium"
                             >
-                                Cancel
+                                {isViewMode ? 'Back to List' : 'Cancel'}
                             </button>
-                            <button
-                                onClick={() => {
-                                    const payload = { ...formData, status: 'Draft' };
-                                    setFormData(payload);
-                                    handleSave();
-                                }}
-                                className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-bold"
-                            >
-                                Save as Draft
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold"
-                            >
-                                Create Service
-                            </button>
+                            {!isViewMode && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            const payload = { ...formData, status: 'Draft' };
+                                            setFormData(payload);
+                                            handleSave();
+                                        }}
+                                        className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-bold"
+                                    >
+                                        Save as Draft
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold"
+                                    >
+                                        {editingItem ? 'Update Service' : 'Create Service'}
+                                    </button>
+                                </>
+                            )}
+                            {isViewMode && editingItem && (
+                                <button
+                                    onClick={() => handleEdit(editingItem)}
+                                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold"
+                                >
+                                    Edit Service
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1937,226 +2023,259 @@ const SubServiceMasterView: React.FC = () => {
 
             {/* Table */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                <Table
-                    columns={[
-                        {
-                            header: 'Service Name',
-                            accessor: (item: SubServiceItem) => {
-                                const parent = services.find(s => s.id === item.parent_service_id);
-                                return (
-                                    <div>
-                                        <div className="font-bold text-slate-800 text-sm hover:text-indigo-600 transition-colors">
-                                            {parent?.service_name || '-'}
-                                        </div>
-                                        <div className="text-xs text-slate-500 mt-0.5">
-                                            {item.sub_service_name}
-                                        </div>
-                                    </div>
-                                );
-                            }
-                        },
-                        {
-                            header: 'Service Code',
-                            accessor: (item: SubServiceItem) => {
-                                const parent = services.find(s => s.id === item.parent_service_id);
-                                return (
-                                    <div>
-                                        <div className="font-mono text-xs text-slate-700 font-bold">
-                                            {parent?.service_code || '-'}
-                                        </div>
-                                        {item.sub_service_code && (
-                                            <div className="text-xs text-slate-500 font-mono mt-0.5">
-                                                {item.sub_service_code}
+                {loading && (
+                    <div className="flex items-center justify-center py-12">
+                        <div className="flex items-center gap-3 text-slate-500">
+                            <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span className="text-sm font-medium">Loading services...</span>
+                        </div>
+                    </div>
+                )}
+                {!loading && (
+                    <Table
+                        columns={[
+                            {
+                                header: 'Service Name',
+                                accessor: (item: SubServiceItem) => {
+                                    const parent = services.find(s => s.id === item.parent_service_id);
+                                    return (
+                                        <div>
+                                            <div className="font-bold text-slate-800 text-sm hover:text-indigo-600 transition-colors">
+                                                {parent?.service_name || '-'}
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-                        },
-                        {
-                            header: 'Industry',
-                            accessor: (item: SubServiceItem) => {
-                                const parent = services.find(s => s.id === item.parent_service_id);
-                                const industryIds = parent?.industry_ids || [];
-                                return (
-                                    <Tooltip content="Industry classification">
-                                        <div className="text-xs">
-                                            {industryIds.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {industryIds.slice(0, 2).map((industryId, index) => (
-                                                        <span key={index} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100">
-                                                            {industryId}
-                                                        </span>
-                                                    ))}
-                                                    {industryIds.length > 2 && (
-                                                        <span className="text-slate-500">+{industryIds.length - 2}</span>
-                                                    )}
+                                            <div className="text-xs text-slate-500 mt-0.5">
+                                                {item.sub_service_name}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            },
+                            {
+                                header: 'Service Code',
+                                accessor: (item: SubServiceItem) => {
+                                    const parent = services.find(s => s.id === item.parent_service_id);
+                                    return (
+                                        <div>
+                                            <div className="font-mono text-xs text-slate-700 font-bold">
+                                                {parent?.service_code || '-'}
+                                            </div>
+                                            {item.sub_service_code && (
+                                                <div className="text-xs text-slate-500 font-mono mt-0.5">
+                                                    {item.sub_service_code}
                                                 </div>
-                                            ) : (
-                                                <span className="text-slate-400">-</span>
                                             )}
                                         </div>
-                                    </Tooltip>
-                                );
-                            }
-                        },
-                        {
-                            header: 'Sector',
-                            accessor: (item: SubServiceItem) => {
-                                const parent = services.find(s => s.id === item.parent_service_id);
-                                return (
-                                    <Tooltip content="Business sector">
-                                        <span className="text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100">
-                                            {parent?.business_unit || 'General'}
-                                        </span>
-                                    </Tooltip>
-                                );
-                            }
-                        },
-                        {
-                            header: 'Sub-Services',
-                            accessor: (item: SubServiceItem) => {
-                                const parent = services.find(s => s.id === item.parent_service_id);
-                                const siblingCount = subServices.filter(s => s.parent_service_id === item.parent_service_id).length;
-                                return (
-                                    <Tooltip content={`Total sub-services under ${parent?.service_name || 'this service'}`}>
-                                        <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full text-xs font-bold border border-purple-100">
-                                            {siblingCount}
-                                        </span>
-                                    </Tooltip>
-                                );
+                                    );
+                                }
                             },
-                            className: "text-center"
-                        },
-                        {
-                            header: 'Linked Assets',
-                            accessor: (item: SubServiceItem) => {
-                                // Count assets from both Content Repository and Asset Library
-                                const contentCount = contentAssets.filter(a => a.linked_sub_service_ids?.includes(item.id)).length;
-                                const libraryCount = libraryAssets.filter(a => {
-                                    const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
-                                    return links.map(String).includes(String(item.id));
-                                }).length;
-                                const count = contentCount + libraryCount;
-                                return (
-                                    <Tooltip content={`Total assets linked: ${libraryCount} from Asset Library + ${contentCount} from Content Repository`}>
-                                        <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-bold border border-indigo-100">
-                                            {count}
-                                        </span>
-                                    </Tooltip>
-                                );
-                            },
-                            className: "text-center"
-                        },
-                        {
-                            header: 'Linked Insights',
-                            accessor: (item: SubServiceItem) => {
-                                // Calculate insights based on keywords and content
-                                const keywordCount = (item.focus_keywords?.length || 0) + (item.secondary_keywords?.length || 0);
-                                const hasContent = !!(item.body_content || item.h1 || item.meta_description);
-                                const insightScore = keywordCount + (hasContent ? 1 : 0);
-
-                                return (
-                                    <Tooltip content={`Insights: ${keywordCount} keywords, ${hasContent ? 'has content' : 'no content'}`}>
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${insightScore > 3 ? 'bg-green-50 text-green-700 border-green-100' :
-                                            insightScore > 1 ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                                                'bg-red-50 text-red-700 border-red-100'
-                                            }`}>
-                                            {insightScore}
-                                        </span>
-                                    </Tooltip>
-                                );
-                            },
-                            className: "text-center"
-                        },
-                        {
-                            header: 'Health Score',
-                            accessor: (item: SubServiceItem) => {
-                                // Calculate health score based on completeness
-                                let score = 0;
-                                if (item.sub_service_name) score += 20;
-                                if (item.slug) score += 15;
-                                if (item.meta_title) score += 15;
-                                if (item.meta_description) score += 15;
-                                if (item.h1) score += 10;
-                                if (item.focus_keywords && item.focus_keywords.length > 0) score += 15;
-                                if (item.body_content) score += 10;
-
-                                const getScoreColor = (score: number) => {
-                                    if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
-                                    if (score >= 60) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                                    if (score >= 40) return 'bg-orange-100 text-orange-800 border-orange-200';
-                                    return 'bg-red-100 text-red-800 border-red-200';
-                                };
-
-                                return (
-                                    <Tooltip content="Health score based on content completeness">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-bold border ${getScoreColor(score)}`}>
-                                                {score}%
-                                            </span>
-                                            <div className="w-8 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full transition-all ${score >= 80 ? 'bg-green-500' :
-                                                        score >= 60 ? 'bg-yellow-500' :
-                                                            score >= 40 ? 'bg-orange-500' : 'bg-red-500'
-                                                        }`}
-                                                    style={{ width: `${score}%` }}
-                                                />
+                            {
+                                header: 'Industry',
+                                accessor: (item: SubServiceItem) => {
+                                    const parent = services.find(s => s.id === item.parent_service_id);
+                                    const industryIds = parent?.industry_ids || [];
+                                    return (
+                                        <Tooltip content="Industry classification">
+                                            <div className="text-xs">
+                                                {industryIds.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {industryIds.slice(0, 2).map((industryId, index) => (
+                                                            <span key={index} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100">
+                                                                {industryId}
+                                                            </span>
+                                                        ))}
+                                                        {industryIds.length > 2 && (
+                                                            <span className="text-slate-500">+{industryIds.length - 2}</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400">-</span>
+                                                )}
                                             </div>
-                                        </div>
-                                    </Tooltip>
-                                );
+                                        </Tooltip>
+                                    );
+                                }
                             },
-                            className: "text-center"
-                        },
-                        {
-                            header: 'Status',
-                            accessor: (item: SubServiceItem) => getStatusBadge(item.status)
-                        },
-                        {
-                            header: 'Updated At',
-                            accessor: (item: SubServiceItem) => {
-                                const date = item.updated_at ? new Date(item.updated_at) : null;
-                                return (
-                                    <Tooltip content={date ? date.toLocaleString() : 'No update date'}>
-                                        <div className="text-xs text-slate-500">
-                                            {date ? (
-                                                <>
-                                                    <div>{date.toLocaleDateString()}</div>
-                                                    <div className="text-xs text-slate-400">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                                </>
-                                            ) : (
-                                                <span className="text-slate-400">-</span>
-                                            )}
-                                        </div>
-                                    </Tooltip>
-                                );
+                            {
+                                header: 'Sector',
+                                accessor: (item: SubServiceItem) => {
+                                    const parent = services.find(s => s.id === item.parent_service_id);
+                                    return (
+                                        <Tooltip content="Business sector">
+                                            <span className="text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100">
+                                                {parent?.business_unit || 'General'}
+                                            </span>
+                                        </Tooltip>
+                                    );
+                                }
+                            },
+                            {
+                                header: 'Sub-Services',
+                                accessor: (item: SubServiceItem) => {
+                                    const parent = services.find(s => s.id === item.parent_service_id);
+                                    const siblingCount = subServices.filter(s => s.parent_service_id === item.parent_service_id).length;
+                                    return (
+                                        <Tooltip content={`Total sub-services under ${parent?.service_name || 'this service'}`}>
+                                            <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full text-xs font-bold border border-purple-100">
+                                                {siblingCount}
+                                            </span>
+                                        </Tooltip>
+                                    );
+                                },
+                                className: "text-center"
+                            },
+                            {
+                                header: 'Linked Assets',
+                                accessor: (item: SubServiceItem) => {
+                                    // Count assets from both Content Repository and Asset Library
+                                    const contentCount = contentAssets.filter(a => a.linked_sub_service_ids?.includes(item.id)).length;
+                                    const libraryCount = libraryAssets.filter(a => {
+                                        const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
+                                        return links.map(String).includes(String(item.id));
+                                    }).length;
+                                    const count = contentCount + libraryCount;
+                                    return (
+                                        <Tooltip content={`Total assets linked: ${libraryCount} from Asset Library + ${contentCount} from Content Repository`}>
+                                            <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-bold border border-indigo-100">
+                                                {count}
+                                            </span>
+                                        </Tooltip>
+                                    );
+                                },
+                                className: "text-center"
+                            },
+                            {
+                                header: 'Linked Insights',
+                                accessor: (item: SubServiceItem) => {
+                                    // Calculate insights based on keywords and content
+                                    const keywordCount = (item.focus_keywords?.length || 0) + (item.secondary_keywords?.length || 0);
+                                    const hasContent = !!(item.body_content || item.h1 || item.meta_description);
+                                    const insightScore = keywordCount + (hasContent ? 1 : 0);
+
+                                    return (
+                                        <Tooltip content={`Insights: ${keywordCount} keywords, ${hasContent ? 'has content' : 'no content'}`}>
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${insightScore > 3 ? 'bg-green-50 text-green-700 border-green-100' :
+                                                insightScore > 1 ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                                                    'bg-red-50 text-red-700 border-red-100'
+                                                }`}>
+                                                {insightScore}
+                                            </span>
+                                        </Tooltip>
+                                    );
+                                },
+                                className: "text-center"
+                            },
+                            {
+                                header: 'Health Score',
+                                accessor: (item: SubServiceItem) => {
+                                    // Calculate health score based on completeness
+                                    let score = 0;
+                                    if (item.sub_service_name) score += 20;
+                                    if (item.slug) score += 15;
+                                    if (item.meta_title) score += 15;
+                                    if (item.meta_description) score += 15;
+                                    if (item.h1) score += 10;
+                                    if (item.focus_keywords && item.focus_keywords.length > 0) score += 15;
+                                    if (item.body_content) score += 10;
+
+                                    const getScoreColor = (score: number) => {
+                                        if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
+                                        if (score >= 60) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                                        if (score >= 40) return 'bg-orange-100 text-orange-800 border-orange-200';
+                                        return 'bg-red-100 text-red-800 border-red-200';
+                                    };
+
+                                    return (
+                                        <Tooltip content="Health score based on content completeness">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-bold border ${getScoreColor(score)}`}>
+                                                    {score}%
+                                                </span>
+                                                <div className="w-8 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full transition-all ${score >= 80 ? 'bg-green-500' :
+                                                            score >= 60 ? 'bg-yellow-500' :
+                                                                score >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                                                            }`}
+                                                        style={{ width: `${score}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </Tooltip>
+                                    );
+                                },
+                                className: "text-center"
+                            },
+                            {
+                                header: 'Status',
+                                accessor: (item: SubServiceItem) => getStatusBadge(item.status)
+                            },
+                            {
+                                header: 'Updated At',
+                                accessor: (item: SubServiceItem) => {
+                                    const date = item.updated_at ? new Date(item.updated_at) : null;
+                                    return (
+                                        <Tooltip content={date ? date.toLocaleString() : 'No update date'}>
+                                            <div className="text-xs text-slate-500">
+                                                {date ? (
+                                                    <>
+                                                        <div>{date.toLocaleDateString()}</div>
+                                                        <div className="text-xs text-slate-400">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-slate-400">-</span>
+                                                )}
+                                            </div>
+                                        </Tooltip>
+                                    );
+                                }
+                            },
+                            {
+                                header: 'Actions',
+                                accessor: (item: SubServiceItem) => (
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => handleView(item)}
+                                            className="text-slate-500 hover:text-blue-600 font-medium text-xs transition-colors"
+                                        >
+                                            View
+                                        </button>
+                                        <button
+                                            onClick={() => handleEdit(item)}
+                                            className="text-slate-500 hover:text-indigo-600 font-medium text-xs transition-colors"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="text-slate-500 hover:text-red-600 font-medium text-xs transition-colors"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                )
                             }
-                        },
-                        {
-                            header: 'Actions',
-                            accessor: (item: SubServiceItem) => (
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleEdit(item)}
-                                        className="text-slate-500 hover:text-indigo-600 font-medium text-xs transition-colors"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(item.id)}
-                                        className="text-slate-500 hover:text-red-600 font-medium text-xs transition-colors"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            )
-                        }
-                    ]}
-                    data={filteredData}
-                    title={`Sub-Service Registry (${filteredData.length})`}
-                />
+                        ]}
+                        data={filteredData}
+                        title={`Sub-Service Registry (${filteredData.length})`}
+                    />
+                )}
+                {!loading && filteredData.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                        <svg className="w-12 h-12 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 className="text-lg font-medium text-slate-700 mb-2">No Sub-Services Found</h3>
+                        <p className="text-sm text-slate-500 mb-4">Get started by creating your first sub-service</p>
+                        <button
+                            onClick={handleCreateClick}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors"
+                        >
+                            Create Sub-Service
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
