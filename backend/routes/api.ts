@@ -48,6 +48,7 @@ import * as teamLeaderDashboardController from '../controllers/teamLeaderDashboa
 import * as aiEvaluationController from '../controllers/aiEvaluationController';
 import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
+import assetCategoryRoutes from './assetCategoryRoutes';
 
 const router = Router();
 
@@ -98,6 +99,9 @@ router.get('/assetLibrary/:id', assetController.getAssetLibraryItem);
 router.post('/assetLibrary', assetController.createAssetLibraryItem);
 router.put('/assetLibrary/:id', assetController.updateAssetLibraryItem);
 router.delete('/assetLibrary/:id', assetController.deleteAssetLibraryItem);
+
+// --- Asset Categories ---
+router.use('/asset-categories', assetCategoryRoutes);
 
 // Asset QC Workflow
 router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);

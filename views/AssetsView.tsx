@@ -7,6 +7,13 @@ import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem, Service, SubServiceItem, User } from '../types';
 
+interface AssetCategory {
+    id: number;
+    category_name: string;
+    description?: string;
+    status: string;
+}
+
 interface AssetsViewProps {
     onNavigate?: (view: string, id?: number) => void;
 }
@@ -16,6 +23,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: users = [] } = useData<User>('users');
+    const { data: keywords = [] } = useData<any>('keywords');
+    const { data: assetCategories = [] } = useData<AssetCategory>('asset-categories');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
@@ -54,18 +63,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         web_body_content: '', // 14. Body Content
         seo_score: undefined, // 15. SEO Score (AI integration)
         grammar_score: undefined, // 16. Grammar Score (AI integration)
-        usage_status: 'Available', // 17. Usage Status
+        // Removed usage_status as per requirement 3
         status: 'Draft', // 18. Status
 
         // Internal fields
         linked_service_ids: [],
         linked_sub_service_ids: [],
         smm_platform: undefined,
-        smm_additional_pages: []
+        smm_additional_pages: [],
+        keywords: [] // Added keywords array for master database integration
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
+    const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
 
     // Markdown editor state
     const [markdownContent, setMarkdownContent] = useState('');
@@ -332,11 +343,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             setEditingAsset(null);
             setSelectedServiceId(null);
             setSelectedSubServiceIds([]);
+            setSelectedKeywords([]);
             setNewAsset({
                 name: '',
                 type: 'Image',
                 repository: 'Content Repository',
-                usage_status: 'Available',
                 status: 'Draft',
                 linked_service_ids: [],
                 linked_sub_service_ids: [],
@@ -344,7 +355,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 smm_platform: undefined,
                 seo_score: undefined,
                 grammar_score: undefined,
-                smm_additional_pages: []
+                smm_additional_pages: [],
+                keywords: []
             });
 
             // Switch to list view immediately
@@ -372,7 +384,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             name: asset.name,
             type: asset.type,
             repository: asset.repository,
-            usage_status: asset.usage_status,
+            // Removed usage_status as per requirement 3
             status: asset.status,
             asset_category: asset.asset_category,
             asset_format: asset.asset_format,
@@ -401,8 +413,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             smm_hashtags: asset.smm_hashtags,
             smm_media_url: asset.smm_media_url,
             smm_media_type: asset.smm_media_type,
-            smm_additional_pages: asset.smm_additional_pages || []
+            smm_additional_pages: asset.smm_additional_pages || [],
+            keywords: asset.keywords || []
         });
+
+        // Set selected keywords for the UI
+        setSelectedKeywords(asset.keywords || []);
 
         // Set markdown content for the editor
         setMarkdownContent(asset.web_body_content || '');
@@ -645,9 +661,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 🔄 Rework: {item.rework_count}
                             </div>
                         )}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                        Usage: {getStatusBadge(item.usage_status)}
                     </div>
                 </div>
             )
@@ -1174,20 +1187,26 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     Asset Application
                                                     <span className="text-red-500 ml-1">*</span>
                                                 </label>
-                                                <select
-                                                    value={newAsset.application_type || ''}
-                                                    onChange={(e) => setNewAsset({
-                                                        ...newAsset,
-                                                        application_type: e.target.value as any,
-                                                        smm_platform: undefined
-                                                    })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer font-medium"
-                                                >
-                                                    <option value="">Select application type...</option>
-                                                    <option value="web">🌐 WEB</option>
-                                                    <option value="seo">🔍 SEO</option>
-                                                    <option value="smm">📱 SMM</option>
-                                                </select>
+                                                {newAsset.application_type === 'web' ? (
+                                                    <div className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
+                                                        🌐 WEB (Content type is now static)
+                                                    </div>
+                                                ) : (
+                                                    <select
+                                                        value={newAsset.application_type || ''}
+                                                        onChange={(e) => setNewAsset({
+                                                            ...newAsset,
+                                                            application_type: e.target.value as any,
+                                                            smm_platform: undefined
+                                                        })}
+                                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer font-medium"
+                                                    >
+                                                        <option value="">Select application type...</option>
+                                                        <option value="web">🌐 WEB</option>
+                                                        <option value="seo">🔍 SEO</option>
+                                                        <option value="smm">📱 SMM</option>
+                                                    </select>
+                                                )}
                                             </div>
 
                                             <div>
@@ -1205,10 +1224,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        {/* Service Linking */}
+                                        {/* Map Asset to Services */}
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                Service Linking
+                                                Map Asset to Services
                                             </label>
                                             <select
                                                 value={selectedServiceId || ''}
@@ -1231,7 +1250,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         {selectedServiceId && (
                                             <div>
                                                 <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                    Sub-Service Linking
+                                                    Sub-Service Mapping
                                                 </label>
                                                 <div className="border border-slate-300 rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
                                                     {subServices
@@ -1394,13 +1413,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <label className="block text-sm font-semibold text-slate-700 mb-3">
                                                     Asset Category
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={newAsset.asset_category || ''}
                                                     onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                    placeholder="e.g., what science can do"
-                                                />
+                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
+                                                >
+                                                    <option value="">Select category...</option>
+                                                    {assetCategories.map(category => (
+                                                        <option key={category.id} value={category.category_name}>
+                                                            {category.category_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
 
                                             <div>
@@ -1424,34 +1448,91 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        {/* Repository & Usage Status */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">Repository</label>
-                                                <select
-                                                    value={newAsset.repository}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
-                                                >
-                                                    <option value="Content Repository">📁 Content Repository</option>
-                                                    <option value="SMM Repository">📱 SMM Repository</option>
-                                                    <option value="SEO Repository">🔍 SEO Repository</option>
-                                                    <option value="Design Repository">🎨 Design Repository</option>
-                                                </select>
-                                            </div>
+                                        {/* Repository */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">Repository</label>
+                                            <select
+                                                value={newAsset.repository}
+                                                onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
+                                            >
+                                                <option value="Content Repository">📁 Content Repository</option>
+                                                <option value="SMM Repository">📱 SMM Repository</option>
+                                                <option value="SEO Repository">🔍 SEO Repository</option>
+                                                <option value="Design Repository">🎨 Design Repository</option>
+                                            </select>
+                                        </div>
 
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">Usage Status</label>
-                                                <select
-                                                    value={newAsset.usage_status}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
-                                                >
-                                                    <option value="Available">✅ Available</option>
-                                                    <option value="In Use">🔄 In Use</option>
-                                                    <option value="Archived">📦 Archived</option>
-                                                </select>
+                                        {/* Keywords Section - Integrated with Master Database */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-3">
+                                                🏷️ Keywords
+                                                <span className="text-xs font-normal text-slate-500 ml-2">(Select from master database)</span>
+                                            </label>
+                                            <div className="border border-slate-300 rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                                                {keywords.length > 0 ? (
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {keywords.map((keyword: any) => (
+                                                            <label key={keyword.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedKeywords.includes(keyword.keyword)}
+                                                                    onChange={(e) => {
+                                                                        if (e.target.checked) {
+                                                                            const newKeywords = [...selectedKeywords, keyword.keyword];
+                                                                            setSelectedKeywords(newKeywords);
+                                                                            setNewAsset({ ...newAsset, keywords: newKeywords });
+                                                                        } else {
+                                                                            const newKeywords = selectedKeywords.filter(k => k !== keyword.keyword);
+                                                                            setSelectedKeywords(newKeywords);
+                                                                            setNewAsset({ ...newAsset, keywords: newKeywords });
+                                                                        }
+                                                                    }}
+                                                                    className="w-4 h-4 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                                                                />
+                                                                <div className="flex-1">
+                                                                    <span className="text-sm font-medium text-slate-700">{keyword.keyword}</span>
+                                                                    {keyword.keyword_type && (
+                                                                        <span className="ml-2 text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded">
+                                                                            {keyword.keyword_type}
+                                                                        </span>
+                                                                    )}
+                                                                    {keyword.search_volume && (
+                                                                        <span className="ml-2 text-xs text-blue-600">
+                                                                            {keyword.search_volume} searches/mo
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 italic">No keywords available in master database</p>
+                                                )}
                                             </div>
+                                            {selectedKeywords.length > 0 && (
+                                                <div className="mt-3">
+                                                    <p className="text-xs text-slate-600 mb-2">Selected keywords:</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {selectedKeywords.map((keyword, index) => (
+                                                            <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                                                {keyword}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const newKeywords = selectedKeywords.filter(k => k !== keyword);
+                                                                        setSelectedKeywords(newKeywords);
+                                                                        setNewAsset({ ...newAsset, keywords: newKeywords });
+                                                                    }}
+                                                                    className="ml-1 text-green-600 hover:text-green-800"
+                                                                >
+                                                                    ×
+                                                                </button>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -1628,23 +1709,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     />
                                 </div>
 
-                                {/* 17. Usage Status */}
+                                {/* 17. Status */}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">17. Usage Status</label>
-                                    <select
-                                        value={newAsset.usage_status}
-                                        onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                    >
-                                        <option value="Available">Available</option>
-                                        <option value="In Use">In Use</option>
-                                        <option value="Archived">Archived</option>
-                                    </select>
-                                </div>
-
-                                {/* 18. Status */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">18. Status</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">17. Status</label>
                                     <select
                                         value={newAsset.status || 'Draft'}
                                         onChange={(e) => setNewAsset({ ...newAsset, status: e.target.value as any })}
@@ -2215,8 +2282,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         )}
                                                     </label>
 
-                                                    {/* SMM Pages Upload Button - Enhanced for Multiple Pages */}
-                                                    {(newAsset.smm_media_type === 'carousel' || newAsset.smm_media_type === 'image') && (
+                                                    {/* SMM Image Upload - Single Image Only */}
+                                                    {(newAsset.smm_media_type === 'image') && (
                                                         <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl">
                                                             <div className="flex items-center gap-3 mb-3">
                                                                 <div className="bg-purple-600 p-2 rounded-lg">
@@ -2225,50 +2292,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     </svg>
                                                                 </div>
                                                                 <div>
-                                                                    <h4 className="text-lg font-bold text-purple-900">📱 SMM Pages Upload</h4>
-                                                                    <p className="text-sm text-purple-600">Upload multiple pages/images for your SMM content</p>
+                                                                    <h4 className="text-lg font-bold text-purple-900">📱 SMM Image Upload</h4>
+                                                                    <p className="text-sm text-purple-600">Upload a single image for your SMM content</p>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const input = document.createElement('input');
-                                                                        input.type = 'file';
-                                                                        input.multiple = true;
-                                                                        input.accept = 'image/*';
-                                                                        input.onchange = (e) => {
-                                                                            const files = (e.target as HTMLInputElement).files;
-                                                                            if (files && files.length > 0) {
-                                                                                // Handle multiple files for carousel
-                                                                                const fileArray = Array.from(files);
-                                                                                Promise.all(fileArray.map(file => {
-                                                                                    return new Promise<string>((resolve) => {
-                                                                                        const reader = new FileReader();
-                                                                                        reader.onloadend = () => resolve(reader.result as string);
-                                                                                        reader.readAsDataURL(file);
-                                                                                    });
-                                                                                })).then(base64Array => {
-                                                                                    // Store first image as main media, others as additional pages
-                                                                                    setNewAsset({
-                                                                                        ...newAsset,
-                                                                                        smm_media_url: base64Array[0],
-                                                                                        smm_additional_pages: base64Array.slice(1)
-                                                                                    });
-                                                                                });
-                                                                            }
-                                                                        };
-                                                                        input.click();
-                                                                    }}
-                                                                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 hover:scale-105"
-                                                                >
-                                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                                    </svg>
-                                                                    Upload Multiple Pages
-                                                                </button>
-
+                                                            <div className="flex justify-center">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
@@ -2292,50 +2321,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 </button>
                                                             </div>
 
-                                                            {/* Display uploaded pages */}
-                                                            {(newAsset.smm_additional_pages && newAsset.smm_additional_pages.length > 0) && (
-                                                                <div className="mt-4">
-                                                                    <p className="text-sm font-bold text-purple-900 mb-2">
-                                                                        📄 Additional Pages ({newAsset.smm_additional_pages.length})
-                                                                    </p>
-                                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                                        {newAsset.smm_additional_pages.map((page, index) => (
-                                                                            <div key={index} className="relative group">
-                                                                                <img
-                                                                                    src={page}
-                                                                                    alt={`Page ${index + 2}`}
-                                                                                    className="w-full h-20 object-cover rounded-lg border-2 border-purple-200"
-                                                                                />
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        const updatedPages = [...(newAsset.smm_additional_pages || [])];
-                                                                                        updatedPages.splice(index, 1);
-                                                                                        setNewAsset({
-                                                                                            ...newAsset,
-                                                                                            smm_additional_pages: updatedPages
-                                                                                        });
-                                                                                    }}
-                                                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                >
-                                                                                    ×
-                                                                                </button>
-                                                                                <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
-                                                                                    {index + 2}
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
                                                             <div className="mt-3 text-xs text-purple-700 bg-purple-100 p-3 rounded-lg">
-                                                                <p className="font-bold mb-1">💡 SMM Pages Upload Tips:</p>
+                                                                <p className="font-bold mb-1">💡 SMM Image Upload Tips:</p>
                                                                 <ul className="space-y-1">
-                                                                    <li>• Upload multiple images for carousel posts</li>
+                                                                    <li>• Upload a single high-quality image</li>
                                                                     <li>• Recommended: 1080x1080px for Instagram, 1200x630px for Facebook</li>
-                                                                    <li>• Maximum 10 images per carousel</li>
                                                                     <li>• Supported formats: JPG, PNG, WebP</li>
+                                                                    <li>• Maximum file size: 10MB</li>
                                                                 </ul>
                                                             </div>
                                                         </div>
@@ -4297,15 +4289,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
 
                                             {/* Usage Status */}
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Usage Status</label>
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${selectedAsset.usage_status === 'Available' ? 'bg-green-100 text-green-800' :
-                                                    selectedAsset.usage_status === 'In Use' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {selectedAsset.usage_status || 'Available'}
-                                                </span>
-                                            </div>
+
 
                                             {/* AI Scores */}
                                             {(selectedAsset.seo_score || selectedAsset.grammar_score) && (
@@ -5925,9 +5909,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {/* Usage Panel */}
                                                         <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
                                                             <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Usage Panel</span>
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
                                                                 <div className="flex items-center justify-between mt-1">
-                                                                    <span className="text-slate-700 font-medium">Status: {asset.usage_status}</span>
                                                                     {asset.linking_active && (
                                                                         <span className="text-green-600 font-medium text-xs">🔗 Active</span>
                                                                     )}
@@ -6109,7 +6092,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         name: '',
                         type: 'article',
                         repository: 'Content Repository',
-                        usage_status: 'Available',
                         status: 'Draft',
                         linked_service_ids: [],
                         linked_sub_service_ids: [],
@@ -6136,7 +6118,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         name: '',
                         type: 'article',
                         repository: 'Content Repository',
-                        usage_status: 'Available',
                         status: 'Draft',
                         linked_service_ids: [],
                         linked_sub_service_ids: [],
