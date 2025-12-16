@@ -65,6 +65,12 @@ const SubServiceMasterView: React.FC = () => {
     const [schemaJson, setSchemaJson] = useState('');
     const [showMissingSeoWarning, setShowMissingSeoWarning] = useState(true);
 
+    // Sub-services management state
+    const [subServicesList, setSubServicesList] = useState([
+        { id: 1, name: 'On-Page SEO', slug: 'on-page-seo', keywords: 'on-page, seo optimization', status: 'active' },
+        { id: 2, name: 'Off-Page SEO', slug: 'off-page-seo', keywords: 'backlinks, link building', status: 'active' }
+    ]);
+
     // Form State
     const [formData, setFormData] = useState<any>({
         sub_service_name: '',
@@ -490,25 +496,15 @@ const SubServiceMasterView: React.FC = () => {
                 {/* Header */}
                 <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-white shadow-sm z-40">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setViewMode('list')} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">{editingItem ? `Edit Sub-Service: ${editingItem.sub_service_name}` : 'Create New Sub-Service'}</h2>
-                            <div className="flex items-center text-xs text-slate-500 mt-1">
-                                <span className="font-mono bg-slate-100 px-1.5 rounded">{editingItem?.sub_service_code || formData.sub_service_code || 'NEW'}</span>
-                                <span className="mx-2">•</span>
-                                <span>{formData.language?.toUpperCase()}</span>
-                                <span className="mx-2">•</span>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${formData.status === 'Published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                    {formData.status}
-                                </span>
-                            </div>
+                            <h2 className="text-xl font-bold text-slate-900">{editingItem ? 'Edit Service' : 'Add New Service'}</h2>
+                            <p className="text-sm text-slate-500 mt-1">Create a new service with complete SEO and content configuration</p>
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => setViewMode('list')} className="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">Discard</button>
-                        <button onClick={handleSave} className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-colors">Save Sub-Service</button>
+                        <button onClick={() => setViewMode('list')} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
                     </div>
                 </div>
 
@@ -900,6 +896,99 @@ const SubServiceMasterView: React.FC = () => {
                                     placeholder="/contact"
                                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                                 />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    {/* --- TAB: SUB-SERVICE MANAGER --- */ }
+    {
+        activeTab === 'SubServiceManager' && (
+            <div className="space-y-8">
+                {/* Sub-Services Table */}
+                <div className="bg-gradient-to-br from-cyan-50 via-blue-50 to-slate-50 rounded-2xl border-2 border-cyan-200 shadow-lg overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-6 text-white">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔧</span>
+                                <div>
+                                    <h3 className="text-xl font-bold">Sub-Services ({subServicesList.length})</h3>
+                                    <p className="text-cyan-100 text-sm">Manage and organize sub-services</p>
+                                </div>
+                            </div>
+                            <button className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                                <span className="text-lg">+</span>
+                                Add Sub-Service
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-8">
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-slate-50 border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Slug</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Keywords</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-slate-200">
+                                        {subServicesList.map((subService, index) => (
+                                            <tr key={subService.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="font-medium text-sm text-slate-900">{subService.name}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-slate-600 font-mono">{subService.slug}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm text-slate-600">{subService.keywords}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-full ${subService.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                        {subService.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <button className="text-indigo-600 hover:text-indigo-900 font-medium">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button className="text-red-600 hover:text-red-900 font-medium">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-200">
+                            <div className="text-sm text-slate-600">
+                                {subServicesList.length} sub-services configured
+                            </div>
+                            <div className="flex gap-3">
+                                <button className="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                                    Save as Draft
+                                </button>
+                                <button className="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-colors">
+                                    Create Service
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1385,150 +1474,216 @@ const SubServiceMasterView: React.FC = () => {
     {
         activeTab === 'LinkedAssets' && (
             <div className="space-y-8">
-                {/* Asset Management */}
-                <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden">
-                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 text-white">
+                {/* Linked Insights Section */}
+                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white">
                         <div className="flex items-center gap-3">
-                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔗</span>
+                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">�</span>
                             <div>
-                                <h3 className="text-xl font-bold">Asset Management</h3>
-                                <p className="text-purple-100 text-sm">Link and manage related assets and insights</p>
+                                <h3 className="text-xl font-bold">Linked Insights</h3>
+                                <p className="text-blue-100 text-sm">Select and prioritize content insights</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-8">
-                        {editingItem ? (
-                            <div className="space-y-6">
-                                {/* Linked Assets Summary */}
-                                <div className="bg-white rounded-xl border-2 border-purple-100 p-6">
-                                    <h4 className="text-lg font-bold text-purple-800 mb-4 flex items-center gap-2">
-                                        <span className="text-xl">📊</span>
-                                        Asset Summary
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
-                                            <div className="text-2xl font-bold text-indigo-700">
-                                                {linkedLibraryAssets.length}
-                                            </div>
-                                            <div className="text-sm text-indigo-600">Library Assets</div>
-                                        </div>
-                                        <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
-                                            <div className="text-2xl font-bold text-emerald-700">
-                                                {contentAssets.filter(a => a.linked_sub_service_ids?.includes(editingItem.id)).length}
-                                            </div>
-                                            <div className="text-sm text-emerald-600">Content Assets</div>
-                                        </div>
-                                        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                                            <div className="text-2xl font-bold text-amber-700">
-                                                {((formData.focus_keywords || []).length + (formData.secondary_keywords || []).length)}
-                                            </div>
-                                            <div className="text-sm text-amber-600">Keywords</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Asset Linking Interface */}
-                                <div className="bg-white rounded-xl border-2 border-pink-100 p-6">
-                                    <h4 className="text-lg font-bold text-pink-800 mb-4 flex items-center gap-2">
-                                        <span className="text-xl">🔗</span>
-                                        Link Assets
-                                    </h4>
-
-                                    {/* Search and Filter */}
-                                    <div className="mb-4 flex gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            {/* Available Insights */}
+                            <div className="space-y-3">
+                                {linkedInsights.map(insight => (
+                                    <label key={insight.id} className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-slate-200 hover:border-blue-300 transition-colors cursor-pointer">
                                         <input
-                                            type="text"
-                                            value={assetSearch}
-                                            onChange={(e) => setAssetSearch(e.target.value)}
-                                            placeholder="Search assets..."
-                                            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                                            type="checkbox"
+                                            checked={selectedInsights.includes(insight.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedInsights([...selectedInsights, insight.id]);
+                                                } else {
+                                                    setSelectedInsights(selectedInsights.filter(id => id !== insight.id));
+                                                }
+                                            }}
+                                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                         />
-                                        <select
-                                            value={repositoryFilter}
-                                            onChange={(e) => setRepositoryFilter(e.target.value)}
-                                            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                                        >
-                                            <option value="All">All Repositories</option>
-                                            <option value="Content Repository">Content Repository</option>
-                                            <option value="Asset Library">Asset Library</option>
-                                        </select>
-                                    </div>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-sm text-slate-800">{insight.title}</div>
+                                            <div className="text-xs text-slate-500">{insight.type}</div>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${insight.status === 'Ready' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {insight.status}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
 
-                                    {/* Available Assets */}
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                        {availableLibraryAssets.map(asset => (
-                                            <div key={asset.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                                <div className="flex-1">
-                                                    <div className="font-medium text-sm text-slate-800">{asset.name}</div>
-                                                    <div className="text-xs text-slate-500">{asset.type} • {asset.repository}</div>
+                            {/* Insight Order (Drag to reorder) */}
+                            <div className="bg-white rounded-lg border-2 border-slate-200 p-4">
+                                <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                    <span className="text-sm">📋</span>
+                                    Insight Order (Drag to reorder)
+                                </h4>
+                                <div className="space-y-2">
+                                    {selectedInsights.map((insightId, index) => {
+                                        const insight = linkedInsights.find(i => i.id === insightId);
+                                        return insight ? (
+                                            <div key={insight.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                <div className="flex items-center gap-2 text-slate-400">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                                    </svg>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleToggleLibraryLink(asset)}
-                                                    className="px-3 py-1 bg-pink-600 text-white rounded text-xs font-bold hover:bg-pink-700 transition-colors"
-                                                >
-                                                    Link
-                                                </button>
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-sm">Insight #{index + 1}</div>
+                                                    <div className="text-xs text-slate-500">Priority: {index + 1}</div>
+                                                </div>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${insight.status === 'Ready' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                    {insight.status}
+                                                </span>
                                             </div>
-                                        ))}
-                                        {availableLibraryAssets.length === 0 && (
-                                            <div className="text-center py-8 text-slate-500">
-                                                No available assets found
-                                            </div>
-                                        )}
-                                    </div>
+                                        ) : null;
+                                    })}
+                                    {selectedInsights.length === 0 && (
+                                        <div className="text-center py-4 text-slate-500 text-sm">
+                                            No insights selected
+                                        </div>
+                                    )}
                                 </div>
+                                <div className="mt-3 text-xs text-slate-500">
+                                    {selectedInsights.length} insights selected
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                {/* Linked Assets List */}
-                                <div className="bg-white rounded-xl border-2 border-indigo-100 p-6">
-                                    <h4 className="text-lg font-bold text-indigo-800 mb-4 flex items-center gap-2">
-                                        <span className="text-xl">📎</span>
-                                        Currently Linked Assets
-                                    </h4>
-                                    <div className="space-y-2">
-                                        {linkedLibraryAssets.map(asset => (
-                                            <div key={asset.id} className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                                                <div className="flex-1">
-                                                    <div className="font-medium text-sm text-indigo-800">{asset.name}</div>
-                                                    <div className="text-xs text-indigo-600">{asset.type} • {asset.repository}</div>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleToggleLibraryLink(asset)}
-                                                    className="px-3 py-1 bg-red-600 text-white rounded text-xs font-bold hover:bg-red-700 transition-colors"
-                                                >
-                                                    Unlink
-                                                </button>
-                                            </div>
-                                        ))}
-                                        {linkedLibraryAssets.length === 0 && (
-                                            <div className="text-center py-8 text-slate-500">
-                                                No assets linked yet
-                                            </div>
-                                        )}
+                {/* Linked Assets Section */}
+                <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 text-white">
+                        <div className="flex items-center gap-3">
+                            <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔗</span>
+                            <div>
+                                <h3 className="text-xl font-bold">Linked Assets</h3>
+                                <p className="text-purple-100 text-sm">Manage related assets and resources</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Available Assets */}
+                            <div className="space-y-3">
+                                <h4 className="font-bold text-slate-800 mb-3">Available Assets</h4>
+                                {[
+                                    { id: 1, name: 'Image: Hero Banner', type: 'Image', selected: true },
+                                    { id: 2, name: 'Icon: Service Logo', type: 'Icon', selected: false },
+                                    { id: 3, name: 'PDF: Service Guide', type: 'PDF', selected: false },
+                                    { id: 4, name: 'Infographic: Stats', type: 'Infographic', selected: false },
+                                    { id: 5, name: 'Video: Demo', type: 'Video', selected: true },
+                                    { id: 6, name: 'Template: Proposal', type: 'Template', selected: false }
+                                ].map(asset => (
+                                    <label key={asset.id} className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-slate-200 hover:border-purple-300 transition-colors cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            defaultChecked={asset.selected}
+                                            className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-medium text-sm text-slate-800">{asset.name}</div>
+                                            <div className="text-xs text-slate-500">{asset.type}</div>
+                                        </div>
+                                        <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
+                                            {asset.type === 'Image' && '🖼️'}
+                                            {asset.type === 'Icon' && '🎯'}
+                                            {asset.type === 'PDF' && '📄'}
+                                            {asset.type === 'Infographic' && '📊'}
+                                            {asset.type === 'Video' && '🎥'}
+                                            {asset.type === 'Template' && '📋'}
+                                        </div>
+                                    </label>
+                                ))}
+                                <div className="text-xs text-slate-500 mt-3">
+                                    1 assets selected
+                                </div>
+                            </div>
+
+                            {/* Promotional Readiness */}
+                            <div className="bg-white rounded-lg border-2 border-slate-200 p-6">
+                                <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <span className="text-lg">🚀</span>
+                                    Promotional Readiness
+                                </h4>
+
+                                <div className="space-y-4">
+                                    {/* Content Ready */}
+                                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                            <span className="font-medium text-sm">Content Ready</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-green-700">Yes</span>
+                                    </div>
+
+                                    {/* Assets Ready */}
+                                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                            <span className="font-medium text-sm">Assets Ready</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-green-700">Yes</span>
+                                    </div>
+
+                                    {/* SEO Score */}
+                                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                            <span className="font-medium text-sm">SEO Score</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-orange-700">75%</span>
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="text-center py-12">
-                                <div className="text-6xl mb-4">💾</div>
-                                <h3 className="text-xl font-bold text-slate-700 mb-2">Save First to Link Assets</h3>
-                                <p className="text-slate-500 mb-6">You need to save this sub-service before you can link assets to it.</p>
-                                <button
-                                    onClick={handleSave}
-                                    className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors"
-                                >
-                                    Save Sub-Service
-                                </button>
-                            </div>
-                        )}
-
+                        </div>
                     </div>
                 </div>
             </div>
-        );
+        )
     }
 
-    // List View
+    {/* Fixed Footer */ }
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-8 py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <button
+                onClick={() => setViewMode('list')}
+                className="px-6 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+            >
+                Cancel
+            </button>
+            <div className="flex gap-3">
+                <button
+                    onClick={() => {
+                        // Save as draft logic
+                        setFormData({ ...formData, status: 'Draft' });
+                        handleSave();
+                    }}
+                    className="px-6 py-2 text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200 transition-colors font-medium flex items-center gap-2"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Save as Draft
+                </button>
+                <button
+                    onClick={handleSave}
+                    className="px-8 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold flex items-center gap-2"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Create Service
+                </button>
+            </div>
+        </div>
+    </div>
+
     return (
         <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6 ui-surface">
             <div className="flex justify-between items-start">
@@ -2009,10 +2164,3 @@ const SubServiceMasterView: React.FC = () => {
 
 export default SubServiceMasterView;
 
-// Enhanced LinkedAssets functionality has been added with:
-// - Linked Insights management with checkboxes and priority ordering
-// - Promotional Readiness section with Content Ready, Assets Ready, and SEO Score
-// - Sample assets with different types (Image, PDF, Video, Icon, Infographic, Template)
-// - Action buttons for Cancel, Save as Draft, and Create Service
-// - Two-column layout for better organization
-// - Interactive elements with proper state management
