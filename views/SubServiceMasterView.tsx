@@ -2145,6 +2145,7 @@ const SubServiceMasterView: React.FC = () => {
                                 },
                                 className: "text-center"
                             },
+                            
                             {
                                 header: 'Linked Insights',
                                 accessor: (item: SubServiceItem) => {
