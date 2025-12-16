@@ -599,20 +599,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                         </div>
                     </div>
 
-                    {/* Keywords */}
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Keywords</label>
-                        <input
-                            type="text"
-                            value={newAsset.keywords?.join(', ') || ''}
-                            onChange={(e) => {
-                                const keywordArray = e.target.value.split(',').map(k => k.trim()).filter(k => k.length > 0);
-                                setNewAsset({ ...newAsset, keywords: keywordArray });
-                            }}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                            placeholder="Enter keywords separated by commas..."
-                        />
-                    </div>
+
 
                     {/* Web Application Fields */}
                     {newAsset.application_type === 'web' && (
