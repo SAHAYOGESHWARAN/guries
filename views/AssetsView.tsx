@@ -39,7 +39,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         // Asset Submission Fields (In Order)
         application_type: undefined, // 1. Asset Application – WEB, SEO, SMM
         // Service/Sub-Service Linking will be handled by selectedServiceId/selectedSubServiceIds
-        keywords: [], // 3. Keywords – Link with keyword master table
+
         name: '', // 4. Title
         web_description: '', // 5. Description
         web_url: '', // 6. URL
@@ -342,7 +342,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 linked_sub_service_ids: [],
                 application_type: undefined,
                 smm_platform: undefined,
-                keywords: [],
                 seo_score: undefined,
                 grammar_score: undefined,
                 smm_additional_pages: []
@@ -381,7 +380,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             qc_score: asset.qc_score,
             seo_score: asset.seo_score,
             grammar_score: asset.grammar_score,
-            keywords: asset.keywords || [],
             file_url: asset.file_url,
             thumbnail_url: asset.thumbnail_url,
             file_size: asset.file_size,
@@ -392,7 +390,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             web_title: asset.web_title,
             web_description: asset.web_description,
             web_meta_description: asset.web_meta_description,
-            web_keywords: asset.web_keywords,
             web_url: asset.web_url,
             web_h1: asset.web_h1,
             web_h2_1: asset.web_h2_1,
@@ -1260,24 +1257,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         )}
 
-                                        {/* Keywords & Asset Type */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                    Keywords
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.keywords?.join(', ') || ''}
-                                                    onChange={(e) => {
-                                                        const keywordArray = e.target.value.split(',').map(k => k.trim()).filter(k => k.length > 0);
-                                                        setNewAsset({ ...newAsset, keywords: keywordArray });
-                                                    }}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                                    placeholder="Enter keywords separated by commas..."
-                                                />
-                                            </div>
-
+                                        {/* Asset Type */}
+                                        <div className="grid grid-cols-1 gap-6">
                                             <div>
                                                 <label className="block text-sm font-semibold text-slate-700 mb-3">
                                                     Asset Type
@@ -1536,7 +1517,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     headers: { 'Content-Type': 'application/json' },
                                                                     body: JSON.stringify({
                                                                         content: newAsset.web_body_content || newAsset.smm_description,
-                                                                        keywords: newAsset.web_keywords || newAsset.keywords,
                                                                         title: newAsset.web_title || newAsset.name,
                                                                         description: newAsset.web_description || newAsset.smm_description
                                                                     })
@@ -1743,17 +1723,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Keywords</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_keywords || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_keywords: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter keywords (comma separated)..."
-                                            />
-                                        </div>
-
-                                        <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-2">URL</label>
                                             <input
                                                 type="url"
@@ -1870,17 +1839,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                                                 placeholder="Enter SEO description..."
                                                 rows={3}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Keywords</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_keywords || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_keywords: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter keywords (comma separated)..."
                                             />
                                         </div>
 
@@ -2678,7 +2636,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             headers: { 'Content-Type': 'application/json' },
                                                             body: JSON.stringify({
                                                                 content: newAsset.web_body_content || newAsset.smm_description,
-                                                                keywords: newAsset.web_keywords || newAsset.keywords,
                                                                 title: newAsset.web_title || newAsset.name,
                                                                 description: newAsset.web_description || newAsset.smm_description
                                                             })
@@ -3115,13 +3072,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <label className="block text-sm font-bold text-slate-700 mb-2">Asset Category</label>
                                                 <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
                                                     {qcReviewAsset?.asset_category || 'Not specified'}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Keywords</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.keywords?.join(', ') || 'No keywords'}
                                                 </div>
                                             </div>
 
@@ -4448,24 +4398,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <span className="text-slate-900 font-medium">{selectedAsset.repository || 'Content Repository'}</span>
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">Keywords Tagged</label>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {selectedAsset.keywords && selectedAsset.keywords.length > 0 ? (
-                                                        selectedAsset.keywords.map((keyword, index) => (
-                                                            <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                                {keyword}
-                                                            </span>
-                                                        ))
-                                                    ) : (
-                                                        <>
-                                                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">AI</span>
-                                                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Technology</span>
-                                                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Blog</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
+
                                         </div>
                                     </div>
 
@@ -5895,23 +5828,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             )}
                                                         </div>
 
-                                                        {/* Keywords */}
-                                                        {asset.keywords && asset.keywords.length > 0 && (
-                                                            <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Keywords Tagged</span>
-                                                                <div className="flex flex-wrap gap-1 mt-1">
-                                                                    {asset.keywords.slice(0, 3).map((keyword, index) => (
-                                                                        <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                                                                            {keyword}
-                                                                        </span>
-                                                                    ))}
-                                                                    {asset.keywords.length > 3 && (
-                                                                        <span className="text-xs text-slate-500">+{asset.keywords.length - 3} more</span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
                                                         {/* QC Panel */}
                                                         {asset.qc_score && (
                                                             <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
@@ -6199,7 +6115,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         linked_sub_service_ids: [],
                         application_type: undefined,
                         smm_platform: undefined,
-                        keywords: [],
                         seo_score: undefined,
                         grammar_score: undefined,
                         smm_additional_pages: [],
@@ -6227,7 +6142,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         linked_sub_service_ids: [],
                         application_type: undefined,
                         smm_platform: undefined,
-                        keywords: [],
                         seo_score: undefined,
                         grammar_score: undefined,
                         smm_additional_pages: [],
