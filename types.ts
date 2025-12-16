@@ -558,6 +558,9 @@ export interface AssetLibraryItem {
     // Keywords (should link with keyword master table)
     keywords?: string[];
 
+    // Usage tracking
+    usage_count?: number; // Number of times this asset has been used
+
     // Web Application Fields
     web_title?: string;
     web_description?: string;

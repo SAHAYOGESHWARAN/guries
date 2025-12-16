@@ -22,7 +22,8 @@ export const initDatabase = () => {
             asset_format TEXT,
             tags TEXT,
             description TEXT,
-            status TEXT,
+            status TEXT DEFAULT 'Draft',
+            usage_status TEXT DEFAULT 'Available',
             file_url TEXT,
             og_image_url TEXT,
             thumbnail_url TEXT,
@@ -31,8 +32,10 @@ export const initDatabase = () => {
             linked_service_ids TEXT,
             linked_sub_service_ids TEXT,
             application_type TEXT,
+            keywords TEXT,
             web_title TEXT,
             web_description TEXT,
+            web_meta_description TEXT,
             web_keywords TEXT,
             web_url TEXT,
             web_h1 TEXT,
@@ -48,6 +51,19 @@ export const initDatabase = () => {
             smm_hashtags TEXT,
             smm_media_url TEXT,
             smm_media_type TEXT,
+            seo_score INTEGER,
+            grammar_score INTEGER,
+            qc_score INTEGER,
+            submitted_by INTEGER,
+            submitted_at DATETIME,
+            qc_reviewer_id INTEGER,
+            qc_reviewed_at DATETIME,
+            qc_remarks TEXT,
+            linking_active INTEGER DEFAULT 0,
+            mapped_to TEXT,
+            rework_count INTEGER DEFAULT 0,
+            workflow_log TEXT,
+            qc_checklist_completion INTEGER DEFAULT 0,
             social_meta TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -376,6 +392,19 @@ export const initDatabase = () => {
 
         INSERT OR IGNORE INTO keywords (id, keyword, keyword_type, search_volume, competition) VALUES 
         (1, 'sample keyword', 'primary', 1000, 'medium');
+
+        CREATE TABLE IF NOT EXISTS asset_qc_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id INTEGER,
+            qc_reviewer_id INTEGER,
+            qc_score INTEGER,
+            checklist_completion INTEGER DEFAULT 0,
+            qc_remarks TEXT,
+            qc_decision TEXT,
+            checklist_items TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (asset_id) REFERENCES assets(id)
+        );
 
         CREATE TABLE IF NOT EXISTS industry_sectors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -6,9 +6,10 @@ interface UploadAssetModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
+    initialData?: Partial<AssetLibraryItem>;
 }
 
-const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, onSuccess, initialData }) => {
     const { create: createAsset } = useData<AssetLibraryItem>('assetLibrary');
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
@@ -45,14 +46,62 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         web_thumbnail: '',
         seo_score: undefined,
         grammar_score: undefined,
+        ...initialData, // Apply initial data if provided
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+
+    // Update state when initialData changes or modal opens
+    React.useEffect(() => {
+        if (isOpen) {
+            if (initialData) {
+                setNewAsset(prev => ({
+                    name: '',
+                    type: 'article',
+                    asset_category: '',
+                    asset_format: '',
+                    repository: 'Content Repository',
+                    usage_status: 'Available',
+                    status: 'Draft',
+                    application_type: undefined,
+                    keywords: [],
+                    linked_service_ids: [],
+                    linked_sub_service_ids: [],
+                    web_title: '',
+                    web_description: '',
+                    web_meta_description: '',
+                    web_keywords: '',
+                    web_url: '',
+                    web_h1: '',
+                    web_h2_1: '',
+                    web_h2_2: '',
+                    web_body_content: '',
+                    web_thumbnail: '',
+                    seo_score: undefined,
+                    grammar_score: undefined,
+                    ...initialData
+                }));
+            }
+        }
+    }, [initialData, isOpen]);
+
+    // Reset state when modal closes
+    React.useEffect(() => {
+        if (!isOpen) {
+            setSelectedFile(null);
+            setPreviewUrl('');
+            setSelectedServiceId(null);
+            setSelectedSubServiceIds([]);
+            setViewVendorHistory(false);
+            setReplaceExistingVersion(false);
+        }
+    }, [isOpen]);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
 
     // Footer options state
     const [viewVendorHistory, setViewVendorHistory] = useState(false);
     const [replaceExistingVersion, setReplaceExistingVersion] = useState(false);
+    const [uploadMode, setUploadMode] = useState<'draft' | 'qc'>('qc');
 
     // Helper function to check if asset is ready for QC submission
     const isQcReady = useMemo(() => {
