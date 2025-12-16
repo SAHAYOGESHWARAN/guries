@@ -6,7 +6,7 @@ import ServiceAssetLinker from '../components/ServiceAssetLinker';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
-import type { SubServiceItem, Service, ContentRepositoryItem, AssetLibraryItem, Brand, User, ContentTypeItem, Keyword } from '../types';
+import type { SubServiceItem, Service, ContentRepositoryItem, AssetLibraryItem, Brand, User, ContentTypeItem, Keyword, IndustrySectorItem } from '../types';
 
 const STATUSES = ['All Status', 'Draft', 'In Progress', 'QC', 'Approved', 'Published', 'Archived'];
 const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
@@ -25,6 +25,7 @@ const SubServiceMasterView: React.FC = () => {
     const { data: users = [], refresh: refreshUsers } = useData<User>('users');
     const { data: contentTypes = [], refresh: refreshContentTypes } = useData<ContentTypeItem>('contentTypes');
     const { data: keywordsMaster = [], refresh: refreshKeywords } = useData<Keyword>('keywords');
+    const { data: industrySectors = [], refresh: refreshIndustrySectors } = useData<IndustrySectorItem>('industrySectors');
 
     // UI State
     const [viewMode, setViewMode] = useState<'list' | 'form' | 'view'>('list');
@@ -33,6 +34,7 @@ const SubServiceMasterView: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState('All Status');
     const [contentTypeFilter, setContentTypeFilter] = useState('All Types');
     const [brandFilter, setBrandFilter] = useState('All Brands');
+    const [industryFilter, setIndustryFilter] = useState('All Industries');
     const [editingItem, setEditingItem] = useState<SubServiceItem | null>(null);
     const [activeTab, setActiveTab] = useState<'GeneralInfo' | 'SubServiceManager' | 'SEOContent' | 'LinkedAssets'>('GeneralInfo');
     const [assetSearch, setAssetSearch] = useState('');
@@ -138,7 +140,15 @@ const SubServiceMasterView: React.FC = () => {
         const parentBrand = parentService?.brand_id ? brands.find(b => b.id === parentService.brand_id)?.name : null;
         const matchesBrand = brandFilter === 'All Brands' || parentBrand === brandFilter;
 
-        return matchesSearch && matchesParent && matchesStatus && matchesContentType && matchesBrand;
+        // Industry filter based on parent service's industry_ids
+        const parentIndustryIds = parentService?.industry_ids || [];
+        const matchesIndustry = industryFilter === 'All Industries' ||
+            (Array.isArray(parentIndustryIds) && parentIndustryIds.some(industryId => {
+                const industry = industrySectors.find(ind => ind.id === parseInt(industryId));
+                return industry?.industry === industryFilter;
+            }));
+
+        return matchesSearch && matchesParent && matchesStatus && matchesContentType && matchesBrand && matchesIndustry;
     });
 
     // Linked and Available Assets from Asset Library
@@ -466,7 +476,58 @@ const SubServiceMasterView: React.FC = () => {
     const handleExport = () => {
         const timestamp = new Date().toISOString().split('T')[0];
         const filename = `sub_services_export_${timestamp}`;
-        exportToCSV(filteredData, filename);
+
+        // Transform data to include the specific fields requested
+        const exportData = filteredData.map(item => {
+            // Get parent service info
+            const parentService = services.find(s => s.id === item.parent_service_id);
+
+            // Get industry sectors from parent service
+            const parentIndustryIds = parentService?.industry_ids || [];
+            const industryNames = Array.isArray(parentIndustryIds)
+                ? parentIndustryIds.map(id => {
+                    const industry = industrySectors.find(ind => ind.id === parseInt(id));
+                    return industry?.industry || '';
+                }).filter(name => name).join('; ')
+                : '';
+
+            // Count linked assets
+            const linkedContentAssets = contentAssets.filter(asset => {
+                const links = Array.isArray(asset.linked_sub_service_ids) ? asset.linked_sub_service_ids : [];
+                return links.map(String).includes(String(item.id));
+            }).length;
+
+            const linkedLibraryAssets = libraryAssets.filter(asset => {
+                const links = Array.isArray(asset.linked_sub_service_ids) ? asset.linked_sub_service_ids : [];
+                return links.map(String).includes(String(item.id));
+            }).length;
+
+            const totalLinkedAssets = linkedContentAssets + linkedLibraryAssets;
+
+            // Calculate health score (simplified - you can enhance this logic)
+            let healthScore = 0;
+            if (item.meta_title) healthScore += 20;
+            if (item.meta_description) healthScore += 20;
+            if (item.h1) healthScore += 15;
+            if (item.focus_keywords && item.focus_keywords.length > 0) healthScore += 15;
+            if (item.description) healthScore += 10;
+            if (totalLinkedAssets > 0) healthScore += 10;
+            if (item.og_title && item.og_description) healthScore += 10;
+
+            return {
+                'Service Name': item.sub_service_name || '',
+                'Service Code': item.sub_service_code || '',
+                'IndustrySector': industryNames,
+                'Sub-Services': parentService?.service_name || '',
+                'Linked Assets': totalLinkedAssets,
+                'Linked Insights': linkedInsights.filter(insight => selectedInsights.includes(insight.id)).length,
+                'Health Score': `${healthScore}%`,
+                'Status': item.status || '',
+                'Updated At': item.updated_at ? new Date(item.updated_at).toLocaleDateString() : ''
+            };
+        });
+
+        exportToCSV(exportData, filename);
     };
 
     const handleRefresh = async () => {
@@ -481,7 +542,8 @@ const SubServiceMasterView: React.FC = () => {
                 refreshBrands?.().catch(e => console.warn('Failed to refresh brands:', e)),
                 refreshUsers?.().catch(e => console.warn('Failed to refresh users:', e)),
                 refreshContentTypes?.().catch(e => console.warn('Failed to refresh content types:', e)),
-                refreshKeywords?.().catch(e => console.warn('Failed to refresh keywords:', e))
+                refreshKeywords?.().catch(e => console.warn('Failed to refresh keywords:', e)),
+                refreshIndustrySectors?.().catch(e => console.warn('Failed to refresh industry sectors:', e))
             ];
 
             await Promise.allSettled(refreshPromises);
@@ -522,7 +584,8 @@ const SubServiceMasterView: React.FC = () => {
                     refreshBrands?.(),
                     refreshUsers?.(),
                     refreshContentTypes?.(),
-                    refreshKeywords?.()
+                    refreshKeywords?.(),
+                    refreshIndustrySectors?.()
                 ]);
             } catch (error) {
                 console.error('Failed to load initial data:', error);
@@ -1821,7 +1884,7 @@ const SubServiceMasterView: React.FC = () => {
                     </svg>
                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Filters & Search</h3>
                     <div className="flex-1"></div>
-                    {(searchQuery || parentFilter !== 'All Parent Services' || statusFilter !== 'All Status' || contentTypeFilter !== 'All Types' || brandFilter !== 'All Brands') && (
+                    {(searchQuery || parentFilter !== 'All Parent Services' || statusFilter !== 'All Status' || contentTypeFilter !== 'All Types' || brandFilter !== 'All Brands' || industryFilter !== 'All Industries') && (
                         <button
                             onClick={() => {
                                 setSearchQuery('');
@@ -1829,6 +1892,7 @@ const SubServiceMasterView: React.FC = () => {
                                 setStatusFilter('All Status');
                                 setContentTypeFilter('All Types');
                                 setBrandFilter('All Brands');
+                                setIndustryFilter('All Industries');
                             }}
                             className="text-xs text-slate-500 hover:text-slate-700 underline transition-colors flex items-center gap-1"
                         >
@@ -1964,6 +2028,30 @@ const SubServiceMasterView: React.FC = () => {
                             </div>
                         )}
 
+                        {/* Industry Filter */}
+                        {industrySectors.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs font-medium text-slate-600">Industry:</label>
+                                <div className="relative">
+                                    <select
+                                        value={industryFilter}
+                                        onChange={(e) => setIndustryFilter(e.target.value)}
+                                        className="bg-slate-50 border border-slate-300 text-sm rounded-lg py-2.5 px-3 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer min-w-[140px]"
+                                    >
+                                        <option value="All Industries">All Industries</option>
+                                        {[...new Set(industrySectors.map(sector => sector.industry))].map(industry => (
+                                            <option key={industry} value={industry}>{industry}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Quick Filters */}
                         <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
                             <label className="text-xs font-medium text-slate-600">Quick:</label>
@@ -1992,6 +2080,7 @@ const SubServiceMasterView: React.FC = () => {
                                     setStatusFilter('All Status');
                                     setContentTypeFilter('All Types');
                                     setBrandFilter('All Brands');
+                                    setIndustryFilter('All Industries');
                                 }}
                                 className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full hover:bg-slate-200 transition-colors"
                             >
@@ -2145,7 +2234,7 @@ const SubServiceMasterView: React.FC = () => {
                                 },
                                 className: "text-center"
                             },
-                            
+
                             {
                                 header: 'Linked Insights',
                                 accessor: (item: SubServiceItem) => {
