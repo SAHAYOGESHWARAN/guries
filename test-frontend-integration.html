@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Management Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .success {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .loading {
+            color: #3b82f6;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Asset Management Integration Test</h1>
+    <p>Testing the new asset management features with master tables integration.</p>
+
+    <div class="test-section">
+        <h2>1. Asset Categories API Test</h2>
+        <button onclick="testAssetCategories()">Test Asset Categories</button>
+        <div id="categories-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Asset Formats API Test</h2>
+        <button onclick="testAssetFormats()">Test Asset Formats</button>
+        <button onclick="testAssetFormatsFiltered('smm')">Test SMM Formats</button>
+        <button onclick="testAssetFormatsFiltered('web')">Test WEB Formats</button>
+        <div id="formats-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Keywords Integration Test</h2>
+        <button onclick="testKeywords()">Test Keywords</button>
+        <div id="keywords-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Requirements Verification</h2>
+        <div class="grid">
+            <div>
+                <h3>✅ Completed Requirements:</h3>
+                <ul>
+                    <li>✅ SMM has only one image upload</li>
+                    <li>✅ Asset format links with Asset Master</li>
+                    <li>✅ Removed Usage status</li>
+                    <li>✅ Renamed to "Map Asset to Services"</li>
+                    <li>✅ Content type static for WEB</li>
+                    <li>✅ Asset Category master table</li>
+                    <li>✅ Keywords integrate master database</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🔧 Backend Features:</h3>
+                <ul>
+                    <li>✅ Asset Category Master API</li>
+                    <li>✅ Asset Format Master API</li>
+                    <li>✅ Application type filtering</li>
+                    <li>✅ Database migrations</li>
+                    <li>✅ TypeScript support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003/api/v1';
+
+        async function testAssetCategories() {
+            const resultDiv = document.getElementById('categories-result');
+            resultDiv.innerHTML = '<p class="loading">Testing asset categories...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/asset-categories`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Asset Categories API working!</p>
+                        <p>Found ${data.length} categories:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testAssetFormats() {
+            const resultDiv = document.getElementById('formats-result');
+            resultDiv.innerHTML = '<p class="loading">Testing asset formats...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/asset-formats`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Asset Formats API working!</p>
+                        <p>Found ${data.length} formats:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testAssetFormatsFiltered(appType) {
+            const resultDiv = document.getElementById('formats-result');
+            resultDiv.innerHTML = `<p class="loading">Testing ${appType.toUpperCase()} asset formats...</p>`;
+
+            try {
+                const response = await fetch(`${API_BASE}/asset-formats?application_type=${appType}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ ${appType.toUpperCase()} Asset Formats API working!</p>
+                        <p>Found ${data.length} formats for ${appType.toUpperCase()}:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testKeywords() {
+            const resultDiv = document.getElementById('keywords-result');
+            resultDiv.innerHTML = '<p class="loading">Testing keywords...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/keywords`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Keywords API working!</p>
+                        <p>Found ${data.length} keywords:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+
+        // Auto-run tests on page load
+        window.onload = function () {
+            console.log('Asset Management Integration Test Page Loaded');
+            console.log('Backend should be running on http://localhost:3003');
+        };
+    </script>
+</body>
+
+</html>

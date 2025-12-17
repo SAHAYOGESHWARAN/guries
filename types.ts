@@ -513,6 +513,28 @@ export interface SmmPost {
     created_at?: string;
 }
 
+export interface AssetCategory {
+    id: number;
+    category_name: string;
+    description?: string;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AssetFormat {
+    id: number;
+    format_name: string;
+    format_type: 'image' | 'video' | 'document' | 'audio';
+    file_extensions: string[];
+    max_file_size_mb: number;
+    description?: string;
+    application_types: ('web' | 'seo' | 'smm')[];
+    status: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface AssetLibraryItem {
     id: number;
     name: string;
@@ -520,7 +542,7 @@ export interface AssetLibraryItem {
     asset_category?: string; // e.g., "what science can do", "how to"
     asset_format?: string; // e.g., "image", "video", "pdf"
     repository: string;
-    usage_status: 'Available' | 'In Use' | 'Archived';
+    // Removed usage_status as per requirement 3
     status?: 'Draft' | 'Pending QC Review' | 'QC Approved' | 'QC Rejected' | 'Rework Required' | 'Published' | 'Archived';
 
     // Workflow fields

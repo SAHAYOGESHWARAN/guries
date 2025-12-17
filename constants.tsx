@@ -178,9 +178,6 @@ export const getStatusBadge = (status: string) => {
         'qc approved': 'bg-green-100 text-green-800',
         'qc rejected': 'bg-red-100 text-red-800',
         'rework required': 'bg-yellow-100 text-yellow-800',
-        // Asset Usage Status
-        available: 'bg-green-100 text-green-800',
-        'in use': 'bg-blue-100 text-blue-800',
         // SMM
         ready_for_design: 'bg-indigo-100 text-indigo-800',
         // Default

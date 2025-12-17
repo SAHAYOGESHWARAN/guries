@@ -2,6 +2,13 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
 import type { AssetLibraryItem, Service, SubServiceItem } from '../types';
 
+interface AssetCategory {
+    id: number;
+    category_name: string;
+    description?: string;
+    status: string;
+}
+
 interface UploadAssetModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -13,6 +20,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const { create: createAsset } = useData<AssetLibraryItem>('assetLibrary');
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
+    const { data: assetCategories = [] } = useData<AssetCategory>('asset-categories');
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
@@ -27,7 +35,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         asset_category: '',
         asset_format: '',
         repository: 'Content Repository',
-        usage_status: 'Available',
         status: 'Draft',
         application_type: undefined,
         keywords: [],
@@ -61,7 +68,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                     asset_category: '',
                     asset_format: '',
                     repository: 'Content Repository',
-                    usage_status: 'Available',
                     status: 'Draft',
                     application_type: undefined,
                     keywords: [],
@@ -312,7 +318,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                 asset_category: '',
                 asset_format: '',
                 repository: 'Content Repository',
-                usage_status: 'Available',
                 status: 'Draft',
                 application_type: undefined,
                 keywords: [],
@@ -487,14 +492,25 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
 
                             {/* Asset Category */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Category</label>
-                                <input
-                                    type="text"
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    Asset Category
+                                    <span className="text-xs font-normal text-slate-500 ml-2">(From Master Table)</span>
+                                </label>
+                                <select
                                     value={newAsset.asset_category || ''}
                                     onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                    placeholder="Enter asset category..."
-                                />
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                >
+                                    <option value="">Select category...</option>
+                                    {assetCategories
+                                        .filter(category => category.status === 'active')
+                                        .map(category => (
+                                            <option key={category.id} value={category.category_name}>
+                                                {category.category_name}
+                                                {category.description && ` - ${category.description}`}
+                                            </option>
+                                        ))}
+                                </select>
                             </div>
 
                             {/* Asset Format */}
@@ -519,9 +535,9 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
 
                         {/* Right Column */}
                         <div className="space-y-4">
-                            {/* Map Asset to Source Work */}
+                            {/* Map Asset to Services */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Map Asset to Source Work</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Map Asset to Services</label>
                                 <select
                                     value={selectedServiceId || ''}
                                     onChange={(e) => {
@@ -583,19 +599,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                 </select>
                             </div>
 
-                            {/* Usage Status */}
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Usage Status</label>
-                                <select
-                                    value={newAsset.usage_status}
-                                    onChange={(e) => setNewAsset({ ...newAsset, usage_status: e.target.value as any })}
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                >
-                                    <option value="Available">Available</option>
-                                    <option value="In Use">In Use</option>
-                                    <option value="Archived">Archived</option>
-                                </select>
-                            </div>
+
                         </div>
                     </div>
 
@@ -1207,14 +1211,12 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                             return [
                                                                 { value: 'image', label: 'Photo', icon: '📸' },
                                                                 { value: 'video', label: 'Video', icon: '🎥' },
-                                                                { value: 'carousel', label: 'Carousel', icon: '🎠' },
                                                                 { value: 'story', label: 'Story', icon: '📱' }
                                                             ];
                                                         case 'facebook':
                                                             return [
                                                                 { value: 'image', label: 'Photo', icon: '📸' },
                                                                 { value: 'video', label: 'Video', icon: '🎥' },
-                                                                { value: 'carousel', label: 'Carousel', icon: '🎠' },
                                                                 { value: 'story', label: 'Story', icon: '📱' }
                                                             ];
                                                         case 'twitter':
@@ -1258,14 +1260,14 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                             setNewAsset({ ...newAsset, smm_media_type: type.value as any });
 
                                                             // If it's a media type that requires file upload, trigger file dialog
-                                                            if (['image', 'video', 'carousel', 'gif'].includes(type.value)) {
+                                                            if (['image', 'video', 'gif'].includes(type.value)) {
                                                                 // Small delay to allow state update, then trigger file input
                                                                 setTimeout(() => {
                                                                     if (mediaInputRef.current) {
                                                                         // Set the accept attribute based on media type
                                                                         if (type.value === 'video') {
                                                                             mediaInputRef.current.accept = 'video/*';
-                                                                        } else if (type.value === 'image' || type.value === 'carousel') {
+                                                                        } else if (type.value === 'image') {
                                                                             mediaInputRef.current.accept = 'image/*';
                                                                         } else if (type.value === 'gif') {
                                                                             mediaInputRef.current.accept = 'image/gif';
@@ -1289,7 +1291,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                         </div>
 
                                                         {/* Upload indicator for media types */}
-                                                        {['image', 'video', 'carousel', 'gif'].includes(type.value) && (
+                                                        {['image', 'video', 'gif'].includes(type.value) && (
                                                             <div className={`text-xs ${newAsset.smm_media_type === type.value ? 'text-white/80' : 'text-slate-500'
                                                                 }`}>
                                                                 📁 Click to upload
@@ -1310,13 +1312,13 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </div>
 
                                         {/* Media Upload Section - Only show for media types */}
-                                        {newAsset.smm_media_type && ['image', 'video', 'carousel', 'gif'].includes(newAsset.smm_media_type) && (
+                                        {newAsset.smm_media_type && ['image', 'video', 'gif'].includes(newAsset.smm_media_type) && (
                                             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                                                 <h6 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                     </svg>
-                                                    Upload {newAsset.smm_media_type === 'carousel' ? 'Images' : newAsset.smm_media_type.charAt(0).toUpperCase() + newAsset.smm_media_type.slice(1)}
+                                                    Upload {newAsset.smm_media_type.charAt(0).toUpperCase() + newAsset.smm_media_type.slice(1)}
                                                 </h6>
 
                                                 {newAsset.smm_media_url ? (
@@ -1373,7 +1375,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                         <div className="text-4xl mb-2">
                                                             {newAsset.smm_media_type === 'video' && '🎥'}
                                                             {newAsset.smm_media_type === 'image' && '📸'}
-                                                            {newAsset.smm_media_type === 'carousel' && '🎠'}
                                                             {newAsset.smm_media_type === 'gif' && '🎭'}
                                                         </div>
                                                         <p className="text-sm font-medium text-slate-700 mb-1">

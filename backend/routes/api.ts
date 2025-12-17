@@ -49,6 +49,7 @@ import * as aiEvaluationController from '../controllers/aiEvaluationController';
 import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import assetCategoryRoutes from './assetCategoryRoutes';
+import assetFormatRoutes from './assetFormatRoutes';
 
 const router = Router();
 
@@ -102,6 +103,9 @@ router.delete('/assetLibrary/:id', assetController.deleteAssetLibraryItem);
 
 // --- Asset Categories ---
 router.use('/asset-categories', assetCategoryRoutes);
+
+// --- Asset Formats ---
+router.use('/asset-formats', assetFormatRoutes);
 
 // Asset QC Workflow
 router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);

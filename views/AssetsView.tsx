@@ -5,7 +5,7 @@ import CircularScore from '../components/CircularScore';
 import UploadAssetModal from '../components/UploadAssetModal';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
-import type { AssetLibraryItem, Service, SubServiceItem, User } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, User, AssetFormat } from '../types';
 
 interface AssetCategory {
     id: number;
@@ -25,6 +25,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: users = [] } = useData<User>('users');
     const { data: keywords = [] } = useData<any>('keywords');
     const { data: assetCategories = [] } = useData<AssetCategory>('asset-categories');
+    const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
+    const [availableFormats, setAvailableFormats] = useState<AssetFormat[]>([]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
@@ -63,8 +65,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         web_body_content: '', // 14. Body Content
         seo_score: undefined, // 15. SEO Score (AI integration)
         grammar_score: undefined, // 16. Grammar Score (AI integration)
-        // Removed usage_status as per requirement 3
-        status: 'Draft', // 18. Status
+        status: 'Draft', // 17. Status (removed usage_status as per requirement 3)
 
         // Internal fields
         linked_service_ids: [],
@@ -104,6 +105,23 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     React.useEffect(() => {
         refresh?.();
     }, []);
+
+    // Update available formats when application type changes
+    React.useEffect(() => {
+        if (newAsset.application_type && assetFormats.length > 0) {
+            const filtered = assetFormats.filter((format: any) =>
+                format.application_types && format.application_types.includes(newAsset.application_type)
+            );
+            setAvailableFormats(filtered);
+
+            // Reset asset format if current selection is not available for new application type
+            if (newAsset.asset_format && !filtered.some((f: any) => f.format_name === newAsset.asset_format)) {
+                setNewAsset(prev => ({ ...prev, asset_format: '' }));
+            }
+        } else {
+            setAvailableFormats(assetFormats);
+        }
+    }, [newAsset.application_type, assetFormats]);
 
     // Calculate markdown stats
     const markdownStats = useMemo(() => {
@@ -1187,9 +1205,22 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     Asset Application
                                                     <span className="text-red-500 ml-1">*</span>
                                                 </label>
-                                                {newAsset.application_type === 'web' ? (
-                                                    <div className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
-                                                        🌐 WEB (Content type is now static)
+                                                {newAsset.application_type ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
+                                                            {newAsset.application_type === 'web' && '🌐 WEB'}
+                                                            {newAsset.application_type === 'seo' && '🔍 SEO'}
+                                                            {newAsset.application_type === 'smm' && '📱 SMM'}
+                                                            <span className="text-slate-500 ml-2">(Content type is now static)</span>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setNewAsset({ ...newAsset, application_type: undefined })}
+                                                            className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                                                            title="Change content type"
+                                                        >
+                                                            Change
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <select
@@ -1412,6 +1443,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <div>
                                                 <label className="block text-sm font-semibold text-slate-700 mb-3">
                                                     Asset Category
+                                                    <span className="text-xs font-normal text-slate-500 ml-2">(From Master Table)</span>
                                                 </label>
                                                 <select
                                                     value={newAsset.asset_category || ''}
@@ -1419,32 +1451,54 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
                                                 >
                                                     <option value="">Select category...</option>
-                                                    {assetCategories.map(category => (
-                                                        <option key={category.id} value={category.category_name}>
-                                                            {category.category_name}
-                                                        </option>
-                                                    ))}
+                                                    {assetCategories
+                                                        .filter(category => category.status === 'active')
+                                                        .map(category => (
+                                                            <option key={category.id} value={category.category_name}>
+                                                                {category.category_name}
+                                                                {category.description && ` - ${category.description}`}
+                                                            </option>
+                                                        ))}
                                                 </select>
                                             </div>
 
                                             <div>
                                                 <label className="block text-sm font-semibold text-slate-700 mb-3">
                                                     Asset Format
+                                                    <span className="text-xs font-normal text-slate-500 ml-2">(Linked with Asset Master)</span>
                                                 </label>
                                                 <select
                                                     value={newAsset.asset_format || ''}
                                                     onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
                                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
+                                                    disabled={!newAsset.application_type}
                                                 >
-                                                    <option value="">Select format...</option>
-                                                    <option value="image">📷 Image</option>
-                                                    <option value="video">🎥 Video</option>
-                                                    <option value="pdf">📄 PDF</option>
-                                                    <option value="doc">📝 Document</option>
-                                                    <option value="ppt">📊 Presentation</option>
-                                                    <option value="infographic">📈 Infographic</option>
-                                                    <option value="ebook">📚 eBook</option>
+                                                    <option value="">
+                                                        {!newAsset.application_type ? 'Select content type first...' : 'Select format...'}
+                                                    </option>
+                                                    {assetFormats
+                                                        .filter(format =>
+                                                            !newAsset.application_type ||
+                                                            format.application_types?.includes(newAsset.application_type)
+                                                        )
+                                                        .map(format => (
+                                                            <option key={format.id} value={format.format_name}>
+                                                                {format.format_name} ({format.format_type})
+                                                                {format.max_file_size_mb && ` - Max ${format.max_file_size_mb}MB`}
+                                                            </option>
+                                                        ))
+                                                    }
                                                 </select>
+                                                {!newAsset.application_type && (
+                                                    <p className="text-xs text-slate-500 mt-1">
+                                                        Please select a content type (WEB/SEO/SMM) to see available formats
+                                                    </p>
+                                                )}
+                                                {newAsset.application_type && assetFormats.filter(f => f.application_types?.includes(newAsset.application_type!)).length === 0 && (
+                                                    <p className="text-xs text-orange-600 mt-1">
+                                                        No formats available for {newAsset.application_type?.toUpperCase()}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
 
@@ -1741,20 +1795,39 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 {/* Application Type Selector */}
                                 <div>
                                     <label className="block text-sm font-bold text-purple-900 mb-2">Application Type</label>
-                                    <select
-                                        value={newAsset.application_type || ''}
-                                        onChange={(e) => setNewAsset({
-                                            ...newAsset,
-                                            application_type: e.target.value as any,
-                                            smm_platform: undefined // Reset SMM platform when changing application type
-                                        })}
-                                        className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
-                                    >
-                                        <option value="">Select application type...</option>
-                                        <option value="web">Web</option>
-                                        <option value="seo">SEO</option>
-                                        <option value="smm">SMM (Social Media Marketing)</option>
-                                    </select>
+                                    {newAsset.application_type ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
+                                                {newAsset.application_type === 'web' && '🌐 Web'}
+                                                {newAsset.application_type === 'seo' && '� SEOc'}
+                                                {newAsset.application_type === 'smm' && '📱 SMM (Social Media Marketing)'}
+                                                <span className="text-slate-500 ml-2">(Content type is now static)</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setNewAsset({ ...newAsset, application_type: undefined })}
+                                                className="px-3 py-2 text-xs font-medium text-purple-600 hover:text-purple-800 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors"
+                                                title="Change content type"
+                                            >
+                                                Change
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={newAsset.application_type || ''}
+                                            onChange={(e) => setNewAsset({
+                                                ...newAsset,
+                                                application_type: e.target.value as any,
+                                                smm_platform: undefined // Reset SMM platform when changing application type
+                                            })}
+                                            className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
+                                        >
+                                            <option value="">Select application type...</option>
+                                            <option value="web">Web</option>
+                                            <option value="seo">SEO</option>
+                                            <option value="smm">SMM (Social Media Marketing)</option>
+                                        </select>
+                                    )}
                                 </div>
 
                                 {/* Web Application Fields */}
@@ -2198,7 +2271,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                         return [
                                                                             { value: 'image', label: 'Photo', icon: '📸' },
                                                                             { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' },
                                                                             { value: 'story', label: 'Story', icon: '📱' },
                                                                             { value: 'reel', label: 'Reel', icon: '🎬' }
                                                                         ];
@@ -2206,9 +2278,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                         return [
                                                                             { value: 'image', label: 'Photo', icon: '📸' },
                                                                             { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' },
                                                                             { value: 'story', label: 'Story', icon: '📱' },
-                                                                            { value: 'live', label: 'Live', icon: '🔴' }
+                                                                            { value: 'live', label: 'Live', icon: '�' }
                                                                         ];
                                                                     case 'twitter':
                                                                         return [
@@ -2239,15 +2310,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     case 'pinterest':
                                                                         return [
                                                                             { value: 'image', label: 'Pin', icon: '📌' },
-                                                                            { value: 'video', label: 'Video Pin', icon: '🎥' },
-                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' }
+                                                                            { value: 'video', label: 'Video Pin', icon: '🎥' }
                                                                         ];
                                                                     default:
                                                                         return [
                                                                             { value: 'image', label: 'Image', icon: '📸' },
                                                                             { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'text', label: 'Text', icon: '📝' },
-                                                                            { value: 'carousel', label: 'Carousel', icon: '🎠' }
+                                                                            { value: 'text', label: 'Text', icon: '📝' }
                                                                         ];
                                                                 }
                                                             };
@@ -2277,7 +2346,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-700 mb-3">
                                                         🎨 Media Upload
-                                                        {(newAsset.smm_media_type === 'image' || newAsset.smm_media_type === 'video' || newAsset.smm_media_type === 'carousel') && (
+                                                        {(newAsset.smm_media_type === 'image' || newAsset.smm_media_type === 'video') && (
                                                             <span className="text-red-500 ml-1">*</span>
                                                         )}
                                                     </label>
@@ -2770,31 +2839,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <div className="bg-black relative">
                                                 {newAsset.smm_media_type === 'video' ? (
                                                     <video src={displayData.media} controls className="w-full max-h-[600px] object-contain" poster={displayData.media} />
-                                                ) : newAsset.smm_media_type === 'carousel' && newAsset.smm_additional_pages && newAsset.smm_additional_pages.length > 0 ? (
-                                                    <div className="relative">
-                                                        {/* Carousel Display */}
-                                                        <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                                            <div className="flex-shrink-0 w-full snap-center">
-                                                                <img src={displayData.media} alt="Post content 1" className="w-full object-cover" style={{ maxHeight: '600px' }} />
-                                                            </div>
-                                                            {newAsset.smm_additional_pages.map((page, index) => (
-                                                                <div key={index} className="flex-shrink-0 w-full snap-center">
-                                                                    <img src={page} alt={`Post content ${index + 2}`} className="w-full object-cover" style={{ maxHeight: '600px' }} />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                        {/* Carousel Indicators */}
-                                                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                                                            <div className="w-2 h-2 bg-white rounded-full opacity-100"></div>
-                                                            {newAsset.smm_additional_pages.map((_, index) => (
-                                                                <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
-                                                            ))}
-                                                        </div>
-                                                        {/* Page Counter */}
-                                                        <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
-                                                            1/{newAsset.smm_additional_pages.length + 1}
-                                                        </div>
-                                                    </div>
                                                 ) : (
                                                     <img src={displayData.media} alt="Post content" className="w-full object-cover" style={{ maxHeight: '600px' }} />
                                                 )}
@@ -6140,3 +6184,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 };
 
 export default AssetsView;
+
+
+
