@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Management Frontend Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Asset Management Frontend Verification</h1>
+    <p>This page will help verify that all 7 requirements are properly implemented in the frontend.</p>
+
+    <div id="results"></div>
+
+    <h2>📋 Manual Verification Checklist</h2>
+    <div class="test-item info">
+        <h3>1. SMM Single Image Upload</h3>
+        <p><strong>Test:</strong> Navigate to Assets → Create Asset → Select SMM application type</p>
+        <p><strong>Expected:</strong> Should show only ONE image upload option for SMM content</p>
+        <button onclick="window.open('http://localhost:5173', '_blank')">Open Frontend</button>
+    </div>
+
+    <div class="test-item info">
+        <h3>2. Asset Format Linked with Asset Master</h3>
+        <p><strong>Test:</strong> Check Asset Category dropdown in the form</p>
+        <p><strong>Expected:</strong> Should show categories from master table (best practices, case studies, etc.)</p>
+    </div>
+
+    <div class="test-item info">
+        <h3>3. Usage Status Removed</h3>
+        <p><strong>Test:</strong> Look for any "Usage Status" fields in the form</p>
+        <p><strong>Expected:</strong> Should NOT find any usage status fields</p>
+    </div>
+
+    <div class="test-item info">
+        <h3>4. "Map Asset to Services" Label</h3>
+        <p><strong>Test:</strong> Look for service linking section</p>
+        <p><strong>Expected:</strong> Should show "Map Asset to Services" label (not "Service Linking")</p>
+    </div>
+
+    <div class="test-item info">
+        <h3>5. Content Type Static for WEB</h3>
+        <p><strong>Test:</strong> Select WEB application type</p>
+        <p><strong>Expected:</strong> Should show "WEB (Content type is now static)" and become non-editable</p>
+    </div>
+
+    <div class="test-item info">
+        <h3>6. Asset Category Master Table</h3>
+        <p><strong>Test:</strong> Check Asset Category dropdown options</p>
+        <p><strong>Expected:</strong> Should populate from master database with 10 categories</p>
+    </div>
+
+    <div class="test-item info">
+        <h3>7. Keywords Master Database Integration</h3>
+        <p><strong>Test:</strong> Look for Keywords section with checkboxes</p>
+        <p><strong>Expected:</strong> Should show checkboxes for keywords from master database (16 keywords)</p>
+    </div>
+
+    <h2>🔧 API Verification</h2>
+    <button onclick="testAPIs()">Test Backend APIs</button>
+    <div id="api-results"></div>
+
+    <script>
+        async function testAPIs() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '<p>Testing APIs...</p>';
+
+            const tests = [
+                { name: 'Asset Categories API', url: 'http://localhost:3003/api/v1/asset-categories' },
+                { name: 'Keywords API', url: 'http://localhost:3003/api/v1/keywords' },
+                { name: 'Asset Library API', url: 'http://localhost:3003/api/v1/assetLibrary' }
+            ];
+
+            let results = '<h3>API Test Results:</h3>';
+
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        results += `<div class="test-item success">
+                            <strong>✅ ${test.name}</strong><br>
+                            Status: ${response.status}<br>
+                            Data count: ${Array.isArray(data) ? data.length : 'N/A'}
+                        </div>`;
+                    } else {
+                        results += `<div class="test-item error">
+                            <strong>❌ ${test.name}</strong><br>
+                            Status: ${response.status}<br>
+                            Error: ${data.error || 'Unknown error'}
+                        </div>`;
+                    }
+                } catch (error) {
+                    results += `<div class="test-item error">
+                        <strong>❌ ${test.name}</strong><br>
+                        Error: ${error.message}
+                    </div>`;
+                }
+            }
+
+            resultsDiv.innerHTML = results;
+        }
+
+        // Auto-test APIs on page load
+        window.onload = function () {
+            testAPIs();
+        };
+    </script>
+</body>
+
+</html>

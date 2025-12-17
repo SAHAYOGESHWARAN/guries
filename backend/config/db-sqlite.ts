@@ -457,7 +457,8 @@ export const pool = {
                     // Get the last inserted row
                     const lastId = result.lastInsertRowid;
                     const selectStmt = sqliteDb.prepare('SELECT * FROM assets WHERE id = ?');
-                    const rows = [selectStmt.get(lastId)];
+                    const row = selectStmt.get(lastId);
+                    const rows = row ? [row] : [];
                     return { rows };
                 }
                 return { rows: [], rowCount: result.changes };
@@ -476,9 +477,10 @@ export const pool = {
                 return { rows: [], rowCount: result.changes };
             }
         } catch (error: any) {
-            console.error('Query error:', error.message);
-            console.error('Query:', text);
+            console.error('SQLite Query Error:', error.message);
+            console.error('Original Query:', text);
             console.error('Params:', params);
+            console.error('Stack:', error.stack);
             throw error;
         }
     },

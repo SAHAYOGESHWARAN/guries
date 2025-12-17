@@ -216,12 +216,15 @@ export const getAssetLibraryItem = async (req: any, res: any) => {
 
 export const createAssetLibraryItem = async (req: any, res: any) => {
     const {
-        name, type, repository, usage_status, file_url, thumbnail_url, file_size, file_type, date,
+        name, type, repository, file_url, thumbnail_url, file_size, file_type, date,
         asset_category, asset_format, status, linked_service_ids, linked_sub_service_ids,
         application_type, keywords, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
         smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by
     } = req.body;
+
+    // Set default usage_status since it's removed from UI but still in DB
+    const usage_status = 'Available';
 
     try {
         // Validate required fields for submission
@@ -253,7 +256,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
 
         const result = await pool.query(
             `INSERT INTO assets (
-                asset_name, asset_type, asset_category, asset_format, tags, usage_status, status,
+                asset_name, asset_type, asset_category, asset_format, tags, status,
                 file_url, og_image_url, thumbnail_url, file_size, file_type,
                 linked_service_ids, linked_sub_service_ids, created_at,
                 application_type, keywords, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
@@ -281,27 +284,47 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
                 submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active`,
             [
-                name, type, asset_category, asset_format, repository, usage_status, status || 'Draft',
-                file_url, thumbnail_url, thumbnail_url, file_size, file_type,
+                name, type, asset_category, asset_format, repository, status || 'Draft',
+                file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
                 date || new Date().toISOString(),
-                application_type, keywords ? JSON.stringify(keywords) : null,
-                web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
-                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-                smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by,
+                application_type || null, keywords ? JSON.stringify(keywords) : null,
+                web_title || null, web_description || null, web_keywords || null, web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
+                web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null, smm_tag || null, smm_url || null, smm_description || null,
+                smm_hashtags || null, smm_media_url || null, smm_media_type || null, seo_score || null, grammar_score || null, submitted_by || null,
                 status === 'Pending QC Review' ? new Date().toISOString() : null,
-                JSON.stringify(workflowLog), false // linking_active starts as false
+                JSON.stringify(workflowLog), 0 // linking_active starts as false (0 for SQLite)
             ]
         );
 
+        // If RETURNING didn't work, do a separate SELECT
+        if (!result.rows || result.rows.length === 0 || !result.rows[0]) {
+            // Get the last inserted asset by name and created_at (since we just created it)
+            const selectResult = await pool.query(
+                `SELECT * FROM assets WHERE asset_name = $1 AND created_at >= $2 ORDER BY id DESC LIMIT 1`,
+                [name, new Date(Date.now() - 5000).toISOString()] // Within last 5 seconds
+            );
+
+            if (!selectResult.rows || selectResult.rows.length === 0) {
+                return res.status(500).json({ error: 'Asset created but could not retrieve data' });
+            }
+
+            result.rows = selectResult.rows;
+        }
+
+        const rawAsset = result.rows[0];
         const newAsset = {
-            ...result.rows[0],
-            repository: result.rows[0].repository || 'Content Repository',
-            usage_status: result.rows[0].usage_status || 'Available',
-            linked_service_ids: result.rows[0].linked_service_ids ? JSON.parse(result.rows[0].linked_service_ids) : [],
-            linked_sub_service_ids: result.rows[0].linked_sub_service_ids ? JSON.parse(result.rows[0].linked_sub_service_ids) : [],
-            keywords: result.rows[0].keywords ? JSON.parse(result.rows[0].keywords) : []
+            ...rawAsset,
+            name: rawAsset.asset_name || rawAsset.name,
+            type: rawAsset.asset_type || rawAsset.type,
+            repository: rawAsset.tags || rawAsset.repository || 'Content Repository',
+            usage_status: rawAsset.usage_status || 'Available',
+            thumbnail_url: rawAsset.og_image_url || rawAsset.thumbnail_url || rawAsset.file_url,
+            date: rawAsset.created_at || rawAsset.date,
+            linked_service_ids: rawAsset.linked_service_ids ? JSON.parse(rawAsset.linked_service_ids) : [],
+            linked_sub_service_ids: rawAsset.linked_sub_service_ids ? JSON.parse(rawAsset.linked_sub_service_ids) : [],
+            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : []
         };
 
         getSocket().emit('assetLibrary_created', newAsset);
@@ -314,12 +337,15 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
 export const updateAssetLibraryItem = async (req: any, res: any) => {
     const { id } = req.params;
     const {
-        name, type, repository, usage_status, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids,
+        name, type, repository, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids,
         asset_category, asset_format, status, keywords, seo_score, grammar_score,
         application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
         smm_hashtags, smm_media_url, smm_media_type
     } = req.body;
+
+    // Set default usage_status since it's removed from UI but still in DB
+    const usage_status = 'Available';
 
     try {
         const result = await pool.query(
@@ -395,13 +421,18 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
+        const rawAsset = result.rows[0];
         const updatedAsset = {
-            ...result.rows[0],
-            repository: result.rows[0].repository || 'Content Repository',
-            usage_status: result.rows[0].usage_status || 'Available',
-            linked_service_ids: result.rows[0].linked_service_ids ? JSON.parse(result.rows[0].linked_service_ids) : [],
-            linked_sub_service_ids: result.rows[0].linked_sub_service_ids ? JSON.parse(result.rows[0].linked_sub_service_ids) : [],
-            keywords: result.rows[0].keywords ? JSON.parse(result.rows[0].keywords) : []
+            ...rawAsset,
+            name: rawAsset.asset_name || rawAsset.name,
+            type: rawAsset.asset_type || rawAsset.type,
+            repository: rawAsset.tags || rawAsset.repository || 'Content Repository',
+            usage_status: rawAsset.usage_status || 'Available',
+            thumbnail_url: rawAsset.og_image_url || rawAsset.thumbnail_url || rawAsset.file_url,
+            date: rawAsset.created_at || rawAsset.date,
+            linked_service_ids: rawAsset.linked_service_ids ? JSON.parse(rawAsset.linked_service_ids) : [],
+            linked_sub_service_ids: rawAsset.linked_sub_service_ids ? JSON.parse(rawAsset.linked_sub_service_ids) : [],
+            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : []
         };
 
         getSocket().emit('assetLibrary_updated', updatedAsset);

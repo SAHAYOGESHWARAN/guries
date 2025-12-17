@@ -207,7 +207,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             const name = (a.name || '').toLowerCase();
             const type = (a.type || '').toLowerCase();
             const repository = (a.repository || '').toLowerCase();
-            const status = (a.usage_status || '').toLowerCase();
+            const status = (a.status || '').toLowerCase();
 
             return name.includes(query) ||
                 type.includes(query) ||
@@ -4287,9 +4287,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     </div>
                                                 )}
                                             </div>
-
-                                            {/* Usage Status */}
-
 
                                             {/* AI Scores */}
                                             {(selectedAsset.seo_score || selectedAsset.grammar_score) && (

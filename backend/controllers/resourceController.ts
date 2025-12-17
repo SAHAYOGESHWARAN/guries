@@ -1,105 +1,203 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db-sqlite';
+import Database from 'better-sqlite3';
+import path from 'path';
+
+const dbPath = path.join(__dirname, '../mcc_db.sqlite');
 
 // --- Keywords ---
 export const getKeywords = async (req: any, res: any) => {
+    const db = new Database(dbPath);
+
     try {
-        const query = `
-            SELECT k.*,
-            (
-                (SELECT COUNT(*) FROM services s WHERE COALESCE(s.focus_keywords, '[]')::jsonb ? k.keyword) +
-                (SELECT COUNT(*) FROM sub_services ss WHERE COALESCE(ss.focus_keywords, '[]')::jsonb ? k.keyword) +
-                (SELECT COUNT(*) FROM content_repository c WHERE COALESCE(c.focus_keywords, '[]')::jsonb ? k.keyword)
-            ) as usage_count
-            FROM keywords k
-            ORDER BY k.id DESC
-        `;
-        const result = await pool.query(query);
-        res.status(200).json(result.rows);
+        const keywords = db.prepare(`
+            SELECT id, keyword, keyword_type, search_volume, competition, mapped_service, created_at,
+                   0 as usage_count
+            FROM keywords 
+            ORDER BY id DESC
+        `).all();
+
+        res.status(200).json(keywords);
     } catch (error: any) {
+        console.error('Keywords query error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 export const createKeyword = async (req: any, res: any) => {
-    const { keyword, intent, keyword_type, search_volume, competition, mapped_service } = req.body;
+    const db = new Database(dbPath);
+
     try {
-        const result = await pool.query(
-            'INSERT INTO keywords (keyword, intent, keyword_type, search_volume, competition, mapped_service) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [keyword, intent, keyword_type, search_volume, competition, mapped_service]
-        );
-        res.status(201).json(result.rows[0]);
+        const { keyword, keyword_type, search_volume, competition, mapped_service } = req.body;
+
+        const result = db.prepare(`
+            INSERT INTO keywords (keyword, keyword_type, search_volume, competition, mapped_service)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(keyword, keyword_type, search_volume || 0, competition, mapped_service);
+
+        const newKeyword = db.prepare(`
+            SELECT id, keyword, keyword_type, search_volume, competition, mapped_service, created_at
+            FROM keywords 
+            WHERE id = ?
+        `).get(result.lastInsertRowid);
+
+        res.status(201).json(newKeyword);
     } catch (error: any) {
+        console.error('Create keyword error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 export const updateKeyword = async (req: any, res: any) => {
-    const { id } = req.params;
-    const { keyword, intent, keyword_type, search_volume, competition, mapped_service } = req.body;
+    const db = new Database(dbPath);
+
     try {
-        const result = await pool.query(
-            'UPDATE keywords SET keyword=$1, intent=$2, keyword_type=$3, search_volume=$4, competition=$5, mapped_service=$6 WHERE id=$7 RETURNING *',
-            [keyword, intent, keyword_type, search_volume, competition, mapped_service, id]
-        );
-        res.status(200).json(result.rows[0]);
+        const { id } = req.params;
+        const { keyword, keyword_type, search_volume, competition, mapped_service } = req.body;
+
+        const result = db.prepare(`
+            UPDATE keywords 
+            SET keyword = ?, keyword_type = ?, search_volume = ?, competition = ?, mapped_service = ?
+            WHERE id = ?
+        `).run(keyword, keyword_type, search_volume || 0, competition, mapped_service, id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Keyword not found' });
+        }
+
+        const updatedKeyword = db.prepare(`
+            SELECT id, keyword, keyword_type, search_volume, competition, mapped_service, created_at
+            FROM keywords 
+            WHERE id = ?
+        `).get(id);
+
+        res.status(200).json(updatedKeyword);
     } catch (error: any) {
+        console.error('Update keyword error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 export const deleteKeyword = async (req: any, res: any) => {
+    const db = new Database(dbPath);
+
     try {
-        await pool.query('DELETE FROM keywords WHERE id = $1', [req.params.id]);
+        const { id } = req.params;
+
+        const result = db.prepare(`
+            DELETE FROM keywords WHERE id = ?
+        `).run(id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Keyword not found' });
+        }
+
         res.status(204).send();
     } catch (error: any) {
+        console.error('Delete keyword error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 // --- Backlinks ---
 export const getBacklinks = async (req: any, res: any) => {
+    const db = new Database(dbPath);
+
     try {
-        const result = await pool.query('SELECT * FROM backlinks ORDER BY id DESC');
-        res.status(200).json(result.rows);
+        const backlinks = db.prepare(`
+            SELECT * FROM backlinks ORDER BY id DESC
+        `).all();
+
+        res.status(200).json(backlinks);
     } catch (error: any) {
+        console.error('Backlinks query error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 export const createBacklink = async (req: any, res: any) => {
-    const { domain, platform_type, da_score, spam_score, country, pricing, status } = req.body;
+    const db = new Database(dbPath);
+
     try {
-        const result = await pool.query(
-            'INSERT INTO backlinks (domain, platform_type, da_score, spam_score, country, pricing, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [domain, platform_type, da_score, spam_score, country, pricing, status]
-        );
-        res.status(201).json(result.rows[0]);
+        const { domain, platform_type, da_score, spam_score, country, pricing, status } = req.body;
+
+        const result = db.prepare(`
+            INSERT INTO backlinks (domain, platform_type, da_score, spam_score, country, pricing, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(domain, platform_type, da_score, spam_score, country, pricing, status);
+
+        const newBacklink = db.prepare(`
+            SELECT * FROM backlinks WHERE id = ?
+        `).get(result.lastInsertRowid);
+
+        res.status(201).json(newBacklink);
     } catch (error: any) {
+        console.error('Create backlink error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 export const updateBacklink = async (req: any, res: any) => {
-    const { id } = req.params;
-    const { domain, platform_type, da_score, spam_score, country, pricing, status } = req.body;
+    const db = new Database(dbPath);
+
     try {
-        const result = await pool.query(
-            'UPDATE backlinks SET domain=$1, platform_type=$2, da_score=$3, spam_score=$4, country=$5, pricing=$6, status=$7 WHERE id=$8 RETURNING *',
-            [domain, platform_type, da_score, spam_score, country, pricing, status, id]
-        );
-        res.status(200).json(result.rows[0]);
+        const { id } = req.params;
+        const { domain, platform_type, da_score, spam_score, country, pricing, status } = req.body;
+
+        const result = db.prepare(`
+            UPDATE backlinks 
+            SET domain = ?, platform_type = ?, da_score = ?, spam_score = ?, country = ?, pricing = ?, status = ?
+            WHERE id = ?
+        `).run(domain, platform_type, da_score, spam_score, country, pricing, status, id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Backlink not found' });
+        }
+
+        const updatedBacklink = db.prepare(`
+            SELECT * FROM backlinks WHERE id = ?
+        `).get(id);
+
+        res.status(200).json(updatedBacklink);
     } catch (error: any) {
+        console.error('Update backlink error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
 
 export const deleteBacklink = async (req: any, res: any) => {
+    const db = new Database(dbPath);
+
     try {
-        await pool.query('DELETE FROM backlinks WHERE id = $1', [req.params.id]);
+        const { id } = req.params;
+
+        const result = db.prepare(`
+            DELETE FROM backlinks WHERE id = ?
+        `).run(id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Backlink not found' });
+        }
+
         res.status(204).send();
     } catch (error: any) {
+        console.error('Delete backlink error:', error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        db.close();
     }
 };
