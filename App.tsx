@@ -39,7 +39,7 @@ const PerformanceBenchmarkView = React.lazy(() => import('./views/PerformanceBen
 const CompetitorBenchmarkMasterView = React.lazy(() => import('./views/CompetitorBenchmarkMasterView'));
 const UxIssuesView = React.lazy(() => import('./views/UxIssuesView'));
 const TasksView = React.lazy(() => import('./views/TasksView'));
-const AssetsView = React.lazy(() => import('./views/AssetsViewNew'));
+const AssetsView = React.lazy(() => import('./views/AssetsView'));
 const AssetDetailView = React.lazy(() => import('./views/AssetDetailView'));
 const OnPageErrorsView = React.lazy(() => import('./views/OnPageErrorsView'));
 const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView'));
