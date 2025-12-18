@@ -46,7 +46,7 @@ const Chatbot: React.FC = () => {
 
         try {
             const response = await chatRef.current.sendMessage({ message: textToSend });
-            const botMessage: ChatMessage = { id: Date.now() + 1, text: response.text, sender: 'bot' };
+            const botMessage: ChatMessage = { id: Date.now() + 1, text: response.text ?? 'Assistant responded', sender: 'bot' };
             setMessages(prev => [...prev, botMessage]);
         } catch (error) {
             console.error("Chatbot error:", error);

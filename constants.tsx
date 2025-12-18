@@ -87,6 +87,7 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'industry-sector-master', name: 'Industry / Sector Master', icon: <MasterIcon /> },
             { id: 'content-type-master', name: 'Content Type Master', icon: <MasterIcon /> },
             { id: 'asset-type-master', name: 'Asset Type Master', icon: <MasterIcon /> },
+            { id: 'asset-category-master', name: 'Asset Category Master', icon: <MasterIcon /> },
             { id: 'platform-master', name: 'Platform Master', icon: <MasterIcon /> },
             { id: 'country-master', name: 'Country Master', icon: <MasterIcon /> },
             { id: 'seo-error-type-master', name: 'SEO Error Type Master', icon: <MasterIcon /> },

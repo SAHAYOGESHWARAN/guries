@@ -7,7 +7,8 @@ import type {
     AssetLibraryItem, Notification, Integration, IntegrationLog,
     EffortTarget, GoldStandardMetric, SubServiceItem, IndustrySectorItem, ContentTypeItem,
     AssetTypeItem, PlatformMasterItem, CountryMasterItem, SeoErrorTypeItem, WorkflowStageItem,
-    CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem, PersonaMasterItem, FormMasterItem
+    CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem, PersonaMasterItem, FormMasterItem,
+    OnPageSeoAudit
 } from '../types';
 
 const STORAGE_KEYS = {

@@ -19,7 +19,7 @@ const StatCard: React.FC<{ label: string; value: string | number; trend?: string
             )}
         </div>
         <div className={`p-2.5 rounded-lg ${colorClass} bg-opacity-10 group-hover:bg-opacity-20 transition-all`}>
-            {React.cloneElement(icon as React.ReactElement<any>, { className: `w-4 h-4 ${colorClass.replace('bg-', 'text-')}` })}
+            {React.cloneElement(icon as React.ReactElement<any>, { className: `w-4 h-4 ${((colorClass || '') as string).replace('bg-', 'text-')}` })} 
         </div>
     </div>
 );

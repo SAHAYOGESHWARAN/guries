@@ -227,7 +227,9 @@ const EmployeeComparisonDashboard: React.FC<EmployeeComparisonDashboardProps> = 
                                                             <span className="font-semibold text-slate-600">#{employee.rank}</span>
                                                         )}
                                                         {employee.monthsInTop3 && employee.monthsInTop3 >= 3 && (
-                                                            <Star className="w-3 h-3 text-yellow-500" title={`${employee.monthsInTop3} months in top 3`} />
+                                                            <span title={`${employee.monthsInTop3} months in top 3`}>
+                                                                <Star className="w-3 h-3 text-yellow-500" />
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </td>

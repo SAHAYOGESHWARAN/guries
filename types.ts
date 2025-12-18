@@ -605,6 +605,9 @@ export interface AssetLibraryItem {
     smm_media_url?: string;
     smm_media_type?: 'image' | 'video' | 'carousel' | 'gif';
     smm_additional_pages?: string[]; // Additional pages/images for carousel posts
+    // Metadata timestamps
+    updated_at?: string;
+    created_at?: string;
 }
 
 export interface Integration {
@@ -783,6 +786,26 @@ export interface AssetTypeItem {
     description: string;
     platforms_count?: number;
     graphic_status?: string;
+    updated_at?: string;
+}
+
+export interface AssetCategoryMasterItem {
+    id: number;
+    brand: string;
+    category_name: string;
+    word_count: number;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AssetTypeMasterItem {
+    id: number;
+    brand: string;
+    asset_type_name: string;
+    word_count: number;
+    status: string;
+    created_at?: string;
     updated_at?: string;
 }
 

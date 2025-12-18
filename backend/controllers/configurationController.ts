@@ -108,6 +108,61 @@ export const updateAssetType = async (req: any, res: any) => {
 };
 export const deleteAssetType = (req: any, res: any) => deleteMaster('asset_types', req.params.id, res);
 
+// --- Asset Categories ---
+export const getAssetCategories = (req: any, res: any) => getMaster('asset_category_master', res);
+export const createAssetCategory = async (req: any, res: any) => {
+    const { brand, category_name, word_count, status } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO asset_category_master (brand, category_name, word_count, status, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [brand, category_name, word_count || 0, status || 'active', new Date().toISOString()]
+        );
+
+        const newCategory = result.rows[0];
+
+        // Emit socket event for real-time updates
+        try {
+            const io = getSocket();
+            io.emit('asset_category_created', newCategory);
+            console.log('✅ Socket event emitted: asset_category_created', newCategory.id);
+        } catch (e) {
+            console.warn('⚠️  Socket not available for asset_category_created event');
+        }
+
+        res.status(201).json(newCategory);
+    } catch (e: any) {
+        console.error('❌ Error creating asset category:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+};
+export const updateAssetCategory = async (req: any, res: any) => {
+    const { id } = req.params;
+    const { brand, category_name, word_count, status } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE asset_category_master SET brand=$1, category_name=$2, word_count=$3, status=$4, updated_at=$5 WHERE id=$6 RETURNING *',
+            [brand, category_name, word_count, status, new Date().toISOString(), id]
+        );
+
+        const updatedCategory = result.rows[0];
+
+        // Emit socket event for real-time updates
+        try {
+            const io = getSocket();
+            io.emit('asset_category_updated', updatedCategory);
+            console.log('✅ Socket event emitted: asset_category_updated', updatedCategory.id);
+        } catch (e) {
+            console.warn('⚠️  Socket not available for asset_category_updated event');
+        }
+
+        res.status(200).json(updatedCategory);
+    } catch (e: any) {
+        console.error('❌ Error updating asset category:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+};
+export const deleteAssetCategory = (req: any, res: any) => deleteMaster('asset_category_master', req.params.id, res, 'asset_category');
+
 // --- Platforms ---
 export const getPlatforms = (req: any, res: any) => getMaster('platforms', res);
 export const createPlatform = async (req: any, res: any) => {

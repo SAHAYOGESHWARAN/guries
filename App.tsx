@@ -27,6 +27,7 @@ const BacklinkMasterView = React.lazy(() => import('./views/BacklinkMasterView')
 const IndustrySectorMasterView = React.lazy(() => import('./views/IndustrySectorMasterView'));
 const ContentTypeMasterView = React.lazy(() => import('./views/ContentTypeMasterView'));
 const AssetTypeMasterView = React.lazy(() => import('./views/AssetTypeMasterView'));
+const AssetCategoryMasterView = React.lazy(() => import('./views/AssetCategoryMasterView'));
 const PlatformMasterView = React.lazy(() => import('./views/PlatformMasterView'));
 const CountryMasterView = React.lazy(() => import('./views/CountryMasterView'));
 const SeoErrorTypeMasterView = React.lazy(() => import('./views/SeoErrorTypeMasterView'));
@@ -38,7 +39,7 @@ const PerformanceBenchmarkView = React.lazy(() => import('./views/PerformanceBen
 const CompetitorBenchmarkMasterView = React.lazy(() => import('./views/CompetitorBenchmarkMasterView'));
 const UxIssuesView = React.lazy(() => import('./views/UxIssuesView'));
 const TasksView = React.lazy(() => import('./views/TasksView'));
-const AssetsView = React.lazy(() => import('./views/AssetsView'));
+const AssetsView = React.lazy(() => import('./views/AssetsViewNew'));
 const AssetDetailView = React.lazy(() => import('./views/AssetDetailView'));
 const OnPageErrorsView = React.lazy(() => import('./views/OnPageErrorsView'));
 const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView'));
@@ -78,7 +79,7 @@ const LoadingSpinner = () => (
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [viewState, setViewState] = useState<{ view: string; id: number | null }>({
+  const [viewState, setViewState] = useState<{ view: string; id: string | number | null }>({
     view: 'dashboard',
     id: null,
   });
@@ -89,7 +90,7 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleNavigate = (view: string, id: number | null = null) => {
+  const handleNavigate = (view: string, id: string | number | null = null) => {
     if (view === 'logout') {
       handleLogout();
     } else {
@@ -112,14 +113,14 @@ const App: React.FC = () => {
       case 'dashboard': return <DashboardView onNavigate={handleNavigate} />;
       case 'projects': return <ProjectsView onProjectSelect={(id) => handleNavigate('project-detail', id)} />;
       case 'project-detail':
-        return viewState.id ? <ProjectDetailView projectId={viewState.id} onNavigateBack={() => handleNavigate('projects')} /> : <ProjectsView onProjectSelect={(id) => handleNavigate('project-detail', id)} />;
+        return viewState.id ? <ProjectDetailView projectId={Number(viewState.id)} onNavigateBack={() => handleNavigate('projects')} /> : <ProjectsView onProjectSelect={(id) => handleNavigate('project-detail', id)} />;
       case 'campaigns': return <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
       case 'campaign-detail':
-        return viewState.id ? <CampaignDetailView campaignId={viewState.id} onNavigateBack={() => handleNavigate('campaigns')} /> : <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
+        return viewState.id ? <CampaignDetailView campaignId={Number(viewState.id)} onNavigateBack={() => handleNavigate('campaigns')} /> : <CampaignsView onCampaignSelect={(id) => handleNavigate('campaign-detail', id)} />;
       case 'tasks': return <TasksView />;
       case 'assets': return <AssetsView onNavigate={handleNavigate} />;
       case 'asset-detail':
-        return viewState.id ? <AssetDetailView assetId={viewState.id} onNavigateBack={() => handleNavigate('assets')} /> : <AssetsView onNavigate={handleNavigate} />;
+        return viewState.id ? <AssetDetailView assetId={Number(viewState.id)} onNavigateBack={() => handleNavigate('assets')} /> : <AssetsView onNavigate={handleNavigate} />;
       case 'asset-qc': return <AssetQCView />;
 
       // COMMUNICATION & KNOWLEDGE
@@ -153,6 +154,7 @@ const App: React.FC = () => {
       case 'industry-sector-master': return <IndustrySectorMasterView />;
       case 'content-type-master': return <ContentTypeMasterView />;
       case 'asset-type-master': return <AssetTypeMasterView />;
+      case 'asset-category-master': return <AssetCategoryMasterView />;
       case 'platform-master': return <PlatformMasterView />;
       case 'country-master': return <CountryMasterView />;
       case 'seo-error-type-master': return <SeoErrorTypeMasterView />;

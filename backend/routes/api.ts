@@ -50,6 +50,8 @@ import * as rewardPenaltyController from '../controllers/rewardPenaltyController
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
+const assetCategoryMasterRoutes = require('./assetCategoryMasterRoutes');
+const assetTypeMasterRoutes = require('./assetTypeMasterRoutes');
 
 const router = Router();
 
@@ -106,6 +108,12 @@ router.use('/asset-categories', assetCategoryRoutes);
 
 // --- Asset Formats ---
 router.use('/asset-formats', assetFormatRoutes);
+
+// --- Asset Category Master ---
+router.use('/asset-category-master', assetCategoryMasterRoutes);
+
+// --- Asset Type Master ---
+router.use('/asset-type-master', assetTypeMasterRoutes);
 
 // Asset QC Workflow
 router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);
@@ -282,6 +290,11 @@ router.get('/asset-types', configController.getAssetTypes);
 router.post('/asset-types', configController.createAssetType);
 router.put('/asset-types/:id', configController.updateAssetType);
 router.delete('/asset-types/:id', configController.deleteAssetType);
+
+router.get('/asset-categories', configController.getAssetCategories);
+router.post('/asset-categories', configController.createAssetCategory);
+router.put('/asset-categories/:id', configController.updateAssetCategory);
+router.delete('/asset-categories/:id', configController.deleteAssetCategory);
 
 router.get('/platforms', configController.getPlatforms);
 router.post('/platforms', configController.createPlatform);

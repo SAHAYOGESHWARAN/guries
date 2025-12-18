@@ -234,7 +234,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                       >
                           <div className="p-4 flex flex-col h-full">
                               <div className="flex justify-between items-start mb-3">
-                                  <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getTypeColor(campaign.campaign_type)}`}>{campaign.campaign_type}</span>
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getTypeColor(campaign.campaign_type || '')}`}>{campaign.campaign_type || ''}</span>
                                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${getStatusColor(campaign.campaign_status)}`}>{campaign.campaign_status.replace(/_/g, ' ')}</span>
                               </div>
                               <div className="mb-3">

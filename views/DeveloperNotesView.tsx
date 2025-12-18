@@ -107,10 +107,10 @@ const SystemMonitor: React.FC = () => {
                         uptime: Math.floor(data.uptime / 60)
                     });
                 } else {
-                    setMetrics(prev => ({ ...prev, status: 'Error' }));
+                    setMetrics((prev: any) => ({ ...prev, status: 'Error' }));
                 }
             } catch (e) {
-                setMetrics(prev => ({ ...prev, status: 'Offline' }));
+                setMetrics((prev: any) => ({ ...prev, status: 'Offline' }));
             }
         };
 

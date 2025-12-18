@@ -95,14 +95,14 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onNavigateBa
 
     const getLinkedService = () => {
         if (asset.linked_service_ids && asset.linked_service_ids.length > 0) {
-            return services.find(s => s.id === asset.linked_service_ids[0]);
+            return services.find(s => s.id === asset.linked_service_ids?.[0]);
         }
         return null;
     };
 
     const getLinkedSubService = () => {
         if (asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0) {
-            return subServices.find(ss => ss.id === asset.linked_sub_service_ids[0]);
+            return subServices.find(ss => ss.id === asset.linked_sub_service_ids?.[0]);
         }
         return null;
     };

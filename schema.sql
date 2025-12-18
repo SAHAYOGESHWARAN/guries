@@ -912,6 +912,32 @@ CREATE TABLE IF NOT EXISTS asset_types (
 	updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Asset Category Master Table
+CREATE TABLE IF NOT EXISTS asset_category_master (
+	id SERIAL PRIMARY KEY,
+	brand VARCHAR(255) NOT NULL,
+	category_name VARCHAR(255) NOT NULL,
+	word_count INTEGER NOT NULL DEFAULT 0,
+	status VARCHAR(50) DEFAULT 'active',
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW(),
+	UNIQUE(brand, category_name)
+);
+
+-- Asset Format Master Table
+CREATE TABLE IF NOT EXISTS asset_formats (
+	id SERIAL PRIMARY KEY,
+	format_name VARCHAR(255) NOT NULL,
+	format_type VARCHAR(50) NOT NULL, -- 'image', 'video', 'document', 'audio'
+	file_extensions TEXT, -- JSON array of file extensions
+	max_file_size_mb INTEGER DEFAULT 10,
+	description TEXT,
+	application_types TEXT, -- JSON array: ['web', 'seo', 'smm']
+	status VARCHAR(50) DEFAULT 'active',
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Platforms Table
 CREATE TABLE IF NOT EXISTS platforms (
 	id SERIAL PRIMARY KEY,

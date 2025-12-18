@@ -43,6 +43,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     personas: { endpoint: 'personas', event: 'persona' },
     forms: { endpoint: 'forms', event: 'form' },
     assetTypes: { endpoint: 'asset-types', event: 'asset_type' },
+    assetCategories: { endpoint: 'asset-categories', event: 'asset_category' },
     platforms: { endpoint: 'platforms', event: 'platform' },
     countries: { endpoint: 'countries', event: 'country' },
     seoErrors: { endpoint: 'seo-errors', event: 'seo_error' },
