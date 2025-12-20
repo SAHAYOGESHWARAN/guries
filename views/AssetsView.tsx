@@ -52,7 +52,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     // Upload form state
     const [uploadStep, setUploadStep] = useState<'select-type' | 'form-fields' | 'upload-file'>('select-type');
-    const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>(null);
+    const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>('web');
     const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
@@ -459,6 +459,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const handleEdit = useCallback((e: React.MouseEvent, asset: AssetLibraryItem) => {
         e.stopPropagation();
         setEditingAsset(asset);
+        setSelectedApplicationType(asset.application_type as any);
         setNewAsset({
             name: asset.name,
             type: asset.type,
@@ -1073,13 +1074,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 required
                             >
                                 <option value="">Select Format</option>
-                                {assetFormats
-                                    .filter(format => selectedApplicationType && format.application_types?.includes(selectedApplicationType))
-                                    .map(format => (
-                                        <option key={format.id} value={format.format_name}>
-                                            {format.format_name}
-                                        </option>
-                                    ))}
+                                {availableFormats.map(format => (
+                                    <option key={format.id} value={format.format_name}>
+                                        {format.format_name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -1319,6 +1318,112 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
                 </div>
             </div>
+
+                {/* Basic Fields (shown on upload step for quick input) */}
+                <div className="mt-6 bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Asset Name</label>
+                            <input
+                                type="text"
+                                value={newAsset.name}
+                                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                                placeholder="Enter asset name..."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Map Asset to Services</label>
+                            <select
+                                value={selectedServiceId || ''}
+                                onChange={(e) => {
+                                    const id = e.target.value ? parseInt(e.target.value) : null;
+                                    setSelectedServiceId(id);
+                                    setSelectedSubServiceIds([]);
+                                }}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                            >
+                                <option value="">Select service...</option>
+                                {services.map(service => (
+                                    <option key={service.id} value={service.id}>{service.service_name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Content Type</label>
+                            {newAsset.application_type ? (
+                                <div className="px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-700 font-medium">
+                                    {newAsset.application_type === 'web' && '🌐 WEB'}
+                                    {newAsset.application_type === 'seo' && '🔍 SEO'}
+                                    {newAsset.application_type === 'smm' && '📱 SMM'}
+                                    <span className="text-slate-500 ml-2">(Content type is now static)</span>
+                                </div>
+                            ) : (
+                                <select
+                                    value={newAsset.application_type || ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value as any;
+                                        setNewAsset({ ...newAsset, application_type: val });
+                                        setSelectedApplicationType(val);
+                                    }}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                                >
+                                    <option value="">Select content type...</option>
+                                    <option value="web">WEB</option>
+                                    <option value="seo">SEO</option>
+                                    <option value="smm">SMM</option>
+                                </select>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Repository</label>
+                            <select
+                                value={newAsset.repository}
+                                onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                            >
+                                <option value="Content Repository">Content Repository</option>
+                                <option value="SMM Repository">SMM Repository</option>
+                                <option value="SEO Repository">SEO Repository</option>
+                                <option value="Design Repository">Design Repository</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Asset Category</label>
+                            <select
+                                value={newAsset.asset_category || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                            >
+                                <option value="">Select category...</option>
+                                {assetCategories.filter(c => c.status === 'active').map(cat => (
+                                    <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Asset Format</label>
+                            <select
+                                value={newAsset.asset_format || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                                disabled={!newAsset.application_type}
+                            >
+                                <option value="">{!newAsset.application_type ? 'Select content type first...' : 'Select format...'}</option>
+                                {assetFormats
+                                    .filter(f => !newAsset.application_type || f.application_types?.includes(newAsset.application_type))
+                                    .map(format => (
+                                        <option key={format.id} value={format.format_name}>{format.format_name} ({format.format_type})</option>
+                                    ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
         </div>
     );
 
@@ -1848,23 +1953,19 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             {newAsset.application_type === 'smm' && '📱 SMM'}
                                                             <span className="text-slate-500 ml-2">(Content type is now static)</span>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setNewAsset({ ...newAsset, application_type: undefined })}
-                                                            className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                                                            title="Change content type"
-                                                        >
-                                                            Change
-                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <select
                                                         value={newAsset.application_type || ''}
-                                                        onChange={(e) => setNewAsset({
-                                                            ...newAsset,
-                                                            application_type: e.target.value as any,
-                                                            smm_platform: undefined
-                                                        })}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value as any;
+                                                            setNewAsset({
+                                                                ...newAsset,
+                                                                application_type: val,
+                                                                smm_platform: undefined
+                                                            });
+                                                            setSelectedApplicationType(val);
+                                                        }}
                                                         className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer font-medium"
                                                     >
                                                         <option value="">Select application type...</option>
@@ -2431,29 +2532,25 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <label className="block text-sm font-bold text-purple-900 mb-2">Application Type</label>
                                     {newAsset.application_type ? (
                                         <div className="flex items-center gap-2">
-                                            <div className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
-                                                {newAsset.application_type === 'web' && '🌐 Web'}
-                                                {newAsset.application_type === 'seo' && '� SEOc'}
-                                                {newAsset.application_type === 'smm' && '📱 SMM (Social Media Marketing)'}
-                                                <span className="text-slate-500 ml-2">(Content type is now static)</span>
+                                                <div className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
+                                                    {newAsset.application_type === 'web' && '🌐 Web'}
+                                                    {newAsset.application_type === 'seo' && '🔍 SEO'}
+                                                    {newAsset.application_type === 'smm' && '📱 SMM (Social Media Marketing)'}
+                                                    <span className="text-slate-500 ml-2">(Content type is now static)</span>
+                                                </div>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setNewAsset({ ...newAsset, application_type: undefined })}
-                                                className="px-3 py-2 text-xs font-medium text-purple-600 hover:text-purple-800 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors"
-                                                title="Change content type"
-                                            >
-                                                Change
-                                            </button>
-                                        </div>
                                     ) : (
                                         <select
                                             value={newAsset.application_type || ''}
-                                            onChange={(e) => setNewAsset({
-                                                ...newAsset,
-                                                application_type: e.target.value as any,
-                                                smm_platform: undefined // Reset SMM platform when changing application type
-                                            })}
+                                            onChange={(e) => {
+                                                const val = e.target.value as any;
+                                                setNewAsset({
+                                                    ...newAsset,
+                                                    application_type: val,
+                                                    smm_platform: undefined // Reset SMM platform when changing application type
+                                                });
+                                                setSelectedApplicationType(val);
+                                            }}
                                             className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
                                         >
                                             <option value="">Select application type...</option>
@@ -6043,6 +6140,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <button
                                         onClick={() => {
                                             setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                            setSelectedApplicationType('web');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
@@ -6054,6 +6152,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <button
                                         onClick={() => {
                                             setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                            setSelectedApplicationType('seo');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
@@ -6065,6 +6164,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <button
                                         onClick={() => {
                                             setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                            setSelectedApplicationType('smm');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"

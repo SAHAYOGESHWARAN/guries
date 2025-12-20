@@ -44,6 +44,10 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     forms: { endpoint: 'forms', event: 'form' },
     assetTypes: { endpoint: 'asset-types', event: 'asset_type' },
     assetCategories: { endpoint: 'asset-categories', event: 'asset_category' },
+    // Master tables (explicit endpoints)
+    'asset-type-master': { endpoint: 'asset-type-master', event: 'asset_type_master' },
+    'asset-category-master': { endpoint: 'asset-category-master', event: 'asset_category_master' },
+    'asset-formats': { endpoint: 'asset-formats', event: 'asset_format' },
     platforms: { endpoint: 'platforms', event: 'platform' },
     countries: { endpoint: 'countries', event: 'country' },
     seoErrors: { endpoint: 'seo-errors', event: 'seo_error' },

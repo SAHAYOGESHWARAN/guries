@@ -1,13 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
-import type { AssetLibraryItem, Service, SubServiceItem } from '../types';
-
-interface AssetCategory {
-    id: number;
-    category_name: string;
-    description?: string;
-    status: string;
-}
+import type { AssetLibraryItem, Service, SubServiceItem, AssetCategoryMasterItem, AssetFormat } from '../types';
 
 interface UploadAssetModalProps {
     isOpen: boolean;
@@ -20,7 +13,8 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const { create: createAsset } = useData<AssetLibraryItem>('assetLibrary');
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
-    const { data: assetCategories = [] } = useData<AssetCategory>('asset-categories');
+    const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
+    const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
@@ -57,6 +51,15 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+    const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
+
+    // Available brands
+    const brands = ['Pubrica', 'Stats work', 'Food Research lab', 'PhD assistance', 'tutors India'];
+
+    // Filter asset categories by selected brand
+    const filteredAssetCategories = useMemo(() => {
+        return assetCategories.filter(cat => cat.brand === selectedBrand && cat.status === 'active');
+    }, [assetCategories, selectedBrand]);
 
     // Update state when initialData changes or modal opens
     React.useEffect(() => {

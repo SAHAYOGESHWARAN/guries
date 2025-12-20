@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
+import AddAssetCategoryModal from '../components/AddAssetCategoryModal';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
 import type { AssetCategoryMasterItem } from '../types';
@@ -8,7 +9,7 @@ import type { AssetCategoryMasterItem } from '../types';
 const BRANDS = ['Pubrica', 'Stats work', 'Food Research lab', 'PhD assistance', 'tutors India'];
 
 const AssetCategoryMasterView: React.FC = () => {
-    const { data: assetCategories, create, update, remove } = useData<AssetCategoryMasterItem>('assetCategories');
+    const { data: assetCategories = [], create, update, remove } = useData<AssetCategoryMasterItem>('asset-category-master');
     const [searchQuery, setSearchQuery] = useState('');
     const [brandFilter, setBrandFilter] = useState('All Brands');
 
@@ -166,66 +167,19 @@ const AssetCategoryMasterView: React.FC = () => {
 
             <Table columns={columns} data={filteredData} title="Asset Category Registry" />
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Asset Category" : "Add Asset Category"}>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Brand <span className="text-red-500">*</span></label>
-                        <select
-                            value={formData.brand}
-                            onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                        >
-                            {BRANDS.map(brand => (
-                                <option key={brand} value={brand}>{brand}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Asset Category Name <span className="text-red-500">*</span></label>
-                        <input
-                            type="text"
-                            value={formData.category_name}
-                            onChange={(e) => setFormData({ ...formData, category_name: e.target.value })}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                            placeholder="e.g. What Science Can Do, How To Guide"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Word Count</label>
-                        <input
-                            type="number"
-                            value={formData.word_count}
-                            onChange={(e) => setFormData({ ...formData, word_count: parseInt(e.target.value) || 0 })}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                            placeholder="e.g. 500"
-                            min="0"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <select
-                            value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                        >
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-
-                    <div className="flex justify-end pt-4">
-                        <button
-                            onClick={handleSave}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium"
-                        >
-                            Submit
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+            <AddAssetCategoryModal
+                isOpen={isModalOpen}
+                onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
+                editingCategory={editingItem}
+                onSave={async (payload) => {
+                    const data = { ...payload, word_count: payload.word_count || 0, updated_at: new Date().toISOString() };
+                    if (editingItem) {
+                        await update(editingItem.id, data as any);
+                    } else {
+                        await create(data as any);
+                    }
+                }}
+            />
         </div>
     );
 };
