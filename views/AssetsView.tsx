@@ -30,7 +30,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [typeFilter, setTypeFilter] = useState('All');
     const [contentTypeFilter, setContentTypeFilter] = useState('All');
-    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types' | 'smm-upload'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [qcMode, setQcMode] = useState(false); // Toggle between user and QC mode
     const [displayMode, setDisplayMode] = useState<'table' | 'grid'>('table'); // List vs Large view toggle
@@ -54,11 +54,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [uploadStep, setUploadStep] = useState<'select-type' | 'form-fields' | 'upload-file'>('select-type');
     const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>('web');
     const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
-    const [contentTypeLocked, setContentTypeLocked] = useState(false); // Track if content type is locked
+    const [contentTypeLocked, setContentTypeLocked] = useState(true); // Track if content type is locked
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
         // Asset Submission Fields (In Order)
-        application_type: 'web', // 1. Asset Application – WEB, SEO, SMM (default to 'web')
+        application_type: 'web', // 1. Asset Application – SMM, SEO, WEB (default to 'web')
         // Service/Sub-Service Linking will be handled by selectedServiceId/selectedSubServiceIds
 
         name: '', // 4. Title
@@ -457,7 +457,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             setSelectedSubServiceIds([]);
             setSelectedKeywords([]);
             setSelectedApplicationType('web'); // Reset to default 'web'
-            setContentTypeLocked(false); // Reset lock state
+            setContentTypeLocked(true); // Keep locked by default
             setUploadStep('select-type');
             setNewAsset({
                 name: '',
@@ -972,22 +972,22 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* WEB Application */}
+                {/* SMM Application */}
                 <div
-                    onClick={() => handleApplicationTypeSelect('web')}
-                    className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg relative"
+                    onClick={() => handleApplicationTypeSelect('smm')}
+                    className="bg-white rounded-xl border-2 border-purple-200 hover:border-purple-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg relative"
                 >
-                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">
+                    <div className="absolute top-2 right-2 bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">
                         DEFAULT
                     </div>
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200">
-                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200">
+                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 12l2 2 4-4" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">WEB</h3>
-                    <p className="text-slate-600 text-sm">Web content, articles, and general website assets</p>
-                    <p className="text-blue-600 text-xs font-medium mt-2">✓ Content type remains unlocked</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">SMM</h3>
+                    <p className="text-slate-600 text-sm">Social media marketing content and assets</p>
+                    <p className="text-purple-600 text-xs font-medium mt-2">🔒 Content type will be locked to SMM</p>
                 </div>
 
                 {/* SEO Application */}
@@ -1005,19 +1005,19 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     <p className="text-green-600 text-xs font-medium mt-2">🔒 Content type will be locked to SEO</p>
                 </div>
 
-                {/* SMM Application */}
+                {/* WEB Application */}
                 <div
-                    onClick={() => handleApplicationTypeSelect('smm')}
-                    className="bg-white rounded-xl border-2 border-slate-200 hover:border-purple-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
+                    onClick={() => handleApplicationTypeSelect('web')}
+                    className="bg-white rounded-xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
                 >
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200">
-                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 12l2 2 4-4" />
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">SMM</h3>
-                    <p className="text-slate-600 text-sm">Social media marketing content and assets</p>
-                    <p className="text-purple-600 text-xs font-medium mt-2">🔒 Content type will be locked to SMM</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">WEB</h3>
+                    <p className="text-slate-600 text-sm">Web content, articles, and general website assets</p>
+                    <p className="text-blue-600 text-xs font-medium mt-2">✓ Content type remains unlocked</p>
                 </div>
             </div>
         </div>
@@ -1378,15 +1378,205 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             }}
                                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                         >
-                                            <option value="web">🌐 WEB</option>
-                                            <option value="seo">🔍 SEO</option>
                                             <option value="smm">📱 SMM</option>
+                                            <option value="seo">🔍 SEO</option>
+                                            <option value="web">🌐 WEB</option>
                                         </select>
                                     )}
                                     <p className="text-xs text-slate-500 mt-1">
-                                        {contentTypeLocked ? 'Content type is locked after selection' : 'Defaults to WEB, locks when SEO/SMM selected'}
+                                        {contentTypeLocked ? 'Content type is locked after selection' : 'Content type is frozen and cannot be changed'}
                                     </p>
                                 </div>
+
+                                {/* Web Application Fields - Moved Up */}
+                                {newAsset.application_type === 'web' && (
+                                    <div className="col-span-2 space-y-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 919-9" />
+                                            </svg>
+                                            <h4 className="text-lg font-bold text-blue-900">🌐 Web Application Fields</h4>
+                                        </div>
+                                        <p className="text-sm text-blue-600 mb-4">Configure your web content details</p>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">📝 Title*</label>
+                                                <input
+                                                    type="text"
+                                                    value={newAsset.web_title || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    placeholder="Enter web title..."
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">🔗 URL</label>
+                                                <input
+                                                    type="url"
+                                                    value={newAsset.web_url || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    placeholder="https://example.com/page"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">🏷️ Keywords</label>
+                                            <input
+                                                type="text"
+                                                value={newAsset.seo_keywords || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, seo_keywords: e.target.value })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                placeholder="Enter keywords separated by commas..."
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">📄 Meta Description</label>
+                                            <div className="relative">
+                                                <textarea
+                                                    value={newAsset.web_meta_description || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, web_meta_description: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                    placeholder="Enter meta description..."
+                                                    rows={3}
+                                                    maxLength={160}
+                                                />
+                                                <div className="absolute bottom-2 right-2 text-xs text-slate-500">
+                                                    {(newAsset.web_meta_description || '').length}/160 characters
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">📋 Description</label>
+                                            <textarea
+                                                value={newAsset.web_description || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                placeholder="Enter web description..."
+                                                rows={3}
+                                            />
+                                        </div>
+
+                                        <div className="bg-white rounded-lg p-4 border border-blue-200">
+                                            <h5 className="font-bold text-blue-900 mb-3">Heading Structure</h5>
+
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H1 Tag</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.web_h1 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                        placeholder="Main heading (H1)..."
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 Tag (First)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.web_h2_1 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                        placeholder="First H2 heading..."
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 Tag (Second)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.web_h2_2 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                        placeholder="Second H2 heading..."
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Body Content</label>
+                                            <div className="bg-white rounded-lg border-2 border-blue-200 p-4">
+                                                <p className="text-sm text-blue-600 mb-3">💡 You can use Markdown formatting for rich text content</p>
+                                                <MarkdownEditor
+                                                    value={newAsset.web_body_content || ''}
+                                                    onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                            <h5 className="font-bold text-green-900 mb-3">AI Quality Check</h5>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">SEO Score (0-100)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={newAsset.seo_score || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                        placeholder="0-100"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Grammar Score (0-100)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={newAsset.grammar_score || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                        placeholder="0-100"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                            >
+                                                Analyze Quality
+                                            </button>
+                                        </div>
+
+                                        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                                            <h5 className="font-bold text-amber-900 mb-3">View Vendor History</h5>
+                                            <button
+                                                type="button"
+                                                className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+                                            >
+                                                View History
+                                            </button>
+                                        </div>
+
+                                        <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                                            <h5 className="font-bold text-red-900 mb-3">Replace Existing Version</h5>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="replaceVersion"
+                                                    className="rounded border-red-300 text-red-600 focus:ring-red-500"
+                                                />
+                                                <label htmlFor="replaceVersion" className="text-sm text-red-700">
+                                                    ⚠️ Replace existing version of this asset
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                                            <p className="text-sm text-slate-600">⚠️ Complete required fields for QC</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Asset Category */}
                                 <div>
@@ -1657,9 +1847,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 }}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             >
-                                <option value="web">🌐 WEB</option>
-                                <option value="seo">🔍 SEO</option>
                                 <option value="smm">📱 SMM</option>
+                                <option value="seo">🔍 SEO</option>
+                                <option value="web">🌐 WEB</option>
                             </select>
                         )}
                     </div>
@@ -1878,7 +2068,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     return (
         <>
-            {(viewMode === 'upload' || viewMode === 'edit') && (
+            {(viewMode === 'upload' || viewMode === 'edit' || viewMode === 'smm-upload') && (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
                     {/* Fixed Header */}
                     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -2255,9 +2445,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer font-medium"
                                                     >
                                                         <option value="">Select application type...</option>
-                                                        <option value="web">🌐 WEB</option>
-                                                        <option value="seo">🔍 SEO</option>
                                                         <option value="smm">📱 SMM</option>
+                                                        <option value="seo">🔍 SEO</option>
+                                                        <option value="web">🌐 WEB</option>
                                                     </select>
                                                 )}
                                             </div>
@@ -2849,14 +3039,14 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
                                         >
                                             <option value="">Select application type...</option>
-                                            <option value="web">Web</option>
-                                            <option value="seo">SEO</option>
                                             <option value="smm">SMM (Social Media Marketing)</option>
+                                            <option value="seo">SEO</option>
+                                            <option value="web">Web</option>
                                         </select>
                                     )}
                                 </div>
 
-                                {/* Web Application Fields */}
+
                                 {newAsset.application_type === 'web' && (
                                     <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
                                         <div className="flex items-center gap-2 mb-3">
@@ -2973,6 +3163,121 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             value={newAsset.web_body_content || ''}
                                             onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
                                         />
+
+                                        {/* Upload Options - Moved Down */}
+                                        <div className="space-y-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border-2 border-purple-200">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <h5 className="font-bold text-purple-900">Upload Options</h5>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Thumbnail/Blog Image</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="url"
+                                                        value={newAsset.web_thumbnail || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
+                                                        className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                        placeholder="https://example.com/image.jpg or upload file"
+                                                    />
+                                                    <input
+                                                        ref={thumbnailInputRef}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
+                                                        className="hidden"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => thumbnailInputRef.current?.click()}
+                                                        className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        Upload
+                                                    </button>
+                                                </div>
+                                                {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
+                                                    <div className="mt-2">
+                                                        <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Additional Pages Section - Similar to SMM */}
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                    Additional Pages/Images
+                                                    <span className="text-xs text-slate-500 ml-2">(Optional - for galleries, carousels, or related content)</span>
+                                                </label>
+
+                                                <div className="space-y-3">
+                                                    {(newAsset.smm_additional_pages || []).map((page, index) => (
+                                                        <div key={index} className="flex gap-2 items-center">
+                                                            <input
+                                                                type="url"
+                                                                value={page}
+                                                                onChange={(e) => {
+                                                                    const updatedPages = [...(newAsset.smm_additional_pages || [])];
+                                                                    updatedPages[index] = e.target.value;
+                                                                    setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
+                                                                }}
+                                                                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                                placeholder={`Additional image/page URL ${index + 1}`}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const updatedPages = (newAsset.smm_additional_pages || []).filter((_, i) => i !== index);
+                                                                    setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
+                                                                }}
+                                                                className="px-3 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    ))}
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const currentPages = newAsset.smm_additional_pages || [];
+                                                            setNewAsset({ ...newAsset, smm_additional_pages: [...currentPages, ''] });
+                                                        }}
+                                                        className="w-full px-4 py-3 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                        </svg>
+                                                        Add Additional Page/Image
+                                                    </button>
+                                                </div>
+
+                                                {(newAsset.smm_additional_pages || []).length > 0 && (
+                                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                        <div className="flex items-start gap-2">
+                                                            <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <div className="text-xs text-blue-700">
+                                                                <p className="font-medium mb-1">Additional Pages Usage:</p>
+                                                                <ul className="space-y-1 text-blue-600">
+                                                                    <li>• Use for image galleries or carousel content</li>
+                                                                    <li>• Add related images or supplementary content</li>
+                                                                    <li>• Perfect for multi-page articles or step-by-step guides</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -6314,8 +6619,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 {/* SMM Content */}
                                                 <button
                                                     onClick={() => {
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                        setShowUploadModal(true);
+                                                        setNewAsset(prev => ({ ...prev, application_type: 'smm', repository: 'SMM Repository' }));
+                                                        setSelectedApplicationType('smm');
+                                                        setViewMode('smm-upload');
                                                     }}
                                                     className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 transition-all group/item"
                                                 >
@@ -6503,8 +6809,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                     <button
                                         onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                            setSelectedApplicationType('web');
+                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                            setSelectedApplicationType('smm');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
@@ -6527,9 +6833,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                     <button
                                         onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                            setNewAsset(prev => ({ ...prev, application_type: 'smm', repository: 'SMM Repository' }));
                                             setSelectedApplicationType('smm');
-                                            setShowUploadModal(true);
+                                            setViewMode('smm-upload');
                                         }}
                                         className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
                                         title="Upload Social Media Content"
@@ -6654,9 +6960,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[140px]"
                                     >
                                         <option value="All">📋 All Content</option>
-                                        <option value="web">🌐 Web Content</option>
-                                        <option value="seo">🔍 SEO Content</option>
                                         <option value="smm">📱 Social Media</option>
+                                        <option value="seo">🔍 SEO Content</option>
+                                        <option value="web">🌐 Web Content</option>
                                     </select>
 
                                     {/* Clear Filters Button */}
@@ -7220,6 +7526,410 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
                 )
             }
+
+            {/* SMM Upload Page - New Dedicated SMM Interface */}
+            {viewMode === 'smm-upload' && (
+                <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+                    {/* SMM Header */}
+                    <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
+                        <div className="max-w-7xl mx-auto px-6 py-6">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        title="Back to Assets"
+                                    >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 12l2 2 4-4" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h1 className="text-2xl font-bold text-white">📱 SMM Content Creator</h1>
+                                            <p className="text-purple-100 text-sm">Create engaging social media content with ease</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => handleUpload(false)}
+                                        disabled={isUploading}
+                                        className="px-6 py-3 bg-white/20 text-white rounded-xl font-medium hover:bg-white/30 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                                        </svg>
+                                        Save Draft
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpload(true)}
+                                        disabled={isUploading || !newAsset.seo_score || !newAsset.grammar_score}
+                                        className="px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Publish Content
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SMM Content Layout */}
+                    <div className="max-w-7xl mx-auto px-6 py-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Left Column - Upload & Media */}
+                            <div className="space-y-6">
+                                {/* Upload Section */}
+                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+                                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Media Upload
+                                        </h2>
+                                        <p className="text-purple-100 text-sm">Upload your visual content</p>
+                                    </div>
+
+                                    <div className="p-6">
+                                        <div
+                                            className={`border-3 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${dragActive
+                                                ? 'border-purple-500 bg-purple-50'
+                                                : 'border-purple-200 bg-purple-25 hover:border-purple-400 hover:bg-purple-50'
+                                                }`}
+                                            onDrop={handleDrop}
+                                            onDragOver={handleDrag}
+                                            onDragEnter={handleDrag}
+                                            onDragLeave={handleDrag}
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                                className="hidden"
+                                                accept="image/*,video/*,.pdf,.doc,.docx"
+                                            />
+
+                                            {previewUrl ? (
+                                                <div className="space-y-4">
+                                                    <img src={previewUrl} alt="Preview" className="max-h-64 mx-auto rounded-xl shadow-lg" />
+                                                    <p className="text-sm text-purple-600 font-medium">Click to change media</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto">
+                                                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xl font-bold text-slate-900 mb-2">Drop your media here</p>
+                                                        <p className="text-purple-600 font-medium">or click to browse files</p>
+                                                        <p className="text-sm text-slate-500 mt-2">Supports: Images, Videos, Documents</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Quick Media Options */}
+                                        <div className="mt-6 grid grid-cols-3 gap-3">
+                                            <button className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 hover:from-blue-100 hover:to-blue-200 transition-all text-center">
+                                                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-xs font-medium text-blue-700">Image</p>
+                                            </button>
+                                            <button className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 hover:from-green-100 hover:to-green-200 transition-all text-center">
+                                                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-xs font-medium text-green-700">Video</p>
+                                            </button>
+                                            <button className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 hover:from-orange-100 hover:to-orange-200 transition-all text-center">
+                                                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-xs font-medium text-orange-700">Document</p>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Additional Media Section */}
+                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6">
+                                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
+                                        Additional Media
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        {(newAsset.smm_additional_pages || []).map((page, index) => (
+                                            <div key={index} className="flex gap-3 items-center">
+                                                <input
+                                                    type="url"
+                                                    value={page}
+                                                    onChange={(e) => {
+                                                        const updatedPages = [...(newAsset.smm_additional_pages || [])];
+                                                        updatedPages[index] = e.target.value;
+                                                        setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
+                                                    }}
+                                                    className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                    placeholder={`Media URL ${index + 1}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updatedPages = (newAsset.smm_additional_pages || []).filter((_, i) => i !== index);
+                                                        setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
+                                                    }}
+                                                    className="px-3 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ))}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const currentPages = newAsset.smm_additional_pages || [];
+                                                setNewAsset({ ...newAsset, smm_additional_pages: [...currentPages, ''] });
+                                            }}
+                                            className="w-full px-4 py-4 border-2 border-dashed border-purple-300 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 font-medium"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Add More Media
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Column - Content Details */}
+                            <div className="space-y-6">
+                                {/* Basic Info */}
+                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6">
+                                    <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Content Details
+                                    </h2>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Content Title *</label>
+                                            <input
+                                                type="text"
+                                                value={newAsset.name || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                placeholder="Enter engaging title..."
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Platform *</label>
+                                            <select
+                                                value={newAsset.smm_platform || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                            >
+                                                <option value="">Select Platform</option>
+                                                <option value="facebook">📘 Facebook</option>
+                                                <option value="instagram">📷 Instagram</option>
+                                                <option value="twitter">🐦 Twitter</option>
+                                                <option value="linkedin">💼 LinkedIn</option>
+                                                <option value="youtube">📺 YouTube</option>
+                                                <option value="tiktok">🎵 TikTok</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Post Type</label>
+                                                <select
+                                                    value={newAsset.smm_post_type || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_post_type: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                >
+                                                    <option value="">Select Type</option>
+                                                    <option value="image">🖼️ Image Post</option>
+                                                    <option value="video">🎥 Video Post</option>
+                                                    <option value="carousel">🎠 Carousel</option>
+                                                    <option value="story">📱 Story</option>
+                                                    <option value="reel">🎬 Reel</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Campaign</label>
+                                                <select
+                                                    value={newAsset.smm_campaign_type || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_campaign_type: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                >
+                                                    <option value="">Select Campaign</option>
+                                                    <option value="awareness">🎯 Brand Awareness</option>
+                                                    <option value="engagement">💬 Engagement</option>
+                                                    <option value="conversion">💰 Conversion</option>
+                                                    <option value="traffic">🚀 Traffic</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+                                            <textarea
+                                                value={newAsset.smm_description || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                rows={4}
+                                                placeholder="Write your engaging caption..."
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Hashtags</label>
+                                            <input
+                                                type="text"
+                                                value={newAsset.smm_hashtags || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                placeholder="#hashtag1 #hashtag2 #hashtag3"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Service Mapping */}
+                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6">
+                                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                        </svg>
+                                        Service Mapping
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Map to Service</label>
+                                            <select
+                                                value={selectedServiceId || ''}
+                                                onChange={(e) => {
+                                                    const id = e.target.value ? parseInt(e.target.value) : null;
+                                                    setSelectedServiceId(id);
+                                                    setSelectedSubServiceIds([]);
+                                                }}
+                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                            >
+                                                <option value="">Select service...</option>
+                                                {services.map(service => (
+                                                    <option key={service.id} value={service.id}>{service.service_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
+                                                <select
+                                                    value={newAsset.repository || 'SMM Repository'}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                >
+                                                    <option value="SMM Repository">📱 SMM Repository</option>
+                                                    <option value="Content Repository">📁 Content Repository</option>
+                                                    <option value="Design Repository">🎨 Design Repository</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Category</label>
+                                                <select
+                                                    value={newAsset.asset_category || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                >
+                                                    <option value="">Select category...</option>
+                                                    {filteredAssetCategories.map(cat => (
+                                                        <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Quality Scores */}
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200 p-6">
+                                    <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Quality Assessment
+                                    </h3>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-green-700 mb-2">SEO Score (0-100)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={newAsset.seo_score || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
+                                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                placeholder="85"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-green-700 mb-2">Grammar Score (0-100)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={newAsset.grammar_score || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
+                                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                                                placeholder="92"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 p-4 bg-white/60 rounded-xl">
+                                        <p className="text-sm text-green-700">
+                                            <span className="font-medium">💡 Tip:</span> Both scores are required for publishing. Aim for 80+ for best results.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Master Categories View */}
             {viewMode === 'master-categories' && renderMasterCategories()}
