@@ -11,7 +11,7 @@ const getAssetFormats = async (req, res) => {
 
         let query = `
             SELECT id, format_name, format_type, file_extensions, max_file_size_mb, 
-                   description, application_types, status, created_at, updated_at
+                   description, application_types, asset_type_ids, status, created_at, updated_at
             FROM asset_format_master 
             WHERE status = 'active'
         `;
@@ -32,7 +32,8 @@ const getAssetFormats = async (req, res) => {
         const formattedFormats = formats.map(format => ({
             ...format,
             file_extensions: JSON.parse(format.file_extensions || '[]'),
-            application_types: JSON.parse(format.application_types || '[]')
+            application_types: JSON.parse(format.application_types || '[]'),
+            asset_type_ids: JSON.parse(format.asset_type_ids || '[]')
         }));
 
         res.json(formattedFormats);
@@ -48,27 +49,28 @@ const createAssetFormat = async (req, res) => {
     const db = new Database(dbPath);
 
     try {
-        const { format_name, format_type, file_extensions, max_file_size_mb, description, application_types } = req.body;
+        const { format_name, format_type, file_extensions, max_file_size_mb, description, application_types, asset_type_ids } = req.body;
 
         if (!format_name || !format_type) {
             return res.status(400).json({ error: 'Format name and type are required' });
         }
 
         const result = db.prepare(`
-            INSERT INTO asset_format_master (format_name, format_type, file_extensions, max_file_size_mb, description, application_types)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO asset_format_master (format_name, format_type, file_extensions, max_file_size_mb, description, application_types, asset_type_ids)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `).run(
             format_name,
             format_type,
             JSON.stringify(file_extensions || []),
             max_file_size_mb || 50,
             description || null,
-            JSON.stringify(application_types || [])
+            JSON.stringify(application_types || []),
+            JSON.stringify(asset_type_ids || [])
         );
 
         const newFormat = db.prepare(`
             SELECT id, format_name, format_type, file_extensions, max_file_size_mb, 
-                   description, application_types, status, created_at, updated_at
+                   description, application_types, asset_type_ids, status, created_at, updated_at
             FROM asset_format_master 
             WHERE id = ?
         `).get(result.lastInsertRowid);
@@ -77,7 +79,8 @@ const createAssetFormat = async (req, res) => {
         const formattedFormat = {
             ...newFormat,
             file_extensions: JSON.parse(newFormat.file_extensions || '[]'),
-            application_types: JSON.parse(newFormat.application_types || '[]')
+            application_types: JSON.parse(newFormat.application_types || '[]'),
+            asset_type_ids: JSON.parse(newFormat.asset_type_ids || '[]')
         };
 
         res.status(201).json(formattedFormat);
@@ -98,7 +101,7 @@ const updateAssetFormat = async (req, res) => {
 
     try {
         const { id } = req.params;
-        const { format_name, format_type, file_extensions, max_file_size_mb, description, application_types, status } = req.body;
+        const { format_name, format_type, file_extensions, max_file_size_mb, description, application_types, asset_type_ids, status } = req.body;
 
         const result = db.prepare(`
             UPDATE asset_format_master 
@@ -108,6 +111,7 @@ const updateAssetFormat = async (req, res) => {
                 max_file_size_mb = COALESCE(?, max_file_size_mb),
                 description = COALESCE(?, description),
                 application_types = COALESCE(?, application_types),
+                asset_type_ids = COALESCE(?, asset_type_ids),
                 status = COALESCE(?, status),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
@@ -118,6 +122,7 @@ const updateAssetFormat = async (req, res) => {
             max_file_size_mb,
             description,
             application_types ? JSON.stringify(application_types) : null,
+            asset_type_ids ? JSON.stringify(asset_type_ids) : null,
             status,
             id
         );
@@ -128,7 +133,7 @@ const updateAssetFormat = async (req, res) => {
 
         const updatedFormat = db.prepare(`
             SELECT id, format_name, format_type, file_extensions, max_file_size_mb, 
-                   description, application_types, status, created_at, updated_at
+                   description, application_types, asset_type_ids, status, created_at, updated_at
             FROM asset_format_master 
             WHERE id = ?
         `).get(id);
@@ -137,7 +142,8 @@ const updateAssetFormat = async (req, res) => {
         const formattedFormat = {
             ...updatedFormat,
             file_extensions: JSON.parse(updatedFormat.file_extensions || '[]'),
-            application_types: JSON.parse(updatedFormat.application_types || '[]')
+            application_types: JSON.parse(updatedFormat.application_types || '[]'),
+            asset_type_ids: JSON.parse(updatedFormat.asset_type_ids || '[]')
         };
 
         res.json(formattedFormat);

@@ -50,8 +50,8 @@ import * as rewardPenaltyController from '../controllers/rewardPenaltyController
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
-const assetCategoryMasterRoutes = require('./assetCategoryMasterRoutes');
-const assetTypeMasterRoutes = require('./assetTypeMasterRoutes');
+import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
+import assetTypeMasterRoutes from './assetTypeMasterRoutes';
 
 const router = Router();
 

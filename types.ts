@@ -530,6 +530,7 @@ export interface AssetFormat {
     max_file_size_mb: number;
     description?: string;
     application_types: ('web' | 'seo' | 'smm')[];
+    asset_type_ids?: string[]; // Array of asset type names that this format supports
     status: string;
     created_at?: string;
     updated_at?: string;
@@ -605,6 +606,14 @@ export interface AssetLibraryItem {
     smm_media_url?: string;
     smm_media_type?: 'image' | 'video' | 'carousel' | 'gif';
     smm_additional_pages?: string[]; // Additional pages/images for carousel posts
+    smm_post_type?: string; // Type of post (image, video, carousel, story, reel)
+    smm_campaign_type?: string; // Campaign type (awareness, engagement, traffic, conversions, lead-generation)
+
+    // SEO Application Fields
+    seo_keywords?: string; // Target keywords for SEO
+    seo_focus_keyword?: string; // Primary focus keyword
+    seo_content_type?: string; // Content type (blog-post, landing-page, product-page, etc.)
+
     // Metadata timestamps
     updated_at?: string;
     created_at?: string;
