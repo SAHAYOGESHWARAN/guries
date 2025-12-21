@@ -30,7 +30,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [typeFilter, setTypeFilter] = useState('All');
     const [contentTypeFilter, setContentTypeFilter] = useState('All');
-    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types' | 'smm-upload'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [qcMode, setQcMode] = useState(false); // Toggle between user and QC mode
     const [displayMode, setDisplayMode] = useState<'table' | 'grid'>('table'); // List vs Large view toggle
@@ -54,11 +54,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [uploadStep, setUploadStep] = useState<'select-type' | 'form-fields' | 'upload-file'>('select-type');
     const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>('web');
     const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
-    const [contentTypeLocked, setContentTypeLocked] = useState(true); // Track if content type is locked
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
         // Asset Submission Fields (In Order)
-        application_type: 'web', // 1. Asset Application – SMM, SEO, WEB (default to 'web')
+        application_type: undefined, // 1. Asset Application – WEB, SEO, SMM
         // Service/Sub-Service Linking will be handled by selectedServiceId/selectedSubServiceIds
 
         name: '', // 4. Title
@@ -82,17 +81,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         linked_sub_service_ids: [],
         smm_platform: undefined,
         smm_additional_pages: [],
-        keywords: [], // Added keywords array for master database integration
-
-        // SEO Application Fields
-        seo_keywords: '',
-        seo_focus_keyword: '',
-        seo_content_type: '',
-
-        // SMM Application Fields
-        smm_post_type: '',
-        smm_campaign_type: '',
-        smm_hashtags: ''
+        keywords: [] // Added keywords array for master database integration
     });
 
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -137,40 +126,22 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         refresh?.();
     }, []);
 
-    // Update available formats when application type or asset type changes
+    // Update available formats when application type changes
     React.useEffect(() => {
-        if (assetFormats.length > 0) {
-            let filtered = assetFormats;
-
-            // Filter by application type if selected
-            if (newAsset.application_type) {
-                filtered = filtered.filter((format: any) =>
-                    format.application_types && format.application_types.includes(newAsset.application_type)
-                );
-            }
-
-            // Filter by asset type if selected
-            if (newAsset.type) {
-                filtered = filtered.filter((format: any) => {
-                    // If format has asset_type_ids, check if current asset type is included
-                    if (format.asset_type_ids && Array.isArray(format.asset_type_ids)) {
-                        return format.asset_type_ids.includes(newAsset.type);
-                    }
-                    // If no asset_type_ids specified, include all formats (backward compatibility)
-                    return true;
-                });
-            }
-
+        if (newAsset.application_type && assetFormats.length > 0) {
+            const filtered = assetFormats.filter((format: any) =>
+                format.application_types && format.application_types.includes(newAsset.application_type)
+            );
             setAvailableFormats(filtered);
 
-            // Reset asset format if current selection is not available for new filters
+            // Reset asset format if current selection is not available for new application type
             if (newAsset.asset_format && !filtered.some((f: any) => f.format_name === newAsset.asset_format)) {
                 setNewAsset(prev => ({ ...prev, asset_format: '' }));
             }
         } else {
             setAvailableFormats(assetFormats);
         }
-    }, [newAsset.application_type, newAsset.type, assetFormats]);
+    }, [newAsset.application_type, assetFormats]);
 
     // Calculate markdown stats
     const markdownStats = useMemo(() => {
@@ -334,12 +305,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             ...prev,
             application_type: type
         }));
-
-        // Lock content type if SEO or SMM is selected
-        if (type === 'seo' || type === 'smm') {
-            setContentTypeLocked(true);
-        }
-
         setUploadStep('form-fields');
     };
 
@@ -456,8 +421,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             setSelectedServiceId(null);
             setSelectedSubServiceIds([]);
             setSelectedKeywords([]);
-            setSelectedApplicationType('web'); // Reset to default 'web'
-            setContentTypeLocked(true); // Keep locked by default
+            setSelectedApplicationType(null);
             setUploadStep('select-type');
             setNewAsset({
                 name: '',
@@ -466,7 +430,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 status: 'Draft',
                 linked_service_ids: [],
                 linked_sub_service_ids: [],
-                application_type: 'web', // Reset to default 'web'
+                application_type: undefined,
                 smm_platform: undefined,
                 seo_score: undefined,
                 grammar_score: undefined,
@@ -496,14 +460,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         e.stopPropagation();
         setEditingAsset(asset);
         setSelectedApplicationType(asset.application_type as any);
-
-        // Lock content type if editing an asset with SEO or SMM
-        if (asset.application_type === 'seo' || asset.application_type === 'smm') {
-            setContentTypeLocked(true);
-        } else {
-            setContentTypeLocked(false);
-        }
-
         setNewAsset({
             name: asset.name,
             type: asset.type,
@@ -538,14 +494,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             smm_media_url: asset.smm_media_url,
             smm_media_type: asset.smm_media_type,
             smm_additional_pages: asset.smm_additional_pages || [],
-            keywords: asset.keywords || [],
-            // SEO Application Fields
-            seo_keywords: asset.seo_keywords || '',
-            seo_focus_keyword: asset.seo_focus_keyword || '',
-            seo_content_type: asset.seo_content_type || '',
-            // SMM Application Fields
-            smm_post_type: asset.smm_post_type || '',
-            smm_campaign_type: asset.smm_campaign_type || ''
+            keywords: asset.keywords || []
         });
 
         // Set selected keywords for the UI
@@ -972,22 +921,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* SMM Application */}
+                {/* WEB Application */}
                 <div
-                    onClick={() => handleApplicationTypeSelect('smm')}
-                    className="bg-white rounded-xl border-2 border-purple-200 hover:border-purple-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg relative"
+                    onClick={() => handleApplicationTypeSelect('web')}
+                    className="bg-white rounded-xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
                 >
-                    <div className="absolute top-2 right-2 bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">
-                        DEFAULT
-                    </div>
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200">
-                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 12l2 2 4-4" />
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">SMM</h3>
-                    <p className="text-slate-600 text-sm">Social media marketing content and assets</p>
-                    <p className="text-purple-600 text-xs font-medium mt-2">🔒 Content type will be locked to SMM</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">WEB</h3>
+                    <p className="text-slate-600 text-sm">Web content, articles, and general website assets</p>
                 </div>
 
                 {/* SEO Application */}
@@ -1002,22 +947,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">SEO</h3>
                     <p className="text-slate-600 text-sm">SEO-optimized content and search engine assets</p>
-                    <p className="text-green-600 text-xs font-medium mt-2">🔒 Content type will be locked to SEO</p>
                 </div>
 
-                {/* WEB Application */}
+                {/* SMM Application */}
                 <div
-                    onClick={() => handleApplicationTypeSelect('web')}
-                    className="bg-white rounded-xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
+                    onClick={() => handleApplicationTypeSelect('smm')}
+                    className="bg-white rounded-xl border-2 border-slate-200 hover:border-purple-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
                 >
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200">
-                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200">
+                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 12l2 2 4-4" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">WEB</h3>
-                    <p className="text-slate-600 text-sm">Web content, articles, and general website assets</p>
-                    <p className="text-blue-600 text-xs font-medium mt-2">✓ Content type remains unlocked</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">SMM</h3>
+                    <p className="text-slate-600 text-sm">Social media marketing content and assets</p>
                 </div>
             </div>
         </div>
@@ -1044,654 +987,246 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
                 </div>
 
-                <div className="space-y-8">
-                    {/* Application Specific Fields - First Section */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-indigo-200">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold ${selectedApplicationType === 'web' ? 'bg-blue-600' :
-                                selectedApplicationType === 'seo' ? 'bg-green-600' : 'bg-purple-600'
-                                }`}>
-                                {selectedApplicationType === 'web' ? 'W' : selectedApplicationType === 'seo' ? 'S' : 'M'}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Basic Fields */}
+                    <div className="space-y-4">
+                        {/* Brand Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Brand *
+                            </label>
+                            <select
+                                value={selectedBrand}
+                                onChange={(e) => setSelectedBrand(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                {brands.map(brand => (
+                                    <option key={brand} value={brand}>{brand}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Asset Category */}
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-sm font-medium text-slate-700">
+                                    Asset Category *
+                                </label>
+                                <button
+                                    onClick={() => setViewMode('master-categories')}
+                                    className="text-xs text-indigo-600 hover:text-indigo-800"
+                                >
+                                    Manage Categories
+                                </button>
                             </div>
-                            {selectedApplicationType?.toUpperCase()} Application Fields
-                        </h3>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {selectedApplicationType === 'web' && (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">URL</label>
-                                        <input
-                                            type="url"
-                                            value={newAsset.web_url || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            placeholder="https://example.com"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">H1</label>
-                                        <input
-                                            type="text"
-                                            value={newAsset.web_h1 || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            placeholder="Main heading"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">H2 (First)</label>
-                                        <input
-                                            type="text"
-                                            value={newAsset.web_h2_1 || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            placeholder="First subheading"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">H2 (Second)</label>
-                                        <input
-                                            type="text"
-                                            value={newAsset.web_h2_2 || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            placeholder="Second subheading"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {selectedApplicationType === 'seo' && (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Target Keywords</label>
-                                        <input
-                                            type="text"
-                                            value={newAsset.seo_keywords || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, seo_keywords: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                            placeholder="keyword1, keyword2, keyword3"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Description</label>
-                                        <textarea
-                                            value={newAsset.web_meta_description || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_meta_description: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                            rows={2}
-                                            placeholder="SEO meta description (150-160 characters)"
-                                            maxLength={160}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Focus Keyword</label>
-                                        <input
-                                            type="text"
-                                            value={newAsset.seo_focus_keyword || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, seo_focus_keyword: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                            placeholder="Primary focus keyword"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Content Type</label>
-                                        <select
-                                            value={newAsset.seo_content_type || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, seo_content_type: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        >
-                                            <option value="">Select Content Type</option>
-                                            <option value="blog-post">Blog Post</option>
-                                            <option value="landing-page">Landing Page</option>
-                                            <option value="product-page">Product Page</option>
-                                            <option value="category-page">Category Page</option>
-                                            <option value="service-page">Service Page</option>
-                                        </select>
-                                    </div>
-                                </>
-                            )}
-
-                            {selectedApplicationType === 'smm' && (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Platform *</label>
-                                        <select
-                                            value={newAsset.smm_platform || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                            required
-                                        >
-                                            <option value="">Select Platform</option>
-                                            <option value="facebook">Facebook</option>
-                                            <option value="instagram">Instagram</option>
-                                            <option value="twitter">Twitter</option>
-                                            <option value="linkedin">LinkedIn</option>
-                                            <option value="youtube">YouTube</option>
-                                            <option value="tiktok">TikTok</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Post Type</label>
-                                        <select
-                                            value={newAsset.smm_post_type || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, smm_post_type: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                        >
-                                            <option value="">Select Post Type</option>
-                                            <option value="image">Image Post</option>
-                                            <option value="video">Video Post</option>
-                                            <option value="carousel">Carousel</option>
-                                            <option value="story">Story</option>
-                                            <option value="reel">Reel</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Hashtags</label>
-                                        <input
-                                            type="text"
-                                            value={newAsset.smm_hashtags || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                            placeholder="#hashtag1 #hashtag2 #hashtag3"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Campaign Type</label>
-                                        <select
-                                            value={newAsset.smm_campaign_type || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, smm_campaign_type: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                        >
-                                            <option value="">Select Campaign Type</option>
-                                            <option value="awareness">Brand Awareness</option>
-                                            <option value="engagement">Engagement</option>
-                                            <option value="traffic">Traffic</option>
-                                            <option value="conversions">Conversions</option>
-                                            <option value="lead-generation">Lead Generation</option>
-                                        </select>
-                                    </div>
-                                </>
-                            )}
+                            <select
+                                value={newAsset.asset_category || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="">Select Category</option>
+                                {filteredAssetCategories.map(category => (
+                                    <option key={category.id} value={category.category_name}>
+                                        {category.category_name} ({category.word_count} words)
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    </div>
 
-                    {/* Upload Section - Second Section */}
-                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-6 border border-orange-200">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            Upload Options
-                        </h3>
+                        {/* Asset Type */}
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-sm font-medium text-slate-700">
+                                    Asset Type *
+                                </label>
+                                <button
+                                    onClick={() => setViewMode('master-types')}
+                                    className="text-xs text-indigo-600 hover:text-indigo-800"
+                                >
+                                    Manage Types
+                                </button>
+                            </div>
+                            <select
+                                value={newAsset.type || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="">Select Type</option>
+                                {filteredAssetTypes.map(type => (
+                                    <option key={type.id} value={type.asset_type_name}>
+                                        {type.asset_type_name} ({type.word_count} words)
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                        <div
-                            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${dragActive
-                                ? 'border-orange-500 bg-orange-100'
-                                : 'border-orange-300 bg-orange-50 hover:border-orange-400 hover:bg-orange-100'
-                                }`}
-                            onDrop={handleDrop}
-                            onDragOver={handleDrag}
-                            onDragEnter={handleDrag}
-                            onDragLeave={handleDrag}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
+                        {/* Asset Format */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Asset Format *
+                            </label>
+                            <select
+                                value={newAsset.asset_format || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="">Select Format</option>
+                                {availableFormats.map(format => (
+                                    <option key={format.id} value={format.format_name}>
+                                        {format.format_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Title */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Title *
+                            </label>
                             <input
-                                ref={fileInputRef}
-                                type="file"
-                                onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                                className="hidden"
-                                accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                type="text"
+                                value={newAsset.name || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="Enter asset title"
+                                required
                             />
+                        </div>
 
-                            {previewUrl ? (
-                                <div className="space-y-4">
-                                    <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg shadow-md" />
-                                    <div className="text-center">
-                                        <p className="text-sm font-medium text-slate-700">{selectedFile?.name}</p>
-                                        <p className="text-xs text-slate-500 mt-1">
-                                            {selectedFile && `${(selectedFile.size / 1024).toFixed(2)} KB`}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedFile(null);
-                                            setPreviewUrl('');
-                                        }}
-                                        className="text-sm text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                                    >
-                                        Remove File
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="bg-gradient-to-br from-orange-500 to-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-semibold text-slate-700 mb-2">Drag & drop your files here, or click to browse</p>
-                                        <p className="text-sm text-slate-500">Supported formats: PNG, JPG, SVG, PDF, MP4, WEBM, AVIF</p>
-                                    </div>
-                                </div>
-                            )}
+                        {/* Description */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Description
+                            </label>
+                            <textarea
+                                value={newAsset.web_description || ''}
+                                onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                rows={3}
+                                placeholder="Enter description"
+                            />
                         </div>
                     </div>
 
-                    {/* Asset Details - Third Section */}
-                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg p-6 border border-slate-200">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Asset Details
-                        </h3>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Left Column - Basic Fields */}
-                            <div className="space-y-4">
-                                {/* Asset Name */}
+                    {/* Right Column - Application Specific Fields */}
+                    <div className="space-y-4">
+                        {selectedApplicationType === 'web' && (
+                            <>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Asset Name *
-                                    </label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">URL</label>
                                     <input
-                                        type="text"
-                                        value={newAsset.name || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                                        type="url"
+                                        value={newAsset.web_url || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                        placeholder="Enter asset name..."
-                                        required
+                                        placeholder="https://example.com"
                                     />
                                 </div>
-
-                                {/* Map Asset to Services */}
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Map Asset to Services
-                                    </label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">H1</label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.web_h1 || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Main heading"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">H2 (First)</label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.web_h2_1 || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="First subheading"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">H2 (Second)</label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.web_h2_2 || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Second subheading"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {selectedApplicationType === 'smm' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Platform</label>
                                     <select
-                                        value={selectedServiceId || ''}
-                                        onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
+                                        value={newAsset.smm_platform || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     >
-                                        <option value="">Select service...</option>
-                                        {services.map(service => (
-                                            <option key={service.id} value={service.id}>{service.service_name}</option>
-                                        ))}
+                                        <option value="">Select Platform</option>
+                                        <option value="facebook">Facebook</option>
+                                        <option value="instagram">Instagram</option>
+                                        <option value="twitter">Twitter</option>
+                                        <option value="linkedin">LinkedIn</option>
+                                        <option value="youtube">YouTube</option>
+                                        <option value="tiktok">TikTok</option>
                                     </select>
                                 </div>
-
-                                {/* Repository */}
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Repository
-                                    </label>
-                                    <select
-                                        value={newAsset.repository || 'Content Repository'}
-                                        onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Hashtags</label>
+                                    <input
+                                        type="text"
+                                        value={newAsset.smm_hashtags || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        <option value="Content Repository">Content Repository</option>
-                                        <option value="Media Repository">Media Repository</option>
-                                        <option value="Document Repository">Document Repository</option>
-                                    </select>
+                                        placeholder="#hashtag1 #hashtag2"
+                                    />
                                 </div>
-                            </div>
+                            </>
+                        )}
 
-                            {/* Right Column - Category & Format */}
-                            <div className="space-y-4">
-                                {/* Content Type */}
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Content Type
-                                    </label>
-                                    {contentTypeLocked ? (
-                                        <div className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-700 font-medium flex items-center justify-between">
-                                            <span>
-                                                {newAsset.application_type === 'web' && '🌐 WEB'}
-                                                {newAsset.application_type === 'seo' && '🔍 SEO'}
-                                                {newAsset.application_type === 'smm' && '📱 SMM'}
-                                            </span>
-                                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                                                </svg>
-                                                Locked
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <select
-                                            value={newAsset.application_type || 'web'}
-                                            onChange={(e) => {
-                                                const val = e.target.value as any;
-                                                setNewAsset({ ...newAsset, application_type: val });
-                                                setSelectedApplicationType(val);
-
-                                                // Lock content type if SEO or SMM is selected
-                                                if (val === 'seo' || val === 'smm') {
-                                                    setContentTypeLocked(true);
-                                                }
-                                            }}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                        >
-                                            <option value="smm">📱 SMM</option>
-                                            <option value="seo">🔍 SEO</option>
-                                            <option value="web">🌐 WEB</option>
-                                        </select>
-                                    )}
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        {contentTypeLocked ? 'Content type is locked after selection' : 'Content type is frozen and cannot be changed'}
-                                    </p>
-                                </div>
-
-                                {/* Web Application Fields - Moved Up */}
-                                {newAsset.application_type === 'web' && (
-                                    <div className="col-span-2 space-y-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 919-9" />
-                                            </svg>
-                                            <h4 className="text-lg font-bold text-blue-900">🌐 Web Application Fields</h4>
-                                        </div>
-                                        <p className="text-sm text-blue-600 mb-4">Configure your web content details</p>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">📝 Title*</label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.web_title || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="Enter web title..."
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">🔗 URL</label>
-                                                <input
-                                                    type="url"
-                                                    value={newAsset.web_url || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="https://example.com/page"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">🏷️ Keywords</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.seo_keywords || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, seo_keywords: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                placeholder="Enter keywords separated by commas..."
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">📄 Meta Description</label>
-                                            <div className="relative">
-                                                <textarea
-                                                    value={newAsset.web_meta_description || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_meta_description: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="Enter meta description..."
-                                                    rows={3}
-                                                    maxLength={160}
-                                                />
-                                                <div className="absolute bottom-2 right-2 text-xs text-slate-500">
-                                                    {(newAsset.web_meta_description || '').length}/160 characters
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">📋 Description</label>
-                                            <textarea
-                                                value={newAsset.web_description || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                placeholder="Enter web description..."
-                                                rows={3}
-                                            />
-                                        </div>
-
-                                        <div className="bg-white rounded-lg p-4 border border-blue-200">
-                                            <h5 className="font-bold text-blue-900 mb-3">Heading Structure</h5>
-
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H1 Tag</label>
-                                                    <input
-                                                        type="text"
-                                                        value={newAsset.web_h1 || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="Main heading (H1)..."
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 Tag (First)</label>
-                                                    <input
-                                                        type="text"
-                                                        value={newAsset.web_h2_1 || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="First H2 heading..."
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 Tag (Second)</label>
-                                                    <input
-                                                        type="text"
-                                                        value={newAsset.web_h2_2 || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        placeholder="Second H2 heading..."
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Body Content</label>
-                                            <div className="bg-white rounded-lg border-2 border-blue-200 p-4">
-                                                <p className="text-sm text-blue-600 mb-3">💡 You can use Markdown formatting for rich text content</p>
-                                                <MarkdownEditor
-                                                    value={newAsset.web_body_content || ''}
-                                                    onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                                            <h5 className="font-bold text-green-900 mb-3">AI Quality Check</h5>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">SEO Score (0-100)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={newAsset.seo_score || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                        placeholder="0-100"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Grammar Score (0-100)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={newAsset.grammar_score || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                        placeholder="0-100"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                                            >
-                                                Analyze Quality
-                                            </button>
-                                        </div>
-
-                                        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                                            <h5 className="font-bold text-amber-900 mb-3">View Vendor History</h5>
-                                            <button
-                                                type="button"
-                                                className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
-                                            >
-                                                View History
-                                            </button>
-                                        </div>
-
-                                        <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                                            <h5 className="font-bold text-red-900 mb-3">Replace Existing Version</h5>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="checkbox"
-                                                    id="replaceVersion"
-                                                    className="rounded border-red-300 text-red-600 focus:ring-red-500"
-                                                />
-                                                <label htmlFor="replaceVersion" className="text-sm text-red-700">
-                                                    ⚠️ Replace existing version of this asset
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                                            <p className="text-sm text-slate-600">⚠️ Complete required fields for QC</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Asset Category */}
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <label className="block text-sm font-medium text-slate-700">
-                                            Asset Category (From Master Table)
-                                        </label>
-                                        <button
-                                            onClick={() => setViewMode('master-categories')}
-                                            className="text-xs text-indigo-600 hover:text-indigo-800"
-                                        >
-                                            Manage Categories
-                                        </button>
-                                    </div>
-                                    <select
-                                        value={newAsset.asset_category || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        <option value="">Select category...</option>
-                                        {filteredAssetCategories.map(category => (
-                                            <option key={category.id} value={category.category_name}>
-                                                {category.category_name} ({category.word_count} words)
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Asset Format */}
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Asset Format
-                                    </label>
-                                    <select
-                                        value={newAsset.asset_format || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        <option value="">Select format...</option>
-                                        {availableFormats.map(format => (
-                                            <option key={format.id} value={format.format_name}>
-                                                {format.format_name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quality Scores - Fourth Section */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Quality Check
-                        </h3>
-
+                        {/* Quality Scores */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">SEO Score (0-100)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">SEO Score</label>
                                 <input
                                     type="number"
                                     min="0"
                                     max="100"
                                     value={newAsset.seo_score || ''}
                                     onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     placeholder="0-100"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Grammar Score (0-100)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Grammar Score</label>
                                 <input
                                     type="number"
                                     min="0"
                                     max="100"
                                     value={newAsset.grammar_score || ''}
                                     onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     placeholder="0-100"
                                 />
                             </div>
                         </div>
-                        <p className="text-sm text-slate-600 mt-3 flex items-start gap-2">
-                            <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span><span className="font-medium">Note:</span> Both SEO and Grammar scores are required for QC submission</span>
-                        </p>
                     </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200">
                     <button
-                        onClick={() => setUploadStep('select-type')}
-                        className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium"
+                        onClick={() => setUploadStep('upload-file')}
+                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                     >
-                        Back
-                    </button>
-                    <button
-                        onClick={() => handleUpload(false)}
-                        disabled={!newAsset.name}
-                        className="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Save as Draft
-                    </button>
-                    <button
-                        onClick={() => handleUpload(true)}
-                        disabled={!newAsset.name || !newAsset.seo_score || !newAsset.grammar_score}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Submit for QC
+                        Next: Upload File
                     </button>
                 </div>
             </div>
@@ -1818,38 +1353,27 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Content Type</label>
-                        {contentTypeLocked ? (
-                            <div className="px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-700 font-medium flex items-center justify-between">
-                                <span>
-                                    {newAsset.application_type === 'web' && '🌐 WEB'}
-                                    {newAsset.application_type === 'seo' && '🔍 SEO'}
-                                    {newAsset.application_type === 'smm' && '📱 SMM'}
-                                </span>
-                                <span className="text-xs text-slate-500 flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                                    </svg>
-                                    Locked
-                                </span>
+                        {newAsset.application_type ? (
+                            <div className="px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-700 font-medium">
+                                {newAsset.application_type === 'web' && '🌐 WEB'}
+                                {newAsset.application_type === 'seo' && '🔍 SEO'}
+                                {newAsset.application_type === 'smm' && '📱 SMM'}
+                                <span className="text-slate-500 ml-2">(Content type is now static)</span>
                             </div>
                         ) : (
                             <select
-                                value={newAsset.application_type || 'web'}
+                                value={newAsset.application_type || ''}
                                 onChange={(e) => {
                                     const val = e.target.value as any;
                                     setNewAsset({ ...newAsset, application_type: val });
                                     setSelectedApplicationType(val);
-
-                                    // Lock content type if SEO or SMM is selected
-                                    if (val === 'seo' || val === 'smm') {
-                                        setContentTypeLocked(true);
-                                    }
                                 }}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                             >
-                                <option value="smm">📱 SMM</option>
-                                <option value="seo">🔍 SEO</option>
-                                <option value="web">🌐 WEB</option>
+                                <option value="">Select content type...</option>
+                                <option value="web">WEB</option>
+                                <option value="seo">SEO</option>
+                                <option value="smm">SMM</option>
                             </select>
                         )}
                     </div>
@@ -2068,7 +1592,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     return (
         <>
-            {(viewMode === 'upload' || viewMode === 'edit' || viewMode === 'smm-upload') && (
+            {(viewMode === 'upload' || viewMode === 'edit') && (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
                     {/* Fixed Header */}
                     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -2445,9 +1969,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer font-medium"
                                                     >
                                                         <option value="">Select application type...</option>
-                                                        <option value="smm">📱 SMM</option>
-                                                        <option value="seo">🔍 SEO</option>
                                                         <option value="web">🌐 WEB</option>
+                                                        <option value="seo">🔍 SEO</option>
+                                                        <option value="smm">📱 SMM</option>
                                                     </select>
                                                 )}
                                             </div>
@@ -2522,29 +2046,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         {/* Asset Type */}
                                         <div className="grid grid-cols-1 gap-6">
                                             <div>
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <label className="block text-sm font-semibold text-slate-700">
-                                                        Asset Type (From Master Table)
-                                                        <span className="text-red-500 ml-1">*</span>
-                                                    </label>
-                                                    <button
-                                                        onClick={() => setViewMode('master-types')}
-                                                        className="text-xs text-indigo-600 hover:text-indigo-800"
-                                                    >
-                                                        Manage Types
-                                                    </button>
-                                                </div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                                                    Asset Type
+                                                    <span className="text-red-500 ml-1">*</span>
+                                                </label>
                                                 <select
                                                     value={newAsset.type}
                                                     onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
                                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
                                                 >
-                                                    <option value="">Select Asset Type</option>
-                                                    {filteredAssetTypes.map(type => (
-                                                        <option key={type.id} value={type.asset_type_name}>
-                                                            {type.asset_type_name}
-                                                        </option>
-                                                    ))}
+                                                    <option value="article">📄 Article</option>
+                                                    <option value="video">🎥 Video</option>
+                                                    <option value="graphic">🎨 Graphic</option>
+                                                    <option value="guide">📚 Guide</option>
+                                                    <option value="listicle">📝 Listicle</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -3039,14 +2554,14 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
                                         >
                                             <option value="">Select application type...</option>
-                                            <option value="smm">SMM (Social Media Marketing)</option>
-                                            <option value="seo">SEO</option>
                                             <option value="web">Web</option>
+                                            <option value="seo">SEO</option>
+                                            <option value="smm">SMM (Social Media Marketing)</option>
                                         </select>
                                     )}
                                 </div>
 
-
+                                {/* Web Application Fields */}
                                 {newAsset.application_type === 'web' && (
                                     <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
                                         <div className="flex items-center gap-2 mb-3">
@@ -3163,121 +2678,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             value={newAsset.web_body_content || ''}
                                             onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
                                         />
-
-                                        {/* Upload Options - Moved Down */}
-                                        <div className="space-y-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border-2 border-purple-200">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                                <h5 className="font-bold text-purple-900">Upload Options</h5>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Thumbnail/Blog Image</label>
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        type="url"
-                                                        value={newAsset.web_thumbnail || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
-                                                        className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                        placeholder="https://example.com/image.jpg or upload file"
-                                                    />
-                                                    <input
-                                                        ref={thumbnailInputRef}
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
-                                                        className="hidden"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => thumbnailInputRef.current?.click()}
-                                                        className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                        Upload
-                                                    </button>
-                                                </div>
-                                                {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
-                                                    <div className="mt-2">
-                                                        <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Additional Pages Section - Similar to SMM */}
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                    Additional Pages/Images
-                                                    <span className="text-xs text-slate-500 ml-2">(Optional - for galleries, carousels, or related content)</span>
-                                                </label>
-
-                                                <div className="space-y-3">
-                                                    {(newAsset.smm_additional_pages || []).map((page, index) => (
-                                                        <div key={index} className="flex gap-2 items-center">
-                                                            <input
-                                                                type="url"
-                                                                value={page}
-                                                                onChange={(e) => {
-                                                                    const updatedPages = [...(newAsset.smm_additional_pages || [])];
-                                                                    updatedPages[index] = e.target.value;
-                                                                    setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
-                                                                }}
-                                                                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                                placeholder={`Additional image/page URL ${index + 1}`}
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const updatedPages = (newAsset.smm_additional_pages || []).filter((_, i) => i !== index);
-                                                                    setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
-                                                                }}
-                                                                className="px-3 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
-                                                            >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    ))}
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const currentPages = newAsset.smm_additional_pages || [];
-                                                            setNewAsset({ ...newAsset, smm_additional_pages: [...currentPages, ''] });
-                                                        }}
-                                                        className="w-full px-4 py-3 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                        </svg>
-                                                        Add Additional Page/Image
-                                                    </button>
-                                                </div>
-
-                                                {(newAsset.smm_additional_pages || []).length > 0 && (
-                                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                                        <div className="flex items-start gap-2">
-                                                            <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <div className="text-xs text-blue-700">
-                                                                <p className="font-medium mb-1">Additional Pages Usage:</p>
-                                                                <ul className="space-y-1 text-blue-600">
-                                                                    <li>• Use for image galleries or carousel content</li>
-                                                                    <li>• Add related images or supplementary content</li>
-                                                                    <li>• Perfect for multi-page articles or step-by-step guides</li>
-                                                                </ul>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
 
@@ -6619,9 +6019,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 {/* SMM Content */}
                                                 <button
                                                     onClick={() => {
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'smm', repository: 'SMM Repository' }));
-                                                        setSelectedApplicationType('smm');
-                                                        setViewMode('smm-upload');
+                                                        setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                        setShowUploadModal(true);
                                                     }}
                                                     className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 transition-all group/item"
                                                 >
@@ -6734,89 +6133,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     My Submissions
                                 </button>
 
-                                {/* Master Tables Dropdown */}
-                                <div className="relative group">
-                                    <button className="bg-slate-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-7H3a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z" />
-                                        </svg>
-                                        Master Tables
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-
-                                    {/* Master Tables Dropdown Menu */}
-                                    <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                        <div className="p-4">
-                                            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                                                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-7H3a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z" />
-                                                </svg>
-                                                Manage Master Data
-                                            </h3>
-
-                                            <div className="space-y-2">
-                                                {/* Asset Category Master */}
-                                                <button
-                                                    onClick={() => setViewMode('master-categories')}
-                                                    className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all group/item"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a.997.997 0 01-1.414 0l-7-7A1.997 1.997 0 013 12V7a4 4 0 014-4z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold text-slate-900 text-sm">Asset Categories</div>
-                                                            <div className="text-xs text-slate-600">Manage asset category master data</div>
-                                                        </div>
-                                                        <svg className="w-4 h-4 text-slate-400 group-hover/item:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </div>
-                                                </button>
-
-                                                {/* Asset Type Master */}
-                                                <button
-                                                    onClick={() => setViewMode('master-types')}
-                                                    className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 transition-all group/item"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-7H3a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold text-slate-900 text-sm">Asset Types</div>
-                                                            <div className="text-xs text-slate-600">Manage asset type master data</div>
-                                                        </div>
-                                                        <svg className="w-4 h-4 text-slate-400 group-hover/item:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Quick Upload Toolbar */}
-                                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-2 shadow-sm">
-                                    <span className="text-xs font-medium text-slate-600 px-2">Quick Upload:</span>
-
+                                {/* Quick Upload Toolbar - Enhanced */}
+                                <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                            setSelectedApplicationType('smm');
+                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                            setSelectedApplicationType('web');
                                             setShowUploadModal(true);
                                         }}
-                                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                        className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all"
                                         title="Upload Web Content"
                                     >
-                                        🌐 Web
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                                        </svg>
+                                        WEB
                                     </button>
 
                                     <button
@@ -6825,22 +6156,28 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             setSelectedApplicationType('seo');
                                             setShowUploadModal(true);
                                         }}
-                                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                                        className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-md hover:shadow-lg transition-all"
                                         title="Upload SEO Content"
                                     >
-                                        🔍 SEO
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                        SEO
                                     </button>
 
                                     <button
                                         onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'smm', repository: 'SMM Repository' }));
+                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
                                             setSelectedApplicationType('smm');
-                                            setViewMode('smm-upload');
+                                            setShowUploadModal(true);
                                         }}
-                                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                                        className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl shadow-md hover:shadow-lg transition-all"
                                         title="Upload Social Media Content"
                                     >
-                                        📱 SMM
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                        </svg>
+                                        SMM
                                     </button>
                                 </div>
 
@@ -6960,9 +6297,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[140px]"
                                     >
                                         <option value="All">📋 All Content</option>
-                                        <option value="smm">📱 Social Media</option>
-                                        <option value="seo">🔍 SEO Content</option>
                                         <option value="web">🌐 Web Content</option>
+                                        <option value="seo">🔍 SEO Content</option>
+                                        <option value="smm">📱 Social Media</option>
                                     </select>
 
                                     {/* Clear Filters Button */}
@@ -7527,416 +6864,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 )
             }
 
-            {/* SMM Upload Page - New Dedicated SMM Interface */}
-            {viewMode === 'smm-upload' && (
-                <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
-                    {/* SMM Header */}
-                    <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
-                        <div className="max-w-7xl mx-auto px-6 py-6">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => setViewMode('list')}
-                                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                        title="Back to Assets"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                        </svg>
-                                    </button>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 12l2 2 4-4" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h1 className="text-2xl font-bold text-white">📱 SMM Content Creator</h1>
-                                            <p className="text-purple-100 text-sm">Create engaging social media content with ease</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => handleUpload(false)}
-                                        disabled={isUploading}
-                                        className="px-6 py-3 bg-white/20 text-white rounded-xl font-medium hover:bg-white/30 transition-colors disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                                        </svg>
-                                        Save Draft
-                                    </button>
-                                    <button
-                                        onClick={() => handleUpload(true)}
-                                        disabled={isUploading || !newAsset.seo_score || !newAsset.grammar_score}
-                                        className="px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Publish Content
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SMM Content Layout */}
-                    <div className="max-w-7xl mx-auto px-6 py-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Left Column - Upload & Media */}
-                            <div className="space-y-6">
-                                {/* Upload Section */}
-                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
-                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
-                                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            Media Upload
-                                        </h2>
-                                        <p className="text-purple-100 text-sm">Upload your visual content</p>
-                                    </div>
-
-                                    <div className="p-6">
-                                        <div
-                                            className={`border-3 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${dragActive
-                                                ? 'border-purple-500 bg-purple-50'
-                                                : 'border-purple-200 bg-purple-25 hover:border-purple-400 hover:bg-purple-50'
-                                                }`}
-                                            onDrop={handleDrop}
-                                            onDragOver={handleDrag}
-                                            onDragEnter={handleDrag}
-                                            onDragLeave={handleDrag}
-                                            onClick={() => fileInputRef.current?.click()}
-                                        >
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                                                className="hidden"
-                                                accept="image/*,video/*,.pdf,.doc,.docx"
-                                            />
-
-                                            {previewUrl ? (
-                                                <div className="space-y-4">
-                                                    <img src={previewUrl} alt="Preview" className="max-h-64 mx-auto rounded-xl shadow-lg" />
-                                                    <p className="text-sm text-purple-600 font-medium">Click to change media</p>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-6">
-                                                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto">
-                                                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xl font-bold text-slate-900 mb-2">Drop your media here</p>
-                                                        <p className="text-purple-600 font-medium">or click to browse files</p>
-                                                        <p className="text-sm text-slate-500 mt-2">Supports: Images, Videos, Documents</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Quick Media Options */}
-                                        <div className="mt-6 grid grid-cols-3 gap-3">
-                                            <button className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 hover:from-blue-100 hover:to-blue-200 transition-all text-center">
-                                                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-xs font-medium text-blue-700">Image</p>
-                                            </button>
-                                            <button className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 hover:from-green-100 hover:to-green-200 transition-all text-center">
-                                                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-xs font-medium text-green-700">Video</p>
-                                            </button>
-                                            <button className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 hover:from-orange-100 hover:to-orange-200 transition-all text-center">
-                                                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-xs font-medium text-orange-700">Document</p>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Additional Media Section */}
-                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6">
-                                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                        </svg>
-                                        Additional Media
-                                    </h3>
-
-                                    <div className="space-y-3">
-                                        {(newAsset.smm_additional_pages || []).map((page, index) => (
-                                            <div key={index} className="flex gap-3 items-center">
-                                                <input
-                                                    type="url"
-                                                    value={page}
-                                                    onChange={(e) => {
-                                                        const updatedPages = [...(newAsset.smm_additional_pages || [])];
-                                                        updatedPages[index] = e.target.value;
-                                                        setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
-                                                    }}
-                                                    className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                    placeholder={`Media URL ${index + 1}`}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const updatedPages = (newAsset.smm_additional_pages || []).filter((_, i) => i !== index);
-                                                        setNewAsset({ ...newAsset, smm_additional_pages: updatedPages });
-                                                    }}
-                                                    className="px-3 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        ))}
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const currentPages = newAsset.smm_additional_pages || [];
-                                                setNewAsset({ ...newAsset, smm_additional_pages: [...currentPages, ''] });
-                                            }}
-                                            className="w-full px-4 py-4 border-2 border-dashed border-purple-300 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 font-medium"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                            </svg>
-                                            Add More Media
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Column - Content Details */}
-                            <div className="space-y-6">
-                                {/* Basic Info */}
-                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6">
-                                    <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                                        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Content Details
-                                    </h2>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Content Title *</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.name || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter engaging title..."
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Platform *</label>
-                                            <select
-                                                value={newAsset.smm_platform || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                            >
-                                                <option value="">Select Platform</option>
-                                                <option value="facebook">📘 Facebook</option>
-                                                <option value="instagram">📷 Instagram</option>
-                                                <option value="twitter">🐦 Twitter</option>
-                                                <option value="linkedin">💼 LinkedIn</option>
-                                                <option value="youtube">📺 YouTube</option>
-                                                <option value="tiktok">🎵 TikTok</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Post Type</label>
-                                                <select
-                                                    value={newAsset.smm_post_type || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_post_type: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                >
-                                                    <option value="">Select Type</option>
-                                                    <option value="image">🖼️ Image Post</option>
-                                                    <option value="video">🎥 Video Post</option>
-                                                    <option value="carousel">🎠 Carousel</option>
-                                                    <option value="story">📱 Story</option>
-                                                    <option value="reel">🎬 Reel</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Campaign</label>
-                                                <select
-                                                    value={newAsset.smm_campaign_type || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_campaign_type: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                >
-                                                    <option value="">Select Campaign</option>
-                                                    <option value="awareness">🎯 Brand Awareness</option>
-                                                    <option value="engagement">💬 Engagement</option>
-                                                    <option value="conversion">💰 Conversion</option>
-                                                    <option value="traffic">🚀 Traffic</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
-                                            <textarea
-                                                value={newAsset.smm_description || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                rows={4}
-                                                placeholder="Write your engaging caption..."
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Hashtags</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.smm_hashtags || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="#hashtag1 #hashtag2 #hashtag3"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Service Mapping */}
-                                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6">
-                                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                        </svg>
-                                        Service Mapping
-                                    </h3>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Map to Service</label>
-                                            <select
-                                                value={selectedServiceId || ''}
-                                                onChange={(e) => {
-                                                    const id = e.target.value ? parseInt(e.target.value) : null;
-                                                    setSelectedServiceId(id);
-                                                    setSelectedSubServiceIds([]);
-                                                }}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                            >
-                                                <option value="">Select service...</option>
-                                                {services.map(service => (
-                                                    <option key={service.id} value={service.id}>{service.service_name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
-                                                <select
-                                                    value={newAsset.repository || 'SMM Repository'}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                >
-                                                    <option value="SMM Repository">📱 SMM Repository</option>
-                                                    <option value="Content Repository">📁 Content Repository</option>
-                                                    <option value="Design Repository">🎨 Design Repository</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Category</label>
-                                                <select
-                                                    value={newAsset.asset_category || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                >
-                                                    <option value="">Select category...</option>
-                                                    {filteredAssetCategories.map(cat => (
-                                                        <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Quality Scores */}
-                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200 p-6">
-                                    <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Quality Assessment
-                                    </h3>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-green-700 mb-2">SEO Score (0-100)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newAsset.seo_score || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                placeholder="85"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-green-700 mb-2">Grammar Score (0-100)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newAsset.grammar_score || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                placeholder="92"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 p-4 bg-white/60 rounded-xl">
-                                        <p className="text-sm text-green-700">
-                                            <span className="font-medium">💡 Tip:</span> Both scores are required for publishing. Aim for 80+ for best results.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Master Categories View */}
-            {viewMode === 'master-categories' && renderMasterCategories()}
-
-            {/* Master Types View */}
-            {viewMode === 'master-types' && renderMasterTypes()}
-
             {/* Upload Asset Modal */}
             <UploadAssetModal
                 isOpen={showUploadModal}
@@ -7993,26 +6920,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 }}
                 initialData={newAsset}
             />
-
-            {/* Asset Category Master Modal */}
-            <AssetCategoryMasterModal
-                isOpen={showCategoryModal}
-                onClose={() => setShowCategoryModal(false)}
-                onSave={handleSaveCategory}
-                editingCategory={editingCategory}
-            />
-
-            {/* Asset Type Master Modal */}
-            <AssetTypeMasterModal
-                isOpen={showTypeModal}
-                onClose={() => setShowTypeModal(false)}
-                onSave={handleSaveType}
-                editingAssetType={editingType}
-            />
         </>
     );
 };
 
 export default AssetsView;
-
 
