@@ -10,9 +10,10 @@ interface UploadAssetModalProps {
     onClose: () => void;
     onSuccess?: () => void;
     initialData?: Partial<AssetLibraryItem>;
+    contentTypeLocked?: boolean;
 }
 
-const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, onSuccess, initialData }) => {
+const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, onSuccess, initialData, contentTypeLocked: contentTypeLockedProp }) => {
     // Component state and logic would go here
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>(initialData || {
         application_type: 'web',
@@ -49,7 +50,8 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
             setNewAsset(initialData);
         }
     }, [initialData]);
-    const [contentTypeLocked, setContentTypeLocked] = useState(false);
+    // use locked state from parent when provided
+    const contentTypeLocked = contentTypeLockedProp ?? false;
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
     const [showCategoryModal, setShowCategoryModal] = useState(false);

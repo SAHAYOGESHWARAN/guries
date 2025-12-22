@@ -19,9 +19,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: users = [] } = useData<User>('users');
     const { data: keywords = [] } = useData<any>('keywords');
-    const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
-    const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
-    const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
+    const { data: assetCategories = [], refresh: refreshAssetCategories } = useData<AssetCategoryMasterItem>('asset-category-master');
+    const { data: assetTypes = [], refresh: refreshAssetTypes } = useData<AssetTypeMasterItem>('asset-type-master');
+    const { data: assetFormats = [], refresh: refreshAssetFormats } = useData<AssetFormat>('asset-formats');
     const { create: createAssetCategory, update: updateAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType, update: updateAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
     const [availableFormats, setAvailableFormats] = useState<AssetFormat[]>([]);
@@ -52,13 +52,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     // Upload form state
     const [uploadStep, setUploadStep] = useState<'select-type' | 'form-fields' | 'upload-file' | 'asset-details'>('select-type');
-    const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>(null);
-    const [contentTypeLocked, setContentTypeLocked] = useState(false); // lock content type during upload process
+    const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>('web');
+    const [contentTypeLocked, setContentTypeLocked] = useState(true); // lock content type during upload process (default to Web)
     const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
         // Asset Submission Fields (In Order)
-        application_type: undefined, // 1. Asset Application – WEB, SEO, SMM
+        application_type: 'web', // 1. Asset Application – WEB, SEO, SMM (default to Web)
         // Service/Sub-Service Linking will be handled by selectedServiceId/selectedSubServiceIds
 
         name: '', // 4. Title
@@ -321,7 +321,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             setEditingCategory(null);
             setShowCategoryModal(false);
             // Refresh master data so new category appears immediately
-            setTimeout(() => refresh?.(), 100);
+            setTimeout(() => refreshAssetCategories?.(), 100);
         } catch (error) {
             console.error('Failed to save category:', error);
             alert('Failed to save category');
@@ -336,6 +336,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 await createAssetType(typeData as AssetTypeMasterItem);
             }
             setEditingType(null);
+            // Refresh asset types so new type appears immediately
+            setTimeout(() => refreshAssetTypes?.(), 100);
         } catch (error) {
             console.error('Failed to save asset type:', error);
             alert('Failed to save asset type');
@@ -426,7 +428,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             setSelectedServiceId(null);
             setSelectedSubServiceIds([]);
             setSelectedKeywords([]);
-            setSelectedApplicationType(null);
+            setSelectedApplicationType('web');
             setUploadStep('select-type');
             setNewAsset({
                 name: '',
@@ -435,7 +437,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 status: 'Draft',
                 linked_service_ids: [],
                 linked_sub_service_ids: [],
-                application_type: undefined,
+                application_type: 'web',
                 smm_platform: undefined,
                 seo_score: undefined,
                 grammar_score: undefined,
@@ -1431,7 +1433,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => setViewMode('upload')}
+                        onClick={() => {
+                            setSelectedApplicationType('web');
+                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                            setContentTypeLocked(true);
+                            setUploadStep('form-fields');
+                            setViewMode('upload');
+                        }}
                         className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1511,7 +1519,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => setViewMode('upload')}
+                        onClick={() => {
+                            setSelectedApplicationType('web');
+                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                            setContentTypeLocked(true);
+                            setUploadStep('form-fields');
+                            setViewMode('upload');
+                        }}
                         className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -6134,6 +6148,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         onClick={() => {
                                             setNewAsset(prev => ({ ...prev, application_type: 'web' }));
                                             setSelectedApplicationType('web');
+                                            setContentTypeLocked(true);
+                                            setUploadStep('form-fields');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all"
@@ -6149,6 +6165,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         onClick={() => {
                                             setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
                                             setSelectedApplicationType('seo');
+                                            setContentTypeLocked(true);
+                                            setUploadStep('form-fields');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-md hover:shadow-lg transition-all"
@@ -6164,6 +6182,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         onClick={() => {
                                             setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
                                             setSelectedApplicationType('smm');
+                                            setContentTypeLocked(true);
+                                            setUploadStep('form-fields');
                                             setShowUploadModal(true);
                                         }}
                                         className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl shadow-md hover:shadow-lg transition-all"
@@ -6521,6 +6541,27 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     </svg>
                                                                 </button>
                                                             )}
+
+                                                            {/* Delete Button - creators or admins */}
+                                                            {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
+                                                                    disabled={deletingId === asset.id}
+                                                                    className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                    title="Delete Asset"
+                                                                >
+                                                                    {deletingId === asset.id ? (
+                                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                            )}
                                                         </div>
 
                                                         {/* Quick Update Badge */}
@@ -6807,11 +6848,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                     <button
                                         onClick={() => {
-                                            // Open full upload flow and require user to select application type first
-                                            setNewAsset(prev => ({ ...prev, application_type: undefined }));
-                                            setSelectedApplicationType(null);
-                                            setUploadStep('select-type');
-                                            setContentTypeLocked(false);
+                                            // Open full upload flow with Web selected and locked
+                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                            setSelectedApplicationType('web');
+                                            setUploadStep('form-fields');
+                                            setContentTypeLocked(true);
                                             setViewMode('upload');
                                         }}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-blue-50 rounded-md transition-colors text-sm"
@@ -6827,10 +6868,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                     <button
                                         onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: undefined }));
-                                            setSelectedApplicationType(null);
-                                            setUploadStep('select-type');
-                                            setContentTypeLocked(false);
+                                            // Open full upload flow with SEO selected and locked
+                                            setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                            setSelectedApplicationType('seo');
+                                            setUploadStep('form-fields');
+                                            setContentTypeLocked(true);
                                             setViewMode('upload');
                                         }}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-green-50 rounded-md transition-colors text-sm"
@@ -6846,10 +6888,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                     <button
                                         onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: undefined }));
-                                            setSelectedApplicationType(null);
-                                            setUploadStep('select-type');
-                                            setContentTypeLocked(false);
+                                            // Open full upload flow with SMM selected and locked
+                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                            setSelectedApplicationType('smm');
+                                            setUploadStep('form-fields');
+                                            setContentTypeLocked(true);
                                             setViewMode('upload');
                                         }}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-purple-50 rounded-md transition-colors text-sm"
@@ -6880,6 +6923,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
             <UploadAssetModal
                 isOpen={showUploadModal}
+                initialData={newAsset}
+                contentTypeLocked={contentTypeLocked}
                 onClose={() => {
                     setShowUploadModal(false);
                     // Reset the newAsset state when modal closes
@@ -6906,7 +6951,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     });
                 }}
                 onSuccess={() => {
-                    refresh?.();
+                    // Refresh master tables and asset list after upload
+                    setTimeout(() => {
+                        refreshAssetCategories?.();
+                        refreshAssetTypes?.();
+                        refreshAssetFormats?.();
+                        refresh?.();
+                    }, 100);
                     setShowUploadModal(false);
                     // Reset the newAsset state after successful upload
                     setNewAsset({
@@ -6931,7 +6982,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         asset_format: ''
                     });
                 }}
-                initialData={newAsset}
             />
         </>
     );

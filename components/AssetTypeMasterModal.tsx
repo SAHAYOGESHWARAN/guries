@@ -23,7 +23,7 @@ const AssetTypeMasterModal: React.FC<AssetTypeMasterModalProps> = ({
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const brands = ['Pubrica', 'Stats Work', 'Food Research Lab', 'PhD Assistance', 'Tutors India'];
+    const brands = ['Pubrica', 'Stats work', 'Food Research lab', 'PhD assistance', 'tutors India'];
 
     useEffect(() => {
         if (editingItem) {
