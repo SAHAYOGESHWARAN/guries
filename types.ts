@@ -608,6 +608,8 @@ export interface AssetLibraryItem {
     smm_additional_pages?: string[]; // Additional pages/images for carousel posts
     smm_post_type?: string; // Type of post (image, video, carousel, story, reel)
     smm_campaign_type?: string; // Campaign type (awareness, engagement, traffic, conversions, lead-generation)
+    smm_cta?: string; // Call to action text
+    smm_target_audience?: string; // Target audience description
 
     // SEO Application Fields
     seo_keywords?: string; // Target keywords for SEO

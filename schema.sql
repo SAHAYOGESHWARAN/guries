@@ -924,6 +924,18 @@ CREATE TABLE IF NOT EXISTS asset_category_master (
 	UNIQUE(brand, category_name)
 );
 
+-- Asset Type Master Table
+CREATE TABLE IF NOT EXISTS asset_type_master (
+	id SERIAL PRIMARY KEY,
+	brand VARCHAR(255) NOT NULL,
+	asset_type_name VARCHAR(255) NOT NULL,
+	word_count INTEGER NOT NULL DEFAULT 0,
+	status VARCHAR(50) DEFAULT 'active',
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW(),
+	UNIQUE(brand, asset_type_name)
+);
+
 -- Asset Format Master Table
 CREATE TABLE IF NOT EXISTS asset_formats (
 	id SERIAL PRIMARY KEY,

@@ -14,7 +14,41 @@ interface UploadAssetModalProps {
 
 const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, onSuccess, initialData }) => {
     // Component state and logic would go here
-    const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>(initialData || {});
+    const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>(initialData || {
+        application_type: 'web',
+        name: '',
+        type: 'article',
+        repository: 'Content Repository',
+        status: 'Draft',
+        linked_service_ids: [],
+        linked_sub_service_ids: [],
+        smm_platform: undefined,
+        seo_score: undefined,
+        grammar_score: undefined,
+        smm_additional_pages: [],
+        keywords: [],
+        web_description: '',
+        web_url: '',
+        web_h1: '',
+        web_h2_1: '',
+        web_h2_2: '',
+        web_body_content: '',
+        asset_category: '',
+        asset_format: '',
+        seo_keywords: '',
+        seo_focus_keyword: '',
+        seo_content_type: '',
+        smm_post_type: '',
+        smm_campaign_type: '',
+        smm_hashtags: ''
+    });
+
+    // Update newAsset when initialData changes
+    React.useEffect(() => {
+        if (initialData) {
+            setNewAsset(initialData);
+        }
+    }, [initialData]);
     const [contentTypeLocked, setContentTypeLocked] = useState(false);
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
@@ -1130,51 +1164,57 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                     </div>
                 </div>
 
-                {showCategoryModal && (
-                    <AssetCategoryMasterModal
-                        isOpen={showCategoryModal}
-                        onClose={() => setShowCategoryModal(false)}
-                        onSave={async (cat: Partial<AssetCategoryMasterItem>) => {
-                            try {
-                                await createAssetCategory(cat as AssetCategoryMasterItem);
-                            } catch (err) {
-                                console.error('Failed to create category:', err);
-                            } finally {
-                                setShowCategoryModal(false);
-                            }
-                        }}
-                        editingCategory={editingCategory}
-                    />
-                )}
+                {
+                    showCategoryModal && (
+                        <AssetCategoryMasterModal
+                            isOpen={showCategoryModal}
+                            onClose={() => setShowCategoryModal(false)}
+                            onSave={async (cat: Partial<AssetCategoryMasterItem>) => {
+                                try {
+                                    await createAssetCategory(cat as AssetCategoryMasterItem);
+                                } catch (err) {
+                                    console.error('Failed to create category:', err);
+                                } finally {
+                                    setShowCategoryModal(false);
+                                }
+                            }}
+                            editingCategory={editingCategory}
+                        />
+                    )
+                }
 
-                {showTypeModal && (
-                    <AssetTypeMasterModal
-                        isOpen={showTypeModal}
-                        onClose={() => setShowTypeModal(false)}
-                        onSave={async (type: Partial<AssetTypeMasterItem>) => {
-                            try {
-                                await createAssetType(type as AssetTypeMasterItem);
-                            } catch (err) {
-                                console.error('Failed to create asset type:', err);
-                            } finally {
-                                setShowTypeModal(false);
-                            }
-                        }}
-                        editingAssetType={editingType}
-                    />
-                )}
+                {
+                    showTypeModal && (
+                        <AssetTypeMasterModal
+                            isOpen={showTypeModal}
+                            onClose={() => setShowTypeModal(false)}
+                            onSave={async (type: Partial<AssetTypeMasterItem>) => {
+                                try {
+                                    await createAssetType(type as AssetTypeMasterItem);
+                                } catch (err) {
+                                    console.error('Failed to create asset type:', err);
+                                } finally {
+                                    setShowTypeModal(false);
+                                }
+                            }}
+                            editingAssetType={editingType}
+                        />
+                    )
+                }
 
-                {showFormatModal && (
-                    <AssetFormatMasterModal
-                        isOpen={showFormatModal}
-                        onClose={() => setShowFormatModal(false)}
-                        onSuccess={() => {
-                            setShowFormatModal(false);
-                        }}
-                    />
-                )}
-            </div>
-        </div>
+                {
+                    showFormatModal && (
+                        <AssetFormatMasterModal
+                            isOpen={showFormatModal}
+                            onClose={() => setShowFormatModal(false)}
+                            onSuccess={() => {
+                                setShowFormatModal(false);
+                            }}
+                        />
+                    )
+                }
+            </div >
+        </div >
     );
 };
 

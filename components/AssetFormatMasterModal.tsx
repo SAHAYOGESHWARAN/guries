@@ -65,7 +65,7 @@ const AssetFormatMasterModal: React.FC<AssetFormatMasterModalProps> = ({
             await createAssetFormat({
                 ...formData,
                 status: 'active'
-            } as AssetFormatMasterItem);
+            });
 
             // Reset form
             setFormData({
@@ -78,9 +78,10 @@ const AssetFormatMasterModal: React.FC<AssetFormatMasterModalProps> = ({
             });
             setExtensionInput('');
 
-            onSuccess?.();
+            if (onSuccess) {
+                onSuccess();
+            }
             onClose();
-            alert('Asset format added successfully!');
         } catch (error) {
             console.error('Failed to create asset format:', error);
             alert('Failed to create asset format. Please try again.');

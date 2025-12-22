@@ -9,7 +9,6 @@
     "dev:client": "vite",
     "dev:server": "cd backend && nodemon server.ts",
     "build": "vite build && cd backend && npm install --include=dev && npm run build",
-    "all": "npm install && npm run setup && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
