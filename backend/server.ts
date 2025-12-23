@@ -16,7 +16,7 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
-const PORT = process.env.PORT || 3003;
+const PORT = parseInt(process.env.PORT || '3003', 10);
 
 // Setup Socket.io
 const io = initSocket(httpServer, {
@@ -81,8 +81,25 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start Server
-connectDB().then(() => {
-    httpServer.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
+const startServer = (portToTry: number) => {
+    const server = httpServer.listen(portToTry);
+
+    server.on('listening', () => {
+        console.log(`🚀 Server running on port ${portToTry}`);
     });
+
+    server.on('error', (err: any) => {
+        if (err && err.code === 'EADDRINUSE') {
+            console.warn(`Port ${portToTry} in use, trying ${portToTry + 1}...`);
+            // try next port
+            setTimeout(() => startServer(portToTry + 1), 200);
+        } else {
+            console.error('Server error:', err);
+            (process as any).exit(1);
+        }
+    });
+};
+
+connectDB().then(() => {
+    startServer(PORT);
 });

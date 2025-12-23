@@ -7,7 +7,7 @@ import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
 import UploadAssetModal from '../components/UploadAssetModal';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
-import type { AssetLibraryItem, Service, SubServiceItem, User, AssetFormat, AssetCategoryMasterItem, AssetTypeMasterItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand } from '../types';
 
 interface AssetsViewProps {
     onNavigate?: (view: string, id?: number) => void;
@@ -21,10 +21,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: keywords = [] } = useData<any>('keywords');
     const { data: assetCategories = [], refresh: refreshAssetCategories } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [], refresh: refreshAssetTypes } = useData<AssetTypeMasterItem>('asset-type-master');
-    const { data: assetFormats = [], refresh: refreshAssetFormats } = useData<AssetFormat>('asset-formats');
+    const { data: assetFormats = [], refresh: refreshAssetFormats } = useData<any>('asset-format-master');
     const { create: createAssetCategory, update: updateAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType, update: updateAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
-    const [availableFormats, setAvailableFormats] = useState<AssetFormat[]>([]);
+    
 
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
@@ -43,6 +43,38 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [editingAsset, setEditingAsset] = useState<AssetLibraryItem | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const thumbnailInputRef = useRef<HTMLInputElement>(null);
+    const mediaInputRef = useRef<HTMLInputElement>(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [showDemoPreview, setShowDemoPreview] = useState<boolean>(true);
+
+    // Additional selection states (missing previously)
+    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+    const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
+    const [selectedKeywords, setSelectedKeywords] = useState<any[]>([]);
+    const [markdownContent, setMarkdownContent] = useState<string>('');
+    const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
+
+    // QC state
+    const [qcReviewAsset, setQcReviewAsset] = useState<AssetLibraryItem | null>(null);
+    const [qcScore, setQcScore] = useState<number | undefined>(undefined);
+    const [qcRemarks, setQcRemarks] = useState<string>('');
+    const [checklistCompleted, setChecklistCompleted] = useState<boolean>(false);
+
+    // Brands (used for filters/masters)
+    const { data: brands = [] } = useData<Brand>('brands');
+
+    // Selected brand (used by master filters)
+    const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
+
+    // Filtered master lists (by brand / active status)
+    const filteredAssetCategories = useMemo(() => {
+        return (assetCategories || []).filter(cat => cat.status === 'active' && (!selectedBrand || selectedBrand === 'All' || cat.brand === selectedBrand));
+    }, [assetCategories, selectedBrand]);
+
+    const filteredAssetTypes = useMemo(() => {
+        return (assetTypes || []).filter(t => t.status === 'active' && (!selectedBrand || selectedBrand === 'All' || t.brand === selectedBrand));
+    }, [assetTypes, selectedBrand]);
 
     // Master table modals
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -54,7 +86,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [uploadStep, setUploadStep] = useState<'select-type' | 'form-fields' | 'upload-file' | 'asset-details'>('select-type');
     const [selectedApplicationType, setSelectedApplicationType] = useState<'web' | 'seo' | 'smm' | null>('web');
     const [contentTypeLocked, setContentTypeLocked] = useState(true); // lock content type during upload process (default to Web)
-    const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
         // Asset Submission Fields (In Order)
@@ -69,7 +100,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         web_h2_2: '', // 8. H2 (second)
         type: 'article', // 9. Asset Type
         asset_category: '', // 10. Asset Category
-        asset_format: '', // 11. Asset Format
         repository: 'Content Repository', // 12. Repository
         // Image Upload Option handled separately
         web_body_content: '', // 14. Body Content
@@ -84,101 +114,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         smm_additional_pages: [],
         keywords: [] // Added keywords array for master database integration
     });
-
-    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
-    const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
-    const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-
-    const brands = ['Pubrica', 'Stats work', 'Food Research lab', 'PhD assistance', 'tutors India'];
-
-    // Filter asset categories and types by selected brand
-    const filteredAssetCategories = useMemo(() => {
-        return assetCategories.filter(cat => cat.brand === selectedBrand && cat.status === 'active');
-    }, [assetCategories, selectedBrand]);
-
-    const filteredAssetTypes = useMemo(() => {
-        return assetTypes.filter(type => type.brand === selectedBrand && type.status === 'active');
-    }, [assetTypes, selectedBrand]);
-
-    // Markdown editor state
-    const [markdownContent, setMarkdownContent] = useState('');
-    const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
-    const markdownTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-    // File upload refs
-    const thumbnailInputRef = useRef<HTMLInputElement>(null);
-    const mediaInputRef = useRef<HTMLInputElement>(null);
-
-    // Preview modal state
-    const [showPreviewModal, setShowPreviewModal] = useState(false);
-    const [showDemoPreview, setShowDemoPreview] = useState(true);
-
-    // QC Review state
-    const [qcReviewAsset, setQcReviewAsset] = useState<AssetLibraryItem | null>(null);
-    const [qcScore, setQcScore] = useState<number | undefined>(undefined);
-    const [qcRemarks, setQcRemarks] = useState('');
-    const [checklistCompleted, setChecklistCompleted] = useState(false);
-
-    // Detailed view state
-    const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
-
-    // Auto-refresh on mount to ensure latest data
-    React.useEffect(() => {
-        refresh?.();
-    }, []);
-
-    // Update available formats when application type changes
-    React.useEffect(() => {
-        if (newAsset.application_type && assetFormats.length > 0) {
-            const filtered = assetFormats.filter((format: any) =>
-                format.application_types && format.application_types.includes(newAsset.application_type)
-            );
-            setAvailableFormats(filtered);
-
-            // Reset asset format if current selection is not available for new application type
-            if (newAsset.asset_format && !filtered.some((f: any) => f.format_name === newAsset.asset_format)) {
-                setNewAsset(prev => ({ ...prev, asset_format: '' }));
-            }
-        } else {
-            setAvailableFormats(assetFormats);
-        }
-    }, [newAsset.application_type, assetFormats]);
-
-    // Calculate markdown stats
-    const markdownStats = useMemo(() => {
-        const text = markdownContent || '';
-        const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
-        const characters = text.length;
-        const lines = text.split('\n').length;
-        const readTime = Math.ceil(words / 200); // Average reading speed: 200 words/min
-
-        return { words, characters, lines, readTime };
-    }, [markdownContent]);
-
-    // Markdown formatting helpers
-    const insertMarkdown = useCallback((before: string, after: string = '') => {
-        const textarea = markdownTextareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const selectedText = markdownContent.substring(start, end);
-        const newText = markdownContent.substring(0, start) + before + selectedText + after + markdownContent.substring(end);
-
-        setMarkdownContent(newText);
-        setNewAsset({ ...newAsset, web_body_content: newText });
-
-        // Update selected asset in real-time if in detail view
-        if (selectedAsset && editingAsset && selectedAsset.id === editingAsset.id) {
-            setSelectedAsset({ ...selectedAsset, web_body_content: newText });
-        }
-
-        // Restore focus and selection
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + before.length, end + before.length);
-        }, 0);
-    }, [markdownContent, newAsset]);
 
     // File upload handler for thumbnails and media
     const handleFileUpload = useCallback(async (file: File, type: 'thumbnail' | 'media') => {
@@ -475,7 +410,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // Removed usage_status as per requirement 3
             status: asset.status,
             asset_category: asset.asset_category,
-            asset_format: asset.asset_format,
+            // asset_format removed per requirements
             mapped_to: asset.mapped_to,
             qc_score: asset.qc_score,
             seo_score: asset.seo_score,
@@ -528,26 +463,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
         setViewMode('edit');
     }, []);
-
-    const handleDelete = useCallback(async (e: React.MouseEvent, id: number, name: string) => {
-        e.stopPropagation();
-
-        if (deletingId !== null) return;
-
-        if (!window.confirm(`Delete "${name}"?`)) return;
-
-        setDeletingId(id);
-        try {
-            await removeAsset(id);
-            // Force refresh after delete to ensure UI is updated
-            setTimeout(() => refresh?.(), 100);
-        } catch (error) {
-            console.error('Delete failed:', error);
-            alert('Failed to delete asset. Please try again.');
-        } finally {
-            setDeletingId(null);
-        }
-    }, [deletingId, removeAsset, refresh]);
 
     // QC Review Functions
     const handleQcReview = useCallback((asset: AssetLibraryItem) => {
@@ -614,6 +529,24 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         setSelectedAsset(null);
         setViewMode('list');
     }, []);
+
+    // Delete handler
+    const handleDelete = useCallback(async (e: React.MouseEvent, id: number, name?: string) => {
+        e.stopPropagation();
+        if (!confirm(`Delete asset ${name || id}? This action cannot be undone.`)) return;
+        setDeletingId(id);
+        try {
+            await removeAsset(id);
+            // if the deleted asset is currently selected, clear detail view
+            setSelectedAsset(prev => (prev && prev.id === id ? null : prev));
+            setTimeout(() => refresh?.(), 100);
+        } catch (err) {
+            console.error('Delete failed:', err);
+            alert('Failed to delete asset.');
+        } finally {
+            setDeletingId(null);
+        }
+    }, [removeAsset, refresh]);
 
     const getAssetIcon = useCallback((type: string) => {
         const icons: Record<string, string> = {
@@ -1008,25 +941,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 onChange={(e) => setSelectedBrand(e.target.value)}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             >
+                                <option value="">Select brand...</option>
                                 {brands.map(brand => (
-                                    <option key={brand} value={brand}>{brand}</option>
+                                    <option key={brand.id} value={brand.name}>{brand.name}</option>
                                 ))}
                             </select>
                         </div>
 
                         {/* Asset Category */}
                         <div>
-                            <div className="flex justify-between items-center mb-1">
-                                <label className="block text-sm font-medium text-slate-700">
-                                    Asset Category *
-                                </label>
-                                <button
-                                    onClick={() => setViewMode('master-categories')}
-                                    className="text-xs text-indigo-600 hover:text-indigo-800"
-                                >
-                                    Manage Categories
-                                </button>
-                            </div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Asset Category *
+                            </label>
                             <select
                                 value={newAsset.asset_category || ''}
                                 onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
@@ -1044,17 +970,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                         {/* Asset Type */}
                         <div>
-                            <div className="flex justify-between items-center mb-1">
-                                <label className="block text-sm font-medium text-slate-700">
-                                    Asset Type *
-                                </label>
-                                <button
-                                    onClick={() => setViewMode('master-types')}
-                                    className="text-xs text-indigo-600 hover:text-indigo-800"
-                                >
-                                    Manage Types
-                                </button>
-                            </div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Asset Type *
+                            </label>
                             <select
                                 value={newAsset.type || ''}
                                 onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
@@ -1070,25 +988,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </select>
                         </div>
 
-                        {/* Asset Format */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Asset Format *
-                            </label>
-                            <select
-                                value={newAsset.asset_format || ''}
-                                onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                required
-                            >
-                                <option value="">Select Format</option>
-                                {availableFormats.map(format => (
-                                    <option key={format.id} value={format.format_name}>
-                                        {format.format_name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {/* Asset Format removed per requirements */}
 
                         {/* Title */}
                         <div>
@@ -1182,7 +1082,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         <option value="twitter">Twitter</option>
                                         <option value="linkedin">LinkedIn</option>
                                         <option value="youtube">YouTube</option>
-                                        <option value="tiktok">TikTok</option>
+                                        {/* TikTok removed per SMM spec */}
                                     </select>
                                 </div>
                                 <div>
@@ -1198,33 +1098,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </>
                         )}
 
-                        {/* Quality Scores */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">SEO Score</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={newAsset.seo_score || ''}
-                                    onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="0-100"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Grammar Score</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={newAsset.grammar_score || ''}
-                                    onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="0-100"
-                                />
-                            </div>
-                        </div>
+                        {/* Quality scores moved beside Body Content */}
                     </div>
                 </div>
 
@@ -1406,22 +1280,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </select>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Asset Format</label>
-                        <select
-                            value={newAsset.asset_format || ''}
-                            onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                            disabled={!newAsset.application_type}
-                        >
-                            <option value="">{!newAsset.application_type ? 'Select content type first...' : 'Select format...'}</option>
-                            {assetFormats
-                                .filter(f => !newAsset.application_type || f.application_types?.includes(newAsset.application_type))
-                                .map(format => (
-                                    <option key={format.id} value={format.format_name}>{format.format_name} ({format.format_type})</option>
-                                ))}
-                        </select>
-                    </div>
+                    {/* Asset Format removed per requirements */}
                 </div>
             </div>
         </div>
@@ -2213,44 +2072,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </select>
                                             </div>
 
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                    Asset Format
-                                                    <span className="text-xs font-normal text-slate-500 ml-2">(Linked with Asset Master)</span>
-                                                </label>
-                                                <select
-                                                    value={newAsset.asset_format || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white cursor-pointer"
-                                                    disabled={!newAsset.application_type}
-                                                >
-                                                    <option value="">
-                                                        {!newAsset.application_type ? 'Select content type first...' : 'Select format...'}
-                                                    </option>
-                                                    {assetFormats
-                                                        .filter(format =>
-                                                            !newAsset.application_type ||
-                                                            format.application_types?.includes(newAsset.application_type)
-                                                        )
-                                                        .map(format => (
-                                                            <option key={format.id} value={format.format_name}>
-                                                                {format.format_name} ({format.format_type})
-                                                                {format.max_file_size_mb && ` - Max ${format.max_file_size_mb}MB`}
-                                                            </option>
-                                                        ))
-                                                    }
-                                                </select>
-                                                {!newAsset.application_type && (
-                                                    <p className="text-xs text-slate-500 mt-1">
-                                                        Please select a content type (WEB/SEO/SMM) to see available formats
-                                                    </p>
-                                                )}
-                                                {newAsset.application_type && assetFormats.filter(f => f.application_types?.includes(newAsset.application_type!)).length === 0 && (
-                                                    <p className="text-xs text-orange-600 mt-1">
-                                                        No formats available for {newAsset.application_type?.toUpperCase()}
-                                                    </p>
-                                                )}
-                                            </div>
+                                            {/* Asset Format removed per requirements */}
                                         </div>
 
                                         {/* Repository */}
@@ -2683,10 +2505,71 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             )}
                                         </div>
 
-                                        <MarkdownEditor
-                                            value={newAsset.web_body_content || ''}
-                                            onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
-                                        />
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div className="lg:col-span-2">
+                                                <MarkdownEditor
+                                                    value={newAsset.web_body_content || ''}
+                                                    onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">SEO Score</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={newAsset.seo_score || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                        placeholder="0-100"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Grammar Score</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={newAsset.grammar_score || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                        placeholder="0-100"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">File Upload</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            ref={fileInputRef}
+                                                            type="file"
+                                                            onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                                            className="hidden"
+                                                            accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => fileInputRef.current?.click()}
+                                                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                                                        >
+                                                            Choose File
+                                                        </button>
+                                                        <div className="flex-1 text-sm text-slate-600 self-center">
+                                                            {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
+                                                        </div>
+                                                    </div>
+
+                                                    {previewUrl && (
+                                                        <div className="mt-2">
+                                                            <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -2839,7 +2722,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     { value: 'twitter', label: 'Twitter/X', icon: '🐦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
                                                     { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
                                                     { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' },
-                                                    { value: 'tiktok', label: 'TikTok', icon: '🎵', color: 'from-black to-gray-800', description: 'Short-form video content' },
                                                     { value: 'pinterest', label: 'Pinterest', icon: '📌', color: 'from-red-500 to-pink-500', description: 'Visual discovery engine' },
                                                     { value: 'snapchat', label: 'Snapchat', icon: '👻', color: 'from-yellow-400 to-yellow-500', description: 'Ephemeral content sharing' },
                                                     { value: 'whatsapp', label: 'WhatsApp', icon: '💬', color: 'from-green-500 to-green-600', description: 'Messaging and status updates' }
@@ -2882,7 +2764,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <option value="twitter">🐦 Twitter/X</option>
                                                     <option value="linkedin">💼 LinkedIn</option>
                                                     <option value="youtube">🎥 YouTube</option>
-                                                    <option value="tiktok">🎵 TikTok</option>
+                                                    {/* TikTok removed per SMM spec */}
                                                     <option value="pinterest">📌 Pinterest</option>
                                                     <option value="snapchat">👻 Snapchat</option>
                                                     <option value="whatsapp">💬 WhatsApp</option>
@@ -2905,11 +2787,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {newAsset.smm_platform === 'twitter' && '�'}
                                                         {newAsset.smm_platform === 'linkedin' && '💼'}
                                                         {newAsset.smm_platform === 'youtube' && '🎥'}
-                                                        {newAsset.smm_platform === 'tiktok' && '🎵'}
                                                         {newAsset.smm_platform === 'pinterest' && '📌'}
                                                         {newAsset.smm_platform === 'snapchat' && '👻'}
                                                         {newAsset.smm_platform === 'whatsapp' && '💬'}
-                                                        {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'tiktok', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && '🌐'}
+                                                        {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && '🌐'}
                                                     </div>
                                                     <div>
                                                         <h5 className="text-lg font-bold text-slate-800 capitalize">
@@ -2921,11 +2802,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             {newAsset.smm_platform === 'twitter' && 'Join real-time conversations'}
                                                             {newAsset.smm_platform === 'linkedin' && 'Connect with professionals'}
                                                             {newAsset.smm_platform === 'youtube' && 'Create engaging video content'}
-                                                            {newAsset.smm_platform === 'tiktok' && 'Create viral short-form videos'}
                                                             {newAsset.smm_platform === 'pinterest' && 'Inspire with visual content'}
                                                             {newAsset.smm_platform === 'snapchat' && 'Share moments that disappear'}
                                                             {newAsset.smm_platform === 'whatsapp' && 'Connect through messaging'}
-                                                            {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'tiktok', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && 'Create engaging social content'}
+                                                            {!(newAsset.smm_platform && ['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform)) && 'Create engaging social content'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -2941,15 +2821,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             value={newAsset.smm_description || ''}
                                                             onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
                                                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                            placeholder={
-                                                                newAsset.smm_platform === 'twitter' ? 'What\'s happening? (280 characters)' :
-                                                                    newAsset.smm_platform === 'linkedin' ? 'Share your professional insights...' :
-                                                                        newAsset.smm_platform === 'instagram' ? 'Share your story with a captivating caption...' :
-                                                                            newAsset.smm_platform === 'facebook' ? 'What\'s on your mind?' :
-                                                                                newAsset.smm_platform === 'youtube' ? 'Describe your video content...' :
-                                                                                    newAsset.smm_platform === 'tiktok' ? 'Add a catchy description for your video...' :
-                                                                                        'Enter your post content...'
-                                                            }
+                                                            placeholder={(() => {
+                                                                switch (newAsset.smm_platform) {
+                                                                    case 'twitter': return "What's happening? (280 characters)";
+                                                                    case 'linkedin': return 'Share your professional insights...';
+                                                                    case 'instagram': return 'Share your story with a captivating caption...';
+                                                                    case 'facebook': return "What's on your mind?";
+                                                                    case 'youtube': return 'Describe your video content...';
+                                                                    default: return 'Enter your post content...';
+                                                                }
+                                                            })()}
                                                             rows={5}
                                                             maxLength={
                                                                 newAsset.smm_platform === 'twitter' ? 280 :
@@ -2979,21 +2860,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             value={newAsset.smm_hashtags || ''}
                                                             onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
                                                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                            placeholder={
-                                                                newAsset.smm_platform === 'twitter' ? '#hashtag1 #hashtag2 (max 2-3)' :
-                                                                    newAsset.smm_platform === 'instagram' ? '#hashtag1 #hashtag2 #hashtag3 (max 30)' :
-                                                                        newAsset.smm_platform === 'linkedin' ? '#hashtag1 #hashtag2 #hashtag3 (max 5)' :
-                                                                            newAsset.smm_platform === 'tiktok' ? '#hashtag1 #hashtag2 #hashtag3 (trending tags)' :
-                                                                                '#hashtag1 #hashtag2 #hashtag3'
-                                                            }
+                                                            placeholder={(() => {
+                                                                switch (newAsset.smm_platform) {
+                                                                    case 'twitter': return '#hashtag1 #hashtag2 (max 2-3)';
+                                                                    case 'instagram': return '#hashtag1 #hashtag2 #hashtag3 (max 30)';
+                                                                    case 'linkedin': return '#hashtag1 #hashtag2 #hashtag3 (max 5)';
+                                                                    default: return '#hashtag1 #hashtag2 #hashtag3';
+                                                                }
+                                                            })()}
                                                         />
                                                         <div className="mt-2 text-xs text-slate-500">
                                                             {newAsset.smm_platform === 'twitter' && '💡 Use 1-2 relevant hashtags for better engagement'}
                                                             {newAsset.smm_platform === 'instagram' && '💡 Use 5-10 hashtags for optimal reach'}
                                                             {newAsset.smm_platform === 'linkedin' && '💡 Use 3-5 professional hashtags'}
-                                                            {newAsset.smm_platform === 'tiktok' && '💡 Mix trending and niche hashtags'}
                                                             {newAsset.smm_platform === 'youtube' && '💡 Use hashtags in description for discoverability'}
-                                                            {!['twitter', 'instagram', 'linkedin', 'tiktok', 'youtube'].includes(newAsset.smm_platform) && '💡 Use relevant hashtags for your platform'}
+                                                            {!['twitter', 'instagram', 'linkedin', 'youtube'].includes(newAsset.smm_platform) && '💡 Use relevant hashtags for your platform'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3042,11 +2923,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             { value: 'short', label: 'Short', icon: '📱' },
                                                                             { value: 'live', label: 'Live Stream', icon: '🔴' }
                                                                         ];
-                                                                    case 'tiktok':
-                                                                        return [
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'live', label: 'Live', icon: '🔴' }
-                                                                        ];
+                                                                    /* TikTok removed per SMM spec */
                                                                     case 'pinterest':
                                                                         return [
                                                                             { value: 'image', label: 'Pin', icon: '📌' },
@@ -3082,6 +2959,74 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     </div>
                                                 </div>
 
+                                                {/* SMM Asset Classifications: Category & Format + Map to Services */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Category</label>
+                                                        <select
+                                                            value={newAsset.asset_category || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                                                        >
+                                                            <option value="">Select category...</option>
+                                                            {filteredAssetCategories.map(cat => (
+                                                                <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Format</label>
+                                                        <select
+                                                            value={(newAsset as any).asset_format || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
+                                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                                                        >
+                                                            <option value="">Select format...</option>
+                                                            {(assetFormats || []).map((f: any) => (
+                                                                <option key={f.id} value={f.format_name}>{f.format_name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-sm font-medium text-slate-700 mb-1">Map Asset to Services</label>
+                                                        <select
+                                                            value={selectedServiceId || ''}
+                                                            onChange={(e) => {
+                                                                const id = e.target.value ? parseInt(e.target.value) : null;
+                                                                setSelectedServiceId(id);
+                                                                setSelectedSubServiceIds([]);
+                                                            }}
+                                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                                                        >
+                                                            <option value="">Select service...</option>
+                                                            {services.map(service => (
+                                                                <option key={service.id} value={service.id}>{service.service_name}</option>
+                                                            ))}
+                                                        </select>
+
+                                                        {selectedServiceId && (
+                                                            <div className="mt-2">
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Select Sub-Services</label>
+                                                                <select
+                                                                    multiple
+                                                                    value={selectedSubServiceIds.map(String)}
+                                                                    onChange={(e) => {
+                                                                        const opts = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
+                                                                        setSelectedSubServiceIds(opts);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                >
+                                                                    {subServices.filter(ss => ss.parent_service_id === selectedServiceId).map(ss => (
+                                                                        <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
                                                 {/* Media Upload Section */}
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -3091,125 +3036,94 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         )}
                                                     </label>
 
-                                                    {/* SMM Image Upload - Single Image Only */}
-                                                    {(newAsset.smm_media_type === 'image') && (
-                                                        <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl">
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                                <div className="bg-purple-600 p-2 rounded-lg">
-                                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-lg font-bold text-purple-900">📱 SMM Image Upload</h4>
-                                                                    <p className="text-sm text-purple-600">Upload a single image for your SMM content</p>
-                                                                </div>
+                                                    {/* single-image SMM upload removed; using consolidated uploader below */}
+
+                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                                        <div className="lg:col-span-2 space-y-4">
+                                                            <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
+                                                                onClick={() => mediaInputRef.current?.click()}>
+                                                                <input
+                                                                    ref={mediaInputRef}
+                                                                    type="file"
+                                                                    accept={
+                                                                        newAsset.smm_media_type === 'video' ? 'video/*' :
+                                                                            newAsset.smm_media_type === 'image' ? 'image/*' :
+                                                                                'image/*,video/*,.gif'
+                                                                    }
+                                                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
+                                                                    className="hidden"
+                                                                />
+
+                                                                {newAsset.smm_media_url && newAsset.smm_media_url.startsWith('data:') ? (
+                                                                    <div className="space-y-3">
+                                                                        {newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
+                                                                            <video src={newAsset.smm_media_url} controls className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
+                                                                        ) : (
+                                                                            <img src={newAsset.smm_media_url} alt="Media preview" className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
+                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setNewAsset({ ...newAsset, smm_media_url: '' });
+                                                                            }}
+                                                                            className="text-sm text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                                        >
+                                                                            Remove Media
+                                                                        </button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="space-y-4">
+                                                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
+                                                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                            </svg>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-base font-semibold text-slate-700 mb-2">
+                                                                                Drop your {newAsset.smm_media_type || 'media'} here or click to browse
+                                                                            </p>
+                                                                            <p className="text-sm text-slate-500">
+                                                                                {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB • Videos up to 60s'}
+                                                                                {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB • Videos up to 2:20'}
+                                                                                {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB • Videos up to 10min'}
+                                                                                {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB • Videos up to 240min'}
+                                                                                {newAsset.smm_platform === 'youtube' && 'Videos up to 15min (or longer with verification)'}
+                                                                                {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && 'JPG, PNG, MP4, GIF up to 50MB'}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
 
-                                                            <div className="flex justify-center">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const input = document.createElement('input');
-                                                                        input.type = 'file';
-                                                                        input.accept = 'image/*';
-                                                                        input.onchange = (e) => {
-                                                                            const file = (e.target as HTMLInputElement).files?.[0];
-                                                                            if (file) {
-                                                                                handleFileUpload(file, 'media');
-                                                                            }
-                                                                        };
-                                                                        input.click();
-                                                                    }}
-                                                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 hover:scale-105"
-                                                                >
-                                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                    </svg>
-                                                                    Upload Single Image
-                                                                </button>
-                                                            </div>
-
-                                                            <div className="mt-3 text-xs text-purple-700 bg-purple-100 p-3 rounded-lg">
-                                                                <p className="font-bold mb-1">💡 SMM Image Upload Tips:</p>
-                                                                <ul className="space-y-1">
-                                                                    <li>• Upload a single high-quality image</li>
-                                                                    <li>• Recommended: 1080x1080px for Instagram, 1200x630px for Facebook</li>
-                                                                    <li>• Supported formats: JPG, PNG, WebP</li>
-                                                                    <li>• Maximum file size: 10MB</li>
-                                                                </ul>
+                                                            <div className="mt-2">
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Or paste media URL:</label>
+                                                                <input
+                                                                    type="url"
+                                                                    value={newAsset.smm_media_url && !newAsset.smm_media_url.startsWith('data:') ? newAsset.smm_media_url : ''}
+                                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_media_url: e.target.value })}
+                                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                                    placeholder="https://example.com/media.jpg"
+                                                                />
                                                             </div>
                                                         </div>
-                                                    )}
 
-                                                    {/* Standard Upload Area */}
-                                                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
-                                                        onClick={() => mediaInputRef.current?.click()}>
-                                                        <input
-                                                            ref={mediaInputRef}
-                                                            type="file"
-                                                            accept={
-                                                                newAsset.smm_media_type === 'video' ? 'video/*' :
-                                                                    newAsset.smm_media_type === 'image' ? 'image/*' :
-                                                                        'image/*,video/*,.gif'
-                                                            }
-                                                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
-                                                            className="hidden"
-                                                        />
-
-                                                        {newAsset.smm_media_url && newAsset.smm_media_url.startsWith('data:') ? (
-                                                            <div className="space-y-3">
-                                                                {newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
-                                                                    <video src={newAsset.smm_media_url} controls className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
-                                                                ) : (
-                                                                    <img src={newAsset.smm_media_url} alt="Media preview" className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
-                                                                )}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setNewAsset({ ...newAsset, smm_media_url: '' });
-                                                                    }}
-                                                                    className="text-sm text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                                                                >
-                                                                    Remove Media
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="space-y-4">
-                                                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
-                                                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-base font-semibold text-slate-700 mb-2">
-                                                                        Drop your {newAsset.smm_media_type || 'media'} here or click to browse
-                                                                    </p>
-                                                                    <p className="text-sm text-slate-500">
-                                                                        {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB • Videos up to 60s'}
-                                                                        {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB • Videos up to 2:20'}
-                                                                        {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB • Videos up to 10min'}
-                                                                        {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB • Videos up to 240min'}
-                                                                        {newAsset.smm_platform === 'youtube' && 'Videos up to 15min (or longer with verification)'}
-                                                                        {newAsset.smm_platform === 'tiktok' && 'Videos 15s-10min • 9:16 aspect ratio recommended'}
-                                                                        {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube', 'tiktok'].includes(newAsset.smm_platform) && 'JPG, PNG, MP4, GIF up to 50MB'}
-                                                                    </p>
+                                                        <div className="lg:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col items-center justify-center">
+                                                            <div className="w-full">
+                                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Preview</label>
+                                                                <div className="w-full h-48 flex items-center justify-center bg-white rounded-lg border-2 border-slate-100">
+                                                                    {newAsset.smm_media_url ? (
+                                                                        newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
+                                                                            <video src={newAsset.smm_media_url} controls className="max-h-44 mx-auto rounded-lg" />
+                                                                        ) : (
+                                                                            <img src={newAsset.smm_media_url} alt="Preview" className="max-h-44 mx-auto rounded-lg" />
+                                                                        )
+                                                                    ) : (
+                                                                        <div className="text-sm text-slate-400">No media selected</div>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* URL Input Alternative */}
-                                                    <div className="mt-4">
-                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Or paste media URL:</label>
-                                                        <input
-                                                            type="url"
-                                                            value={newAsset.smm_media_url && !newAsset.smm_media_url.startsWith('data:') ? newAsset.smm_media_url : ''}
-                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_media_url: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                            placeholder="https://example.com/media.jpg"
-                                                        />
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -3350,15 +3264,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                         <li>• Engage with comments within first hour</li>
                                                                     </>
                                                                 )}
-                                                                {newAsset.smm_platform === 'tiktok' && (
-                                                                    <>
-                                                                        <li>• Create vertical videos (9:16 aspect ratio)</li>
-                                                                        <li>• Hook viewers in the first 3 seconds</li>
-                                                                        <li>• Use trending sounds and hashtags</li>
-                                                                        <li>• Post 1-4 times daily for best results</li>
-                                                                    </>
-                                                                )}
-                                                                {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube', 'tiktok'].includes(newAsset.smm_platform) && (
+                                                                {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && (
                                                                     <>
                                                                         <li>• Know your platform's optimal posting times</li>
                                                                         <li>• Use platform-appropriate content formats</li>
@@ -6946,16 +6852,14 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         web_h2_1: '',
                         web_h2_2: '',
                         web_body_content: '',
-                        asset_category: '',
-                        asset_format: ''
+                        asset_category: ''
                     });
                 }}
                 onSuccess={() => {
                     // Refresh master tables and asset list after upload
-                    setTimeout(() => {
+                        setTimeout(() => {
                         refreshAssetCategories?.();
                         refreshAssetTypes?.();
-                        refreshAssetFormats?.();
                         refresh?.();
                     }, 100);
                     setShowUploadModal(false);
@@ -6978,8 +6882,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         web_h2_1: '',
                         web_h2_2: '',
                         web_body_content: '',
-                        asset_category: '',
-                        asset_format: ''
+                        asset_category: ''
                     });
                 }}
             />

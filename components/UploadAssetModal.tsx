@@ -36,7 +36,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         web_body_content: '',
         asset_category: '',
         asset_format: '',
-        seo_keywords: '',
+        seo_keywords: [],
         seo_focus_keyword: '',
         seo_content_type: '',
         smm_post_type: '',
@@ -356,7 +356,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
                                 />
                                 <div className="text-xs text-slate-500 mt-1">
-                                    {(newAsset.seo_content_body || newAsset.web_body_content || '').split(' ').filter(w => w.length > 0).length} words
+                                    {(newAsset.seo_content_body || newAsset.web_body_content || '').split(' ').filter((w: string) => w.length > 0).length} words
                                 </div>
                             </div>
                         </div>
@@ -915,17 +915,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                 </option>
                                             ))}
                                         </select>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowTypeModal(true)}
-                                            className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                                            title="Add New Asset Type"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Add
-                                        </button>
                                     </div>
                                 </div>
 
@@ -947,58 +936,10 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                 </option>
                                             ))}
                                         </select>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCategoryModal(true)}
-                                            className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                                            title="Add New Category"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Add
-                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Asset Format (From Master Table) */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                        Asset Format <span className="text-slate-500 text-xs">(From Master Table)</span>
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={newAsset.asset_format || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                                            className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                        >
-                                            <option value="">Select format...</option>
-                                            {assetFormats
-                                                .filter(format => !newAsset.application_type || format.application_types?.includes(newAsset.application_type))
-                                                .map(format => (
-                                                    <option key={format.id} value={format.format_name}>
-                                                        {format.format_name}
-                                                    </option>
-                                                ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowFormatModal(true)}
-                                            className="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
-                                            title="Add New Format"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Add
-                                        </button>
-                                    </div>
-                                    {newAsset.application_type && (
-                                        <div className="text-xs text-slate-500 mt-1">
-                                            Showing formats available for {newAsset.application_type?.toUpperCase()} content
-                                        </div>
-                                    )}
-                                </div>
+                                {/* Asset Format removed per requirements */}
                             </div>
 
                             {/* Right Column */}
@@ -1180,7 +1121,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                     setShowCategoryModal(false);
                                 }
                             }}
-                            editingCategory={editingCategory}
+                            editingItem={editingCategory}
                         />
                     )
                 }
@@ -1199,7 +1140,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                     setShowTypeModal(false);
                                 }
                             }}
-                            editingAssetType={editingType}
+                            editingItem={editingType}
                         />
                     )
                 }

@@ -612,9 +612,17 @@ export interface AssetLibraryItem {
     smm_target_audience?: string; // Target audience description
 
     // SEO Application Fields
-    seo_keywords?: string; // Target keywords for SEO
+    seo_title?: string;
+    seo_target_url?: string;
+    seo_keywords?: string[]; // Target keywords for SEO
     seo_focus_keyword?: string; // Primary focus keyword
     seo_content_type?: string; // Content type (blog-post, landing-page, product-page, etc.)
+    seo_meta_description?: string;
+    seo_content_description?: string;
+    seo_h1?: string;
+    seo_h2_1?: string;
+    seo_h2_2?: string;
+    seo_content_body?: string;
 
     // Metadata timestamps
     updated_at?: string;
