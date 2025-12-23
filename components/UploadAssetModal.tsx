@@ -487,25 +487,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </div>
                                     </button>
 
-                                    {/* TikTok */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setNewAsset({ ...newAsset, smm_platform: 'tiktok' })}
-                                        className={`p-4 rounded-xl border-2 transition-all text-left ${newAsset.smm_platform === 'tiktok'
-                                            ? 'border-slate-900 bg-slate-50'
-                                            : 'border-slate-200 hover:border-slate-400 hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-                                                <span className="text-white font-bold text-sm">♪</span>
-                                            </div>
-                                            <div>
-                                                <div className="font-semibold text-slate-900">🎵 TikTok</div>
-                                                <div className="text-xs text-slate-600">Short-form video content</div>
-                                            </div>
-                                        </div>
-                                    </button>
+                                    {/* TikTok removed per SMM spec */}
                                 </div>
                             </div>
 

@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 interface SmmApplicationModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onPlatformSelect: (platform: 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'youtube' | 'tiktok' | 'pinterest' | 'snapchat' | 'whatsapp' | 'telegram' | 'discord' | 'reddit' | 'tumblr' | 'other', file?: File) => void;
+    onPlatformSelect: (platform: 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'youtube' | 'pinterest' | 'snapchat' | 'whatsapp' | 'telegram' | 'discord' | 'reddit' | 'tumblr' | 'other', file?: File) => void;
 }
 
 const SmmApplicationModal: React.FC<SmmApplicationModalProps> = ({ isOpen, onClose, onPlatformSelect }) => {
@@ -102,13 +102,7 @@ const SmmApplicationModal: React.FC<SmmApplicationModalProps> = ({ isOpen, onClo
             description: 'Video content platform',
             color: 'from-red-600 to-red-700'
         },
-        {
-            id: 'tiktok',
-            name: 'TikTok',
-            icon: '🎵',
-            description: 'Short-form video content',
-            color: 'from-black to-gray-800'
-        }
+        // TikTok removed per SMM spec
     ];
 
     const selectedPlatformData = platforms.find(p => p.id === selectedPlatform);

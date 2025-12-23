@@ -595,9 +595,11 @@ export interface AssetLibraryItem {
     web_h2_2?: string;
     web_thumbnail?: string;
     web_body_content?: string;
+    web_body_attachment?: string; // base64 or URL for attached file
+    web_body_attachment_name?: string; // original filename for the attachment
 
     // SMM Application Fields
-    smm_platform?: 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'youtube' | 'tiktok' | 'pinterest' | 'snapchat' | 'whatsapp' | 'telegram' | 'discord' | 'reddit' | 'tumblr' | 'other';
+    smm_platform?: 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'youtube' | 'pinterest' | 'snapchat' | 'whatsapp' | 'telegram' | 'discord' | 'reddit' | 'tumblr' | 'other';
     smm_title?: string;
     smm_tag?: string;
     smm_url?: string;
