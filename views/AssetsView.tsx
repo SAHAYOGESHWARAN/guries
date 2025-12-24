@@ -71,21 +71,33 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     // Filtered master lists (by brand / active status)
     const filteredAssetCategories = useMemo(() => {
-        return (assetCategories || []).filter(cat => cat.status === 'active' && (!selectedBrand || selectedBrand === 'All' || cat.brand === selectedBrand));
+        // Handle both structures - filter by status if it exists
+        return (assetCategories || []).filter(cat => {
+            const statusOk = !cat.status || cat.status === 'active';
+            const brandOk = !selectedBrand || selectedBrand === 'All' || cat.brand === selectedBrand;
+            return statusOk && brandOk;
+        });
     }, [assetCategories, selectedBrand]);
 
     // All active categories for dropdowns (not filtered by brand)
     const allActiveAssetCategories = useMemo(() => {
-        return (assetCategories || []).filter(cat => cat.status === 'active');
+        // Handle both structures - filter by status if it exists
+        return (assetCategories || []).filter(cat => !cat.status || cat.status === 'active');
     }, [assetCategories]);
 
     const filteredAssetTypes = useMemo(() => {
-        return (assetTypes || []).filter(t => t.status === 'active' && (!selectedBrand || selectedBrand === 'All' || t.brand === selectedBrand));
+        // Handle both AssetTypeItem (no status) and AssetTypeMasterItem (has status)
+        return (assetTypes || []).filter(t => {
+            const statusOk = !t.status || t.status === 'active';
+            const brandOk = !selectedBrand || selectedBrand === 'All' || (t as any).brand === selectedBrand;
+            return statusOk && brandOk;
+        });
     }, [assetTypes, selectedBrand]);
 
     // All active asset types for dropdowns (not filtered by brand)
     const allActiveAssetTypes = useMemo(() => {
-        return (assetTypes || []).filter(t => t.status === 'active');
+        // Handle both AssetTypeItem (no status) and AssetTypeMasterItem (has status)
+        return (assetTypes || []).filter(t => !t.status || t.status === 'active');
     }, [assetTypes]);
 
     // Debug: Log master data on load
@@ -1625,9 +1637,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
                                     <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                                         <option value="">Select type...</option>
-                                        {filteredAssetTypes.map(t => (
-                                            <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
-                                        ))}
+                                        {filteredAssetTypes.map(t => {
+                                            const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                            return <option key={t.id} value={typeName}>{typeName}</option>;
+                                        })}
                                     </select>
                                 </div>
 
@@ -1714,9 +1727,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                         >
                             <option value="">Select type...</option>
-                            {filteredAssetTypes.map(t => (
-                                <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
-                            ))}
+                            {filteredAssetTypes.map(t => {
+                                const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                return <option key={t.id} value={typeName}>{typeName}</option>;
+                            })}
                         </select>
                     </div>
 
@@ -2871,9 +2885,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
                                                     <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                                         <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types available --'}</option>
-                                                        {allActiveAssetTypes.map(t => (
-                                                            <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
-                                                        ))}
+                                                        {allActiveAssetTypes.map(t => {
+                                                            const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                                            return <option key={t.id} value={typeName}>{typeName}</option>;
+                                                        })}
                                                     </select>
                                                     {allActiveAssetTypes.length === 0 && (
                                                         <p className="text-xs text-amber-600 mt-1">⚠️ Add types in Asset Type Master</p>
@@ -3393,36 +3408,43 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {/* Repository */}
                                                         <div>
                                                             <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
-                                                            <select value={newAsset.repository || 'SMM Repository'} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                            <select value={newAsset.repository || 'SMM Repository'} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                                                 <option value="SMM Repository">SMM Repository</option>
                                                                 <option value="Content Repository">Content Repository</option>
                                                                 <option value="Design Repository">Design Repository</option>
                                                             </select>
                                                         </div>
 
-                                                        {/* Asset Category (from master table - no Add icon) */}
+                                                        {/* Asset Category (from master table) */}
                                                         <div>
                                                             <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
                                                             <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                                <option value="">Select category...</option>
+                                                                <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories --'}</option>
                                                                 {allActiveAssetCategories.map(cat => (
                                                                     <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
                                                                 ))}
                                                             </select>
+                                                            {allActiveAssetCategories.length === 0 && (
+                                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Category Master</p>
+                                                            )}
                                                         </div>
 
-                                                        {/* Asset Type (from master table - no Add icon) */}
+                                                        {/* Asset Type (from master table) */}
                                                         <div>
                                                             <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
                                                             <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                                <option value="">Select type...</option>
-                                                                {allActiveAssetTypes.map(t => (
-                                                                    <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
-                                                                ))}
+                                                                <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types --'}</option>
+                                                                {allActiveAssetTypes.map(t => {
+                                                                    const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                                                    return <option key={t.id} value={typeName}>{typeName}</option>;
+                                                                })}
                                                             </select>
+                                                            {allActiveAssetTypes.length === 0 && (
+                                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Type Master</p>
+                                                            )}
                                                         </div>
 
-                                                        {/* Map Asset to Services with sub-service dropdown */}
+                                                        {/* Map Asset to Services */}
                                                         <div className="md:col-span-2">
                                                             <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
                                                             <select
@@ -3431,53 +3453,44 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     const id = e.target.value ? parseInt(e.target.value) : null;
                                                                     setSelectedServiceId(id);
                                                                     setSelectedSubServiceIds([]);
-                                                                    // Debug: log service selection
-                                                                    console.log('SMM - Selected Service ID:', id);
-                                                                    console.log('SMM - Filtered Sub-Services:', subServices.filter(ss => Number(ss.parent_service_id) === Number(id)));
                                                                 }}
                                                                 className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                                                             >
-                                                                <option value="">Select a service...</option>
+                                                                <option value="">{services.length > 0 ? 'Select a service...' : '-- No services --'}</option>
                                                                 {services.map(s => (
                                                                     <option key={s.id} value={s.id}>{s.service_name}</option>
                                                                 ))}
                                                             </select>
+                                                            {services.length === 0 && (
+                                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add in Service Master</p>
+                                                            )}
 
-                                                            {/* Sub-services section - always show when service is selected */}
+                                                            {/* Sub-services */}
                                                             {selectedServiceId && (
                                                                 <div className="mt-3 border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
-                                                                    <label className="block text-sm font-semibold text-purple-700 mb-3">
-                                                                        📋 Select Sub-Services:
-                                                                    </label>
+                                                                    <label className="block text-sm font-semibold text-purple-700 mb-3">📋 Select Sub-Services:</label>
                                                                     {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
                                                                         <div className="space-y-2">
                                                                             {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                                                <label key={ss.id} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200 hover:border-purple-300 cursor-pointer transition-colors">
-                                                                                    <input
-                                                                                        type="checkbox"
-                                                                                        checked={selectedSubServiceIds.includes(ss.id)}
-                                                                                        onChange={(e) => {
-                                                                                            if (e.target.checked) {
-                                                                                                setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                                                            } else {
-                                                                                                const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                                                setSelectedSubServiceIds(remaining);
-                                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                                                            }
-                                                                                        }}
-                                                                                        className="w-4 h-4 text-purple-600 rounded"
-                                                                                    />
+                                                                                <label key={ss.id} className="flex items-center gap-3 p-2 bg-white rounded-lg border hover:border-purple-300 cursor-pointer">
+                                                                                    <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
+                                                                                        if (e.target.checked) {
+                                                                                            setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
+                                                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
+                                                                                        } else {
+                                                                                            const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
+                                                                                            setSelectedSubServiceIds(remaining);
+                                                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
+                                                                                        }
+                                                                                    }} className="w-4 h-4 text-purple-600 rounded" />
                                                                                     <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
                                                                                 </label>
                                                                             ))}
                                                                         </div>
                                                                     ) : (
                                                                         <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                                                            <span className="font-medium">⚠️ No sub-services found for this service.</span>
-                                                                            <span className="block text-xs mt-1 text-amber-600">
-                                                                                Go to Sub-Service Master and create sub-services with this service as the parent.
-                                                                            </span>
+                                                                            <span className="font-medium">⚠️ No sub-services found.</span>
+                                                                            <span className="block text-xs mt-1">Add in Sub-Service Master with this service as parent.</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -3843,7 +3856,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </div >
                 </div >
             )}
 

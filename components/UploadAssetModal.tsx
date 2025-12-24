@@ -76,20 +76,51 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const { create: createAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
 
+    // Debug: Log all loaded data on mount
+    React.useEffect(() => {
+        console.log('=== UploadAssetModal Data Load ===');
+        console.log('Services loaded:', services.length, services);
+        console.log('SubServices loaded:', subServices.length, subServices);
+        console.log('Asset Categories loaded:', assetCategories.length, assetCategories);
+        console.log('Asset Types loaded:', assetTypes.length, assetTypes);
+    }, [services, subServices, assetCategories, assetTypes]);
+
     // Filter sub-services by selected service
     const filteredSubServices = useMemo(() => {
-        if (!selectedServiceId) return [];
-        return subServices.filter(sub => Number(sub.parent_service_id) === Number(selectedServiceId));
+        console.log('=== Sub-Services Debug ===');
+        console.log('All subServices loaded:', subServices);
+        console.log('Selected Service ID:', selectedServiceId);
+        if (!selectedServiceId) {
+            console.log('No service selected, returning empty array');
+            return [];
+        }
+        const filtered = subServices.filter(sub => {
+            const match = Number(sub.parent_service_id) === Number(selectedServiceId);
+            console.log(`SubService "${sub.sub_service_name}" (parent_service_id: ${sub.parent_service_id}) - Match: ${match}`);
+            return match;
+        });
+        console.log('Filtered sub-services:', filtered);
+        return filtered;
     }, [subServices, selectedServiceId]);
 
-    // Filter asset categories by brand
+    // Filter asset categories by brand - handle both status field presence
     const filteredAssetCategories = useMemo(() => {
-        return assetCategories.filter(cat => cat.status === 'active');
+        console.log('=== Asset Categories Debug ===');
+        console.log('All categories:', assetCategories);
+        // Filter by status if it exists, otherwise include all
+        const filtered = assetCategories.filter(cat => !cat.status || cat.status === 'active');
+        console.log('Filtered categories:', filtered);
+        return filtered;
     }, [assetCategories]);
 
-    // Filter asset types by brand
+    // Filter asset types - handle both AssetTypeItem and AssetTypeMasterItem structures
     const filteredAssetTypes = useMemo(() => {
-        return assetTypes.filter(type => type.status === 'active');
+        console.log('=== Asset Types Debug ===');
+        console.log('All asset types:', assetTypes);
+        // Filter by status if it exists, otherwise include all
+        const filtered = assetTypes.filter(type => !type.status || type.status === 'active');
+        console.log('Filtered asset types:', filtered);
+        return filtered;
     }, [assetTypes]);
 
     // File handling functions
@@ -903,14 +934,18 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                     <select
                                                         value={newAsset.type || ''}
                                                         onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
-                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-slate-900"
                                                     >
-                                                        <option value="">Select type...</option>
-                                                        {filteredAssetTypes.map(type => (
-                                                            <option key={type.id} value={type.asset_type_name}>
-                                                                {type.asset_type_name}
-                                                            </option>
-                                                        ))}
+                                                        <option value="" className="text-slate-900">Select type...</option>
+                                                        {filteredAssetTypes.map(type => {
+                                                            // Handle both AssetTypeItem (asset_type) and AssetTypeMasterItem (asset_type_name)
+                                                            const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
+                                                            return (
+                                                                <option key={type.id} value={typeName} className="text-slate-900">
+                                                                    {typeName}
+                                                                </option>
+                                                            );
+                                                        })}
                                                     </select>
                                                 </div>
                                             </div>
@@ -943,58 +978,67 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                         value={selectedServiceId || ''}
                                                         onChange={(e) => {
                                                             const newServiceId = e.target.value ? parseInt(e.target.value) : null;
+                                                            console.log('SMM Section - Selected Service:', newServiceId);
+                                                            console.log('SMM Section - All SubServices:', subServices);
+                                                            const filtered = subServices.filter(sub => Number(sub.parent_service_id) === Number(newServiceId));
+                                                            console.log('SMM Section - Filtered SubServices:', filtered);
                                                             setSelectedServiceId(newServiceId);
                                                             setSelectedSubServiceIds([]);
                                                         }}
-                                                        className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                        className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-slate-900"
                                                     >
-                                                        <option value="">Choose Target Service</option>
+                                                        <option value="" className="text-slate-900">
+                                                            {services.length > 0 ? 'Choose Target Service' : '-- No services available --'}
+                                                        </option>
                                                         {services.map(service => (
-                                                            <option key={service.id} value={service.id}>
+                                                            <option key={service.id} value={service.id} className="text-slate-900">
                                                                 {service.service_name}
                                                             </option>
                                                         ))}
                                                     </select>
-                                                </div>
+                                                    {services.length === 0 && (
+                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add services in Service Master first</p>
+                                                    )}
 
-                                                {/* Sub Services */}
-                                                {selectedServiceId && (
-                                                    <div>
-                                                        <label className="block text-sm text-slate-600 mb-2">
-                                                            Sub Services
-                                                        </label>
-                                                        {filteredSubServices.length > 0 ? (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {filteredSubServices.map(subService => (
-                                                                    <button
-                                                                        key={subService.id}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setSelectedSubServiceIds(prev =>
-                                                                                prev.includes(subService.id)
-                                                                                    ? prev.filter(id => id !== subService.id)
-                                                                                    : [...prev, subService.id]
-                                                                            );
-                                                                        }}
-                                                                        className={`px-4 py-2 rounded-lg border text-sm transition-colors ${selectedSubServiceIds.includes(subService.id)
-                                                                            ? 'bg-purple-100 border-purple-300 text-purple-700'
-                                                                            : 'bg-white border-slate-200 text-slate-600 hover:border-purple-300'
-                                                                            }`}
-                                                                    >
-                                                                        {subService.sub_service_name}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                                                No sub-services available for this service.
-                                                                <span className="block text-xs mt-1 text-slate-400">
-                                                                    Create sub-services in Sub-Service Master with this service as parent.
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                    {/* Sub Services - Always show section when service selected */}
+                                                    {selectedServiceId && (
+                                                        <div className="mt-4 p-4 border-2 border-purple-300 rounded-lg bg-purple-50">
+                                                            <label className="block text-sm font-semibold text-purple-700 mb-3">
+                                                                📋 Select Sub-Services:
+                                                            </label>
+                                                            {filteredSubServices.length > 0 ? (
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {filteredSubServices.map(subService => (
+                                                                        <button
+                                                                            key={subService.id}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setSelectedSubServiceIds(prev =>
+                                                                                    prev.includes(subService.id)
+                                                                                        ? prev.filter(id => id !== subService.id)
+                                                                                        : [...prev, subService.id]
+                                                                                );
+                                                                            }}
+                                                                            className={`px-4 py-2 rounded-lg border text-sm transition-colors ${selectedSubServiceIds.includes(subService.id)
+                                                                                ? 'bg-purple-200 border-purple-400 text-purple-800 font-medium'
+                                                                                : 'bg-white border-slate-300 text-slate-700 hover:border-purple-400'
+                                                                                }`}
+                                                                        >
+                                                                            {subService.sub_service_name}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-300">
+                                                                    <span className="font-medium">⚠️ No sub-services found for this service.</span>
+                                                                    <span className="block text-xs mt-1 text-amber-600">
+                                                                        Create sub-services in Sub-Service Master with this service as parent.
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1385,14 +1429,18 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                             <select
                                                 value={newAsset.type || ''}
                                                 onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
-                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
                                             >
-                                                <option value="">Select type...</option>
-                                                {filteredAssetTypes.map(type => (
-                                                    <option key={type.id} value={type.asset_type_name}>
-                                                        {type.asset_type_name}
-                                                    </option>
-                                                ))}
+                                                <option value="" className="text-slate-900">Select type...</option>
+                                                {filteredAssetTypes.map(type => {
+                                                    // Handle both AssetTypeItem (asset_type) and AssetTypeMasterItem (asset_type_name)
+                                                    const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
+                                                    return (
+                                                        <option key={type.id} value={typeName} className="text-slate-900">
+                                                            {typeName}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                         </div>
 
@@ -1403,16 +1451,67 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                             </label>
                                             <select
                                                 value={selectedServiceId || ''}
-                                                onChange={(e) => setSelectedServiceId(e.target.value ? parseInt(e.target.value) : null)}
-                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                onChange={(e) => {
+                                                    const newServiceId = e.target.value ? parseInt(e.target.value) : null;
+                                                    console.log('WEB Section - Selected Service:', newServiceId);
+                                                    const filtered = subServices.filter(sub => Number(sub.parent_service_id) === Number(newServiceId));
+                                                    console.log('WEB Section - Filtered SubServices:', filtered);
+                                                    setSelectedServiceId(newServiceId);
+                                                    setSelectedSubServiceIds([]);
+                                                }}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
                                             >
-                                                <option value="">Choose Target Service</option>
+                                                <option value="" className="text-slate-900">
+                                                    {services.length > 0 ? 'Choose Target Service' : '-- No services available --'}
+                                                </option>
                                                 {services.map(service => (
-                                                    <option key={service.id} value={service.id}>
+                                                    <option key={service.id} value={service.id} className="text-slate-900">
                                                         {service.service_name}
                                                     </option>
                                                 ))}
                                             </select>
+                                            {services.length === 0 && (
+                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add services in Service Master first</p>
+                                            )}
+
+                                            {/* Sub Services for WEB */}
+                                            {selectedServiceId && (
+                                                <div className="mt-4 p-4 border-2 border-blue-300 rounded-lg bg-blue-50">
+                                                    <label className="block text-sm font-semibold text-blue-700 mb-3">
+                                                        📋 Select Sub-Services:
+                                                    </label>
+                                                    {filteredSubServices.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {filteredSubServices.map(subService => (
+                                                                <button
+                                                                    key={subService.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedSubServiceIds(prev =>
+                                                                            prev.includes(subService.id)
+                                                                                ? prev.filter(id => id !== subService.id)
+                                                                                : [...prev, subService.id]
+                                                                        );
+                                                                    }}
+                                                                    className={`px-4 py-2 rounded-lg border text-sm transition-colors ${selectedSubServiceIds.includes(subService.id)
+                                                                        ? 'bg-blue-200 border-blue-400 text-blue-800 font-medium'
+                                                                        : 'bg-white border-slate-300 text-slate-700 hover:border-blue-400'
+                                                                        }`}
+                                                                >
+                                                                    {subService.sub_service_name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-300">
+                                                            <span className="font-medium">⚠️ No sub-services found for this service.</span>
+                                                            <span className="block text-xs mt-1 text-amber-600">
+                                                                Create sub-services in Sub-Service Master with this service as parent.
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
