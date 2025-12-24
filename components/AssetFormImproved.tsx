@@ -1,6 +1,6 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useData } from '../hooks/useData';
-import type { AssetLibraryItem, Service, SubServiceItem, AssetCategory, AssetFormat } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, AssetCategory } from '../types';
 
 interface AssetFormImprovedProps {
     asset?: Partial<AssetLibraryItem>;
@@ -21,14 +21,12 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: keywords = [] } = useData<any>('keywords');
     const { data: assetCategories = [] } = useData<AssetCategory>('asset-categories');
-    const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
 
     const [formData, setFormData] = useState<Partial<AssetLibraryItem>>(asset || {
         name: '',
         application_type: undefined,
         type: 'article',
         asset_category: '',
-        asset_format: '',
         repository: 'Content Repository',
         status: 'Draft',
         linked_service_ids: [],
@@ -41,29 +39,11 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
     const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-    const [availableFormats, setAvailableFormats] = useState<AssetFormat[]>([]);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
 
     // File upload refs - SMM should have only one image upload
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Update available formats when application type changes
-    useEffect(() => {
-        if (formData.application_type) {
-            const filtered = assetFormats.filter(format =>
-                format.application_types.includes(formData.application_type!)
-            );
-            setAvailableFormats(filtered);
-
-            // Reset asset format if current selection is not available for new application type
-            if (formData.asset_format && !filtered.some(f => f.format_name === formData.asset_format)) {
-                setFormData(prev => ({ ...prev, asset_format: '' }));
-            }
-        } else {
-            setAvailableFormats(assetFormats);
-        }
-    }, [formData.application_type, assetFormats]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -339,29 +319,6 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
                                                 </option>
                                             ))}
                                         </select>
-                                    </div>
-
-                                    {/* Asset Format - Link with Asset Master */}
-                                    <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                            Asset Format
-                                        </label>
-                                        <select
-                                            value={formData.asset_format || ''}
-                                            onChange={(e) => setFormData({ ...formData, asset_format: e.target.value })}
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                            disabled={!formData.application_type}
-                                        >
-                                            <option value="">Select asset format...</option>
-                                            {availableFormats.map((format) => (
-                                                <option key={format.id} value={format.format_name}>
-                                                    {format.format_name} ({format.format_type})
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {!formData.application_type && (
-                                            <p className="text-xs text-slate-500 mt-1">Please select content type first</p>
-                                        )}
                                     </div>
                                 </div>
 

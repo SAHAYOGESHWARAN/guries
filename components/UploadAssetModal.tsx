@@ -36,7 +36,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         web_h2_2: '',
         web_body_content: '',
         asset_category: '',
-        asset_format: '',
         seo_keywords: [],
         seo_focus_keyword: '',
         seo_content_type: '',
@@ -914,25 +913,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                         ))}
                                                     </select>
                                                 </div>
-
-                                                {/* Asset Format (Linked to Asset Format Master Table) */}
-                                                <div>
-                                                    <label className="block text-sm text-slate-600 mb-2">
-                                                        Asset Format <span className="text-xs text-slate-400">(Linked to Asset Format Master Table)</span>
-                                                    </label>
-                                                    <select
-                                                        value={newAsset.asset_format || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
-                                                    >
-                                                        <option value="">Select format...</option>
-                                                        {assetFormats.filter(f => f.status === 'active').map(format => (
-                                                            <option key={format.id} value={format.format_name}>
-                                                                {format.format_name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
                                             </div>
 
                                             {/* Right Column */}
@@ -1372,25 +1352,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                 {filteredAssetCategories.map(category => (
                                                     <option key={category.id} value={category.category_name}>
                                                         {category.category_name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Asset Format (From Master Table) */}
-                                        <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                                Asset Format <span className="text-xs text-slate-500">(Linked to master database)</span>
-                                            </label>
-                                            <select
-                                                value={newAsset.asset_format || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
-                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            >
-                                                <option value="">Select format...</option>
-                                                {assetFormats.filter(f => f.status === 'active').map(format => (
-                                                    <option key={format.id} value={format.format_name}>
-                                                        {format.format_name}
                                                     </option>
                                                 ))}
                                             </select>

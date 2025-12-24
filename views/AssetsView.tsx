@@ -88,6 +88,17 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         return (assetTypes || []).filter(t => t.status === 'active');
     }, [assetTypes]);
 
+    // Debug: Log master data on load
+    useEffect(() => {
+        console.log('=== Master Data Debug ===');
+        console.log('Services:', services);
+        console.log('Sub-Services:', subServices);
+        console.log('Asset Types:', assetTypes);
+        console.log('Asset Categories:', assetCategories);
+        console.log('All Active Asset Types:', allActiveAssetTypes);
+        console.log('All Active Asset Categories:', allActiveAssetCategories);
+    }, [services, subServices, assetTypes, assetCategories, allActiveAssetTypes, allActiveAssetCategories]);
+
     // Master table modals
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [showTypeModal, setShowTypeModal] = useState(false);
@@ -1407,16 +1418,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <option value="">Select category...</option>
                                             {allActiveAssetCategories.map(cat => (
                                                 <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Format</label>
-                                        <select value={(newAsset as any).asset_format || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                                            <option value="">Select format...</option>
-                                            {(assetFormats || []).map((f: any) => (
-                                                <option key={f.id} value={f.format_name}>{f.format_name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -2855,22 +2856,28 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div>
                                                     <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
                                                     <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                        <option value="">Select category...</option>
+                                                        <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories available --'}</option>
                                                         {allActiveAssetCategories.map(cat => (
                                                             <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
                                                         ))}
                                                     </select>
+                                                    {allActiveAssetCategories.length === 0 && (
+                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add categories in Asset Category Master</p>
+                                                    )}
                                                 </div>
 
                                                 {/* Asset Type (from master table - no Add icon) */}
                                                 <div>
                                                     <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
                                                     <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                        <option value="">Select type...</option>
+                                                        <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types available --'}</option>
                                                         {allActiveAssetTypes.map(t => (
                                                             <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
                                                         ))}
                                                     </select>
+                                                    {allActiveAssetTypes.length === 0 && (
+                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add types in Asset Type Master</p>
+                                                    )}
                                                 </div>
 
                                                 {/* Asset Format removed for WEB assets per requirements */}
@@ -2884,40 +2891,54 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             const id = e.target.value ? parseInt(e.target.value) : null;
                                                             setSelectedServiceId(id);
                                                             setSelectedSubServiceIds([]);
+                                                            console.log('Selected Service ID:', id);
+                                                            console.log('Filtered Sub-Services:', subServices.filter(ss => Number(ss.parent_service_id) === Number(id)));
                                                         }}
-                                                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                        className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                                                     >
-                                                        <option value="">Select a service...</option>
+                                                        <option value="">{services.length > 0 ? 'Select a service...' : '-- No services available --'}</option>
                                                         {services.map(s => (
                                                             <option key={s.id} value={s.id}>{s.service_name}</option>
                                                         ))}
                                                     </select>
+                                                    {services.length === 0 && (
+                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add services in Service Master first</p>
+                                                    )}
 
-                                                    {/* Sub-services displayed below when service is selected */}
+                                                    {/* Sub-services section - always show when service is selected */}
                                                     {selectedServiceId && (
-                                                        <div className="mt-3 border rounded-lg p-3 bg-white">
-                                                            <label className="block text-xs font-medium text-slate-500 mb-2">Select Sub-Services:</label>
+                                                        <div className="mt-3 border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                                                            <label className="block text-sm font-semibold text-indigo-700 mb-3">
+                                                                📋 Select Sub-Services:
+                                                            </label>
                                                             {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
-                                                                subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                                    <label key={ss.id} className="flex items-center gap-3 mb-2">
-                                                                        <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
-                                                                            if (e.target.checked) {
-                                                                                setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                                            } else {
-                                                                                const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                                setSelectedSubServiceIds(remaining);
-                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                                            }
-                                                                        }} />
-                                                                        <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                                                    </label>
-                                                                ))
+                                                                <div className="space-y-2">
+                                                                    {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
+                                                                        <label key={ss.id} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 cursor-pointer transition-colors">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={selectedSubServiceIds.includes(ss.id)}
+                                                                                onChange={(e) => {
+                                                                                    if (e.target.checked) {
+                                                                                        setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
+                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
+                                                                                    } else {
+                                                                                        const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
+                                                                                        setSelectedSubServiceIds(remaining);
+                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
+                                                                                    }
+                                                                                }}
+                                                                                className="w-4 h-4 text-indigo-600 rounded"
+                                                                            />
+                                                                            <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
                                                             ) : (
-                                                                <div className="text-sm text-slate-500 italic">
-                                                                    No sub-services available for this service.
-                                                                    <span className="block text-xs mt-1 text-slate-400">
-                                                                        Create sub-services in Sub-Service Master with this service as parent.
+                                                                <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                                                    <span className="font-medium">⚠️ No sub-services found for this service.</span>
+                                                                    <span className="block text-xs mt-1 text-amber-600">
+                                                                        Go to Sub-Service Master and create sub-services with this service as the parent.
                                                                     </span>
                                                                 </div>
                                                             )}
@@ -3410,8 +3431,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     const id = e.target.value ? parseInt(e.target.value) : null;
                                                                     setSelectedServiceId(id);
                                                                     setSelectedSubServiceIds([]);
+                                                                    // Debug: log service selection
+                                                                    console.log('SMM - Selected Service ID:', id);
+                                                                    console.log('SMM - Filtered Sub-Services:', subServices.filter(ss => Number(ss.parent_service_id) === Number(id)));
                                                                 }}
-                                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                                className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                                                             >
                                                                 <option value="">Select a service...</option>
                                                                 {services.map(s => (
@@ -3419,31 +3443,40 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 ))}
                                                             </select>
 
-                                                            {/* Sub-services displayed below when service is selected */}
+                                                            {/* Sub-services section - always show when service is selected */}
                                                             {selectedServiceId && (
-                                                                <div className="mt-3 border rounded-lg p-3 bg-white">
-                                                                    <label className="block text-xs font-medium text-slate-500 mb-2">Select Sub-Services:</label>
+                                                                <div className="mt-3 border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+                                                                    <label className="block text-sm font-semibold text-purple-700 mb-3">
+                                                                        📋 Select Sub-Services:
+                                                                    </label>
                                                                     {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
-                                                                        subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                                            <label key={ss.id} className="flex items-center gap-3 mb-2">
-                                                                                <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
-                                                                                    if (e.target.checked) {
-                                                                                        setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                                                    } else {
-                                                                                        const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                                        setSelectedSubServiceIds(remaining);
-                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                                                    }
-                                                                                }} />
-                                                                                <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                                                            </label>
-                                                                        ))
+                                                                        <div className="space-y-2">
+                                                                            {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
+                                                                                <label key={ss.id} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200 hover:border-purple-300 cursor-pointer transition-colors">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={selectedSubServiceIds.includes(ss.id)}
+                                                                                        onChange={(e) => {
+                                                                                            if (e.target.checked) {
+                                                                                                setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
+                                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
+                                                                                            } else {
+                                                                                                const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
+                                                                                                setSelectedSubServiceIds(remaining);
+                                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
+                                                                                            }
+                                                                                        }}
+                                                                                        className="w-4 h-4 text-purple-600 rounded"
+                                                                                    />
+                                                                                    <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
+                                                                                </label>
+                                                                            ))}
+                                                                        </div>
                                                                     ) : (
-                                                                        <div className="text-sm text-slate-500 italic">
-                                                                            No sub-services available for this service.
-                                                                            <span className="block text-xs mt-1 text-slate-400">
-                                                                                Create sub-services in Sub-Service Master with this service as parent.
+                                                                        <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                                                            <span className="font-medium">⚠️ No sub-services found for this service.</span>
+                                                                            <span className="block text-xs mt-1 text-amber-600">
+                                                                                Go to Sub-Service Master and create sub-services with this service as the parent.
                                                                             </span>
                                                                         </div>
                                                                     )}
@@ -3811,757 +3844,759 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
             )}
 
             {/* SMM Preview Modal */}
-            {showPreviewModal && (() => {
-                const displayData = {
-                    name: newAsset.name || 'Your Page',
-                    description: newAsset.smm_description || '',
-                    hashtags: newAsset.smm_hashtags || '',
-                    media: newAsset.smm_media_url || ''
-                };
+            {
+                showPreviewModal && (() => {
+                    const displayData = {
+                        name: newAsset.name || 'Your Page',
+                        description: newAsset.smm_description || '',
+                        hashtags: newAsset.smm_hashtags || '',
+                        media: newAsset.smm_media_url || ''
+                    };
 
-                return (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreviewModal(false)}>
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    <div>
-                                        <h3 className="text-lg font-bold">Social Media Post Preview</h3>
-                                        <p className="text-xs text-blue-100">
-                                            {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && 'Facebook / Instagram'}
-                                            {newAsset.smm_platform === 'twitter' && 'Twitter'}
-                                            {newAsset.smm_platform === 'linkedin' && 'LinkedIn'}
-                                        </p>
+                    return (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreviewModal(false)}>
+                            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                                    <div className="flex items-center gap-3">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <div>
+                                            <h3 className="text-lg font-bold">Social Media Post Preview</h3>
+                                            <p className="text-xs text-blue-100">
+                                                {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && 'Facebook / Instagram'}
+                                                {newAsset.smm_platform === 'twitter' && 'Twitter'}
+                                                {newAsset.smm_platform === 'linkedin' && 'LinkedIn'}
+                                            </p>
+                                        </div>
                                     </div>
+                                    <button onClick={() => setShowPreviewModal(false)} className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                 </div>
-                                <button onClick={() => setShowPreviewModal(false)} className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="p-6">
-                                {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
-                                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 max-w-[500px] mx-auto">
-                                        <div className="p-3 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-[2px]">
-                                                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                                                        <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                                                            {displayData.name?.charAt(0)?.toUpperCase() || 'A'}
+                                <div className="p-6">
+                                    {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
+                                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 max-w-[500px] mx-auto">
+                                            <div className="p-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-[2px]">
+                                                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                                                            <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                                                {displayData.name?.charAt(0)?.toUpperCase() || 'A'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-1">
+                                                            <p className="font-semibold text-[15px] text-slate-900">{displayData.name || 'Your Page'}</p>
+                                                            <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                                                            <span>Just now</span>
+                                                            <span>·</span>
+                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+                                                            </svg>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex-1">
+                                                <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2">
+                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            {(displayData.description || displayData.hashtags) && (
+                                                <div className="px-3 pb-2">
+                                                    {displayData.description && <p className="text-[15px] text-slate-900 whitespace-pre-wrap leading-5 mb-1">{displayData.description}</p>}
+                                                    {displayData.hashtags && <p className="text-[15px] text-blue-600 font-normal">{displayData.hashtags}</p>}
+                                                </div>
+                                            )}
+                                            {displayData.media && (
+                                                <div className="bg-black relative">
+                                                    {newAsset.smm_media_type === 'video' ? (
+                                                        <video src={displayData.media} controls className="w-full max-h-[600px] object-contain" poster={displayData.media} />
+                                                    ) : (
+                                                        <img src={displayData.media} alt="Post content" className="w-full object-cover" style={{ maxHeight: '600px' }} />
+                                                    )}
+                                                </div>
+                                            )}
+                                            <div className="px-3 py-2">
+                                                <div className="flex items-center justify-between text-[13px] text-slate-600">
                                                     <div className="flex items-center gap-1">
-                                                        <p className="font-semibold text-[15px] text-slate-900">{displayData.name || 'Your Page'}</p>
-                                                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                        </svg>
+                                                        <div className="flex -space-x-1">
+                                                            <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">👍</span></div>
+                                                            <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">❤️</span></div>
+                                                            <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">😊</span></div>
+                                                        </div>
+                                                        <span className="ml-1">1.2K</span>
                                                     </div>
-                                                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                                                        <span>Just now</span>
-                                                        <span>·</span>
-                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </div>
+                                                    <div className="flex items-center gap-2"><span>89 comments</span><span>·</span><span>24 shares</span></div>
                                                 </div>
                                             </div>
-                                            <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2">
-                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                                </svg>
-                                            </button>
+                                            <div className="border-t border-slate-200 px-2 py-1">
+                                                <div className="flex items-center justify-around">
+                                                    <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                                                        Like
+                                                    </button>
+                                                    <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                                        Comment
+                                                    </button>
+                                                    <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                                        Share
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="border-t border-slate-200 px-3 py-2 bg-slate-50">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-bold">U</div>
+                                                    <div className="flex-1 bg-white border border-slate-200 rounded-full px-4 py-2"><p className="text-sm text-slate-400">Write a comment...</p></div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        {(displayData.description || displayData.hashtags) && (
-                                            <div className="px-3 pb-2">
-                                                {displayData.description && <p className="text-[15px] text-slate-900 whitespace-pre-wrap leading-5 mb-1">{displayData.description}</p>}
-                                                {displayData.hashtags && <p className="text-[15px] text-blue-600 font-normal">{displayData.hashtags}</p>}
-                                            </div>
-                                        )}
-                                        {displayData.media && (
-                                            <div className="bg-black relative">
-                                                {newAsset.smm_media_type === 'video' ? (
-                                                    <video src={displayData.media} controls className="w-full max-h-[600px] object-contain" poster={displayData.media} />
-                                                ) : (
-                                                    <img src={displayData.media} alt="Post content" className="w-full object-cover" style={{ maxHeight: '600px' }} />
-                                                )}
-                                            </div>
-                                        )}
-                                        <div className="px-3 py-2">
-                                            <div className="flex items-center justify-between text-[13px] text-slate-600">
-                                                <div className="flex items-center gap-1">
-                                                    <div className="flex -space-x-1">
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">👍</span></div>
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">❤️</span></div>
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">😊</span></div>
+                                    )}
+                                    {newAsset.smm_platform === 'twitter' && (
+                                        <div className="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-lg">
+                                            <div className="p-4 flex gap-3">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">{displayData.name?.charAt(0) || 'A'}</div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="font-bold text-sm">{displayData.name || 'Your Account'}</p>
+                                                        <span className="text-blue-500">✓</span>
+                                                        <span className="text-slate-500 text-sm font-normal">@{displayData.name?.toLowerCase().replace(/\s+/g, '') || 'account'}</span>
+                                                        <span className="text-slate-500 text-sm">· 2m</span>
                                                     </div>
-                                                    <span className="ml-1">1.2K</span>
-                                                </div>
-                                                <div className="flex items-center gap-2"><span>89 comments</span><span>·</span><span>24 shares</span></div>
-                                            </div>
-                                        </div>
-                                        <div className="border-t border-slate-200 px-2 py-1">
-                                            <div className="flex items-center justify-around">
-                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
-                                                    Like
-                                                </button>
-                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                                    Comment
-                                                </button>
-                                                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-[15px]">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                                                    Share
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="border-t border-slate-200 px-3 py-2 bg-slate-50">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-bold">U</div>
-                                                <div className="flex-1 bg-white border border-slate-200 rounded-full px-4 py-2"><p className="text-sm text-slate-400">Write a comment...</p></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {newAsset.smm_platform === 'twitter' && (
-                                    <div className="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-lg">
-                                        <div className="p-4 flex gap-3">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">{displayData.name?.charAt(0) || 'A'}</div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <p className="font-bold text-sm">{displayData.name || 'Your Account'}</p>
-                                                    <span className="text-blue-500">✓</span>
-                                                    <span className="text-slate-500 text-sm font-normal">@{displayData.name?.toLowerCase().replace(/\s+/g, '') || 'account'}</span>
-                                                    <span className="text-slate-500 text-sm">· 2m</span>
-                                                </div>
 
-                                                {/* Tweet Text */}
+                                                    {/* Tweet Text */}
+                                                    {displayData.description && (
+                                                        <p className="text-sm text-slate-900 mb-2 whitespace-pre-wrap">{displayData.description}</p>
+                                                    )}
+
+                                                    {/* Hashtags */}
+                                                    {displayData.hashtags && (
+                                                        <p className="text-sm text-blue-500 mb-2">{displayData.hashtags}</p>
+                                                    )}
+
+                                                    {/* Media */}
+                                                    {displayData.media && (
+                                                        <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
+                                                            {newAsset.smm_media_type === 'video' ? (
+                                                                <video src={displayData.media} controls className="w-full" />
+                                                            ) : (
+                                                                <img src={displayData.media} alt="Tweet media" className="w-full" />
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Engagement */}
+                                                    <div className="flex justify-between mt-3 text-slate-500 text-sm">
+                                                        <button className="flex items-center gap-2 hover:text-blue-500">
+                                                            <span>💬</span> 24
+                                                        </button>
+                                                        <button className="flex items-center gap-2 hover:text-green-500">
+                                                            <span>🔁</span> 12
+                                                        </button>
+                                                        <button className="flex items-center gap-2 hover:text-red-500">
+                                                            <span>❤️</span> 156
+                                                        </button>
+                                                        <button className="flex items-center gap-2 hover:text-blue-500">
+                                                            <span>📊</span> 2.1K
+                                                        </button>
+                                                        <button className="flex items-center gap-2 hover:text-blue-500">
+                                                            <span>↗️</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {newAsset.smm_platform === 'linkedin' && (
+                                        <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg">
+                                            {/* LinkedIn Header */}
+                                            <div className="p-4 flex items-start gap-3 border-b border-slate-200">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                                    {displayData.name?.charAt(0) || 'A'}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-sm">{displayData.name || 'Your Company'}</p>
+                                                    <p className="text-xs text-slate-500">1,234 followers</p>
+                                                    <p className="text-xs text-slate-500">1m · 🌐</p>
+                                                </div>
+                                                <button className="text-slate-500 hover:bg-slate-100 p-2 rounded">
+                                                    <span>⋯</span>
+                                                </button>
+                                            </div>
+
+                                            {/* Post Content */}
+                                            <div className="p-4">
                                                 {displayData.description && (
-                                                    <p className="text-sm text-slate-900 mb-2 whitespace-pre-wrap">{displayData.description}</p>
+                                                    <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{displayData.description}</p>
                                                 )}
-
-                                                {/* Hashtags */}
                                                 {displayData.hashtags && (
-                                                    <p className="text-sm text-blue-500 mb-2">{displayData.hashtags}</p>
+                                                    <p className="text-sm text-blue-700 mb-2">{displayData.hashtags}</p>
                                                 )}
+                                            </div>
 
-                                                {/* Media */}
-                                                {displayData.media && (
-                                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
-                                                        {newAsset.smm_media_type === 'video' ? (
-                                                            <video src={displayData.media} controls className="w-full" />
-                                                        ) : (
-                                                            <img src={displayData.media} alt="Tweet media" className="w-full" />
-                                                        )}
-                                                    </div>
-                                                )}
+                                            {/* Media */}
+                                            {displayData.media && (
+                                                <div className="bg-slate-100">
+                                                    {newAsset.smm_media_type === 'video' ? (
+                                                        <video src={displayData.media} controls className="w-full" />
+                                                    ) : (
+                                                        <img src={displayData.media} alt="Post media" className="w-full" />
+                                                    )}
+                                                </div>
+                                            )}
 
-                                                {/* Engagement */}
-                                                <div className="flex justify-between mt-3 text-slate-500 text-sm">
-                                                    <button className="flex items-center gap-2 hover:text-blue-500">
-                                                        <span>💬</span> 24
+                                            {/* Engagement Bar */}
+                                            <div className="p-4 border-t border-slate-200">
+                                                <div className="flex justify-between text-xs text-slate-600 mb-3">
+                                                    <span>👍 💡 ❤️ 89</span>
+                                                    <span>12 comments · 5 reposts</span>
+                                                </div>
+                                                <div className="flex justify-around border-t border-slate-200 pt-3">
+                                                    <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                        <span className="text-lg">👍</span> Like
                                                     </button>
-                                                    <button className="flex items-center gap-2 hover:text-green-500">
-                                                        <span>🔁</span> 12
+                                                    <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                        <span className="text-lg">💬</span> Comment
                                                     </button>
-                                                    <button className="flex items-center gap-2 hover:text-red-500">
-                                                        <span>❤️</span> 156
+                                                    <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                        <span className="text-lg">🔁</span> Repost
                                                     </button>
-                                                    <button className="flex items-center gap-2 hover:text-blue-500">
-                                                        <span>📊</span> 2.1K
-                                                    </button>
-                                                    <button className="flex items-center gap-2 hover:text-blue-500">
-                                                        <span>↗️</span>
+                                                    <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
+                                                        <span className="text-lg">↗️</span> Send
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
 
-                                {newAsset.smm_platform === 'linkedin' && (
-                                    <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-lg">
-                                        {/* LinkedIn Header */}
-                                        <div className="p-4 flex items-start gap-3 border-b border-slate-200">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                                {displayData.name?.charAt(0) || 'A'}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-bold text-sm">{displayData.name || 'Your Company'}</p>
-                                                <p className="text-xs text-slate-500">1,234 followers</p>
-                                                <p className="text-xs text-slate-500">1m · 🌐</p>
-                                            </div>
-                                            <button className="text-slate-500 hover:bg-slate-100 p-2 rounded">
-                                                <span>⋯</span>
-                                            </button>
-                                        </div>
-
-                                        {/* Post Content */}
-                                        <div className="p-4">
-                                            {displayData.description && (
-                                                <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{displayData.description}</p>
-                                            )}
-                                            {displayData.hashtags && (
-                                                <p className="text-sm text-blue-700 mb-2">{displayData.hashtags}</p>
-                                            )}
-                                        </div>
-
-                                        {/* Media */}
-                                        {displayData.media && (
-                                            <div className="bg-slate-100">
-                                                {newAsset.smm_media_type === 'video' ? (
-                                                    <video src={displayData.media} controls className="w-full" />
-                                                ) : (
-                                                    <img src={displayData.media} alt="Post media" className="w-full" />
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Engagement Bar */}
-                                        <div className="p-4 border-t border-slate-200">
-                                            <div className="flex justify-between text-xs text-slate-600 mb-3">
-                                                <span>👍 💡 ❤️ 89</span>
-                                                <span>12 comments · 5 reposts</span>
-                                            </div>
-                                            <div className="flex justify-around border-t border-slate-200 pt-3">
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">👍</span> Like
-                                                </button>
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">💬</span> Comment
-                                                </button>
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">🔁</span> Repost
-                                                </button>
-                                                <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                    <span className="text-lg">↗️</span> Send
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Modal Footer */}
-                            <div className="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 rounded-b-2xl flex justify-end gap-3">
-                                <button
-                                    onClick={() => setShowPreviewModal(false)}
-                                    className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
-                                >
-                                    Close
-                                </button>
+                                {/* Modal Footer */}
+                                <div className="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 rounded-b-2xl flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setShowPreviewModal(false)}
+                                        className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
-            })()
+                    );
+                })()
             }
 
             {/* QC Review View */}
-            {viewMode === 'qc' && qcReviewAsset && (() => {
-                return (
-                    <div className="h-full flex flex-col w-full p-6 overflow-hidden">
-                        <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                            <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 w-full flex-shrink-0">
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-900">QC Review</h2>
-                                    <p className="text-slate-600 text-xs mt-0.5">
-                                        Review asset for quality control approval
-                                    </p>
+            {
+                viewMode === 'qc' && qcReviewAsset && (() => {
+                    return (
+                        <div className="h-full flex flex-col w-full p-6 overflow-hidden">
+                            <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
+                                <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 w-full flex-shrink-0">
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-900">QC Review</h2>
+                                        <p className="text-slate-600 text-xs mt-0.5">
+                                            Review asset for quality control approval
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {/* Quick Upload Button in QC View */}
+                                        <button
+                                            onClick={() => setShowUploadModal(true)}
+                                            className="px-4 py-2 text-sm font-medium text-indigo-600 border-2 border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
+                                            title="Upload New Asset"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Upload Asset
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setQcReviewAsset(null);
+                                                setViewMode('list');
+                                            }}
+                                            className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={() => handleQcSubmit(false)}
+                                            disabled={!qcScore || !checklistCompleted}
+                                            className={`bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-red-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            Reject Asset
+                                        </button>
+                                        <button
+                                            onClick={() => handleQcSubmit(true)}
+                                            disabled={!qcScore || !checklistCompleted}
+                                            className={`bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            Approve Asset
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    {/* Quick Upload Button in QC View */}
-                                    <button
-                                        onClick={() => setShowUploadModal(true)}
-                                        className="px-4 py-2 text-sm font-medium text-indigo-600 border-2 border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
-                                        title="Upload New Asset"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Upload Asset
-                                    </button>
 
-                                    <button
-                                        onClick={() => {
-                                            setQcReviewAsset(null);
-                                            setViewMode('list');
-                                        }}
-                                        className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => handleQcSubmit(false)}
-                                        disabled={!qcScore || !checklistCompleted}
-                                        className={`bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-red-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        Reject Asset
-                                    </button>
-                                    <button
-                                        onClick={() => handleQcSubmit(true)}
-                                        disabled={!qcScore || !checklistCompleted}
-                                        className={`bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        Approve Asset
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
-                                <div className="max-w-4xl mx-auto space-y-6">
-                                    {/* Asset Information (Read-Only) */}
-                                    <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
-                                            <div className="bg-indigo-600 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-indigo-900">Asset Information</h3>
-                                                <p className="text-xs text-indigo-600">Read-only view for QC review</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.name || 'N/A'}
+                                <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
+                                    <div className="max-w-4xl mx-auto space-y-6">
+                                        {/* Asset Information (Read-Only) */}
+                                        <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
+                                                <div className="bg-indigo-600 p-2 rounded-lg">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-indigo-900">Asset Information</h3>
+                                                    <p className="text-xs text-indigo-600">Read-only view for QC review</p>
                                                 </div>
                                             </div>
 
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Application Type</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700 uppercase">
-                                                    {qcReviewAsset?.application_type || 'Not specified'}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
+                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                        {qcReviewAsset?.name || 'N/A'}
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Asset Type</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.type || 'N/A'}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Application Type</label>
+                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700 uppercase">
+                                                        {qcReviewAsset?.application_type || 'Not specified'}
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Asset Category</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.asset_category || 'Not specified'}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Type</label>
+                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                        {qcReviewAsset?.type || 'N/A'}
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
-                                                <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {qcReviewAsset?.repository || 'N/A'}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Category</label>
+                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                        {qcReviewAsset?.asset_category || 'Not specified'}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
 
-                                        {/* AI Scores Display */}
-                                        {(qcReviewAsset?.seo_score || qcReviewAsset?.grammar_score) && (
-                                            <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                <h4 className="text-sm font-bold text-slate-700 mb-4">AI Quality Scores</h4>
-                                                <div className="flex justify-center gap-8">
-                                                    {qcReviewAsset?.seo_score && qcReviewAsset.seo_score > 0 && (
-                                                        <CircularScore
-                                                            score={qcReviewAsset.seo_score}
-                                                            label="SEO Score"
-                                                            size="md"
-                                                        />
-                                                    )}
-                                                    {qcReviewAsset?.grammar_score && qcReviewAsset.grammar_score > 0 && (
-                                                        <CircularScore
-                                                            score={qcReviewAsset.grammar_score}
-                                                            label="Grammar Score"
-                                                            size="md"
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Content Preview */}
-                                        {qcReviewAsset?.web_body_content && (
-                                            <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                <h4 className="text-sm font-bold text-slate-700 mb-4">Body Content</h4>
-                                                <div className="max-h-64 overflow-y-auto bg-slate-50 border-2 border-slate-200 rounded-lg p-4">
-                                                    <div className="prose prose-sm max-w-none text-slate-700">
-                                                        {qcReviewAsset?.web_body_content?.split('\n').map((line, index) => (
-                                                            <p key={index} className="mb-2">{line}</p>
-                                                        ))}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
+                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
+                                                        {qcReviewAsset?.repository || 'N/A'}
                                                     </div>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {/* Media Preview */}
-                                        {(qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url) && (
-                                            <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                <h4 className="text-sm font-bold text-slate-700 mb-4">Asset Preview</h4>
-                                                <div className="flex justify-center">
-                                                    <img
-                                                        src={qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url || ''}
-                                                        alt="Asset preview"
-                                                        className="max-h-64 rounded-lg border-2 border-slate-200 shadow-sm"
-                                                    />
+                                            {/* AI Scores Display */}
+                                            {(qcReviewAsset?.seo_score || qcReviewAsset?.grammar_score) && (
+                                                <div className="mt-6 pt-6 border-t-2 border-slate-200">
+                                                    <h4 className="text-sm font-bold text-slate-700 mb-4">AI Quality Scores</h4>
+                                                    <div className="flex justify-center gap-8">
+                                                        {qcReviewAsset?.seo_score && qcReviewAsset.seo_score > 0 && (
+                                                            <CircularScore
+                                                                score={qcReviewAsset.seo_score}
+                                                                label="SEO Score"
+                                                                size="md"
+                                                            />
+                                                        )}
+                                                        {qcReviewAsset?.grammar_score && qcReviewAsset.grammar_score > 0 && (
+                                                            <CircularScore
+                                                                score={qcReviewAsset.grammar_score}
+                                                                label="Grammar Score"
+                                                                size="md"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Content Preview */}
+                                            {qcReviewAsset?.web_body_content && (
+                                                <div className="mt-6 pt-6 border-t-2 border-slate-200">
+                                                    <h4 className="text-sm font-bold text-slate-700 mb-4">Body Content</h4>
+                                                    <div className="max-h-64 overflow-y-auto bg-slate-50 border-2 border-slate-200 rounded-lg p-4">
+                                                        <div className="prose prose-sm max-w-none text-slate-700">
+                                                            {qcReviewAsset?.web_body_content?.split('\n').map((line, index) => (
+                                                                <p key={index} className="mb-2">{line}</p>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Media Preview */}
+                                            {(qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url) && (
+                                                <div className="mt-6 pt-6 border-t-2 border-slate-200">
+                                                    <h4 className="text-sm font-bold text-slate-700 mb-4">Asset Preview</h4>
+                                                    <div className="flex justify-center">
+                                                        <img
+                                                            src={qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url || ''}
+                                                            alt="Asset preview"
+                                                            className="max-h-64 rounded-lg border-2 border-slate-200 shadow-sm"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* QC Input Section */}
+                                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 shadow-sm">
+                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200 mb-6">
+                                                <div className="bg-purple-600 p-2 rounded-lg">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-purple-900">QC Review Input</h3>
+                                                    <p className="text-xs text-purple-600">Provide your quality control assessment</p>
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
 
-                                    {/* QC Input Section */}
-                                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 shadow-sm">
-                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200 mb-6">
-                                            <div className="bg-purple-600 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                            <div className="space-y-6">
+                                                {/* QC Score Input */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-purple-900 mb-3">
+                                                        QC Score (0-100)
+                                                        <span className="text-red-500 ml-1">*</span>
+                                                    </label>
+                                                    <div className="flex items-center gap-4">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            value={qcScore || ''}
+                                                            onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
+                                                            className="w-32 px-4 py-3 border-2 border-purple-300 rounded-lg text-lg font-bold text-center focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                            placeholder="0"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="range"
+                                                                min="0"
+                                                                max="100"
+                                                                value={qcScore || 0}
+                                                                onChange={(e) => setQcScore(parseInt(e.target.value))}
+                                                                className="w-full h-3 bg-purple-200 rounded-lg appearance-none cursor-pointer slider"
+                                                            />
+                                                            <div className="flex justify-between text-xs text-purple-600 mt-1">
+                                                                <span>Poor (0)</span>
+                                                                <span>Average (50)</span>
+                                                                <span>Excellent (100)</span>
+                                                            </div>
+                                                        </div>
+                                                        {qcScore && (
+                                                            <div className="w-16 h-16">
+                                                                <CircularScore
+                                                                    score={qcScore}
+                                                                    label="QC"
+                                                                    size="sm"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* QC Remarks */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-purple-900 mb-3">
+                                                        QC Remarks & Feedback
+                                                    </label>
+                                                    <textarea
+                                                        value={qcRemarks}
+                                                        onChange={(e) => setQcRemarks(e.target.value)}
+                                                        className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
+                                                        rows={4}
+                                                        placeholder="Provide detailed feedback about the asset quality, areas for improvement, or approval notes..."
+                                                    />
+                                                    <div className="flex justify-between items-center mt-2">
+                                                        <div className="text-xs text-purple-600">
+                                                            {qcRemarks.length}/500 characters
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => setQcRemarks(qcRemarks + '\n\n✅ Approved: ')}
+                                                                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                                                            >
+                                                                + Approval Note
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setQcRemarks(qcRemarks + '\n\n❌ Issue: ')}
+                                                                className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+                                                            >
+                                                                + Issue Note
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* QC Checklist */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-purple-900 mb-3">
+                                                        QC Checklist
+                                                        <span className="text-red-500 ml-1">*</span>
+                                                    </label>
+                                                    <div className="bg-white rounded-lg border-2 border-purple-200 p-4">
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="content-quality"
+                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
+                                                                />
+                                                                <label htmlFor="content-quality" className="text-sm text-slate-700">
+                                                                    Content quality meets standards
+                                                                </label>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="brand-guidelines"
+                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
+                                                                />
+                                                                <label htmlFor="brand-guidelines" className="text-sm text-slate-700">
+                                                                    Follows brand guidelines and style
+                                                                </label>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="technical-specs"
+                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
+                                                                />
+                                                                <label htmlFor="technical-specs" className="text-sm text-slate-700">
+                                                                    Technical specifications are correct
+                                                                </label>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="seo-optimization"
+                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
+                                                                />
+                                                                <label htmlFor="seo-optimization" className="text-sm text-slate-700">
+                                                                    SEO optimization is adequate
+                                                                </label>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="final-approval"
+                                                                    checked={checklistCompleted}
+                                                                    onChange={(e) => setChecklistCompleted(e.target.checked)}
+                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
+                                                                />
+                                                                <label htmlFor="final-approval" className="text-sm font-bold text-purple-900">
+                                                                    I have completed the QC review process
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Buttons */}
+                                                <div className="flex justify-between items-center pt-4 border-t-2 border-purple-200">
+                                                    <div className="text-sm text-purple-700">
+                                                        {!qcScore && <span className="text-red-600">⚠️ QC Score required</span>}
+                                                        {!checklistCompleted && qcScore && <span className="text-red-600">⚠️ Complete checklist required</span>}
+                                                        {qcScore && checklistCompleted && <span className="text-green-600">✅ Ready for submission</span>}
+                                                    </div>
+                                                    <div className="flex gap-3">
+                                                        <button
+                                                            onClick={() => handleQcSubmit(false)}
+                                                            disabled={!qcScore || !checklistCompleted}
+                                                            className={`bg-red-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-red-700 transition-all text-sm flex items-center gap-2 ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                            Reject Asset
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleQcSubmit(true)}
+                                                            disabled={!qcScore || !checklistCompleted}
+                                                            className={`bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 transition-all text-sm flex items-center gap-2 ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            Approve Asset
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-purple-900">QC Review Input</h3>
-                                                <p className="text-xs text-purple-600">Provide your quality control assessment</p>
+                                        </div>
+
+                                        {/* Asset History & Timeline */}
+                                        <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
+                                                <div className="bg-slate-600 p-2 rounded-lg">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">Asset Timeline</h3>
+                                                    <p className="text-xs text-slate-600">Review history and workflow progress</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium text-slate-900">Asset Created</div>
+                                                        <div className="text-xs text-slate-500">
+                                                            {qcReviewAsset?.date ? new Date(qcReviewAsset.date).toLocaleString() : 'Unknown date'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {qcReviewAsset?.submitted_at && (
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="text-sm font-medium text-slate-900">Submitted for QC Review</div>
+                                                            <div className="text-xs text-slate-500">
+                                                                {new Date(qcReviewAsset.submitted_at).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium text-slate-900">QC Review in Progress</div>
+                                                        <div className="text-xs text-slate-500">Currently being reviewed</div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <div className="space-y-6">
-                                            {/* QC Score Input */}
+                                            {/* QC Score */}
                                             <div>
-                                                <label className="block text-sm font-bold text-purple-900 mb-3">
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">
                                                     QC Score (0-100)
                                                     <span className="text-red-500 ml-1">*</span>
                                                 </label>
-                                                <div className="flex items-center gap-4">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={qcScore || ''}
-                                                        onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
-                                                        className="w-32 px-4 py-3 border-2 border-purple-300 rounded-lg text-lg font-bold text-center focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                        placeholder="0"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <input
-                                                            type="range"
-                                                            min="0"
-                                                            max="100"
-                                                            value={qcScore || 0}
-                                                            onChange={(e) => setQcScore(parseInt(e.target.value))}
-                                                            className="w-full h-3 bg-purple-200 rounded-lg appearance-none cursor-pointer slider"
-                                                        />
-                                                        <div className="flex justify-between text-xs text-purple-600 mt-1">
-                                                            <span>Poor (0)</span>
-                                                            <span>Average (50)</span>
-                                                            <span>Excellent (100)</span>
-                                                        </div>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={qcScore || ''}
+                                                    onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Enter QC score (0-100)"
+                                                />
+                                                {qcScore && qcScore > 0 && (
+                                                    <div className={`mt-2 text-xs font-bold ${qcScore >= 80 ? 'text-green-600' : qcScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                        {qcScore >= 80 ? '✓ Excellent quality' : qcScore >= 60 ? '⚠ Good quality' : '✗ Needs improvement'}
                                                     </div>
-                                                    {qcScore && (
-                                                        <div className="w-16 h-16">
-                                                            <CircularScore
-                                                                score={qcScore}
-                                                                label="QC"
-                                                                size="sm"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                )}
+                                            </div>
+
+                                            {/* Checklist Completion */}
+                                            <div>
+                                                <label className="flex items-center gap-3 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checklistCompleted}
+                                                        onChange={(e) => setChecklistCompleted(e.target.checked)}
+                                                        className="w-5 h-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                                                    />
+                                                    <span className="text-sm font-bold text-slate-700">
+                                                        QC Checklist Completed
+                                                        <span className="text-red-500 ml-1">*</span>
+                                                    </span>
+                                                </label>
+                                                <p className="text-xs text-slate-500 mt-1 ml-8">
+                                                    Confirm that all quality control checks have been completed
+                                                </p>
                                             </div>
 
                                             {/* QC Remarks */}
                                             <div>
-                                                <label className="block text-sm font-bold text-purple-900 mb-3">
-                                                    QC Remarks & Feedback
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                    QC Remarks / Comments
                                                 </label>
                                                 <textarea
                                                     value={qcRemarks}
                                                     onChange={(e) => setQcRemarks(e.target.value)}
-                                                    className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Enter your QC remarks and comments..."
                                                     rows={4}
-                                                    placeholder="Provide detailed feedback about the asset quality, areas for improvement, or approval notes..."
                                                 />
-                                                <div className="flex justify-between items-center mt-2">
-                                                    <div className="text-xs text-purple-600">
-                                                        {qcRemarks.length}/500 characters
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => setQcRemarks(qcRemarks + '\n\n✅ Approved: ')}
-                                                            className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
-                                                        >
-                                                            + Approval Note
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setQcRemarks(qcRemarks + '\n\n❌ Issue: ')}
-                                                            className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
-                                                        >
-                                                            + Issue Note
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* QC Checklist */}
-                                            <div>
-                                                <label className="block text-sm font-bold text-purple-900 mb-3">
-                                                    QC Checklist
-                                                    <span className="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <div className="bg-white rounded-lg border-2 border-purple-200 p-4">
-                                                    <div className="space-y-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="content-quality"
-                                                                className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                            />
-                                                            <label htmlFor="content-quality" className="text-sm text-slate-700">
-                                                                Content quality meets standards
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="brand-guidelines"
-                                                                className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                            />
-                                                            <label htmlFor="brand-guidelines" className="text-sm text-slate-700">
-                                                                Follows brand guidelines and style
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="technical-specs"
-                                                                className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                            />
-                                                            <label htmlFor="technical-specs" className="text-sm text-slate-700">
-                                                                Technical specifications are correct
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="seo-optimization"
-                                                                className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                            />
-                                                            <label htmlFor="seo-optimization" className="text-sm text-slate-700">
-                                                                SEO optimization is adequate
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="final-approval"
-                                                                checked={checklistCompleted}
-                                                                onChange={(e) => setChecklistCompleted(e.target.checked)}
-                                                                className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                            />
-                                                            <label htmlFor="final-approval" className="text-sm font-bold text-purple-900">
-                                                                I have completed the QC review process
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="flex justify-between items-center pt-4 border-t-2 border-purple-200">
-                                                <div className="text-sm text-purple-700">
-                                                    {!qcScore && <span className="text-red-600">⚠️ QC Score required</span>}
-                                                    {!checklistCompleted && qcScore && <span className="text-red-600">⚠️ Complete checklist required</span>}
-                                                    {qcScore && checklistCompleted && <span className="text-green-600">✅ Ready for submission</span>}
-                                                </div>
-                                                <div className="flex gap-3">
-                                                    <button
-                                                        onClick={() => handleQcSubmit(false)}
-                                                        disabled={!qcScore || !checklistCompleted}
-                                                        className={`bg-red-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-red-700 transition-all text-sm flex items-center gap-2 ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                        Reject Asset
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleQcSubmit(true)}
-                                                        disabled={!qcScore || !checklistCompleted}
-                                                        className={`bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 transition-all text-sm flex items-center gap-2 ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                        Approve Asset
-                                                    </button>
-                                                </div>
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                    Provide detailed feedback for the asset creator
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Asset History & Timeline */}
+                                    {/* Workflow Information */}
                                     <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
-                                            <div className="bg-slate-600 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                        <h3 className="text-lg font-bold text-slate-900 mb-4">Workflow Information</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="font-bold text-slate-700">Submitted by:</span>
+                                                <span className="ml-2 text-slate-600">
+                                                    {users.find(u => u.id === qcReviewAsset?.submitted_by)?.name || 'Unknown'}
+                                                </span>
                                             </div>
                                             <div>
-                                                <h3 className="text-lg font-bold text-slate-900">Asset Timeline</h3>
-                                                <p className="text-xs text-slate-600">Review history and workflow progress</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="text-sm font-medium text-slate-900">Asset Created</div>
-                                                    <div className="text-xs text-slate-500">
-                                                        {qcReviewAsset?.date ? new Date(qcReviewAsset.date).toLocaleString() : 'Unknown date'}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {qcReviewAsset?.submitted_at && (
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="text-sm font-medium text-slate-900">Submitted for QC Review</div>
-                                                        <div className="text-xs text-slate-500">
-                                                            {new Date(qcReviewAsset.submitted_at).toLocaleString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                    <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="text-sm font-medium text-slate-900">QC Review in Progress</div>
-                                                    <div className="text-xs text-slate-500">Currently being reviewed</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        {/* QC Score */}
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                QC Score (0-100)
-                                                <span className="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={qcScore || ''}
-                                                onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter QC score (0-100)"
-                                            />
-                                            {qcScore && qcScore > 0 && (
-                                                <div className={`mt-2 text-xs font-bold ${qcScore >= 80 ? 'text-green-600' : qcScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                    {qcScore >= 80 ? '✓ Excellent quality' : qcScore >= 60 ? '⚠ Good quality' : '✗ Needs improvement'}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Checklist Completion */}
-                                        <div>
-                                            <label className="flex items-center gap-3 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={checklistCompleted}
-                                                    onChange={(e) => setChecklistCompleted(e.target.checked)}
-                                                    className="w-5 h-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
-                                                />
-                                                <span className="text-sm font-bold text-slate-700">
-                                                    QC Checklist Completed
-                                                    <span className="text-red-500 ml-1">*</span>
+                                                <span className="font-bold text-slate-700">Submitted at:</span>
+                                                <span className="ml-2 text-slate-600">
+                                                    {qcReviewAsset?.submitted_at ? new Date(qcReviewAsset.submitted_at).toLocaleString() : 'Unknown'}
                                                 </span>
-                                            </label>
-                                            <p className="text-xs text-slate-500 mt-1 ml-8">
-                                                Confirm that all quality control checks have been completed
-                                            </p>
-                                        </div>
-
-                                        {/* QC Remarks */}
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                QC Remarks / Comments
-                                            </label>
-                                            <textarea
-                                                value={qcRemarks}
-                                                onChange={(e) => setQcRemarks(e.target.value)}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter your QC remarks and comments..."
-                                                rows={4}
-                                            />
-                                            <p className="text-xs text-slate-500 mt-1">
-                                                Provide detailed feedback for the asset creator
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Workflow Information */}
-                                <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                    <h3 className="text-lg font-bold text-slate-900 mb-4">Workflow Information</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <span className="font-bold text-slate-700">Submitted by:</span>
-                                            <span className="ml-2 text-slate-600">
-                                                {users.find(u => u.id === qcReviewAsset?.submitted_by)?.name || 'Unknown'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-bold text-slate-700">Submitted at:</span>
-                                            <span className="ml-2 text-slate-600">
-                                                {qcReviewAsset?.submitted_at ? new Date(qcReviewAsset.submitted_at).toLocaleString() : 'Unknown'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-bold text-slate-700">Current status:</span>
-                                            <span className="ml-2">{getStatusBadge(qcReviewAsset?.status || 'Draft')}</span>
-                                        </div>
-                                        <div>
-                                            <span className="font-bold text-slate-700">Rework count:</span>
-                                            <span className="ml-2 text-slate-600">{qcReviewAsset?.rework_count || 0}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-slate-700">Current status:</span>
+                                                <span className="ml-2">{getStatusBadge(qcReviewAsset?.status || 'Draft')}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-slate-700">Rework count:</span>
+                                                <span className="ml-2 text-slate-600">{qcReviewAsset?.rework_count || 0}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                );
-            })()
+                    );
+                })()
             }
 
             {/* My Submissions View */}
@@ -5376,10 +5411,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         <span className="text-slate-900">{selectedAsset.asset_category}</span>
                                                     </div>
                                                 )}
-                                                {selectedAsset.asset_format && (
+                                                {selectedAsset.type && (
                                                     <div>
-                                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Format</label>
-                                                        <span className="text-slate-900">{selectedAsset.asset_format}</span>
+                                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Type</label>
+                                                        <span className="text-slate-900">{selectedAsset.type}</span>
                                                     </div>
                                                 )}
                                             </div>
