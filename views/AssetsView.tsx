@@ -7,7 +7,7 @@ import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
 import UploadAssetModal from '../components/UploadAssetModal';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
-import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand, Campaign, Project, Task } from '../types';
 
 interface AssetsViewProps {
     onNavigate?: (view: string, id?: number) => void;
@@ -21,15 +21,28 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: keywords = [] } = useData<any>('keywords');
     const { data: assetCategories = [], refresh: refreshAssetCategories } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [], refresh: refreshAssetTypes } = useData<AssetTypeMasterItem>('asset-type-master');
-    const { data: assetFormats = [], refresh: refreshAssetFormats } = useData<any>('asset-format-master');
     const { create: createAssetCategory, update: updateAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType, update: updateAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
 
+    // Data hooks for filters
+    const { data: campaigns = [] } = useData<Campaign>('campaigns');
+    const { data: projects = [] } = useData<Project>('projects');
+    const { data: tasks = [] } = useData<Task>('tasks');
+
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [repositoryFilter, setRepositoryFilter] = useState('All');
-    const [typeFilter, setTypeFilter] = useState('All');
-    const [contentTypeFilter, setContentTypeFilter] = useState('All');
+
+    // Filter state variables matching the specification
+    const [assetTypeFilter, setAssetTypeFilter] = useState('All');           // Asset Type - from Asset Type Master
+    const [assetCategoryFilter, setAssetCategoryFilter] = useState('All');   // Asset Category - from Asset Category Master
+    const [campaignTypeFilter, setCampaignTypeFilter] = useState('All');     // Campaign Type - from Campaigns
+    const [linkedServiceFilter, setLinkedServiceFilter] = useState('All');   // Linked Service - from Service Master
+    const [linkedSubServiceFilter, setLinkedSubServiceFilter] = useState('All'); // Linked Sub-Service - mapped to selected service
+    const [projectFilter, setProjectFilter] = useState('All');               // Project - from Projects
+    const [createdByFilter, setCreatedByFilter] = useState('All');           // Created By - from Users
+    const [dateRangeFilter, setDateRangeFilter] = useState('All');           // Date Range - date picker
+    const [usageStatusFilter, setUsageStatusFilter] = useState('All');       // Usage Status - Used, Unused, Archived
+
     const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [qcMode, setQcMode] = useState(false); // Toggle between user and QC mode
@@ -99,6 +112,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         // Handle both AssetTypeItem (no status) and AssetTypeMasterItem (has status)
         return (assetTypes || []).filter(t => !t.status || t.status === 'active');
     }, [assetTypes]);
+
+    // Filter sub-services based on selected linked service filter
+    const filteredSubServicesForFilter = useMemo(() => {
+        if (linkedServiceFilter === 'All') {
+            return subServices;
+        }
+        return subServices.filter(sub =>
+            Number(sub.parent_service_id) === Number(linkedServiceFilter)
+        );
+    }, [subServices, linkedServiceFilter]);
 
     // Debug: Log master data on load
     useEffect(() => {
@@ -205,29 +228,100 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // User Mode filter - show all except those in QC review (unless user is the creator)
             if (!qcMode && a.status === 'Pending QC Review' && a.submitted_by !== currentUser.id) return false;
 
-            // Repository filter
-            if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;
+            // Asset Type filter (from Asset Type Master)
+            if (assetTypeFilter !== 'All' && a.type !== assetTypeFilter) return false;
 
-            // Type filter
-            if (typeFilter !== 'All' && a.type !== typeFilter) return false;
+            // Asset Category filter (from Asset Category Master)
+            if (assetCategoryFilter !== 'All' && a.asset_category !== assetCategoryFilter) return false;
 
-            // Content Type filter
-            if (contentTypeFilter !== 'All' && a.application_type !== contentTypeFilter) return false;
+            // Campaign Type filter
+            if (campaignTypeFilter !== 'All') {
+                const linkedCampaignId = a.linked_campaign_id;
+                if (!linkedCampaignId || linkedCampaignId.toString() !== campaignTypeFilter) return false;
+            }
+
+            // Linked Service filter
+            if (linkedServiceFilter !== 'All') {
+                const serviceId = a.linked_service_id || (a.linked_service_ids && a.linked_service_ids[0]);
+                if (!serviceId || serviceId.toString() !== linkedServiceFilter) return false;
+            }
+
+            // Linked Sub-Service filter
+            if (linkedSubServiceFilter !== 'All') {
+                const subServiceId = a.linked_sub_service_id || (a.linked_sub_service_ids && a.linked_sub_service_ids[0]);
+                if (!subServiceId || subServiceId.toString() !== linkedSubServiceFilter) return false;
+            }
+
+            // Project filter
+            if (projectFilter !== 'All') {
+                const projectId = a.linked_project_id;
+                if (!projectId || projectId.toString() !== projectFilter) return false;
+            }
+
+            // Created By filter
+            if (createdByFilter !== 'All') {
+                const creatorId = a.created_by || a.submitted_by;
+                if (!creatorId || creatorId.toString() !== createdByFilter) return false;
+            }
+
+            // Date Range filter
+            if (dateRangeFilter !== 'All' && a.date) {
+                const assetDate = new Date(a.date);
+                const now = new Date();
+
+                switch (dateRangeFilter) {
+                    case 'today':
+                        if (assetDate.toDateString() !== now.toDateString()) return false;
+                        break;
+                    case 'week':
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        if (assetDate < weekAgo) return false;
+                        break;
+                    case 'month':
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        if (assetDate < monthAgo) return false;
+                        break;
+                    case 'quarter':
+                        const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                        if (assetDate < quarterAgo) return false;
+                        break;
+                    case 'year':
+                        const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                        if (assetDate < yearAgo) return false;
+                        break;
+                }
+            }
+
+            // Usage Status filter
+            if (usageStatusFilter !== 'All') {
+                const usageCount = (a as any).usage_count || 0;
+                switch (usageStatusFilter) {
+                    case 'Used':
+                        if (usageCount === 0) return false;
+                        break;
+                    case 'Unused':
+                        if (usageCount > 0) return false;
+                        break;
+                    case 'Archived':
+                        if (a.status !== 'Archived') return false;
+                        break;
+                }
+            }
 
             // Search query
             if (!query) return true;
 
             const name = (a.name || '').toLowerCase();
             const type = (a.type || '').toLowerCase();
-            const repository = (a.repository || '').toLowerCase();
+            const category = (a.asset_category || '').toLowerCase();
             const status = (a.status || '').toLowerCase();
 
             return name.includes(query) ||
                 type.includes(query) ||
-                repository.includes(query) ||
+                category.includes(query) ||
                 status.includes(query);
         });
-    }, [assets, searchQuery, repositoryFilter, typeFilter, contentTypeFilter, qcMode, currentUser.id]);
+    }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, createdByFilter, dateRangeFilter, usageStatusFilter, qcMode, currentUser.id]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -662,308 +756,234 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const getAssetIcon = useCallback((type: string) => {
         const icons: Record<string, string> = {
-            'Image': '�️',
+            'Image': '🖼️',
             'Video': '🎥',
             'Document': '📄',
-            'Archive': '📦'
+            'Archive': '📦',
+            'Blog Banner': '📝',
+            'Reel': '🎬',
+            'Infographic': '📊',
+            'PDF': '📑'
         };
         return icons[type] || '📁';
     }, []);
 
-    // Memoize columns for better performance
+    // Get asset type badge color
+    const getAssetTypeBadgeColor = useCallback((type: string) => {
+        const colors: Record<string, string> = {
+            'Blog Banner': 'bg-blue-100 text-blue-700',
+            'Reel': 'bg-purple-100 text-purple-700',
+            'Infographic': 'bg-green-100 text-green-700',
+            'PDF': 'bg-red-100 text-red-700',
+            'Video': 'bg-pink-100 text-pink-700',
+            'Image': 'bg-amber-100 text-amber-700',
+            'Document': 'bg-slate-100 text-slate-700'
+        };
+        return colors[type] || 'bg-slate-100 text-slate-700';
+    }, []);
+
+    // Memoize columns for better performance - Updated to match screenshot
     const columns = useMemo(() => [
         {
-            header: 'Thumbnail',
+            header: 'THUMBNAIL',
             accessor: (item: AssetLibraryItem) => (
                 <div className="flex items-center justify-center">
                     {item.thumbnail_url ? (
                         <img
                             src={item.thumbnail_url}
                             alt={item.name}
-                            className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 shadow-sm"
+                            className="w-12 h-12 object-cover rounded-lg border border-slate-200"
                             loading="lazy"
                         />
                     ) : (
-                        <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-2xl shadow-sm">
+                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-xl border border-slate-200">
                             {getAssetIcon(item.type)}
                         </div>
                     )}
                 </div>
             ),
-            className: 'w-24'
+            className: 'w-20'
         },
         {
-            header: 'Asset Name',
+            header: 'ASSET NAME',
             accessor: (item: AssetLibraryItem) => (
                 <div>
-                    <div className="font-bold text-slate-900 text-sm">{item.name}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">ID: {item.id}</div>
+                    <div className="font-semibold text-slate-900 text-sm">{item.name}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{item.file_url?.split('/').pop() || `asset-${item.id}.${item.file_type || 'file'}`}</div>
                 </div>
             )
         },
         {
-            header: 'Asset Type',
+            header: 'ASSET TYPE',
             accessor: (item: AssetLibraryItem) => (
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-600">
-                    <span>{getAssetIcon(item.type)}</span>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${getAssetTypeBadgeColor(item.type)}`}>
                     {item.type}
                 </span>
             )
         },
         {
-            header: 'Content Type',
+            header: 'CONTENT TYPE',
             accessor: (item: AssetLibraryItem) => (
-                <span className="text-xs text-slate-600 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
-                    {item.application_type || 'Not Set'}
+                <span className="text-sm text-slate-700">
+                    {item.application_type === 'web' ? 'Article' :
+                        item.application_type === 'seo' ? 'Visual' :
+                            item.application_type === 'smm' ? 'Video' :
+                                item.type || 'Document'}
                 </span>
             )
         },
         {
-            header: 'Linked Service',
+            header: 'LINKED SERVICE',
             accessor: (item: AssetLibraryItem) => {
-                const linkedServiceIds = item.linked_service_ids || [];
-                const linkedSubServiceIds = item.linked_sub_service_ids || [];
-                const hasLinks = linkedServiceIds.length > 0 || linkedSubServiceIds.length > 0;
+                const linkedServiceId = item.linked_service_id || (item.linked_service_ids && item.linked_service_ids[0]);
+                const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
+                const linkedSubServiceId = item.linked_sub_service_id || (item.linked_sub_service_ids && item.linked_sub_service_ids[0]);
+                const subService = linkedSubServiceId ? subServices.find(ss => ss.id === linkedSubServiceId) : null;
 
-                if (!hasLinks) {
-                    return <span className="text-xs text-slate-400 italic">Not linked</span>;
+                if (!service) {
+                    return <span className="text-xs text-slate-400">-</span>;
                 }
 
                 return (
-                    <div className="max-w-xs">
-                        <div className="text-xs text-slate-700 bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-200">
-                            <div className="flex items-start gap-2">
-                                <svg className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                </svg>
-                                <div className="space-y-1">
-                                    {linkedServiceIds.map(serviceId => {
-                                        const service = services.find(s => s.id === serviceId);
-                                        return service ? (
-                                            <div key={serviceId} className="font-medium text-indigo-900">
-                                                {service.service_name}
-                                            </div>
-                                        ) : null;
-                                    })}
-                                    {linkedSubServiceIds.length > 0 && (
-                                        <div className="text-indigo-700 text-[11px]">
-                                            {linkedSubServiceIds.map(ssId => {
-                                                const subService = subServices.find(ss => ss.id === ssId);
-                                                return subService?.sub_service_name;
-                                            }).filter(Boolean).join(', ')}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                    <div className="text-xs">
+                        <div className="font-medium text-slate-900">{service.service_name}</div>
+                        {subService && (
+                            <div className="text-slate-500">{subService.sub_service_name}</div>
+                        )}
                     </div>
                 );
             }
         },
         {
-            header: 'Linked Task',
+            header: 'LINKED TASK',
+            accessor: (item: AssetLibraryItem) => {
+                const taskId = item.linked_task_id || item.linked_task;
+                const task = taskId ? tasks.find(t => t.id === taskId) : null;
+
+                if (!task) {
+                    return <span className="text-xs text-slate-400">-</span>;
+                }
+
+                return (
+                    <div className="text-xs text-slate-700">
+                        {task.name}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'QC STATUS',
+            accessor: (item: AssetLibraryItem) => {
+                const status = item.status || 'Draft';
+                const qcScore = item.qc_score;
+
+                let statusColor = 'bg-slate-100 text-slate-700';
+                let statusText = status;
+
+                if (status === 'QC Approved' || status === 'Published') {
+                    statusColor = 'bg-green-100 text-green-700';
+                    statusText = 'Pass';
+                } else if (status === 'Pending QC Review') {
+                    statusColor = 'bg-amber-100 text-amber-700';
+                    statusText = 'Pending';
+                } else if (status === 'QC Rejected' || status === 'Rework Required') {
+                    statusColor = 'bg-red-100 text-red-700';
+                    statusText = 'Fail';
+                }
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
+                            {statusText}
+                        </span>
+                        {qcScore !== undefined && (
+                            <span className="text-xs text-slate-500">({qcScore})</span>
+                        )}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'VERSION',
             accessor: (item: AssetLibraryItem) => (
-                <span className="text-xs text-slate-600">
-                    {item.linked_task ? `Task #${item.linked_task}` : <span className="text-slate-400 italic">No task</span>}
+                <span className="text-sm text-slate-700">
+                    {item.version_number || 'v1.0'}
                 </span>
             )
         },
         {
-            header: 'QC Status',
-            accessor: (item: AssetLibraryItem) => (
-                <div className="space-y-2">
-                    <div className="flex flex-col gap-1">
-                        {getStatusBadge(item.status || 'Draft')}
-                        {item.status === 'Pending QC Review' && (
-                            <div className="text-xs text-purple-600 font-medium">
-                                ⏳ Awaiting QC Review
-                            </div>
-                        )}
-                        {item.status === 'QC Approved' && item.linking_active && (
-                            <div className="text-xs text-green-600 font-medium">
-                                ✅ Linked & Active
-                            </div>
-                        )}
-                        {item.status === 'QC Rejected' && (
-                            <div className="text-xs text-red-600 font-medium">
-                                ❌ Rework Required
-                            </div>
-                        )}
-                        {item.rework_count && item.rework_count > 0 && (
-                            <div className="text-xs text-orange-600 font-medium">
-                                🔄 Rework: {item.rework_count}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )
-        },
-        {
-            header: 'Version',
-            accessor: (item: AssetLibraryItem) => (
-                <div className="text-center">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        v{item.version_number || '1.0'}
-                    </span>
-                    {item.rework_count && item.rework_count > 0 && (
-                        <div className="text-xs text-orange-600 mt-1">
-                            Rev: {item.rework_count}
-                        </div>
-                    )}
-                </div>
-            )
-        },
-        {
-            header: 'Designer',
+            header: 'DESIGNER',
             accessor: (item: AssetLibraryItem) => {
-                const designer = users.find(u => u.id === (item.designed_by || item.submitted_by));
+                const designer = users.find(u => u.id === (item.designed_by || item.submitted_by || item.created_by));
+
+                if (!designer) {
+                    return <span className="text-xs text-slate-400">-</span>;
+                }
+
+                // Get initials
+                const initials = designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+
+                // Generate consistent color based on name
+                const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-amber-500', 'bg-cyan-500'];
+                const colorIndex = designer.name?.charCodeAt(0) % colors.length || 0;
+
                 return (
-                    <div className="text-xs">
-                        {designer ? (
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                    {designer.name?.[0]?.toUpperCase() || 'U'}
-                                </div>
-                                <div>
-                                    <div className="font-medium text-slate-900">
-                                        {designer.name}
-                                    </div>
-                                    <div className="text-slate-500">
-                                        {designer.email}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-slate-400 italic">Unknown</span>
-                        )}
+                    <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 ${colors[colorIndex]} rounded-full flex items-center justify-center text-white text-xs font-bold`}>
+                            {initials}
+                        </div>
+                        <div className="text-xs">
+                            <div className="font-medium text-slate-900">{designer.name}</div>
+                        </div>
                     </div>
                 );
             }
         },
         {
-            header: 'Uploaded At',
-            accessor: (item: AssetLibraryItem) => (
-                <div className="text-xs text-slate-600">
-                    <div>{item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}</div>
-                    <div className="text-slate-400 mt-1">
-                        {item.date ? new Date(item.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+            header: 'UPLOADED AT',
+            accessor: (item: AssetLibraryItem) => {
+                const date = item.date || item.created_at;
+                if (!date) return <span className="text-xs text-slate-400">-</span>;
+
+                const d = new Date(date);
+                return (
+                    <div className="text-xs text-slate-600">
+                        <div>{d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</div>
                     </div>
-                </div>
-            )
+                );
+            }
         },
         {
-            header: 'Usage Count',
+            header: 'USAGE COUNT',
             accessor: (item: AssetLibraryItem) => (
                 <div className="text-center">
-                    <div className="text-lg font-bold text-slate-900">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
                         {(item as any).usage_count || 0}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                        times used
-                    </div>
+                    </span>
                 </div>
             )
         },
         {
-            header: 'Actions',
+            header: 'ACTIONS',
             accessor: (item: AssetLibraryItem) => (
-                <div className="flex gap-2">
+                <div className="flex justify-center">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleRowClick(item);
+                            // Show dropdown menu
                         }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="View Details"
+                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-all"
+                        title="More actions"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                         </svg>
                     </button>
-
-                    {/* Open File Button */}
-                    {(item.file_url || item.thumbnail_url) && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const url = item.file_url || item.thumbnail_url;
-                                if (url) {
-                                    // Check if it's a base64 data URL
-                                    if (url.startsWith('data:')) {
-                                        // Open in new window for base64 images
-                                        const win = window.open();
-                                        if (win) {
-                                            win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
-                                        }
-                                    } else {
-                                        // Open regular URL in new tab
-                                        window.open(url, '_blank', 'noopener,noreferrer');
-                                    }
-                                }
-                            }}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                            title="Open File"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </button>
-                    )}
-
-                    {/* QC Review Button - Only for QC personnel and Pending QC Review status */}
-                    {item.status === 'Pending QC Review' && currentUser.role === 'qc' && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleQcReview(item);
-                            }}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-                            title="QC Review"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </button>
-                    )}
-
-                    {/* Edit Button - Only for creators or if status allows editing */}
-                    {(item.status === 'Draft' || item.status === 'Rework Required' || item.submitted_by === currentUser.id) && (
-                        <button
-                            onClick={(e) => handleEdit(e, item)}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                            title="Edit"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                    )}
-
-                    {/* Delete Button - Only for creators or admins */}
-                    {(item.submitted_by === currentUser.id || currentUser.role === 'admin') && (
-                        <button
-                            onClick={(e) => handleDelete(e, item.id, item.name)}
-                            disabled={deletingId === item.id}
-                            className={`p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all ${deletingId === item.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title="Delete"
-                        >
-                            {deletingId === item.id ? (
-                                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            )}
-                        </button>
-                    )}
                 </div>
-            )
+            ),
+            className: 'w-20'
         }
-    ], [getAssetIcon, handleEdit, handleDelete, deletingId]);
+    ], [getAssetIcon, getAssetTypeBadgeColor, services, subServices, tasks, users]);
 
     // Render application type selection step
     const renderApplicationTypeSelection = () => (
@@ -1931,7 +1951,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             )}
 
             {(viewMode === 'edit' || (viewMode === 'upload' && uploadStep === 'asset-details')) && (
-                <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+                <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-indigo-50">
                     {/* Fixed Header */}
                     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
                         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -2050,7 +2070,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
 
                     {/* Main Content */}
-                    <div className="max-w-7xl mx-auto px-6 py-8">
+                    <div className="max-w-7xl mx-auto px-6 py-8 pb-24">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                             {/* Left Column - File Upload & Preview */}
@@ -5165,7 +5185,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div className="flex justify-between">
                                                     <span className="text-slate-600">Format</span>
                                                     <span className="text-slate-900 font-medium">
-                                                        {selectedAsset.asset_format?.toUpperCase() || selectedAsset.file_type?.toUpperCase() || 'JPEG'}
+                                                        {selectedAsset.file_type?.toUpperCase() || 'JPEG'}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between">
@@ -5287,7 +5307,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-semibold text-slate-700 mb-2">Format</label>
-                                                    <span className="text-slate-900">{selectedAsset.asset_format?.toUpperCase() || selectedAsset.file_type?.toUpperCase() || 'JPEG'}</span>
+                                                    <span className="text-slate-900">{selectedAsset.file_type?.toUpperCase() || 'JPEG'}</span>
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-semibold text-slate-700 mb-2">Version</label>
@@ -6714,159 +6734,182 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </div>
                         </div>
 
-                        <div className="relative">
+                        <div className="relative mb-4">
                             <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             <input
                                 type="text"
-                                placeholder={qcMode ? "Search assets pending QC review..." : "Search assets by name, type, repository, or status..."}
+                                placeholder="Search by title, file name, or tag..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 transition-all text-sm"
                             />
                         </div>
 
                         <div className="mb-6 space-y-4">
-                            {/* Enhanced Filters */}
-                            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                                <div className="flex flex-wrap gap-4 items-center">
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                        </svg>
-                                        <span className="text-sm font-medium text-slate-700">Filters:</span>
+                            {/* Enhanced Filters - Matching Screenshot */}
+                            <div className="bg-white rounded-lg border border-slate-200 p-4">
+                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Filters</div>
+
+                                {/* First Row of Filters */}
+                                <div className="grid grid-cols-4 gap-4 mb-4">
+                                    {/* Asset Type Filter - from Asset Type Master */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Type</label>
+                                        <select
+                                            value={assetTypeFilter}
+                                            onChange={(e) => setAssetTypeFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Types</option>
+                                            {allActiveAssetTypes.map(type => {
+                                                const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
+                                                return (
+                                                    <option key={type.id} value={typeName}>{typeName}</option>
+                                                );
+                                            })}
+                                        </select>
                                     </div>
 
-                                    <select
-                                        value={repositoryFilter}
-                                        onChange={(e) => setRepositoryFilter(e.target.value)}
-                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[150px]"
-                                    >
-                                        {repositories.map(repo => (
-                                            <option key={repo} value={repo}>
-                                                {repo === 'All' ? '📁 All Repositories' : `📁 ${repo}`}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                    <select
-                                        value={typeFilter}
-                                        onChange={(e) => setTypeFilter(e.target.value)}
-                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[120px]"
-                                    >
-                                        {uniqueAssetTypes.map(type => (
-                                            <option key={type} value={type}>
-                                                {type === 'All' ? '🏷️ All Types' : `🏷️ ${type}`}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                    {/* Content Type Filter */}
-                                    <select
-                                        value={contentTypeFilter}
-                                        onChange={(e) => setContentTypeFilter(e.target.value)}
-                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[140px]"
-                                    >
-                                        <option value="All">📋 All Content</option>
-                                        <option value="web">🌐 Web Content</option>
-                                        <option value="seo">🔍 SEO Content</option>
-                                        <option value="smm">📱 Social Media</option>
-                                    </select>
-
-                                    {/* Clear Filters Button */}
-                                    {(repositoryFilter !== 'All' || typeFilter !== 'All' || contentTypeFilter !== 'All' || searchQuery) && (
-                                        <button
-                                            onClick={() => {
-                                                setRepositoryFilter('All');
-                                                setTypeFilter('All');
-                                                setContentTypeFilter('All');
-                                                setSearchQuery('');
-                                            }}
-                                            className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                                    {/* Asset Category Filter - from Asset Category Master */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Category</label>
+                                        <select
+                                            value={assetCategoryFilter}
+                                            onChange={(e) => setAssetCategoryFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                            Clear Filters
-                                        </button>
-                                    )}
+                                            <option value="All">All Categories</option>
+                                            {allActiveAssetCategories.map(category => (
+                                                <option key={category.id} value={category.category_name}>{category.category_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Campaign Type Filter - from Campaigns */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Campaign Type</label>
+                                        <select
+                                            value={campaignTypeFilter}
+                                            onChange={(e) => setCampaignTypeFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Campaigns</option>
+                                            {campaigns.map(campaign => (
+                                                <option key={campaign.id} value={campaign.id.toString()}>{campaign.campaign_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Linked Service Filter - from Service Master */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Service</label>
+                                        <select
+                                            value={linkedServiceFilter}
+                                            onChange={(e) => {
+                                                setLinkedServiceFilter(e.target.value);
+                                                setLinkedSubServiceFilter('All'); // Reset sub-service when service changes
+                                            }}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Services</option>
+                                            {services.map(service => (
+                                                <option key={service.id} value={service.id.toString()}>{service.service_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Second Row of Filters */}
+                                <div className="grid grid-cols-4 gap-4 mb-4">
+                                    {/* Linked Sub-Service Filter - mapped to selected service */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Sub-Service</label>
+                                        <select
+                                            value={linkedSubServiceFilter}
+                                            onChange={(e) => setLinkedSubServiceFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Sub-services</option>
+                                            {filteredSubServicesForFilter.map(subService => (
+                                                <option key={subService.id} value={subService.id.toString()}>{subService.sub_service_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Project Filter - from Projects */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Project</label>
+                                        <select
+                                            value={projectFilter}
+                                            onChange={(e) => setProjectFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Projects</option>
+                                            {projects.map(project => (
+                                                <option key={project.id} value={project.id.toString()}>{project.project_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Created By Filter - from Users */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Created By</label>
+                                        <select
+                                            value={createdByFilter}
+                                            onChange={(e) => setCreatedByFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Users</option>
+                                            {users.map(user => (
+                                                <option key={user.id} value={user.id.toString()}>{user.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Date Range Filter - date picker */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Date Range</label>
+                                        <select
+                                            value={dateRangeFilter}
+                                            onChange={(e) => setDateRangeFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Time</option>
+                                            <option value="today">Today</option>
+                                            <option value="week">This Week</option>
+                                            <option value="month">This Month</option>
+                                            <option value="quarter">This Quarter</option>
+                                            <option value="year">This Year</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Third Row - Usage Status */}
+                                <div className="grid grid-cols-4 gap-4">
+                                    {/* Usage Status Filter - Used, Unused, Archived */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Usage Status</label>
+                                        <select
+                                            value={usageStatusFilter}
+                                            onChange={(e) => setUsageStatusFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Statuses</option>
+                                            <option value="Used">Used</option>
+                                            <option value="Unused">Unused</option>
+                                            <option value="Archived">Archived</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Results Summary */}
                             <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-4">
-                                    <p className="text-sm text-slate-600">
-                                        {qcMode ? (
-                                            <>
-                                                Showing <span className="font-bold text-purple-600">{filteredAssets.length}</span> assets pending QC review
-                                            </>
-                                        ) : (
-                                            <>
-                                                Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
-                                                {(repositoryFilter !== 'All' || typeFilter !== 'All' || contentTypeFilter !== 'All' || searchQuery) && (
-                                                    <span className="text-slate-500"> (filtered from {assets.length} total)</span>
-                                                )}
-                                            </>
-                                        )}
-                                    </p>
-
-                                    {/* Content Type Indicators */}
-                                    {!qcMode && assets.length > 0 && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500">Content Types:</span>
-                                            <div className="flex gap-1">
-                                                {(() => {
-                                                    const webCount = assets.filter(a => a.application_type === 'web').length;
-                                                    const seoCount = assets.filter(a => a.application_type === 'seo').length;
-                                                    const smmCount = assets.filter(a => a.application_type === 'smm').length;
-
-                                                    return (
-                                                        <>
-                                                            {webCount > 0 && (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                                                                    🌐 {webCount}
-                                                                </span>
-                                                            )}
-                                                            {seoCount > 0 && (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                                                                    🔍 {seoCount}
-                                                                </span>
-                                                            )}
-                                                            {smmCount > 0 && (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">
-                                                                    📱 {smmCount}
-                                                                </span>
-                                                            )}
-                                                        </>
-                                                    );
-                                                })()}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Last Updated Indicator */}
-                                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Updated {new Date().toLocaleTimeString()}</span>
-                                    </div>
-                                </div>
-
-                                {/* Sort Options */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-slate-500">Sort by:</span>
-                                    <select className="px-3 py-1 border border-slate-300 rounded-lg text-sm bg-white">
-                                        <option>Date (Newest)</option>
-                                        <option>Date (Oldest)</option>
-                                        <option>Name (A-Z)</option>
-                                        <option>Name (Z-A)</option>
-                                        <option>Status</option>
-                                        <option>Type</option>
-                                    </select>
-                                </div>
+                                <p className="text-sm text-slate-600">
+                                    Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                                </p>
                             </div>
 
                             {/* Display Content Based on View Mode */}
@@ -7208,8 +7251,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
+                        </div >
+                    </div >
                 )
             }
 

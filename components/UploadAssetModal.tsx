@@ -1,10 +1,17 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
-import type { AssetLibraryItem, Service, SubServiceItem, AssetCategoryMasterItem, AssetFormat, AssetTypeMasterItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, AssetCategoryMasterItem, AssetTypeMasterItem, Task, Campaign, Project, ContentRepositoryItem, User } from '../types';
 import AssetCategoryMasterModal from './AssetCategoryMasterModal';
 import AssetTypeMasterModal from './AssetTypeMasterModal';
-import AssetFormatMasterModal from './AssetFormatMasterModal';
 import CircularScore from './CircularScore';
+
+interface AssetFormatMasterItem {
+    id: number;
+    format_name: string;
+    description?: string;
+    application_types?: string[];
+    status?: string;
+}
 
 interface UploadAssetModalProps {
     isOpen: boolean;
@@ -56,12 +63,27 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const [selectedSubServiceIds, setSelectedSubServiceIds] = useState<number[]>([]);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [showTypeModal, setShowTypeModal] = useState(false);
-    const [showFormatModal, setShowFormatModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState<AssetCategoryMasterItem | null>(null);
     const [editingType, setEditingType] = useState<AssetTypeMasterItem | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
     const [dragActive, setDragActive] = useState(false);
+
+    // Map Assets to Source Work state
+    const [linkedTaskId, setLinkedTaskId] = useState<number | null>(initialData?.linked_task_id || null);
+    const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(initialData?.linked_campaign_id || null);
+    const [linkedProjectId, setLinkedProjectId] = useState<number | null>(initialData?.linked_project_id || null);
+    const [linkedServiceId, setLinkedServiceId] = useState<number | null>(initialData?.linked_service_id || null);
+    const [linkedSubServiceId, setLinkedSubServiceId] = useState<number | null>(initialData?.linked_sub_service_id || null);
+    const [linkedRepositoryItemId, setLinkedRepositoryItemId] = useState<number | null>(initialData?.linked_repository_item_id || null);
+
+    // Designer & Workflow state
+    const [designedBy, setDesignedBy] = useState<number | null>(initialData?.designed_by || null);
+    const [workflowStage, setWorkflowStage] = useState<string>(initialData?.status || 'Draft');
+
+    // Versioning state
+    const [versionNumber, setVersionNumber] = useState<string>(initialData?.version_number || 'v1.0');
+    const [showVersionHistory, setShowVersionHistory] = useState(false);
     const [showSmmPreview, setShowSmmPreview] = useState(true);
     const [smmMediaUrl, setSmmMediaUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,10 +94,19 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
-    const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
+    const { data: assetFormats = [] } = useData<AssetFormatMasterItem>('asset-format-master');
     const { create: createAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
     const { create: createAsset, update: updateAsset } = useData<AssetLibraryItem>('assetLibrary');
+
+    // Data hooks for Map Assets to Source Work section
+    const { data: tasks = [] } = useData<Task>('tasks');
+    const { data: campaigns = [] } = useData<Campaign>('campaigns');
+    const { data: projects = [] } = useData<Project>('projects');
+    const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
+
+    // Data hooks for Designer & Workflow section
+    const { data: users = [] } = useData<User>('users');
 
     // Debug: Log all loaded data on mount
     React.useEffect(() => {
@@ -104,6 +135,12 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         return filtered;
     }, [subServices, selectedServiceId]);
 
+    // Filter sub-services for Map Assets to Source Work section
+    const linkedFilteredSubServices = useMemo(() => {
+        if (!linkedServiceId) return [];
+        return subServices.filter(sub => Number(sub.parent_service_id) === Number(linkedServiceId));
+    }, [subServices, linkedServiceId]);
+
     // Filter asset categories by brand - handle both status field presence
     const filteredAssetCategories = useMemo(() => {
         console.log('=== Asset Categories Debug ===');
@@ -123,6 +160,16 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         console.log('Filtered asset types:', filtered);
         return filtered;
     }, [assetTypes]);
+
+    // Filter asset formats - handle status field
+    const filteredAssetFormats = useMemo(() => {
+        console.log('=== Asset Formats Debug ===');
+        console.log('All asset formats:', assetFormats);
+        // Filter by status if it exists, otherwise include all
+        const filtered = assetFormats.filter(format => !format.status || format.status === 'active');
+        console.log('Filtered asset formats:', filtered);
+        return filtered;
+    }, [assetFormats]);
 
     // File handling functions
     const handleFileSelect = useCallback((file: File) => {
@@ -192,7 +239,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
         reader.readAsDataURL(file);
     }, []);
 
-    const handleUpload = useCallback(async (type: 'draft' | 'qc') => {
+    const handleUpload = useCallback(async (type: 'draft' | 'qc' | 'library') => {
         try {
             // Validate required fields
             if (!newAsset.name || newAsset.name.trim() === '') {
@@ -200,12 +247,33 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                 return;
             }
 
+            // Determine status based on action type
+            let status: string;
+            if (type === 'qc') {
+                status = 'Pending QC Review';
+            } else if (type === 'library') {
+                status = workflowStage;
+            } else {
+                status = 'Draft';
+            }
+
             // Prepare asset data
             const assetData: Partial<AssetLibraryItem> = {
                 ...newAsset,
-                status: type === 'qc' ? 'QC' : 'Draft',
+                status: status as any,
                 linked_service_ids: selectedServiceId ? [selectedServiceId] : [],
                 linked_sub_service_ids: selectedSubServiceIds,
+                // Map Assets to Source Work fields
+                linked_task_id: linkedTaskId || undefined,
+                linked_campaign_id: linkedCampaignId || undefined,
+                linked_project_id: linkedProjectId || undefined,
+                linked_service_id: linkedServiceId || undefined,
+                linked_sub_service_id: linkedSubServiceId || undefined,
+                linked_repository_item_id: linkedRepositoryItemId || undefined,
+                // Designer & Workflow fields
+                designed_by: designedBy || undefined,
+                // Versioning
+                version_number: versionNumber,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             };
@@ -224,7 +292,12 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
             }
 
             // Show success message
-            alert(type === 'qc' ? 'Asset submitted to QC successfully!' : 'Asset saved as draft!');
+            const messages: Record<string, string> = {
+                qc: 'Asset submitted to QC successfully!',
+                library: 'Asset saved to Asset Library!',
+                draft: 'Asset saved as draft!'
+            };
+            alert(messages[type]);
 
             onSuccess?.();
             onClose();
@@ -232,7 +305,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
             console.error('Failed to save asset:', error);
             alert('Failed to save asset. Please try again.');
         }
-    }, [newAsset, selectedServiceId, selectedSubServiceIds, initialData, createAsset, updateAsset, onSuccess, onClose]);
+    }, [newAsset, selectedServiceId, selectedSubServiceIds, linkedTaskId, linkedCampaignId, linkedProjectId, linkedServiceId, linkedSubServiceId, linkedRepositoryItemId, designedBy, workflowStage, versionNumber, initialData, createAsset, updateAsset, onSuccess, onClose]);
 
     if (!isOpen) return null;
 
@@ -454,7 +527,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                 </div>
                             </div>
 
-                            {/* Social Media Platform Selection */}
+                            {/* Social Media Platform Selection - TikTok removed */}
                             <div className="mb-6">
                                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-4">
                                     <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -564,7 +637,25 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </div>
                                     </button>
 
-                                    {/* TikTok removed per SMM spec */}
+                                    {/* Pinterest */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewAsset({ ...newAsset, smm_platform: 'pinterest' })}
+                                        className={`p-4 rounded-xl border-2 transition-all text-left ${newAsset.smm_platform === 'pinterest'
+                                            ? 'border-red-600 bg-red-50'
+                                            : 'border-slate-200 hover:border-red-300 hover:bg-red-50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                                                <span className="text-white font-bold text-sm">📌</span>
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold text-slate-900">📌 Pinterest</div>
+                                                <div className="text-xs text-slate-600">Visual discovery platform</div>
+                                            </div>
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
 
@@ -982,6 +1073,25 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                                 </option>
                                                             );
                                                         })}
+                                                    </select>
+                                                </div>
+
+                                                {/* Asset Format (Linked to Asset Format Master Table) */}
+                                                <div>
+                                                    <label className="block text-sm text-slate-600 mb-2">
+                                                        Asset Format <span className="text-xs text-slate-400">(Linked to Asset Format Master Table)</span>
+                                                    </label>
+                                                    <select
+                                                        value={(newAsset as any).asset_format || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value } as any)}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-slate-900"
+                                                    >
+                                                        <option value="" className="text-slate-900">Select format...</option>
+                                                        {filteredAssetFormats.map(format => (
+                                                            <option key={format.id} value={format.format_name} className="text-slate-900">
+                                                                {format.format_name}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
@@ -1555,6 +1665,277 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                         </div>
                     )}
 
+                    {/* Map Assets to Source Work Section */}
+                    <div className="bg-slate-50 rounded-xl p-6 border-2 border-slate-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Map Asset to Source Work</h3>
+                                <p className="text-sm text-slate-600">Link this asset to existing tasks, campaigns, projects, and services</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Left Column */}
+                            <div className="space-y-4">
+                                {/* Linked Task */}
+                                <div>
+                                    <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                        Linked Task
+                                    </label>
+                                    <select
+                                        value={linkedTaskId || ''}
+                                        onChange={(e) => setLinkedTaskId(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                    >
+                                        <option value="">Select task</option>
+                                        {tasks.map(task => (
+                                            <option key={task.id} value={task.id}>
+                                                {task.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Linked Project */}
+                                <div>
+                                    <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                        Linked Project
+                                    </label>
+                                    <select
+                                        value={linkedProjectId || ''}
+                                        onChange={(e) => setLinkedProjectId(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                    >
+                                        <option value="">Select project</option>
+                                        {projects.map(project => (
+                                            <option key={project.id} value={project.id}>
+                                                {project.project_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Linked Sub-Service */}
+                                <div>
+                                    <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                        Linked Sub-Service
+                                    </label>
+                                    <select
+                                        value={linkedSubServiceId || ''}
+                                        onChange={(e) => setLinkedSubServiceId(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                        disabled={!linkedServiceId}
+                                    >
+                                        <option value="">Select sub-service</option>
+                                        {linkedFilteredSubServices.map(subService => (
+                                            <option key={subService.id} value={subService.id}>
+                                                {subService.sub_service_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {!linkedServiceId && (
+                                        <p className="text-xs text-slate-500 mt-1">Select a service first to see sub-services</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="space-y-4">
+                                {/* Linked Campaign */}
+                                <div>
+                                    <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                        Linked Campaign
+                                    </label>
+                                    <select
+                                        value={linkedCampaignId || ''}
+                                        onChange={(e) => setLinkedCampaignId(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                    >
+                                        <option value="">Select campaign</option>
+                                        {campaigns.map(campaign => (
+                                            <option key={campaign.id} value={campaign.id}>
+                                                {campaign.campaign_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Linked Service */}
+                                <div>
+                                    <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                        Linked Service
+                                    </label>
+                                    <select
+                                        value={linkedServiceId || ''}
+                                        onChange={(e) => {
+                                            const newServiceId = e.target.value ? parseInt(e.target.value) : null;
+                                            setLinkedServiceId(newServiceId);
+                                            setLinkedSubServiceId(null); // Reset sub-service when service changes
+                                        }}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                    >
+                                        <option value="">Select service</option>
+                                        {services.map(service => (
+                                            <option key={service.id} value={service.id}>
+                                                {service.service_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Linked Repository Item */}
+                                <div>
+                                    <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                        Linked Repository Item
+                                    </label>
+                                    <select
+                                        value={linkedRepositoryItemId || ''}
+                                        onChange={(e) => setLinkedRepositoryItemId(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                    >
+                                        <option value="">Select repository</option>
+                                        {repositoryItems.map(item => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.content_title_clean}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Designer & Workflow Section */}
+                    <div className="bg-indigo-50 rounded-xl p-6 border-2 border-indigo-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-indigo-900">Designer & Workflow</h3>
+                                <p className="text-sm text-indigo-700">Assign ownership and track workflow status</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Created By (Auto-filled) */}
+                            <div>
+                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                    Created By (Auto-Filled)
+                                </label>
+                                <input
+                                    type="text"
+                                    value="Current User"
+                                    disabled
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-100 text-slate-700 cursor-not-allowed"
+                                />
+                            </div>
+
+                            {/* Designed By */}
+                            <div>
+                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                    Designed By <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={designedBy || ''}
+                                    onChange={(e) => setDesignedBy(e.target.value ? parseInt(e.target.value) : null)}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-slate-900"
+                                >
+                                    <option value="">Select designer</option>
+                                    {users.filter(u => u.status === 'active').map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Workflow Stage - Full Width */}
+                        <div className="mt-4">
+                            <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                Workflow Stage <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={workflowStage}
+                                onChange={(e) => setWorkflowStage(e.target.value)}
+                                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-slate-900"
+                            >
+                                <option value="Draft">Draft</option>
+                                <option value="Pending QC Review">QC Pending</option>
+                                <option value="QC Approved">QC Completed</option>
+                                <option value="Published">Published</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Versioning Section */}
+                    <div className="bg-white rounded-xl p-6 border-2 border-slate-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Versioning</h3>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start justify-between gap-6">
+                            {/* Version Number */}
+                            <div className="flex-1">
+                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                    Version Number (Auto-Increment)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={versionNumber}
+                                    disabled
+                                    className="w-full max-w-[200px] px-4 py-3 border border-slate-200 rounded-lg bg-slate-100 text-slate-900 font-semibold cursor-not-allowed"
+                                />
+                                <p className="text-xs text-slate-500 mt-2">
+                                    This is the initial version. Future uploads will auto-increment to v1.1, v1.2, etc.
+                                </p>
+                            </div>
+
+                            {/* Version Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowVersionHistory(true)}
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    View Version History
+                                </button>
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Replace Existing Version
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Required Fields Note */}
+                    <p className="text-sm text-slate-500">
+                        <span className="text-red-500">*</span> Required fields must be filled to save the asset
+                    </p>
+
                     {/* Action Buttons */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                         <button
@@ -1564,20 +1945,30 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                             Cancel
                         </button>
                         <button
-                            onClick={() => handleUpload('draft')}
-                            className="px-6 py-2 text-sm font-medium bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                        >
-                            Save Draft
-                        </button>
-                        <button
                             onClick={() => handleUpload('qc')}
                             disabled={!newAsset.name || newAsset.name.trim() === ''}
-                            className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors ${newAsset.name && newAsset.name.trim() !== ''
+                            className={`flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors ${newAsset.name && newAsset.name.trim() !== ''
+                                ? 'bg-slate-600 text-white hover:bg-slate-700'
+                                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                }`}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Send to QC Stage 2
+                        </button>
+                        <button
+                            onClick={() => handleUpload('library')}
+                            disabled={!newAsset.name || newAsset.name.trim() === ''}
+                            className={`flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors ${newAsset.name && newAsset.name.trim() !== ''
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                                 : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                                 }`}
                         >
-                            Submit to QC
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            Save to Asset Library
                         </button>
                     </div>
                 </div>
@@ -1616,18 +2007,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                 }
                             }}
                             editingItem={editingType}
-                        />
-                    )
-                }
-
-                {
-                    showFormatModal && (
-                        <AssetFormatMasterModal
-                            isOpen={showFormatModal}
-                            onClose={() => setShowFormatModal(false)}
-                            onSuccess={() => {
-                                setShowFormatModal(false);
-                            }}
                         />
                     )
                 }

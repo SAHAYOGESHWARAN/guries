@@ -563,6 +563,14 @@ export interface AssetLibraryItem {
     date: string;
     linked_task?: number;
     owner_id?: number;
+
+    // Map Assets to Source Work fields
+    linked_task_id?: number;
+    linked_campaign_id?: number;
+    linked_project_id?: number;
+    linked_service_id?: number;
+    linked_sub_service_id?: number;
+    linked_repository_item_id?: number;
     created_by?: number; // User who created the asset
     designed_by?: number; // User who designed the asset
     version_number?: string; // Version number like "v1.0"

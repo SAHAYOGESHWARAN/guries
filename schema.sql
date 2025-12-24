@@ -438,6 +438,18 @@ CREATE TABLE IF NOT EXISTS assets (
 	smm_media_type VARCHAR(50),
 	-- Linking becomes active only after QC approval
 	linking_active BOOLEAN DEFAULT false,
+	-- Map Assets to Source Work fields
+	linked_task_id INTEGER REFERENCES tasks(id),
+	linked_campaign_id INTEGER REFERENCES campaigns(id),
+	linked_project_id INTEGER REFERENCES projects(id),
+	linked_service_id INTEGER REFERENCES services(id),
+	linked_sub_service_id INTEGER REFERENCES sub_services(id),
+	linked_repository_item_id INTEGER, -- References content repository items
+	-- Designer & Workflow fields
+	created_by INTEGER REFERENCES users(id),
+	designed_by INTEGER REFERENCES users(id),
+	-- Versioning
+	version_number VARCHAR(20) DEFAULT 'v1.0',
 	-- Workflow log
 	workflow_log TEXT, -- JSON array of workflow events
 	-- Linking
