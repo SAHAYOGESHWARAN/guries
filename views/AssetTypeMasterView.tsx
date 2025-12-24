@@ -9,7 +9,7 @@ const COMMON_FORMATS = ['JPG', 'PNG', 'SVG', 'PDF', 'MP4', 'MOV', 'JSON', 'DOCX'
 
 const AssetTypeMasterView: React.FC = () => {
     // ... (logic kept same) ...
-    const { data: assetTypes, create, update, remove, refresh } = useData<AssetTypeItem>('asset-type-master');
+    const { data: assetTypes = [], create, update, remove, refresh } = useData<AssetTypeItem>('asset-type-master');
     const [searchQuery, setSearchQuery] = useState('');
     const [formatFilter, setFormatFilter] = useState('All Formats');
 
@@ -20,8 +20,8 @@ const AssetTypeMasterView: React.FC = () => {
     });
     const [currentTag, setCurrentTag] = useState('');
 
-    const filteredData = assetTypes.filter(item => {
-        const matchesSearch = item.asset_type.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (assetTypes || []).filter(item => {
+        const matchesSearch = (item.asset_type || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFormat = formatFilter === 'All Formats' || (item.file_formats && item.file_formats.includes(formatFilter));
         return matchesSearch && matchesFormat;
     });
