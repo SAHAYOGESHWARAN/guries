@@ -75,6 +75,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
     const { create: createAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
+    const { create: createAsset, update: updateAsset } = useData<AssetLibraryItem>('assetLibrary');
 
     // Debug: Log all loaded data on mount
     React.useEffect(() => {
@@ -192,11 +193,46 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     }, []);
 
     const handleUpload = useCallback(async (type: 'draft' | 'qc') => {
-        // Handle upload logic here
-        console.log('Upload type:', type, 'Asset:', newAsset);
-        onSuccess?.();
-        onClose();
-    }, [newAsset, onSuccess, onClose]);
+        try {
+            // Validate required fields
+            if (!newAsset.name || newAsset.name.trim() === '') {
+                alert('Please enter an asset name/title');
+                return;
+            }
+
+            // Prepare asset data
+            const assetData: Partial<AssetLibraryItem> = {
+                ...newAsset,
+                status: type === 'qc' ? 'QC' : 'Draft',
+                linked_service_ids: selectedServiceId ? [selectedServiceId] : [],
+                linked_sub_service_ids: selectedSubServiceIds,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+
+            console.log('Saving asset:', assetData);
+
+            // Check if editing existing asset or creating new
+            if (initialData?.id) {
+                // Update existing asset
+                await updateAsset(initialData.id, assetData);
+                console.log('Asset updated successfully');
+            } else {
+                // Create new asset
+                await createAsset(assetData as AssetLibraryItem);
+                console.log('Asset created successfully');
+            }
+
+            // Show success message
+            alert(type === 'qc' ? 'Asset submitted to QC successfully!' : 'Asset saved as draft!');
+
+            onSuccess?.();
+            onClose();
+        } catch (error) {
+            console.error('Failed to save asset:', error);
+            alert('Failed to save asset. Please try again.');
+        }
+    }, [newAsset, selectedServiceId, selectedSubServiceIds, initialData, createAsset, updateAsset, onSuccess, onClose]);
 
     if (!isOpen) return null;
 
@@ -1535,8 +1571,8 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                         </button>
                         <button
                             onClick={() => handleUpload('qc')}
-                            disabled={!newAsset.seo_score || !newAsset.grammar_score}
-                            className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors ${newAsset.seo_score && newAsset.grammar_score
+                            disabled={!newAsset.name || newAsset.name.trim() === ''}
+                            className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors ${newAsset.name && newAsset.name.trim() !== ''
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                                 : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                                 }`}
