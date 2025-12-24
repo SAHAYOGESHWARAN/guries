@@ -9,7 +9,7 @@ const COMMON_FORMATS = ['JPG', 'PNG', 'SVG', 'PDF', 'MP4', 'MOV', 'JSON', 'DOCX'
 
 const AssetTypeMasterView: React.FC = () => {
     // ... (logic kept same) ...
-    const { data: assetTypes, create, update, remove } = useData<AssetTypeItem>('assetTypes');
+    const { data: assetTypes, create, update, remove, refresh } = useData<AssetTypeItem>('asset-type-master');
     const [searchQuery, setSearchQuery] = useState('');
     const [formatFilter, setFormatFilter] = useState('All Formats');
 
@@ -19,7 +19,7 @@ const AssetTypeMasterView: React.FC = () => {
         asset_type: '', dimension: '', file_formats: [], description: 'Optional', platforms_count: 0, graphic_status: 'linked'
     });
     const [currentTag, setCurrentTag] = useState('');
-    
+
     const filteredData = assetTypes.filter(item => {
         const matchesSearch = item.asset_type.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFormat = formatFilter === 'All Formats' || (item.file_formats && item.file_formats.includes(formatFilter));
@@ -40,12 +40,13 @@ const AssetTypeMasterView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if(confirm('Delete this asset type?')) await remove(id);
+        if (confirm('Delete this asset type?')) await remove(id);
     };
 
     const handleSave = async () => {
         const payload = {
             ...formData,
+            status: formData.status || 'active',
             updated_at: new Date().toISOString()
         };
         if (editingItem) {
@@ -53,6 +54,8 @@ const AssetTypeMasterView: React.FC = () => {
         } else {
             await create(payload as any);
         }
+        // Refresh data from backend to ensure persistence
+        await refresh();
         setIsModalOpen(false);
         setEditingItem(null);
         setFormData({ asset_type: '', dimension: '', file_formats: [], description: 'Optional', platforms_count: 0, graphic_status: 'linked' });
@@ -95,8 +98,8 @@ const AssetTypeMasterView: React.FC = () => {
     const columns = [
         { header: 'Asset Type', accessor: 'asset_type' as keyof AssetTypeItem, className: 'font-bold text-slate-800' },
         { header: 'Dimension', accessor: 'dimension' as keyof AssetTypeItem, className: 'font-mono text-xs text-slate-600' },
-        { 
-            header: 'Accepted Formats', 
+        {
+            header: 'Accepted Formats',
             accessor: (item: AssetTypeItem) => (
                 <div className="flex flex-wrap gap-1">
                     {item.file_formats && item.file_formats.length > 0 ? item.file_formats.map((fmt, idx) => (
@@ -126,7 +129,7 @@ const AssetTypeMasterView: React.FC = () => {
                     <p className="text-slate-500 mt-1">Configure asset definitions and connect allowed file formats.</p>
                 </div>
                 <div className="flex space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >
@@ -153,13 +156,13 @@ const AssetTypeMasterView: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Asset Type Name</label>
-                        <input type="text" value={formData.asset_type} onChange={(e) => setFormData({...formData, asset_type: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="e.g. Blog Banner" />
+                        <input type="text" value={formData.asset_type} onChange={(e) => setFormData({ ...formData, asset_type: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="e.g. Blog Banner" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Recommended Dimension</label>
-                        <input type="text" value={formData.dimension} onChange={(e) => setFormData({...formData, dimension: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="e.g. 1200x628" />
+                        <input type="text" value={formData.dimension} onChange={(e) => setFormData({ ...formData, dimension: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="e.g. 1200x628" />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Connect Accepted Formats</label>
                         <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md bg-white min-h-[42px] focus-within:ring-2 focus-within:ring-blue-500">
@@ -169,9 +172,9 @@ const AssetTypeMasterView: React.FC = () => {
                                     <button type="button" onClick={() => removeTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800 font-bold">×</button>
                                 </span>
                             ))}
-                            <input 
-                                type="text" 
-                                value={currentTag} 
+                            <input
+                                type="text"
+                                value={currentTag}
                                 onChange={(e) => setCurrentTag(e.target.value)}
                                 onKeyDown={addTag}
                                 className="flex-1 outline-none bg-transparent text-sm min-w-[60px]"
@@ -182,15 +185,14 @@ const AssetTypeMasterView: React.FC = () => {
                             <p className="text-xs text-gray-500 mb-1">Quick Add:</p>
                             <div className="flex flex-wrap gap-1">
                                 {COMMON_FORMATS.map(f => (
-                                    <button 
-                                        key={f} 
-                                        type="button" 
+                                    <button
+                                        key={f}
+                                        type="button"
                                         onClick={() => addTagFromClick(f)}
-                                        className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                                            formData.file_formats?.includes(f) 
-                                                ? 'bg-blue-600 text-white' 
-                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                        }`}
+                                        className={`text-xs px-2 py-0.5 rounded transition-colors ${formData.file_formats?.includes(f)
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
                                     >
                                         {f}
                                     </button>
@@ -201,7 +203,7 @@ const AssetTypeMasterView: React.FC = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Requirement Level</label>
-                        <select value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                        <select value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2">
                             <option value="Required">Required</option>
                             <option value="Optional">Optional</option>
                             <option value="Not Required">Not Required</option>

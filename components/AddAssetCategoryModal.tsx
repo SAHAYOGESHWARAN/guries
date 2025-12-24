@@ -21,7 +21,7 @@ const AddAssetCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave, editi
 
     useEffect(() => {
         if (editingCategory) setForm(editingCategory);
-        else setForm({ brand: 'Pubrica', category_name: '', word_count: 0 });
+        else setForm({ brand: 'Pubrica', category_name: '', word_count: 0, status: 'active' });
     }, [editingCategory, isOpen]);
 
     const handleSubmit = () => {
@@ -29,7 +29,7 @@ const AddAssetCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave, editi
             alert('Category name is required');
             return;
         }
-        onSave({ ...form, word_count: form.word_count || 0 });
+        onSave({ ...form, word_count: form.word_count || 0, status: form.status || 'active' });
         onClose();
     };
 

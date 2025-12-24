@@ -80,7 +80,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     // Filter sub-services by selected service
     const filteredSubServices = useMemo(() => {
         if (!selectedServiceId) return [];
-        return subServices.filter(sub => sub.parent_service_id === selectedServiceId);
+        return subServices.filter(sub => Number(sub.parent_service_id) === Number(selectedServiceId));
     }, [subServices, selectedServiceId]);
 
     // Filter asset categories by brand

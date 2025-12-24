@@ -48,6 +48,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     'asset-type-master': { endpoint: 'asset-type-master', event: 'asset_type_master' },
     'asset-category-master': { endpoint: 'asset-category-master', event: 'asset_category_master' },
     'asset-formats': { endpoint: 'asset-formats', event: 'asset_format' },
+    'asset-format-master': { endpoint: 'asset-formats', event: 'asset_format' },
     platforms: { endpoint: 'platforms', event: 'platform' },
     countries: { endpoint: 'countries', event: 'country' },
     seoErrors: { endpoint: 'seo-errors', event: 'seo_error' },
@@ -320,24 +321,35 @@ export function useData<T>(collection: string) {
             updatedItem = (db as any)[collection].update(id, updates);
         }
 
+        // Try backend sync and await the response for proper persistence
+        let serverItem = null;
         if (resource && !isOffline) {
-            fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
-            }).catch(() => setIsOffline(true));
+            try {
+                const response = await fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates),
+                });
+                if (response.ok) {
+                    serverItem = await response.json();
+                }
+            } catch (e) {
+                setIsOffline(true);
+            }
         }
 
+        // Use server response if available, otherwise fall back to local update
+        const finalItem = serverItem || updatedItem || { ...updates, id };
+
         // Immediately update state to reflect the changes
-        // Use updatedItem if available, otherwise merge updates with existing item
         setData(prev => prev.map(item => {
             if ((item as any).id === id) {
-                return updatedItem || { ...item, ...updates };
+                return finalItem;
             }
             return item;
         }));
 
-        return updatedItem;
+        return finalItem;
     };
 
     const remove = async (id: number | string) => {
@@ -345,10 +357,15 @@ export function useData<T>(collection: string) {
             (db as any)[collection].delete(id);
         }
 
+        // Await backend delete for proper persistence
         if (resource && !isOffline) {
-            fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
-                method: 'DELETE',
-            }).catch(() => setIsOffline(true));
+            try {
+                await fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
+                    method: 'DELETE',
+                });
+            } catch (e) {
+                setIsOffline(true);
+            }
         }
 
         // Immediately update state to remove the item

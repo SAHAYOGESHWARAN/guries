@@ -9,7 +9,7 @@ import type { AssetCategoryMasterItem } from '../types';
 const BRANDS = ['Pubrica', 'Stats work', 'Food Research lab', 'PhD assistance', 'tutors India'];
 
 const AssetCategoryMasterView: React.FC = () => {
-    const { data: assetCategories = [], create, update, remove } = useData<AssetCategoryMasterItem>('asset-category-master');
+    const { data: assetCategories = [], create, update, remove, refresh } = useData<AssetCategoryMasterItem>('asset-category-master');
     const [searchQuery, setSearchQuery] = useState('');
     const [brandFilter, setBrandFilter] = useState('All Brands');
 
@@ -172,12 +172,14 @@ const AssetCategoryMasterView: React.FC = () => {
                 onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
                 editingCategory={editingItem}
                 onSave={async (payload) => {
-                    const data = { ...payload, word_count: payload.word_count || 0, updated_at: new Date().toISOString() };
+                    const data = { ...payload, word_count: payload.word_count || 0, status: payload.status || 'active', updated_at: new Date().toISOString() };
                     if (editingItem) {
                         await update(editingItem.id, data as any);
                     } else {
                         await create(data as any);
                     }
+                    // Refresh data from backend to ensure persistence
+                    await refresh();
                 }}
             />
         </div>
