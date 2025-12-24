@@ -267,7 +267,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
         // Try API call, but don't block on it
         try {
-            const response = await fetch('http://localhost:3003/api/v1/assetLibrary/ai-scores', {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/assetLibrary/ai-scores`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -1191,8 +1191,9 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                 const localSeoScore = Math.min(100, lengthScore + randBoost);
                                                 const localGrammarScore = Math.min(100, Math.round(60 + Math.random() * 40));
 
+                                                const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
                                                 try {
-                                                    const response = await fetch('http://localhost:3003/api/v1/assetLibrary/ai-scores', {
+                                                    const response = await fetch(`${apiUrl}/assetLibrary/ai-scores`, {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({

@@ -302,8 +302,9 @@ const AdminConsole: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavi
 
     const runMaintenance = async (action: string) => {
         setMaintenanceStatus(`Running ${action}...`);
+        const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
         try {
-            await fetch('http://localhost:3001/api/v1/settings/maintenance', {
+            await fetch(`${apiUrl}/settings/maintenance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action })

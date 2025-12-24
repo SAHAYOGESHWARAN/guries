@@ -3,7 +3,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { db } from '../utils/storage';
 
-const API_BASE_URL = 'http://localhost:3003/api/v1';
+// Use environment variable or default to relative path for production
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
 
 // Map frontend collection names to API endpoints and socket events
 const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
@@ -92,7 +94,7 @@ const checkBackendAvailability = async (): Promise<boolean> => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 500);
 
-        const response = await fetch('http://localhost:3003/api/v1/users', {
+        const response = await fetch(`${API_BASE_URL}/users`, {
             signal: controller.signal,
             method: 'HEAD'
         });
@@ -115,7 +117,7 @@ const getSocket = () => {
 
     if (!socketInstance) {
         try {
-            socketInstance = io('http://localhost:3003', {
+            socketInstance = io(SOCKET_URL, {
                 reconnectionAttempts: 0, // No reconnection attempts
                 timeout: 1000,
                 autoConnect: false,
