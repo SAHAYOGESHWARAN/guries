@@ -4,6 +4,7 @@ import type { AssetLibraryItem, Service, SubServiceItem, AssetCategoryMasterItem
 import AssetCategoryMasterModal from './AssetCategoryMasterModal';
 import AssetTypeMasterModal from './AssetTypeMasterModal';
 import AssetFormatMasterModal from './AssetFormatMasterModal';
+import CircularScore from './CircularScore';
 
 interface UploadAssetModalProps {
     isOpen: boolean;
@@ -62,16 +63,25 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
     const [dragActive, setDragActive] = useState(false);
+    const [showSmmPreview, setShowSmmPreview] = useState(true);
+    const [smmMediaUrl, setSmmMediaUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const mediaInputRef = useRef<HTMLInputElement>(null);
 
     // Data hooks
     const { data: services = [] } = useData<Service>('services');
+    const { data: subServices = [] } = useData<SubServiceItem>('sub-services');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
     const { create: createAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
+
+    // Filter sub-services by selected service
+    const filteredSubServices = useMemo(() => {
+        if (!selectedServiceId) return [];
+        return subServices.filter(sub => sub.parent_service_id === selectedServiceId);
+    }, [subServices, selectedServiceId]);
 
     // Filter asset categories by brand
     const filteredAssetCategories = useMemo(() => {
@@ -145,6 +155,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                     ...prev,
                     smm_media_url: base64String
                 }));
+                setSmmMediaUrl(base64String);
             }
         };
         reader.readAsDataURL(file);
@@ -598,30 +609,404 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </div>
                                     </div>
 
-                                    {/* Media Upload Section */}
-                                    <div>
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-4">
-                                            <svg className="w-4 h-4 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            📸 Media Upload
-                                        </label>
-                                        <div
-                                            className="border-dashed border-2 border-purple-300 p-6 rounded-lg text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all"
-                                            onClick={() => mediaInputRef.current?.click()}
-                                        >
-                                            <svg className="w-12 h-12 text-purple-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            <div className="text-sm text-purple-600 font-medium">Upload media for your {newAsset.smm_platform} post</div>
-                                            <div className="text-xs text-slate-500 mt-1">Images, videos, GIFs supported</div>
-                                            <input
-                                                ref={mediaInputRef}
-                                                type="file"
-                                                className="hidden"
-                                                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
-                                                accept="image/*,video/*,.gif"
-                                            />
+                                    {/* Media & Preview Section */}
+                                    <div className="mt-6">
+                                        <div className="flex items-center gap-2 mb-4 border-l-4 border-purple-500 pl-3">
+                                            <h4 className="text-md font-bold text-slate-800">Media & Preview</h4>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            {/* Left - Upload Media */}
+                                            <div className="space-y-4">
+                                                <div
+                                                    className="border-dashed border-2 border-slate-300 p-8 rounded-xl text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/30 transition-all"
+                                                    onClick={() => mediaInputRef.current?.click()}
+                                                >
+                                                    {smmMediaUrl ? (
+                                                        <div className="space-y-3">
+                                                            <img src={smmMediaUrl} className="mx-auto max-h-32 rounded-lg shadow-md" alt="Preview" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSmmMediaUrl('');
+                                                                    setNewAsset(prev => ({ ...prev, smm_media_url: undefined }));
+                                                                }}
+                                                                className="text-sm text-red-600 hover:text-red-700 font-medium"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                </svg>
+                                                            </div>
+                                                            <div className="text-base font-semibold text-slate-800">Upload Media</div>
+                                                            <div className="text-sm text-slate-500">Click to choose image or video</div>
+                                                        </>
+                                                    )}
+                                                    <input
+                                                        ref={mediaInputRef}
+                                                        type="file"
+                                                        className="hidden"
+                                                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
+                                                        accept="image/*,video/*,.gif"
+                                                    />
+                                                </div>
+
+                                                {/* Toggle Preview Button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowSmmPreview(!showSmmPreview)}
+                                                    className="w-full px-4 py-3 border border-purple-200 rounded-lg text-purple-600 font-medium hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showSmmPreview ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" : "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} />
+                                                    </svg>
+                                                    {showSmmPreview ? 'Hide Preview' : 'Show Preview'}
+                                                </button>
+                                            </div>
+
+                                            {/* Right - Platform Preview */}
+                                            {showSmmPreview && (
+                                                <div className="space-y-2">
+                                                    {/* Facebook Preview */}
+                                                    {newAsset.smm_platform === 'facebook' && (
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Facebook Post Preview</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                                                <div className="p-3 flex items-center gap-3">
+                                                                    <div className="w-10 h-10 bg-slate-300 rounded-full"></div>
+                                                                    <div>
+                                                                        <div className="font-semibold text-sm text-slate-900">Your Company</div>
+                                                                        <div className="text-xs text-slate-500 flex items-center gap-1">Just now • 🌐</div>
+                                                                    </div>
+                                                                </div>
+                                                                {newAsset.smm_description && (
+                                                                    <div className="px-3 pb-2 text-sm text-slate-800">{newAsset.smm_description}</div>
+                                                                )}
+                                                                <div className="bg-slate-100 h-48 flex items-center justify-center">
+                                                                    {smmMediaUrl ? (
+                                                                        <img src={smmMediaUrl} className="w-full h-full object-cover" alt="Post media" />
+                                                                    ) : (
+                                                                        <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </div>
+                                                                <div className="px-3 py-2 border-t border-slate-200 flex gap-6 text-xs font-semibold text-slate-500">
+                                                                    <span>LIKE</span>
+                                                                    <span>COMMENT</span>
+                                                                    <span>SHARE</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Instagram Preview */}
+                                                    {newAsset.smm_platform === 'instagram' && (
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                                                                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Instagram Post Preview</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                                                <div className="p-3 flex items-center gap-3">
+                                                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full"></div>
+                                                                    <div className="font-semibold text-sm text-slate-900">your_company</div>
+                                                                </div>
+                                                                <div className="bg-slate-100 aspect-square flex items-center justify-center">
+                                                                    {smmMediaUrl ? (
+                                                                        <img src={smmMediaUrl} className="w-full h-full object-cover" alt="Post media" />
+                                                                    ) : (
+                                                                        <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </div>
+                                                                <div className="p-3 flex gap-4">
+                                                                    <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                                                    <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                                                    <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                                                </div>
+                                                                {newAsset.smm_description && (
+                                                                    <div className="px-3 pb-3 text-sm"><span className="font-semibold">your_company</span> {newAsset.smm_description}</div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Twitter/X Preview */}
+                                                    {newAsset.smm_platform === 'twitter' && (
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-2 h-2 bg-slate-800 rounded-full"></div>
+                                                                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">X (Twitter) Post Preview</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4">
+                                                                <div className="flex gap-3">
+                                                                    <div className="w-10 h-10 bg-slate-800 rounded-full flex-shrink-0"></div>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="font-bold text-sm">Your Company</span>
+                                                                            <span className="text-slate-500 text-sm">@yourcompany · Just now</span>
+                                                                        </div>
+                                                                        {newAsset.smm_description && (
+                                                                            <div className="text-sm mt-1">{newAsset.smm_description}</div>
+                                                                        )}
+                                                                        {smmMediaUrl && (
+                                                                            <div className="mt-3 rounded-xl overflow-hidden border border-slate-200">
+                                                                                <img src={smmMediaUrl} className="w-full h-40 object-cover" alt="Post media" />
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="flex gap-8 mt-3 text-slate-500">
+                                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* LinkedIn Preview */}
+                                                    {newAsset.smm_platform === 'linkedin' && (
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-2 h-2 bg-blue-700 rounded-full"></div>
+                                                                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">LinkedIn Post Preview</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                                                <div className="p-3 flex items-center gap-3">
+                                                                    <div className="w-12 h-12 bg-blue-700 rounded-full"></div>
+                                                                    <div>
+                                                                        <div className="font-semibold text-sm text-slate-900">Your Company</div>
+                                                                        <div className="text-xs text-slate-500">1,234 followers</div>
+                                                                        <div className="text-xs text-slate-500">Just now • 🌐</div>
+                                                                    </div>
+                                                                </div>
+                                                                {newAsset.smm_description && (
+                                                                    <div className="px-3 pb-2 text-sm text-slate-800">{newAsset.smm_description}</div>
+                                                                )}
+                                                                <div className="bg-slate-100 h-48 flex items-center justify-center">
+                                                                    {smmMediaUrl ? (
+                                                                        <img src={smmMediaUrl} className="w-full h-full object-cover" alt="Post media" />
+                                                                    ) : (
+                                                                        <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </div>
+                                                                <div className="px-3 py-2 border-t border-slate-200 flex gap-6 text-xs font-semibold text-slate-500">
+                                                                    <span>👍 Like</span>
+                                                                    <span>💬 Comment</span>
+                                                                    <span>🔄 Repost</span>
+                                                                    <span>📤 Send</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* YouTube Preview */}
+                                                    {newAsset.smm_platform === 'youtube' && (
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                                                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">YouTube Post Preview</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                                                <div className="bg-slate-900 aspect-video flex items-center justify-center relative">
+                                                                    {smmMediaUrl ? (
+                                                                        <img src={smmMediaUrl} className="w-full h-full object-cover" alt="Video thumbnail" />
+                                                                    ) : (
+                                                                        <svg className="w-12 h-12 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                        </svg>
+                                                                    )}
+                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                        <div className="w-16 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+                                                                            <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                                                                <path d="M8 5v14l11-7z" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="p-3">
+                                                                    <div className="font-semibold text-sm text-slate-900 line-clamp-2">{newAsset.smm_title || 'Video Title'}</div>
+                                                                    <div className="text-xs text-slate-500 mt-1">Your Company • 0 views • Just now</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* SMM Asset Classification Section */}
+                                    <div className="mt-6 bg-purple-50/50 rounded-xl border border-purple-200 p-6">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-xl">🏷️</span>
+                                            <h4 className="text-md font-bold text-slate-800">Asset Classification</h4>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Left Column */}
+                                            <div className="space-y-4">
+                                                {/* Content Type (Static - Locked) */}
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                                        Content Type
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            value="SOCIAL"
+                                                            disabled
+                                                            className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium cursor-not-allowed"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Asset Category (Linked to Asset Category Master Table) */}
+                                                <div>
+                                                    <label className="block text-sm text-slate-600 mb-2">
+                                                        Asset Category <span className="text-xs text-slate-400">(Linked to Asset Category Master Table)</span>
+                                                    </label>
+                                                    <select
+                                                        value={newAsset.asset_category || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                    >
+                                                        <option value="">Select category...</option>
+                                                        {filteredAssetCategories.map(category => (
+                                                            <option key={category.id} value={category.category_name}>
+                                                                {category.category_name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Asset Type (Linked to Asset Type Master Table) */}
+                                                <div>
+                                                    <label className="block text-sm text-slate-600 mb-2">
+                                                        Asset Type <span className="text-xs text-slate-400">(Linked to Asset Type Master Table)</span>
+                                                    </label>
+                                                    <select
+                                                        value={newAsset.type || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                    >
+                                                        <option value="">Select type...</option>
+                                                        {filteredAssetTypes.map(type => (
+                                                            <option key={type.id} value={type.asset_type_name}>
+                                                                {type.asset_type_name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Asset Format (Linked to Asset Format Master Table) */}
+                                                <div>
+                                                    <label className="block text-sm text-slate-600 mb-2">
+                                                        Asset Format <span className="text-xs text-slate-400">(Linked to Asset Format Master Table)</span>
+                                                    </label>
+                                                    <select
+                                                        value={newAsset.asset_format || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                    >
+                                                        <option value="">Select format...</option>
+                                                        {assetFormats.filter(f => f.status === 'active').map(format => (
+                                                            <option key={format.id} value={format.format_name}>
+                                                                {format.format_name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Right Column */}
+                                            <div className="space-y-4">
+                                                {/* Repository */}
+                                                <div>
+                                                    <label className="block text-sm text-slate-600 mb-2">
+                                                        Repository
+                                                    </label>
+                                                    <select
+                                                        value={newAsset.repository || 'Content Repository'}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                    >
+                                                        <option value="Content Repository">Content</option>
+                                                        <option value="Media Repository">Media</option>
+                                                        <option value="Document Repository">Document</option>
+                                                        <option value="Template Repository">Template</option>
+                                                    </select>
+                                                </div>
+
+                                                {/* Map Asset to Service */}
+                                                <div>
+                                                    <label className="block text-sm text-slate-600 mb-2">
+                                                        Map Asset to Service
+                                                    </label>
+                                                    <select
+                                                        value={selectedServiceId || ''}
+                                                        onChange={(e) => {
+                                                            const newServiceId = e.target.value ? parseInt(e.target.value) : null;
+                                                            setSelectedServiceId(newServiceId);
+                                                            setSelectedSubServiceIds([]);
+                                                        }}
+                                                        className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                                                    >
+                                                        <option value="">Choose Target Service</option>
+                                                        {services.map(service => (
+                                                            <option key={service.id} value={service.id}>
+                                                                {service.service_name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Sub Services */}
+                                                {selectedServiceId && filteredSubServices.length > 0 && (
+                                                    <div>
+                                                        <label className="block text-sm text-slate-600 mb-2">
+                                                            Sub Services
+                                                        </label>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {filteredSubServices.map(subService => (
+                                                                <button
+                                                                    key={subService.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedSubServiceIds(prev =>
+                                                                            prev.includes(subService.id)
+                                                                                ? prev.filter(id => id !== subService.id)
+                                                                                : [...prev, subService.id]
+                                                                        );
+                                                                    }}
+                                                                    className={`px-4 py-2 rounded-lg border text-sm transition-colors ${selectedSubServiceIds.includes(subService.id)
+                                                                        ? 'bg-purple-100 border-purple-300 text-purple-700'
+                                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-purple-300'
+                                                                        }`}
+                                                                >
+                                                                    {subService.sub_service_name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -721,22 +1106,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </div>
                                     </div>
 
-                                    {/* Description */}
-                                    <div>
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                                            <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-                                            </svg>
-                                            Description
-                                        </label>
-                                        <textarea
-                                            value={newAsset.web_description || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
-                                            placeholder="Detailed description of the web content..."
-                                            rows={4}
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                        />
-                                    </div>
+                                    {/* Description field removed for WEB assets per requirements */}
                                 </div>
                             </div>
 
@@ -788,23 +1158,272 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                 </div>
                             </div>
 
-                            {/* Body Content Section */}
+                            {/* Body Content Section with AI Scores */}
+                            <div className="mt-6 bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* Body Content - Left Side */}
+                                    <div className="lg:col-span-2">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                            <span className="text-lg">📝</span>
+                                            Body content
+                                        </label>
+                                        <textarea
+                                            value={newAsset.web_body_content || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                            className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                            placeholder="Paste your full article or body copy here for AI analysis..."
+                                            rows={8}
+                                        />
+
+                                        {/* Analyse Button */}
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                const text = (newAsset.web_body_content || '').trim();
+                                                if (!text) {
+                                                    alert('Please add body content to analyse');
+                                                    return;
+                                                }
+                                                try {
+                                                    const response = await fetch('/api/v1/assetLibrary/ai-scores', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            content: text,
+                                                            title: newAsset.web_title || newAsset.name,
+                                                            description: newAsset.web_description
+                                                        })
+                                                    });
+                                                    if (response.ok) {
+                                                        const scores = await response.json();
+                                                        setNewAsset(prev => ({
+                                                            ...prev,
+                                                            seo_score: scores.seo_score,
+                                                            grammar_score: scores.grammar_score
+                                                        }));
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Failed to analyze:', error);
+                                                }
+                                            }}
+                                            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            Analyze
+                                        </button>
+                                    </div>
+
+                                    {/* AI Scores - Right Side */}
+                                    <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                        <div className="space-y-6">
+                                            {/* SEO Score */}
+                                            <div className="flex flex-col items-center">
+                                                <CircularScore
+                                                    score={newAsset.seo_score || 0}
+                                                    label="SEO SCORE"
+                                                    size="sm"
+                                                />
+                                            </div>
+
+                                            {/* Grammar Score */}
+                                            <div className="flex flex-col items-center">
+                                                <CircularScore
+                                                    score={newAsset.grammar_score || 0}
+                                                    label="GRAMMAR SCORE"
+                                                    size="sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Resource Upload Section */}
                             <div className="mt-6">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <h4 className="text-md font-bold text-slate-800">Body Content</h4>
+                                    <span className="text-xl">📁</span>
+                                    <h4 className="text-md font-bold text-slate-800">Resource Upload</h4>
                                 </div>
-                                <textarea
-                                    value={newAsset.web_body_content || ''}
-                                    onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
-                                    placeholder="Enter the main body content for your web page..."
-                                    rows={8}
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                />
-                                <div className="text-xs text-slate-500 mt-1">
-                                    {(newAsset.web_body_content || '').split(' ').filter(w => w.length > 0).length} words
+                                <div
+                                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragActive
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'
+                                        }`}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDrop={handleDrop}
+                                    onDragOver={handleDrag}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        className="hidden"
+                                        onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                        accept="image/*,video/*,.pdf,.doc,.docx,.zip,.svg,.webm,.avif"
+                                    />
+                                    {previewUrl ? (
+                                        <div className="space-y-4">
+                                            <img src={previewUrl} className="mx-auto max-h-40 rounded-lg shadow-md" alt="Preview" />
+                                            <div className="text-sm text-slate-700 font-medium">{selectedFile?.name}</div>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedFile(null);
+                                                    setPreviewUrl('');
+                                                }}
+                                                className="text-sm text-red-600 hover:text-red-700 font-medium"
+                                            >
+                                                Remove File
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
+                                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-semibold text-slate-800">Upload Web Assets</p>
+                                                <p className="text-sm text-slate-500">
+                                                    Drag & drop source files, or <span className="text-blue-600 font-medium">browse local files</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Asset Classification Section */}
+                            <div className="mt-6 bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="text-xl">🏷️</span>
+                                    <h4 className="text-md font-bold text-slate-800">Asset Classification</h4>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Left Column */}
+                                    <div className="space-y-4">
+                                        {/* Content Type (Static - Locked) */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Content Type <span className="text-xs text-slate-500">(STATIC)</span>
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value="WEB"
+                                                    disabled
+                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-100 text-slate-700 font-medium cursor-not-allowed"
+                                                />
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Asset Category (From Master Table) */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Asset Category <span className="text-xs text-slate-500">(Linked to master database)</span>
+                                            </label>
+                                            <select
+                                                value={newAsset.asset_category || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">Select category...</option>
+                                                {filteredAssetCategories.map(category => (
+                                                    <option key={category.id} value={category.category_name}>
+                                                        {category.category_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Asset Format (From Master Table) */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Asset Format <span className="text-xs text-slate-500">(Linked to master database)</span>
+                                            </label>
+                                            <select
+                                                value={newAsset.asset_format || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">Select format...</option>
+                                                {assetFormats.filter(f => f.status === 'active').map(format => (
+                                                    <option key={format.id} value={format.format_name}>
+                                                        {format.format_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Column */}
+                                    <div className="space-y-4">
+                                        {/* Repository */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Repository
+                                            </label>
+                                            <select
+                                                value={newAsset.repository || 'Content Repository'}
+                                                onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="Content Repository">Content</option>
+                                                <option value="Media Repository">Media</option>
+                                                <option value="Document Repository">Document</option>
+                                                <option value="Template Repository">Template</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Asset Type (From Master Table) */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Asset Type <span className="text-xs text-slate-500">(Linked to master database)</span>
+                                            </label>
+                                            <select
+                                                value={newAsset.type || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">Select type...</option>
+                                                {filteredAssetTypes.map(type => (
+                                                    <option key={type.id} value={type.asset_type_name}>
+                                                        {type.asset_type_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Map Asset to Service */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Map Asset to Service
+                                            </label>
+                                            <select
+                                                value={selectedServiceId || ''}
+                                                onChange={(e) => setSelectedServiceId(e.target.value ? parseInt(e.target.value) : null)}
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">Choose Target Service</option>
+                                                {services.map(service => (
+                                                    <option key={service.id} value={service.id}>
+                                                        {service.service_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -958,39 +1577,6 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                     </select>
                                 </div>
 
-                                {/* Quality Scores */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-3">Quality Scores</label>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-600 mb-2">SEO Score</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newAsset.seo_score || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                                placeholder="0-100"
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-600 mb-2">Grammar Score</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newAsset.grammar_score || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                                placeholder="0-100"
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="text-xs text-slate-500 mt-2">
-                                        Both scores required for QC submission
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

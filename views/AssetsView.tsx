@@ -24,7 +24,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: assetFormats = [], refresh: refreshAssetFormats } = useData<any>('asset-format-master');
     const { create: createAssetCategory, update: updateAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { create: createAssetType, update: updateAssetType } = useData<AssetTypeMasterItem>('asset-type-master');
-    
+
 
     const [searchQuery, setSearchQuery] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
@@ -1150,95 +1150,101 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         placeholder="Second subheading"
                                     />
                                 </div>
-                                <div>
-                                    <label className="flex items-center justify-between">
-                                        <span className="block text-sm font-medium text-slate-700">Body Content</span>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm font-semibold text-indigo-600">SEO: {typeof newAsset.seo_score === 'number' ? newAsset.seo_score : '—'}</span>
-                                            <span className="text-sm font-semibold text-green-600">Grammar: {typeof newAsset.grammar_score === 'number' ? newAsset.grammar_score : '—'}</span>
-                                        </div>
-                                    </label>
-                                    <textarea
-                                        value={newAsset.web_body_content || ''}
-                                        onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
-                                        className="w-full mt-2 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                        rows={6}
-                                        placeholder="Enter body content..."
-                                    />
 
-                                    <div className="mt-2">
-                                        <button
-                                            onClick={analyzeBodyContent}
-                                            className="px-4 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                            disabled={analysisInProgress}
-                                        >
-                                            {analysisInProgress ? 'Analysing...' : 'Analyse Score'}
-                                        </button>
-                                    </div>
-
-                                    <div className="mt-3">
-                                        <input
-                                            ref={bodyFileInputRef}
-                                            type="file"
-                                            accept="image/*,application/pdf,.doc,.docx,text/plain"
-                                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'body')}
-                                            className="hidden"
-                                        />
-
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => bodyFileInputRef.current?.click()}
-                                                className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-sm hover:bg-slate-200"
-                                            >
-                                                Upload Attachment
-                                            </button>
-
-                                            {(newAsset as any).web_body_attachment_name && (
-                                                <div className="text-sm text-slate-700">{(newAsset as any).web_body_attachment_name}</div>
-                                            )}
-                                        </div>
-
-                                        {/* Main Upload Dropzone for Web assets - placed below Body Content per requirements */}
-                                        <div
-                                            className={`mt-4 border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${dragActive
-                                                ? 'border-indigo-500 bg-indigo-50'
-                                                : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50'
-                                                }`}
-                                            onDrop={handleDrop}
-                                            onDragOver={handleDrag}
-                                            onDragEnter={handleDrag}
-                                            onDragLeave={handleDrag}
-                                            onClick={() => fileInputRef.current?.click()}
-                                        >
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                                                className="hidden"
-                                                accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                {/* Body Content Section with AI Scores */}
+                                <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        {/* Body Content - Left Side */}
+                                        <div className="lg:col-span-2">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                <span className="text-lg">📝</span>
+                                                Body content
+                                            </label>
+                                            <textarea
+                                                value={newAsset.web_body_content || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                                placeholder="Paste your full article or body copy here for AI analysis..."
+                                                rows={8}
                                             />
 
-                                            {previewUrl ? (
-                                                <div className="space-y-3">
-                                                    <img src={previewUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg shadow-md" />
-                                                    <p className="text-sm text-slate-600">Click to change file</p>
+                                            {/* Analyse Button */}
+                                            <button
+                                                type="button"
+                                                onClick={analyzeBodyContent}
+                                                disabled={analysisInProgress}
+                                                className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                                {analysisInProgress ? 'Analysing...' : 'Analyze'}
+                                            </button>
+                                        </div>
+
+                                        {/* AI Scores - Right Side */}
+                                        <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                            <div className="space-y-6">
+                                                {/* SEO Score */}
+                                                <div className="flex flex-col items-center">
+                                                    <CircularScore
+                                                        score={newAsset.seo_score || 0}
+                                                        label="SEO SCORE"
+                                                        size="sm"
+                                                    />
                                                 </div>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto">
-                                                        <svg className="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-lg font-medium text-slate-900">Drop your file here</p>
-                                                        <p className="text-sm text-slate-500">or click to browse</p>
-                                                    </div>
+
+                                                {/* Grammar Score */}
+                                                <div className="flex flex-col items-center">
+                                                    <CircularScore
+                                                        score={newAsset.grammar_score || 0}
+                                                        label="GRAMMAR SCORE"
+                                                        size="sm"
+                                                    />
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Main Upload Dropzone for Web assets */}
+                                <div
+                                    className={`mt-4 border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${dragActive
+                                        ? 'border-indigo-500 bg-indigo-50'
+                                        : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50'
+                                        }`}
+                                    onDrop={handleDrop}
+                                    onDragOver={handleDrag}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                        className="hidden"
+                                        accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                    />
+
+                                    {previewUrl ? (
+                                        <div className="space-y-3">
+                                            <img src={previewUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg shadow-md" />
+                                            <p className="text-sm text-slate-600">Click to change file</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto">
+                                                <svg className="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-medium text-slate-900">Drop your file here</p>
+                                                <p className="text-sm text-slate-500">or click to browse</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -1629,87 +1635,87 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 <option value="smm">SMM</option>
                             </select>
                         )}
-                    
-                    {/* WEB Asset Classification - placed below file upload as required */}
-                    <div className="mt-6 bg-white rounded-xl border border-slate-200 p-4">
-                        <h4 className="text-sm font-semibold text-slate-900 mb-3">Asset Classification</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
-                                <div className="px-3 py-2 border rounded-lg bg-slate-50 text-sm text-slate-700">WEB</div>
-                            </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
-                                <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                                    <option value="Content Repository">Content Repository</option>
-                                    <option value="SMM Repository">SMM Repository</option>
-                                    <option value="SEO Repository">SEO Repository</option>
-                                    <option value="Design Repository">Design Repository</option>
-                                </select>
-                            </div>
+                        {/* WEB Asset Classification - placed below file upload as required */}
+                        <div className="mt-6 bg-white rounded-xl border border-slate-200 p-4">
+                            <h4 className="text-sm font-semibold text-slate-900 mb-3">Asset Classification</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
+                                    <div className="px-3 py-2 border rounded-lg bg-slate-50 text-sm text-slate-700">WEB</div>
+                                </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
-                                <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                                    <option value="">Select category...</option>
-                                    {filteredAssetCategories.map(cat => (
-                                        <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
+                                    <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                        <option value="Content Repository">Content Repository</option>
+                                        <option value="SMM Repository">SMM Repository</option>
+                                        <option value="SEO Repository">SEO Repository</option>
+                                        <option value="Design Repository">Design Repository</option>
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
-                                <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                                    <option value="">Select type...</option>
-                                    {filteredAssetTypes.map(t => (
-                                        <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                    <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                        <option value="">Select category...</option>
+                                        {filteredAssetCategories.map(cat => (
+                                            <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
-                                <select
-                                    value={selectedServiceId || ''}
-                                    onChange={(e) => {
-                                        const id = e.target.value ? parseInt(e.target.value) : null;
-                                        setSelectedServiceId(id);
-                                        setSelectedSubServiceIds([]);
-                                    }}
-                                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                                >
-                                    <option value="">Select a service...</option>
-                                    {services.map(s => (
-                                        <option key={s.id} value={s.id}>{s.service_name}</option>
-                                    ))}
-                                </select>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                    <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                        <option value="">Select type...</option>
+                                        {filteredAssetTypes.map(t => (
+                                            <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                                <div className="mt-3 border rounded-lg p-3 bg-slate-50">
-                                    {selectedServiceId ? (
-                                        subServices.filter(ss => ss.parent_service_id === selectedServiceId).map(ss => (
-                                            <label key={ss.id} className="flex items-center gap-3 mb-2">
-                                                <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                    } else {
-                                                        const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                        setSelectedSubServiceIds(remaining);
-                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                    }
-                                                }} />
-                                                <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                            </label>
-                                        ))
-                                    ) : (
-                                        <div className="text-sm text-slate-500">Select a service to see sub-services</div>
-                                    )}
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
+                                    <select
+                                        value={selectedServiceId || ''}
+                                        onChange={(e) => {
+                                            const id = e.target.value ? parseInt(e.target.value) : null;
+                                            setSelectedServiceId(id);
+                                            setSelectedSubServiceIds([]);
+                                        }}
+                                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                                    >
+                                        <option value="">Select a service...</option>
+                                        {services.map(s => (
+                                            <option key={s.id} value={s.id}>{s.service_name}</option>
+                                        ))}
+                                    </select>
+
+                                    <div className="mt-3 border rounded-lg p-3 bg-slate-50">
+                                        {selectedServiceId ? (
+                                            subServices.filter(ss => ss.parent_service_id === selectedServiceId).map(ss => (
+                                                <label key={ss.id} className="flex items-center gap-3 mb-2">
+                                                    <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
+                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
+                                                        } else {
+                                                            const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
+                                                            setSelectedSubServiceIds(remaining);
+                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
+                                                        }
+                                                    }} />
+                                                    <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
+                                                </label>
+                                            ))
+                                        ) : (
+                                            <div className="text-sm text-slate-500">Select a service to see sub-services</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                     </div>
 
                     <div>
@@ -2502,79 +2508,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </div>
                                 </div>
 
-                                
 
-                                {/* AI Quality Scores Section */}
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                            </svg>
-                                            AI Quality Scores
-                                        </h3>
-                                        <p className="text-sm text-slate-600 mt-1">Required for QC submission - AI-powered content analysis</p>
-                                    </div>
-
-                                    <div className="p-6 space-y-6">
-                                        {/* Score Display */}
-                                        {(newAsset.seo_score || newAsset.grammar_score) && (
-                                            <div className="flex justify-center gap-8 py-4">
-                                                {newAsset.seo_score && (
-                                                    <CircularScore
-                                                        score={newAsset.seo_score}
-                                                        label="SEO Score"
-                                                        size="md"
-                                                        showEmbedButton={true}
-                                                    />
-                                                )}
-                                                {newAsset.grammar_score && (
-                                                    <CircularScore
-                                                        score={newAsset.grammar_score}
-                                                        label="Grammar Score"
-                                                        size="md"
-                                                        showEmbedButton={true}
-                                                    />
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Score Display (non-editable). Values update automatically via analysis. */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">SEO Score</label>
-                                                <div className="px-4 py-3 border rounded-lg bg-slate-50 text-sm font-medium text-slate-800">
-                                                    {typeof newAsset.seo_score === 'number' ? `${newAsset.seo_score}` : '—'}
-                                                </div>
-                                                {typeof newAsset.seo_score === 'number' && (
-                                                    <div className={`mt-2 text-xs font-medium ${newAsset.seo_score >= 80 ? 'text-green-600' : newAsset.seo_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                        {newAsset.seo_score >= 80 ? '✓ Excellent SEO' : newAsset.seo_score >= 60 ? '⚠ Good SEO' : '✗ Needs SEO improvement'}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">Grammar Score</label>
-                                                <div className="px-4 py-3 border rounded-lg bg-slate-50 text-sm font-medium text-slate-800">
-                                                    {typeof newAsset.grammar_score === 'number' ? `${newAsset.grammar_score}` : '—'}
-                                                </div>
-                                                {typeof newAsset.grammar_score === 'number' && (
-                                                    <div className={`mt-2 text-xs font-medium ${newAsset.grammar_score >= 90 ? 'text-green-600' : newAsset.grammar_score >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                        {newAsset.grammar_score >= 90 ? '✓ Excellent grammar' : newAsset.grammar_score >= 70 ? '⚠ Good grammar' : '✗ Needs grammar improvement'}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Info Note */}
-                                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                                            <p className="text-sm text-green-800">
-                                                <strong>Note:</strong> SEO and Grammar scores are mandatory before submitting for QC review.
-                                                Use the "Generate" button to get AI-powered scores based on your content.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
 
                                 {/* 13. Image Upload Option */}
                                 <div>
@@ -2615,13 +2549,60 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     )}
                                 </div>
 
-                                {/* 14. Body Content */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">14. Body Content</label>
-                                    <MarkdownEditor
-                                        value={newAsset.web_body_content || ''}
-                                        onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
-                                    />
+                                {/* Body Content Section with AI Scores */}
+                                <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        {/* Body Content - Left Side */}
+                                        <div className="lg:col-span-2">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                <span className="text-lg">📝</span>
+                                                Body content
+                                            </label>
+                                            <textarea
+                                                value={newAsset.web_body_content || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                                placeholder="Paste your full article or body copy here for AI analysis..."
+                                                rows={8}
+                                            />
+
+                                            {/* Analyse Button */}
+                                            <button
+                                                type="button"
+                                                onClick={analyzeBodyContent}
+                                                disabled={analysisInProgress}
+                                                className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                                {analysisInProgress ? 'Analysing...' : 'Analyze'}
+                                            </button>
+                                        </div>
+
+                                        {/* AI Scores - Right Side */}
+                                        <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                            <div className="space-y-6">
+                                                {/* SEO Score */}
+                                                <div className="flex flex-col items-center">
+                                                    <CircularScore
+                                                        score={newAsset.seo_score || 0}
+                                                        label="SEO SCORE"
+                                                        size="sm"
+                                                    />
+                                                </div>
+
+                                                {/* Grammar Score */}
+                                                <div className="flex flex-col items-center">
+                                                    <CircularScore
+                                                        score={newAsset.grammar_score || 0}
+                                                        label="GRAMMAR SCORE"
+                                                        size="sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* 17. Status */}
@@ -2793,70 +2774,90 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             )}
                                         </div>
 
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                            <div className="lg:col-span-2">
-                                                <MarkdownEditor
-                                                    value={newAsset.web_body_content || ''}
-                                                    onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-slate-700 mb-1">SEO Score</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={newAsset.seo_score || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                                        placeholder="0-100"
+                                        {/* Body Content Section with AI Scores */}
+                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                {/* Body Content - Left Side */}
+                                                <div className="lg:col-span-2">
+                                                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                        <span className="text-lg">📝</span>
+                                                        Body content
+                                                    </label>
+                                                    <textarea
+                                                        value={newAsset.web_body_content || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                                        placeholder="Paste your full article or body copy here for AI analysis..."
+                                                        rows={8}
                                                     />
+
+                                                    {/* Analyse Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={analyzeBodyContent}
+                                                        disabled={analysisInProgress}
+                                                        className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                        </svg>
+                                                        {analysisInProgress ? 'Analysing...' : 'Analyze'}
+                                                    </button>
                                                 </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Grammar Score</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={newAsset.grammar_score || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                                        placeholder="0-100"
-                                                    />
-                                                </div>
+                                                {/* AI Scores - Right Side */}
+                                                <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                                    <div className="space-y-6">
+                                                        {/* SEO Score */}
+                                                        <div className="flex flex-col items-center">
+                                                            <CircularScore
+                                                                score={newAsset.seo_score || 0}
+                                                                label="SEO SCORE"
+                                                                size="sm"
+                                                            />
+                                                        </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-slate-700 mb-1">File Upload</label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            ref={fileInputRef}
-                                                            type="file"
-                                                            onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                                                            className="hidden"
-                                                            accept="image/*,video/*,.pdf,.doc,.docx,.zip"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => fileInputRef.current?.click()}
-                                                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-                                                        >
-                                                            Choose File
-                                                        </button>
-                                                        <div className="flex-1 text-sm text-slate-600 self-center">
-                                                            {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
+                                                        {/* Grammar Score */}
+                                                        <div className="flex flex-col items-center">
+                                                            <CircularScore
+                                                                score={newAsset.grammar_score || 0}
+                                                                label="GRAMMAR SCORE"
+                                                                size="sm"
+                                                            />
                                                         </div>
                                                     </div>
-
-                                                    {previewUrl && (
-                                                        <div className="mt-2">
-                                                            <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* File Upload Section */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">File Upload</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                                    className="hidden"
+                                                    accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                                                >
+                                                    Choose File
+                                                </button>
+                                                <div className="flex-1 text-sm text-slate-600 self-center">
+                                                    {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
+                                                </div>
+                                            </div>
+
+                                            {previewUrl && (
+                                                <div className="mt-2">
+                                                    <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -2974,10 +2975,61 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             )}
                                         </div>
 
-                                        <MarkdownEditor
-                                            value={newAsset.web_body_content || ''}
-                                            onChange={(value) => setNewAsset({ ...newAsset, web_body_content: value })}
-                                        />
+                                        {/* Body Content Section with AI Scores */}
+                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                {/* Body Content - Left Side */}
+                                                <div className="lg:col-span-2">
+                                                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                        <span className="text-lg">📝</span>
+                                                        Body content
+                                                    </label>
+                                                    <textarea
+                                                        value={newAsset.web_body_content || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                                        placeholder="Paste your full article or body copy here for AI analysis..."
+                                                        rows={8}
+                                                    />
+
+                                                    {/* Analyse Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={analyzeBodyContent}
+                                                        disabled={analysisInProgress}
+                                                        className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                        </svg>
+                                                        {analysisInProgress ? 'Analysing...' : 'Analyze'}
+                                                    </button>
+                                                </div>
+
+                                                {/* AI Scores - Right Side */}
+                                                <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                                    <div className="space-y-6">
+                                                        {/* SEO Score */}
+                                                        <div className="flex flex-col items-center">
+                                                            <CircularScore
+                                                                score={newAsset.seo_score || 0}
+                                                                label="SEO SCORE"
+                                                                size="sm"
+                                                            />
+                                                        </div>
+
+                                                        {/* Grammar Score */}
+                                                        <div className="flex flex-col items-center">
+                                                            <CircularScore
+                                                                score={newAsset.grammar_score || 0}
+                                                                label="GRAMMAR SCORE"
+                                                                size="sm"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -3658,128 +3710,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         )}
                                     </div>
                                 )}
-                            </div>
-
-                            {/* Fields 15 & 16: AI Scores Section - Required for Submission */}
-                            <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 p-6 space-y-4 shadow-sm">
-                                <div className="flex items-center gap-3 pb-3 border-b-2 border-green-200">
-                                    <div className="bg-green-600 p-2 rounded-lg">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-green-900">15 & 16. AI Quality Scores</h3>
-                                        <p className="text-xs text-green-600">Required for QC submission</p>
-                                    </div>
-                                </div>
-
-                                {/* Score Display Section */}
-                                {(newAsset.seo_score || newAsset.grammar_score) && (
-                                    <div className="flex justify-center gap-8 py-4">
-                                        {newAsset.seo_score && (
-                                            <CircularScore
-                                                score={newAsset.seo_score}
-                                                label="SEO Score"
-                                                size="md"
-                                                showEmbedButton={true}
-                                            />
-                                        )}
-                                        {newAsset.grammar_score && (
-                                            <CircularScore
-                                                score={newAsset.grammar_score}
-                                                label="Grammar Score"
-                                                size="md"
-                                                showEmbedButton={true}
-                                            />
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                            15. SEO Score (0-100) - AI Integration
-                                            <span className="text-red-500 ml-1">*</span>
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newAsset.seo_score || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, seo_score: parseInt(e.target.value) || undefined })}
-                                                className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                                placeholder="0-100"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    try {
-                                                        const response = await fetch('/api/v1/assetLibrary/ai-scores', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({
-                                                                content: newAsset.web_body_content || newAsset.smm_description,
-                                                                title: newAsset.web_title || newAsset.name,
-                                                                description: newAsset.web_description || newAsset.smm_description
-                                                            })
-                                                        });
-                                                        if (response.ok) {
-                                                            const scores = await response.json();
-                                                            setNewAsset({
-                                                                ...newAsset,
-                                                                seo_score: scores.seo_score,
-                                                                grammar_score: scores.grammar_score
-                                                            });
-                                                        }
-                                                    } catch (error) {
-                                                        console.error('Failed to generate AI scores:', error);
-                                                    }
-                                                }}
-                                                className="px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                                </svg>
-                                                Generate AI Scores
-                                            </button>
-                                        </div>
-                                        {newAsset.seo_score && (
-                                            <div className={`mt-2 text-xs font-bold ${newAsset.seo_score >= 80 ? 'text-green-600' : newAsset.seo_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                {newAsset.seo_score >= 80 ? '✓ Excellent SEO' : newAsset.seo_score >= 60 ? '⚠ Good SEO' : '✗ Needs SEO improvement'}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                            16. Grammar Score (0-100) - AI Integration
-                                            <span className="text-red-500 ml-1">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            value={newAsset.grammar_score || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, grammar_score: parseInt(e.target.value) || undefined })}
-                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                                            placeholder="0-100"
-                                        />
-                                        {newAsset.grammar_score && (
-                                            <div className={`mt-2 text-xs font-bold ${newAsset.grammar_score >= 90 ? 'text-green-600' : newAsset.grammar_score >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                {newAsset.grammar_score >= 90 ? '✓ Excellent grammar' : newAsset.grammar_score >= 70 ? '⚠ Good grammar' : '✗ Needs grammar improvement'}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="bg-white rounded-lg p-4 border border-green-200">
-                                    <p className="text-xs text-slate-600">
-                                        <strong>Note:</strong> SEO and Grammar scores are mandatory before submitting for QC review.
-                                        Use the "Generate" button to get AI-powered scores based on your content.
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -7237,7 +7167,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 }}
                 onSuccess={() => {
                     // Refresh master tables and asset list after upload
-                        setTimeout(() => {
+                    setTimeout(() => {
                         refreshAssetCategories?.();
                         refreshAssetTypes?.();
                         refresh?.();
