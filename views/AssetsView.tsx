@@ -83,6 +83,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         return (assetTypes || []).filter(t => t.status === 'active' && (!selectedBrand || selectedBrand === 'All' || t.brand === selectedBrand));
     }, [assetTypes, selectedBrand]);
 
+    // All active asset types for dropdowns (not filtered by brand)
+    const allActiveAssetTypes = useMemo(() => {
+        return (assetTypes || []).filter(t => t.status === 'active');
+    }, [assetTypes]);
+
     // Master table modals
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [showTypeModal, setShowTypeModal] = useState(false);
@@ -2849,7 +2854,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 {/* Asset Category (from master table - no Add icon) */}
                                                 <div>
                                                     <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
-                                                    <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                    <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                                         <option value="">Select category...</option>
                                                         {allActiveAssetCategories.map(cat => (
                                                             <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
@@ -2860,9 +2865,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 {/* Asset Type (from master table - no Add icon) */}
                                                 <div>
                                                     <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
-                                                    <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                    <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                                         <option value="">Select type...</option>
-                                                        {filteredAssetTypes.map(t => (
+                                                        {allActiveAssetTypes.map(t => (
                                                             <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
                                                         ))}
                                                     </select>
@@ -3377,7 +3382,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {/* Asset Category (from master table - no Add icon) */}
                                                         <div>
                                                             <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
-                                                            <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                            <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                                                 <option value="">Select category...</option>
                                                                 {allActiveAssetCategories.map(cat => (
                                                                     <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
@@ -3385,13 +3390,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             </select>
                                                         </div>
 
-                                                        {/* Asset Format (from master table - no Add icon) - SMM only */}
+                                                        {/* Asset Type (from master table - no Add icon) */}
                                                         <div>
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Asset Format</label>
-                                                            <select value={(newAsset as any).asset_format || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                                                                <option value="">Select format...</option>
-                                                                {(assetFormats || []).filter((f: any) => f.status === 'active').map((f: any) => (
-                                                                    <option key={f.id} value={f.format_name}>{f.format_name}</option>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                                            <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                                <option value="">Select type...</option>
+                                                                {allActiveAssetTypes.map(t => (
+                                                                    <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
                                                                 ))}
                                                             </select>
                                                         </div>
