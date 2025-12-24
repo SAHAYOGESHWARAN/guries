@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useData } from '../hooks/useData';
-import type { Notification } from '../types';
+import { useNotifications } from '../hooks/useNotifications';
 import Tooltip from './Tooltip';
 import SearchBar from './SearchBar';
 import NotificationPanel from './NotificationPanel';
@@ -14,9 +13,24 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onLogout }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
 
-  const { data: notifications } = useData<Notification>('notifications');
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearAll
+  } = useNotifications({ enableSound: true, enableBrowserNotifications: true });
+
+  // Animate bell when new notification arrives
+  useEffect(() => {
+    if (unreadCount > 0 && !showNotifications) {
+      setHasNewNotification(true);
+      const timer = setTimeout(() => setHasNewNotification(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [unreadCount]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -149,14 +163,17 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onLogout }) => {
         <div className="relative notifications-container">
           <Tooltip content="View notifications and alerts" position="bottom">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setHasNewNotification(false);
+              }}
+              className={`relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 ${hasNewNotification ? 'animate-bell-ring' : ''}`}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -168,18 +185,9 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onLogout }) => {
             <div className="absolute right-0 mt-2 w-96 z-50 animate-fade-in">
               <NotificationPanel
                 notifications={notifications}
-                onMarkAsRead={(id) => {
-                  // Handle mark as read
-                  console.log('Mark as read:', id);
-                }}
-                onMarkAllAsRead={() => {
-                  // Handle mark all as read
-                  console.log('Mark all as read');
-                }}
-                onClearAll={() => {
-                  // Handle clear all
-                  console.log('Clear all notifications');
-                }}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+                onClearAll={clearAll}
               />
             </div>
           )}

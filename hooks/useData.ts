@@ -73,7 +73,9 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     articles: { endpoint: 'knowledge/articles', event: 'article' },
     // Compliance
     complianceRules: { endpoint: 'compliance/rules', event: 'compliance_rule' },
-    complianceAudits: { endpoint: 'compliance/audits', event: 'compliance_audit' }
+    complianceAudits: { endpoint: 'compliance/audits', event: 'compliance_audit' },
+    // Notifications
+    notifications: { endpoint: 'notifications', event: 'notification' }
 };
 
 // Singleton socket instance to manage connection

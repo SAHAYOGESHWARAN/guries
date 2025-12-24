@@ -58,6 +58,7 @@ export default {
         'shine': 'shine 3s infinite',
         'pulse-slow': 'pulseSubtle 6s infinite ease-in-out',
         'scale-in': 'scaleIn 0.2s ease-out forwards',
+        'bell-ring': 'bellRing 0.5s ease-in-out',
       },
       keyframes: {
         fadeIn: {
@@ -88,6 +89,15 @@ export default {
           '0%': { transform: 'skewX(-12deg) translateX(-150%)' },
           '50%': { transform: 'skewX(-12deg) translateX(150%)' },
           '100%': { transform: 'skewX(-12deg) translateX(150%)' },
+        },
+        bellRing: {
+          '0%': { transform: 'rotate(0)' },
+          '15%': { transform: 'rotate(15deg)' },
+          '30%': { transform: 'rotate(-15deg)' },
+          '45%': { transform: 'rotate(10deg)' },
+          '60%': { transform: 'rotate(-10deg)' },
+          '75%': { transform: 'rotate(5deg)' },
+          '100%': { transform: 'rotate(0)' },
         }
       }
     }
