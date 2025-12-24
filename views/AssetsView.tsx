@@ -350,6 +350,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 await createAssetType(typeData as AssetTypeMasterItem);
             }
             setEditingType(null);
+            setShowTypeModal(false);
             // Refresh asset types so new type appears immediately
             setTimeout(() => refreshAssetTypes?.(), 100);
         } catch (error) {
@@ -2641,16 +2642,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             />
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
-                                            <textarea
-                                                value={newAsset.web_description || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter web description..."
-                                                rows={3}
-                                            />
-                                        </div>
+                                        {/* Description field removed per WEB requirements */}
 
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-2">URL</label>
@@ -2698,49 +2690,14 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Thumbnail/Blog Image</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="url"
-                                                    value={newAsset.web_thumbnail || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
-                                                    className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="https://example.com/image.jpg or upload file"
-                                                />
-                                                <input
-                                                    ref={thumbnailInputRef}
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
-                                                    className="hidden"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => thumbnailInputRef.current?.click()}
-                                                    className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                    Upload
-                                                </button>
-                                            </div>
-                                            {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
-                                                <div className="mt-2">
-                                                    <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Body Content Section with AI Scores */}
+                                        {/* Body Content Section with AI Scores beside it */}
                                         <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                 {/* Body Content - Left Side */}
                                                 <div className="lg:col-span-2">
                                                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
                                                         <span className="text-lg">📝</span>
-                                                        Body content
+                                                        Body Content
                                                     </label>
                                                     <textarea
                                                         value={newAsset.web_body_content || ''}
@@ -2750,7 +2707,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         rows={8}
                                                     />
 
-                                                    {/* Analyse Button */}
+                                                    {/* Analyze Score Button - below Body Content */}
                                                     <button
                                                         type="button"
                                                         onClick={analyzeBodyContent}
@@ -2760,12 +2717,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                                         </svg>
-                                                        {analysisInProgress ? 'Analysing...' : 'Analyze'}
+                                                        {analysisInProgress ? 'Analysing...' : 'Analyze Score'}
                                                     </button>
                                                 </div>
 
-                                                {/* AI Scores - Right Side */}
+                                                {/* AI Quality Scores - Right Side (beside Body Content, updates in real-time) */}
                                                 <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                                    <h5 className="text-sm font-semibold text-slate-600 mb-4">AI Quality Scores</h5>
                                                     <div className="space-y-6">
                                                         {/* SEO Score */}
                                                         <div className="flex flex-col items-center">
@@ -2789,34 +2747,179 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        {/* File Upload Section */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">File Upload</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    ref={fileInputRef}
-                                                    type="file"
-                                                    onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                                                    className="hidden"
-                                                    accept="image/*,video/*,.pdf,.doc,.docx,.zip"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-                                                >
-                                                    Choose File
-                                                </button>
-                                                <div className="flex-1 text-sm text-slate-600 self-center">
-                                                    {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
+                                        {/* Upload Web Assets Section - below Body Content */}
+                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                <span className="text-lg">📤</span>
+                                                Upload Web Assets
+                                            </label>
+                                            <div className="space-y-4">
+                                                {/* Thumbnail/Blog Image */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-600 mb-2">Thumbnail/Blog Image</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="url"
+                                                            value={newAsset.web_thumbnail || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
+                                                            className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                            placeholder="https://example.com/image.jpg or upload file"
+                                                        />
+                                                        <input
+                                                            ref={thumbnailInputRef}
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
+                                                            className="hidden"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => thumbnailInputRef.current?.click()}
+                                                            className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                            Upload
+                                                        </button>
+                                                    </div>
+                                                    {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
+                                                        <div className="mt-2">
+                                                            <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Additional File Upload */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-600 mb-2">Additional Files</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            ref={fileInputRef}
+                                                            type="file"
+                                                            onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                                            className="hidden"
+                                                            accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => fileInputRef.current?.click()}
+                                                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                                                        >
+                                                            Choose File
+                                                        </button>
+                                                        <div className="flex-1 text-sm text-slate-600 self-center">
+                                                            {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
+                                                        </div>
+                                                    </div>
+
+                                                    {previewUrl && (
+                                                        <div className="mt-2">
+                                                            <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            {previewUrl && (
-                                                <div className="mt-2">
-                                                    <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                        {/* Asset Classification - below Upload Web Assets */}
+                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
+                                                <span className="text-lg">🏷️</span>
+                                                Asset Classification
+                                            </label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Content Type (Static - Locked as WEB) */}
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
+                                                    <div className="px-3 py-2 border rounded-lg bg-slate-100 text-sm text-slate-700 font-medium">WEB</div>
                                                 </div>
-                                            )}
+
+                                                {/* Repository */}
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
+                                                    <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                        <option value="Content Repository">Content Repository</option>
+                                                        <option value="SMM Repository">SMM Repository</option>
+                                                        <option value="SEO Repository">SEO Repository</option>
+                                                        <option value="Design Repository">Design Repository</option>
+                                                    </select>
+                                                </div>
+
+                                                {/* Asset Category (from master table - no Add icon) */}
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                                    <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                        <option value="">Select category...</option>
+                                                        {allActiveAssetCategories.map(cat => (
+                                                            <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Asset Type (from master table - no Add icon) */}
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                                    <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                        <option value="">Select type...</option>
+                                                        {filteredAssetTypes.map(t => (
+                                                            <option key={t.id} value={t.asset_type_name}>{t.asset_type_name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Asset Format removed for WEB assets per requirements */}
+
+                                                {/* Map Asset to Services */}
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
+                                                    <select
+                                                        value={selectedServiceId || ''}
+                                                        onChange={(e) => {
+                                                            const id = e.target.value ? parseInt(e.target.value) : null;
+                                                            setSelectedServiceId(id);
+                                                            setSelectedSubServiceIds([]);
+                                                        }}
+                                                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                    >
+                                                        <option value="">Select a service...</option>
+                                                        {services.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.service_name}</option>
+                                                        ))}
+                                                    </select>
+
+                                                    {/* Sub-services displayed below when service is selected */}
+                                                    {selectedServiceId && (
+                                                        <div className="mt-3 border rounded-lg p-3 bg-white">
+                                                            <label className="block text-xs font-medium text-slate-500 mb-2">Select Sub-Services:</label>
+                                                            {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
+                                                                subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
+                                                                    <label key={ss.id} className="flex items-center gap-3 mb-2">
+                                                                        <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
+                                                                            if (e.target.checked) {
+                                                                                setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
+                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
+                                                                            } else {
+                                                                                const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
+                                                                                setSelectedSubServiceIds(remaining);
+                                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
+                                                                            }
+                                                                        }} />
+                                                                        <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
+                                                                    </label>
+                                                                ))
+                                                            ) : (
+                                                                <div className="text-sm text-slate-500 italic">
+                                                                    No sub-services available for this service.
+                                                                    <span className="block text-xs mt-1 text-slate-400">
+                                                                        Create sub-services in Sub-Service Master with this service as parent.
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -3020,10 +3123,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     { value: 'instagram', label: 'Instagram', icon: '📷', color: 'from-pink-500 to-purple-600', description: 'Visual storytelling platform' },
                                                     { value: 'twitter', label: 'Twitter/X', icon: '🐦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
                                                     { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
-                                                    { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' },
-                                                    { value: 'pinterest', label: 'Pinterest', icon: '📌', color: 'from-red-500 to-pink-500', description: 'Visual discovery engine' },
-                                                    { value: 'snapchat', label: 'Snapchat', icon: '👻', color: 'from-yellow-400 to-yellow-500', description: 'Ephemeral content sharing' },
-                                                    { value: 'whatsapp', label: 'WhatsApp', icon: '💬', color: 'from-green-500 to-green-600', description: 'Messaging and status updates' }
+                                                    { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' }
+                                                    /* TikTok, Pinterest, Snapchat, WhatsApp removed per SMM spec - only core platforms */
                                                 ].map((platform) => (
                                                     <button
                                                         key={platform.value}
@@ -3063,15 +3164,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <option value="twitter">🐦 Twitter/X</option>
                                                     <option value="linkedin">💼 LinkedIn</option>
                                                     <option value="youtube">🎥 YouTube</option>
-                                                    {/* TikTok removed per SMM spec */}
-                                                    <option value="pinterest">📌 Pinterest</option>
-                                                    <option value="snapchat">👻 Snapchat</option>
-                                                    <option value="whatsapp">💬 WhatsApp</option>
-                                                    <option value="telegram">✈️ Telegram</option>
-                                                    <option value="discord">🎮 Discord</option>
-                                                    <option value="reddit">🤖 Reddit</option>
-                                                    <option value="tumblr">📝 Tumblr</option>
-                                                    <option value="other">🌐 Other Platform</option>
+                                                    {/* TikTok and other platforms removed per SMM spec */}
                                                 </select>
                                             </div>
                                         </div>
@@ -3258,62 +3351,100 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     </div>
                                                 </div>
 
-                                                {/* SMM Asset Classifications: Category & Format + Map to Services */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Asset Category</label>
-                                                        <select
-                                                            value={newAsset.asset_category || ''}
-                                                            onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
-                                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                                                        >
-                                                            <option value="">Select category...</option>
-                                                            {allActiveAssetCategories.map(cat => (
-                                                                <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                                {/* SMM Asset Classification - below upload & preview */}
+                                                <div className="bg-purple-50/50 rounded-xl border border-purple-200 p-6">
+                                                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
+                                                        <span className="text-lg">🏷️</span>
+                                                        Asset Classification
+                                                    </label>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* Content Type (Static - Locked as SMM) */}
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
+                                                            <div className="px-3 py-2 border rounded-lg bg-slate-100 text-sm text-slate-700 font-medium">SMM</div>
+                                                        </div>
 
-                                                    {/* Asset Format removed per WEB requirements */}
+                                                        {/* Repository */}
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
+                                                            <select value={newAsset.repository || 'SMM Repository'} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                                <option value="SMM Repository">SMM Repository</option>
+                                                                <option value="Content Repository">Content Repository</option>
+                                                                <option value="Design Repository">Design Repository</option>
+                                                            </select>
+                                                        </div>
 
-                                                    <div className="md:col-span-2">
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">Map Asset to Services</label>
-                                                        <select
-                                                            value={selectedServiceId || ''}
-                                                            onChange={(e) => {
-                                                                const id = e.target.value ? parseInt(e.target.value) : null;
-                                                                setSelectedServiceId(id);
-                                                                setSelectedSubServiceIds([]);
-                                                            }}
-                                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                                                        >
-                                                            <option value="">Select service...</option>
-                                                            {services.map(service => (
-                                                                <option key={service.id} value={service.id}>{service.service_name}</option>
-                                                            ))}
-                                                        </select>
+                                                        {/* Asset Category (from master table - no Add icon) */}
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                                            <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                                <option value="">Select category...</option>
+                                                                {allActiveAssetCategories.map(cat => (
+                                                                    <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
 
-                                                        {selectedServiceId && (
-                                                            <div className="mt-2">
-                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Select Sub-Services</label>
-                                                                <select
-                                                                    multiple
-                                                                    value={selectedSubServiceIds.map(String)}
-                                                                    onChange={(e) => {
-                                                                        const opts = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
-                                                                        setSelectedSubServiceIds(opts);
-                                                                    }}
-                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
-                                                                >
-                                                                    {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                                        <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>
-                                                                    ))}
-                                                                </select>
-                                                                {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length === 0 && (
-                                                                    <div className="text-xs text-slate-500 mt-1">No sub-services available for this service</div>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                        {/* Asset Format (from master table - no Add icon) - SMM only */}
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Asset Format</label>
+                                                            <select value={(newAsset as any).asset_format || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_format: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                                <option value="">Select format...</option>
+                                                                {(assetFormats || []).filter((f: any) => f.status === 'active').map((f: any) => (
+                                                                    <option key={f.id} value={f.format_name}>{f.format_name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        {/* Map Asset to Services with sub-service dropdown */}
+                                                        <div className="md:col-span-2">
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
+                                                            <select
+                                                                value={selectedServiceId || ''}
+                                                                onChange={(e) => {
+                                                                    const id = e.target.value ? parseInt(e.target.value) : null;
+                                                                    setSelectedServiceId(id);
+                                                                    setSelectedSubServiceIds([]);
+                                                                }}
+                                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                            >
+                                                                <option value="">Select a service...</option>
+                                                                {services.map(s => (
+                                                                    <option key={s.id} value={s.id}>{s.service_name}</option>
+                                                                ))}
+                                                            </select>
+
+                                                            {/* Sub-services displayed below when service is selected */}
+                                                            {selectedServiceId && (
+                                                                <div className="mt-3 border rounded-lg p-3 bg-white">
+                                                                    <label className="block text-xs font-medium text-slate-500 mb-2">Select Sub-Services:</label>
+                                                                    {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
+                                                                        subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
+                                                                            <label key={ss.id} className="flex items-center gap-3 mb-2">
+                                                                                <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
+                                                                                    if (e.target.checked) {
+                                                                                        setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
+                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
+                                                                                    } else {
+                                                                                        const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
+                                                                                        setSelectedSubServiceIds(remaining);
+                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
+                                                                                    }
+                                                                                }} />
+                                                                                <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
+                                                                            </label>
+                                                                        ))
+                                                                    ) : (
+                                                                        <div className="text-sm text-slate-500 italic">
+                                                                            No sub-services available for this service.
+                                                                            <span className="block text-xs mt-1 text-slate-400">
+                                                                                Create sub-services in Sub-Service Master with this service as parent.
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
 

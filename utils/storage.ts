@@ -8,7 +8,7 @@ import type {
     EffortTarget, GoldStandardMetric, SubServiceItem, IndustrySectorItem, ContentTypeItem,
     AssetTypeItem, PlatformMasterItem, CountryMasterItem, SeoErrorTypeItem, WorkflowStageItem,
     CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem, PersonaMasterItem, FormMasterItem,
-    OnPageSeoAudit
+    OnPageSeoAudit, AssetCategoryMasterItem, AssetTypeMasterItem, AssetFormat
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -32,6 +32,9 @@ const STORAGE_KEYS = {
     PERSONAS: 'mcc_personas',
     FORMS: 'mcc_forms',
     ASSET_TYPES: 'mcc_asset_types',
+    ASSET_CATEGORY_MASTER: 'mcc_asset_category_master',
+    ASSET_TYPE_MASTER: 'mcc_asset_type_master',
+    ASSET_FORMATS: 'mcc_asset_formats',
     PLATFORMS: 'mcc_platforms',
     COUNTRIES: 'mcc_countries',
     SEO_ERRORS: 'mcc_seo_errors',
@@ -93,10 +96,10 @@ class DataService<T extends { id: number | string }> {
 
     create(item: Omit<T, 'id'>): T {
         const items = this.getAll();
-        const newId = items.length > 0 
-            ? Math.max(...items.map((i: any) => typeof i.id === 'number' ? i.id : 0)) + 1 
+        const newId = items.length > 0
+            ? Math.max(...items.map((i: any) => typeof i.id === 'number' ? i.id : 0)) + 1
             : 1;
-        
+
         const newItem = { ...item, id: newId } as T;
         items.unshift(newItem);
         this.save(items);
@@ -132,7 +135,7 @@ export const db = {
     // Identity
     users: new DataService<User>(STORAGE_KEYS.USERS),
     teams: new DataService<Team>(STORAGE_KEYS.TEAMS),
-    teamMembers: new DataService<TeamMember>(STORAGE_KEYS.TEAM_MEMBERS), 
+    teamMembers: new DataService<TeamMember>(STORAGE_KEYS.TEAM_MEMBERS),
     brands: new DataService<Brand>(STORAGE_KEYS.BRANDS),
     // Masters
     keywords: new DataService<Keyword>(STORAGE_KEYS.KEYWORDS),
@@ -148,6 +151,10 @@ export const db = {
     personas: new DataService<PersonaMasterItem>(STORAGE_KEYS.PERSONAS),
     forms: new DataService<FormMasterItem>(STORAGE_KEYS.FORMS),
     assetTypes: new DataService<AssetTypeItem>(STORAGE_KEYS.ASSET_TYPES),
+    // Asset Master Tables (with hyphenated keys for useData hook compatibility)
+    'asset-category-master': new DataService<AssetCategoryMasterItem>(STORAGE_KEYS.ASSET_CATEGORY_MASTER),
+    'asset-type-master': new DataService<AssetTypeMasterItem>(STORAGE_KEYS.ASSET_TYPE_MASTER),
+    'asset-formats': new DataService<AssetFormat>(STORAGE_KEYS.ASSET_FORMATS),
     platforms: new DataService<PlatformMasterItem>(STORAGE_KEYS.PLATFORMS),
     countries: new DataService<CountryMasterItem>(STORAGE_KEYS.COUNTRIES),
     seoErrors: new DataService<SeoErrorTypeItem>(STORAGE_KEYS.SEO_ERRORS),

@@ -70,7 +70,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
 
     // Data hooks
     const { data: services = [] } = useData<Service>('services');
-    const { data: subServices = [] } = useData<SubServiceItem>('sub-services');
+    const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const { data: assetFormats = [] } = useData<AssetFormat>('asset-formats');
@@ -978,32 +978,41 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                                 </div>
 
                                                 {/* Sub Services */}
-                                                {selectedServiceId && filteredSubServices.length > 0 && (
+                                                {selectedServiceId && (
                                                     <div>
                                                         <label className="block text-sm text-slate-600 mb-2">
                                                             Sub Services
                                                         </label>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {filteredSubServices.map(subService => (
-                                                                <button
-                                                                    key={subService.id}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setSelectedSubServiceIds(prev =>
-                                                                            prev.includes(subService.id)
-                                                                                ? prev.filter(id => id !== subService.id)
-                                                                                : [...prev, subService.id]
-                                                                        );
-                                                                    }}
-                                                                    className={`px-4 py-2 rounded-lg border text-sm transition-colors ${selectedSubServiceIds.includes(subService.id)
-                                                                        ? 'bg-purple-100 border-purple-300 text-purple-700'
-                                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-purple-300'
-                                                                        }`}
-                                                                >
-                                                                    {subService.sub_service_name}
-                                                                </button>
-                                                            ))}
-                                                        </div>
+                                                        {filteredSubServices.length > 0 ? (
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {filteredSubServices.map(subService => (
+                                                                    <button
+                                                                        key={subService.id}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setSelectedSubServiceIds(prev =>
+                                                                                prev.includes(subService.id)
+                                                                                    ? prev.filter(id => id !== subService.id)
+                                                                                    : [...prev, subService.id]
+                                                                            );
+                                                                        }}
+                                                                        className={`px-4 py-2 rounded-lg border text-sm transition-colors ${selectedSubServiceIds.includes(subService.id)
+                                                                            ? 'bg-purple-100 border-purple-300 text-purple-700'
+                                                                            : 'bg-white border-slate-200 text-slate-600 hover:border-purple-300'
+                                                                            }`}
+                                                                    >
+                                                                        {subService.sub_service_name}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                                No sub-services available for this service.
+                                                                <span className="block text-xs mt-1 text-slate-400">
+                                                                    Create sub-services in Sub-Service Master with this service as parent.
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
