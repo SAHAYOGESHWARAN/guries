@@ -5322,62 +5322,159 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </h3>
                                         </div>
                                         <div className="p-6 space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Task</label>
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                    </svg>
-                                                    <span className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">Write blog post on AI trends</span>
+                                            {/* Linked Task */}
+                                            <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-blue-600 uppercase tracking-wide">Linked Task</label>
+                                                        <span className="text-blue-900 font-semibold">Write blog post on AI trends</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Campaign</label>
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                <button
+                                                    onClick={() => onNavigate?.('tasks', selectedAsset.linked_task || 1)}
+                                                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+                                                >
+                                                    View
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                     </svg>
-                                                    <span className="text-slate-900 font-medium">Content</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Project</label>
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                    </svg>
-                                                    <span className="text-slate-900 font-medium">Q4 Marketing Campaign</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Service</label>
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6" />
-                                                    </svg>
-                                                    <span className="text-slate-900 font-medium">Digital Marketing</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Sub-Service</label>
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    <span className="text-slate-900 font-medium">Content Marketing</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Linked Repository</label>
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
-                                                    </svg>
-                                                    <span className="text-slate-900 font-medium">{selectedAsset.repository || 'Content Repository'}</span>
-                                                </div>
+                                                </button>
                                             </div>
 
+                                            {/* Linked Campaign */}
+                                            <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-purple-600 uppercase tracking-wide">Linked Campaign</label>
+                                                        <span className="text-purple-900 font-semibold">Content</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onNavigate?.('campaigns', 1)}
+                                                    className="flex items-center gap-1 text-purple-600 hover:text-purple-800 font-medium text-sm transition-colors"
+                                                >
+                                                    View
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            {/* Linked Project */}
+                                            <div className="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-indigo-600 uppercase tracking-wide">Linked Project</label>
+                                                        <span className="text-indigo-900 font-semibold">Q4 Marketing Campaign</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onNavigate?.('projects', 1)}
+                                                    className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium text-sm transition-colors"
+                                                >
+                                                    View
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            {/* Linked Service */}
+                                            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-green-600 uppercase tracking-wide">Linked Service</label>
+                                                        <span className="text-green-900 font-semibold">
+                                                            {selectedAsset.linked_service_ids && selectedAsset.linked_service_ids.length > 0
+                                                                ? services.find(s => s.id === selectedAsset.linked_service_ids![0])?.service_name || 'Digital Marketing'
+                                                                : 'Digital Marketing'
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onNavigate?.('services', selectedAsset.linked_service_ids?.[0] || 1)}
+                                                    className="flex items-center gap-1 text-green-600 hover:text-green-800 font-medium text-sm transition-colors"
+                                                >
+                                                    View
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            {/* Linked Sub-Service */}
+                                            <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-orange-600 uppercase tracking-wide">Linked Sub-Service</label>
+                                                        <span className="text-orange-900 font-semibold">
+                                                            {selectedAsset.linked_sub_service_ids && selectedAsset.linked_sub_service_ids.length > 0
+                                                                ? subServices.find(ss => ss.id === selectedAsset.linked_sub_service_ids![0])?.sub_service_name || 'Content Marketing'
+                                                                : 'Content Marketing'
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onNavigate?.('sub-services', selectedAsset.linked_sub_service_ids?.[0] || 1)}
+                                                    className="flex items-center gap-1 text-orange-600 hover:text-orange-800 font-medium text-sm transition-colors"
+                                                >
+                                                    View
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            {/* Linked Repository */}
+                                            <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 uppercase tracking-wide">Linked Repository</label>
+                                                        <span className="text-slate-900 font-semibold">{selectedAsset.repository || 'Content Repository'}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onNavigate?.('content-repository')}
+                                                    className="flex items-center gap-1 text-slate-600 hover:text-slate-800 font-medium text-sm transition-colors"
+                                                >
+                                                    View
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
