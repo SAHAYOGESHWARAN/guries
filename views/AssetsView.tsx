@@ -822,6 +822,14 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             )
         },
         {
+            header: 'ASSET CATEGORY',
+            accessor: (item: AssetLibraryItem) => (
+                <span className="text-sm text-slate-700">
+                    {item.asset_category || '-'}
+                </span>
+            )
+        },
+        {
             header: 'CONTENT TYPE',
             accessor: (item: AssetLibraryItem) => (
                 <span className="text-sm text-slate-700">
@@ -6913,7 +6921,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </div>
 
                             {/* Display Content Based on View Mode */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 overflow-auto min-h-0">
                                 {displayMode === 'table' ? (
                                     <Table
                                         columns={columns}

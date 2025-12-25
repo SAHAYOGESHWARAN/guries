@@ -38,8 +38,8 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
         </div>
       )}
 
-      <div className="overflow-x-auto flex-1 w-full">
-        <table className="min-w-full divide-y divide-slate-200 w-full">
+      <div className="overflow-auto flex-1 w-full" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+        <table className="min-w-full divide-y divide-slate-200 w-max">
           <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
             <tr>
               {columns.map((col, index) => (
@@ -71,7 +71,7 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
                   onClick={() => onRowClick && onRowClick(item)}
                 >
                   {columns.map((col, index) => (
-                    <td key={index} className={`px-6 py-3 text-sm text-slate-600 font-medium ${col.className || ''}`}>
+                    <td key={index} className={`px-6 py-3 text-sm text-slate-600 font-medium whitespace-nowrap ${col.className || ''}`}>
                       {renderCell(item, col)}
                     </td>
                   ))}
