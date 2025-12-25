@@ -536,12 +536,23 @@ export interface AssetFormat {
     updated_at?: string;
 }
 
+// QC Checklist Item Result for Asset QC Review
+export interface QcChecklistItemResult {
+    id: number;
+    item_name: string; // QC parameter name (e.g., "Image Resolution & Quality")
+    reviewer_comment?: string; // Reviewer feedback for the checklist item
+    score: number; // Score assigned (e.g., 18)
+    max_score: number; // Maximum possible score (e.g., 20)
+    result: 'Pass' | 'Fail'; // Pass/Fail per checklist item
+}
+
 export interface AssetLibraryItem {
     id: number;
     name: string;
     type: string; // Asset Type: article/video/graphic/guide
     asset_category?: string; // e.g., "what science can do", "how to"
     asset_format?: string; // e.g., "image", "video", "pdf"
+    content_type?: 'Blog' | 'Service Page' | 'Sub-Service Page' | 'SMM Post' | 'Backlink Asset' | 'Web UI Asset'; // Content classification type
     repository: string;
     // Removed usage_status as per requirement 3
     status?: 'Draft' | 'Pending QC Review' | 'QC Approved' | 'QC Rejected' | 'Rework Required' | 'Published' | 'Archived';
@@ -552,7 +563,9 @@ export interface AssetLibraryItem {
     qc_reviewer_id?: number;
     qc_reviewed_at?: string;
     qc_score?: number; // Quality control score (0-100)
+    qc_status?: 'Pass' | 'Fail' | 'Rework'; // QC result status
     qc_remarks?: string;
+    qc_checklist_items?: QcChecklistItemResult[]; // QC checklist with scoring
     rework_count?: number; // Number of times sent for rework
     linking_active?: boolean; // Only active after QC approval
 
@@ -572,12 +585,14 @@ export interface AssetLibraryItem {
     linked_sub_service_id?: number;
     linked_repository_item_id?: number;
     created_by?: number; // User who created the asset
+    updated_by?: number; // User who last updated the asset
     designed_by?: number; // User who designed the asset
     version_number?: string; // Version number like "v1.0"
     file_url?: string;
     thumbnail_url?: string;
     file_size?: number;
     file_type?: string;
+    dimensions?: string; // Asset dimensions from Asset Type Master
     linked_service_ids?: number[];
     linked_sub_service_ids?: number[];
     linked_page_ids?: number[]; // For mapping to specific pages
@@ -833,6 +848,9 @@ export interface AssetTypeMasterItem {
     brand: string;
     asset_type_name: string;
     word_count: number;
+    dimensions?: string; // e.g., "1920x1080"
+    file_size?: string; // e.g., "2.4 MB"
+    file_formats?: string; // e.g., "JPEG, PNG, MP4"
     status: string;
     created_at?: string;
     updated_at?: string;
@@ -1088,4 +1106,71 @@ export interface ComplianceAudit {
     score: number;
     violations: string[];
     audited_at: string;
+}
+
+// --- Asset Usage Tracking Types ---
+export interface AssetWebsiteUsage {
+    id: number;
+    asset_id: number;
+    website_url: string;
+    page_title?: string;
+    status: 'active' | 'inactive';
+    added_by?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AssetSocialMediaUsage {
+    id: number;
+    asset_id: number;
+    platform_name: string;
+    post_url?: string;
+    post_id?: string;
+    status: 'Published' | 'Scheduled' | 'Draft' | 'Archived';
+    engagement_impressions: number;
+    engagement_clicks: number;
+    engagement_shares: number;
+    engagement_likes: number;
+    engagement_comments: number;
+    posted_at?: string;
+    added_by?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AssetBacklinkUsage {
+    id: number;
+    asset_id: number;
+    domain_name: string;
+    backlink_url?: string;
+    anchor_text?: string;
+    approval_status: 'Pending' | 'Approved' | 'Rejected';
+    da_score?: number;
+    submitted_at?: string;
+    approved_at?: string;
+    added_by?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AssetEngagementMetrics {
+    id?: number;
+    asset_id: number;
+    total_impressions: number;
+    total_clicks: number;
+    total_shares: number;
+    total_likes: number;
+    total_comments: number;
+    ctr_percentage: number;
+    performance_summary?: string;
+    last_calculated_at?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AssetUsageData {
+    website_urls: AssetWebsiteUsage[];
+    social_media_posts: AssetSocialMediaUsage[];
+    backlink_submissions: AssetBacklinkUsage[];
+    engagement_metrics: AssetEngagementMetrics;
 }

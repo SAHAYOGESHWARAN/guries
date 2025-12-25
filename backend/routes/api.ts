@@ -52,6 +52,7 @@ import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
 import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
 import assetTypeMasterRoutes from './assetTypeMasterRoutes';
+import * as assetUsageController from '../controllers/assetUsageController';
 
 const router = Router();
 
@@ -124,6 +125,31 @@ router.post('/assetLibrary/ai-scores', assetController.generateAIScores);
 // User actions during QC review stage
 router.put('/assetLibrary/:id/qc-edit', assetController.editAssetInQC);
 router.delete('/assetLibrary/:id/qc-delete', assetController.deleteAssetInQC);
+
+// --- Asset Usage Tracking ---
+// Get all usage data for an asset
+router.get('/assetLibrary/:assetId/usage', assetUsageController.getAssetAllUsage);
+
+// Website Usage
+router.get('/assetLibrary/:assetId/usage/website', assetUsageController.getAssetWebsiteUsage);
+router.post('/assetLibrary/:assetId/usage/website', assetUsageController.addAssetWebsiteUsage);
+router.delete('/assetLibrary/:assetId/usage/website/:usageId', assetUsageController.deleteAssetWebsiteUsage);
+
+// Social Media Usage
+router.get('/assetLibrary/:assetId/usage/social', assetUsageController.getAssetSocialMediaUsage);
+router.post('/assetLibrary/:assetId/usage/social', assetUsageController.addAssetSocialMediaUsage);
+router.put('/assetLibrary/:assetId/usage/social/:usageId', assetUsageController.updateAssetSocialMediaUsage);
+router.delete('/assetLibrary/:assetId/usage/social/:usageId', assetUsageController.deleteAssetSocialMediaUsage);
+
+// Backlink Usage
+router.get('/assetLibrary/:assetId/usage/backlinks', assetUsageController.getAssetBacklinkUsage);
+router.post('/assetLibrary/:assetId/usage/backlinks', assetUsageController.addAssetBacklinkUsage);
+router.put('/assetLibrary/:assetId/usage/backlinks/:usageId', assetUsageController.updateAssetBacklinkUsage);
+router.delete('/assetLibrary/:assetId/usage/backlinks/:usageId', assetUsageController.deleteAssetBacklinkUsage);
+
+// Engagement Metrics
+router.get('/assetLibrary/:assetId/usage/metrics', assetUsageController.getAssetEngagementMetrics);
+router.put('/assetLibrary/:assetId/usage/metrics', assetUsageController.updateAssetEngagementMetrics);
 
 // --- Content Repository ---
 router.get('/content', contentController.getContent);

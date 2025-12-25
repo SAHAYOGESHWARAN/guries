@@ -81,6 +81,7 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 asset_type as type,
                 asset_category,
                 asset_format,
+                content_type,
                 tags as repository,
                 usage_status,
                 status,
@@ -88,22 +89,39 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
                 file_size,
                 file_type,
+                dimensions,
                 created_at as date,
+                created_at,
+                updated_at,
                 linked_service_ids,
                 linked_sub_service_ids,
+                linked_task_id,
+                linked_campaign_id,
+                linked_project_id,
+                linked_service_id,
+                linked_sub_service_id,
+                linked_repository_item_id,
                 application_type,
                 keywords,
                 seo_score,
                 grammar_score,
                 qc_score,
+                qc_status,
+                qc_checklist_items,
                 submitted_by,
                 submitted_at,
                 qc_reviewer_id,
                 qc_reviewed_at,
                 qc_remarks,
                 linking_active,
+                rework_count,
+                version_number,
+                designed_by,
+                created_by,
+                updated_by,
                 web_title,
                 web_description,
+                web_meta_description,
                 web_keywords,
                 web_url,
                 web_h1,
@@ -217,8 +235,10 @@ export const getAssetLibraryItem = async (req: any, res: any) => {
 export const createAssetLibraryItem = async (req: any, res: any) => {
     const {
         name, type, repository, file_url, thumbnail_url, file_size, file_type, date,
-        asset_category, asset_format, status, linked_service_ids, linked_sub_service_ids,
-        application_type, keywords, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+        asset_category, asset_format, content_type, status, linked_service_ids, linked_sub_service_ids,
+        linked_task_id, linked_campaign_id, linked_project_id, linked_service_id, linked_sub_service_id,
+        linked_repository_item_id, designed_by, version_number,
+        application_type, keywords, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
         smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by
     } = req.body;
@@ -256,19 +276,22 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
 
         const result = await pool.query(
             `INSERT INTO assets (
-                asset_name, asset_type, asset_category, asset_format, tags, status,
+                asset_name, asset_type, asset_category, asset_format, content_type, tags, status,
                 file_url, og_image_url, thumbnail_url, file_size, file_type,
-                linked_service_ids, linked_sub_service_ids, created_at,
-                application_type, keywords, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
+                linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
+                designed_by, version_number, created_at,
+                application_type, keywords, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
                 web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
                 smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by,
                 submitted_at, workflow_log, linking_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39) RETURNING 
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48) RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
                 asset_category,
                 asset_format,
+                content_type,
                 tags as repository,
                 usage_status,
                 status,
@@ -279,18 +302,21 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 linked_service_ids,
                 linked_sub_service_ids,
                 created_at as date,
-                application_type, keywords, seo_score, grammar_score, qc_score,
+                application_type, keywords, seo_score, grammar_score, qc_score, qc_status, qc_checklist_items,
                 web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
                 smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
                 submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active`,
             [
-                name, type, asset_category, asset_format, repository, status || 'Draft',
+                name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
+                linked_task_id || null, linked_campaign_id || null, linked_project_id || null,
+                linked_service_id || null, linked_sub_service_id || null, linked_repository_item_id || null,
+                designed_by || null, version_number || 'v1.0',
                 date || new Date().toISOString(),
                 application_type || null, keywords ? JSON.stringify(keywords) : null,
-                web_title || null, web_description || null, web_keywords || null, web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
+                web_title || null, web_description || null, web_meta_description || null, web_keywords || null, web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
                 web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null, smm_tag || null, smm_url || null, smm_description || null,
                 smm_hashtags || null, smm_media_url || null, smm_media_type || null, seo_score || null, grammar_score || null, submitted_by || null,
                 status === 'Pending QC Review' ? new Date().toISOString() : null,
@@ -338,8 +364,10 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
     const { id } = req.params;
     const {
         name, type, repository, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids,
-        asset_category, asset_format, status, keywords, seo_score, grammar_score,
-        application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+        asset_category, asset_format, content_type, status, keywords, seo_score, grammar_score,
+        linked_task_id, linked_campaign_id, linked_project_id, linked_service_id, linked_sub_service_id,
+        linked_repository_item_id, designed_by, version_number,
+        application_type, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
         smm_hashtags, smm_media_url, smm_media_type
     } = req.body;
@@ -354,42 +382,53 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 asset_type = COALESCE($2, asset_type),
                 asset_category = COALESCE($3, asset_category),
                 asset_format = COALESCE($4, asset_format),
-                tags = COALESCE($5, tags),
-                usage_status = COALESCE($6, usage_status),
-                status = COALESCE($7, status),
-                file_url = COALESCE($8, file_url),
-                og_image_url = COALESCE($9, og_image_url),
-                thumbnail_url = COALESCE($10, thumbnail_url),
-                linked_service_ids = COALESCE($11, linked_service_ids),
-                linked_sub_service_ids = COALESCE($12, linked_sub_service_ids),
-                keywords = COALESCE($13, keywords),
-                seo_score = COALESCE($14, seo_score),
-                grammar_score = COALESCE($15, grammar_score),
-                application_type = COALESCE($16, application_type),
-                web_title = COALESCE($17, web_title),
-                web_description = COALESCE($18, web_description),
-                web_keywords = COALESCE($19, web_keywords),
-                web_url = COALESCE($20, web_url),
-                web_h1 = COALESCE($21, web_h1),
-                web_h2_1 = COALESCE($22, web_h2_1),
-                web_h2_2 = COALESCE($23, web_h2_2),
-                web_thumbnail = COALESCE($24, web_thumbnail),
-                web_body_content = COALESCE($25, web_body_content),
-                smm_platform = COALESCE($26, smm_platform),
-                smm_title = COALESCE($27, smm_title),
-                smm_tag = COALESCE($28, smm_tag),
-                smm_url = COALESCE($29, smm_url),
-                smm_description = COALESCE($30, smm_description),
-                smm_hashtags = COALESCE($31, smm_hashtags),
-                smm_media_url = COALESCE($32, smm_media_url),
-                smm_media_type = COALESCE($33, smm_media_type),
+                content_type = COALESCE($5, content_type),
+                tags = COALESCE($6, tags),
+                usage_status = COALESCE($7, usage_status),
+                status = COALESCE($8, status),
+                file_url = COALESCE($9, file_url),
+                og_image_url = COALESCE($10, og_image_url),
+                thumbnail_url = COALESCE($11, thumbnail_url),
+                linked_service_ids = COALESCE($12, linked_service_ids),
+                linked_sub_service_ids = COALESCE($13, linked_sub_service_ids),
+                keywords = COALESCE($14, keywords),
+                seo_score = COALESCE($15, seo_score),
+                grammar_score = COALESCE($16, grammar_score),
+                application_type = COALESCE($17, application_type),
+                web_title = COALESCE($18, web_title),
+                web_description = COALESCE($19, web_description),
+                web_meta_description = COALESCE($20, web_meta_description),
+                web_keywords = COALESCE($21, web_keywords),
+                web_url = COALESCE($22, web_url),
+                web_h1 = COALESCE($23, web_h1),
+                web_h2_1 = COALESCE($24, web_h2_1),
+                web_h2_2 = COALESCE($25, web_h2_2),
+                web_thumbnail = COALESCE($26, web_thumbnail),
+                web_body_content = COALESCE($27, web_body_content),
+                smm_platform = COALESCE($28, smm_platform),
+                smm_title = COALESCE($29, smm_title),
+                smm_tag = COALESCE($30, smm_tag),
+                smm_url = COALESCE($31, smm_url),
+                smm_description = COALESCE($32, smm_description),
+                smm_hashtags = COALESCE($33, smm_hashtags),
+                smm_media_url = COALESCE($34, smm_media_url),
+                smm_media_type = COALESCE($35, smm_media_type),
+                linked_task_id = COALESCE($36, linked_task_id),
+                linked_campaign_id = COALESCE($37, linked_campaign_id),
+                linked_project_id = COALESCE($38, linked_project_id),
+                linked_service_id = COALESCE($39, linked_service_id),
+                linked_sub_service_id = COALESCE($40, linked_sub_service_id),
+                linked_repository_item_id = COALESCE($41, linked_repository_item_id),
+                designed_by = COALESCE($42, designed_by),
+                version_number = COALESCE($43, version_number),
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $34 RETURNING 
+            WHERE id = $44 RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
                 asset_category,
                 asset_format,
+                content_type,
                 tags as repository,
                 usage_status,
                 status,
@@ -400,20 +439,29 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 created_at as date,
                 linked_service_ids,
                 linked_sub_service_ids,
-                keywords, seo_score, grammar_score, qc_score,
+                linked_task_id,
+                linked_campaign_id,
+                linked_project_id,
+                linked_service_id,
+                linked_sub_service_id,
+                linked_repository_item_id,
+                keywords, seo_score, grammar_score, qc_score, qc_status, qc_checklist_items,
                 application_type,
-                web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
+                web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
                 smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
-                submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active`,
+                submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active, rework_count, version_number, designed_by`,
             [
-                name, type, asset_category, asset_format, repository, usage_status, status,
+                name, type, asset_category, asset_format, content_type || null, repository, usage_status, status,
                 file_url, thumbnail_url, thumbnail_url,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
                 keywords ? JSON.stringify(keywords) : null, seo_score, grammar_score,
-                application_type, web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                application_type, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
                 web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-                smm_hashtags, smm_media_url, smm_media_type, id
+                smm_hashtags, smm_media_url, smm_media_type,
+                linked_task_id || null, linked_campaign_id || null, linked_project_id || null,
+                linked_service_id || null, linked_sub_service_id || null, linked_repository_item_id || null,
+                designed_by || null, version_number || null, id
             ]
         );
 
@@ -625,21 +673,26 @@ export const reviewAsset = async (req: any, res: any) => {
         // If approved, activate linking to service/sub-service
         const linkingActive = qc_decision === 'approved';
 
+        // Determine qc_status based on decision
+        const qcStatus = qc_decision === 'approved' ? 'Pass' : qc_decision === 'rejected' ? 'Fail' : 'Rework';
+
         const result = await pool.query(
             `UPDATE assets SET 
                 status = $1,
                 qc_score = $2,
-                qc_remarks = $3,
-                qc_reviewer_id = $4,
+                qc_status = $3,
+                qc_checklist_items = $4,
+                qc_remarks = $5,
+                qc_reviewer_id = $6,
                 qc_reviewed_at = NOW(),
-                qc_checklist_completion = $5,
-                linking_active = $6,
-                workflow_log = $7,
-                rework_count = $8,
+                qc_checklist_completion = $7,
+                linking_active = $8,
+                workflow_log = $9,
+                rework_count = $10,
                 updated_at = NOW()
-            WHERE id = $9 RETURNING 
-                id, asset_name as name, status, qc_score, qc_remarks, qc_reviewed_at, linking_active, rework_count`,
-            [newStatus, qc_score, qc_remarks, qc_reviewer_id, checklist_completion, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
+            WHERE id = $11 RETURNING 
+                id, asset_name as name, status, qc_score, qc_status, qc_checklist_items, qc_remarks, qc_reviewed_at, linking_active, rework_count`,
+            [newStatus, qc_score, qcStatus, JSON.stringify(checklist_items || []), qc_remarks, qc_reviewer_id, checklist_completion, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
         );
 
         // Create QC review record with checklist items
@@ -649,6 +702,45 @@ export const reviewAsset = async (req: any, res: any) => {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, JSON.stringify(checklist_items || {})]
         );
+
+        // If approved, create service/sub-service asset links
+        if (qc_decision === 'approved') {
+            const linkedServiceIds = currentAsset.rows[0].linked_service_ids
+                ? JSON.parse(currentAsset.rows[0].linked_service_ids)
+                : [];
+            const linkedSubServiceIds = currentAsset.rows[0].linked_sub_service_ids
+                ? JSON.parse(currentAsset.rows[0].linked_sub_service_ids)
+                : [];
+
+            // Create service-asset links
+            for (const serviceId of linkedServiceIds) {
+                await pool.query(
+                    `INSERT INTO service_asset_links (service_id, asset_id) 
+                     VALUES ($1, $2) 
+                     ON CONFLICT DO NOTHING`,
+                    [serviceId, id]
+                );
+            }
+
+            // Create sub-service-asset links
+            for (const subServiceId of linkedSubServiceIds) {
+                await pool.query(
+                    `INSERT INTO subservice_asset_links (sub_service_id, asset_id) 
+                     VALUES ($1, $2) 
+                     ON CONFLICT DO NOTHING`,
+                    [subServiceId, id]
+                );
+            }
+
+            // Update asset count on linked services
+            if (linkedServiceIds.length > 0) {
+                await pool.query(
+                    `UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 
+                     WHERE id = ANY($1::int[])`,
+                    [linkedServiceIds]
+                );
+            }
+        }
 
         getSocket().emit('assetLibrary_qc_reviewed', result.rows[0]);
         res.status(200).json(result.rows[0]);

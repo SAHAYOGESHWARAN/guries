@@ -374,6 +374,7 @@ CREATE TABLE IF NOT EXISTS assets (
 	asset_type VARCHAR(100),
 	asset_category VARCHAR(100),
 	asset_format VARCHAR(50),
+	content_type VARCHAR(100), -- Blog, Service Page, Sub-Service Page, SMM Post, Backlink Asset, Web UI Asset
 	file_url VARCHAR(1000),
 	description TEXT,
 	tags TEXT, -- JSON array (repository)
@@ -390,6 +391,8 @@ CREATE TABLE IF NOT EXISTS assets (
 	qc_reviewer_id INTEGER REFERENCES users(id),
 	qc_reviewed_at TIMESTAMP,
 	qc_score INTEGER, -- 0-100
+	qc_status VARCHAR(50), -- Pass / Fail / Rework
+	qc_checklist_items TEXT, -- JSON array of checklist item results
 	qc_checklist_completion BOOLEAN DEFAULT false,
 	qc_remarks TEXT,
 	rework_count INTEGER DEFAULT 0, -- Number of times sent for rework
@@ -942,6 +945,9 @@ CREATE TABLE IF NOT EXISTS asset_type_master (
 	brand VARCHAR(255) NOT NULL,
 	asset_type_name VARCHAR(255) NOT NULL,
 	word_count INTEGER NOT NULL DEFAULT 0,
+	dimensions VARCHAR(100), -- e.g., "1920x1080"
+	file_size VARCHAR(50), -- e.g., "2.4 MB"
+	file_formats VARCHAR(255), -- e.g., "JPEG, PNG, MP4"
 	status VARCHAR(50) DEFAULT 'active',
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW(),
@@ -1105,3 +1111,83 @@ COMMENT ON TABLE notifications IS 'System notifications';
 -- =====================================================
 -- END OF SCHEMA
 -- =====================================================
+
+
+-- =====================================================
+-- ASSET USAGE TRACKING TABLES
+-- Added for Usage Panel feature
+-- =====================================================
+
+-- Asset Website Usage Table
+CREATE TABLE IF NOT EXISTS asset_website_usage (
+	id SERIAL PRIMARY KEY,
+	asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+	website_url TEXT NOT NULL,
+	page_title TEXT,
+	status VARCHAR(50) DEFAULT 'active',
+	added_by INTEGER REFERENCES users(id),
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Asset Social Media Usage Table
+CREATE TABLE IF NOT EXISTS asset_social_media_usage (
+	id SERIAL PRIMARY KEY,
+	asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+	platform_name VARCHAR(100) NOT NULL,
+	post_url TEXT,
+	post_id VARCHAR(255),
+	status VARCHAR(50) DEFAULT 'Published',
+	engagement_impressions INTEGER DEFAULT 0,
+	engagement_clicks INTEGER DEFAULT 0,
+	engagement_shares INTEGER DEFAULT 0,
+	engagement_likes INTEGER DEFAULT 0,
+	engagement_comments INTEGER DEFAULT 0,
+	posted_at TIMESTAMP,
+	added_by INTEGER REFERENCES users(id),
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Asset Backlink Usage Table
+CREATE TABLE IF NOT EXISTS asset_backlink_usage (
+	id SERIAL PRIMARY KEY,
+	asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+	domain_name VARCHAR(500) NOT NULL,
+	backlink_url TEXT,
+	anchor_text VARCHAR(500),
+	approval_status VARCHAR(50) DEFAULT 'Pending',
+	da_score INTEGER,
+	submitted_at TIMESTAMP,
+	approved_at TIMESTAMP,
+	added_by INTEGER REFERENCES users(id),
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Asset Engagement Metrics Table (aggregated metrics)
+CREATE TABLE IF NOT EXISTS asset_engagement_metrics (
+	id SERIAL PRIMARY KEY,
+	asset_id INTEGER NOT NULL UNIQUE REFERENCES assets(id) ON DELETE CASCADE,
+	total_impressions INTEGER DEFAULT 0,
+	total_clicks INTEGER DEFAULT 0,
+	total_shares INTEGER DEFAULT 0,
+	total_likes INTEGER DEFAULT 0,
+	total_comments INTEGER DEFAULT 0,
+	ctr_percentage DECIMAL(5,2) DEFAULT 0,
+	performance_summary TEXT,
+	last_calculated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for asset usage tables
+CREATE INDEX IF NOT EXISTS idx_website_usage_asset ON asset_website_usage(asset_id);
+CREATE INDEX IF NOT EXISTS idx_social_usage_asset ON asset_social_media_usage(asset_id);
+CREATE INDEX IF NOT EXISTS idx_backlink_usage_asset ON asset_backlink_usage(asset_id);
+CREATE INDEX IF NOT EXISTS idx_engagement_asset ON asset_engagement_metrics(asset_id);
+
+COMMENT ON TABLE asset_website_usage IS 'Tracks where assets are used on websites';
+COMMENT ON TABLE asset_social_media_usage IS 'Tracks asset usage on social media platforms with engagement metrics';
+COMMENT ON TABLE asset_backlink_usage IS 'Tracks backlink submissions using the asset';
+COMMENT ON TABLE asset_engagement_metrics IS 'Aggregated engagement metrics for assets';

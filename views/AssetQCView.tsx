@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
 import CircularScore from '../components/CircularScore';
-import type { AssetLibraryItem, User } from '../types';
+import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
+import type { AssetLibraryItem, User, Service, SubServiceItem, Task, AssetCategoryMasterItem, AssetTypeMasterItem } from '../types';
 
 const AssetQCView: React.FC = () => {
     const [assetsForQC, setAssetsForQC] = useState<AssetLibraryItem[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    // Side panel state for viewing asset details
+    const [sidePanelAsset, setSidePanelAsset] = useState<AssetLibraryItem | null>(null);
+    const [showSidePanel, setShowSidePanel] = useState(false);
 
     // QC Form State
     const [qcScore, setQcScore] = useState<number>(0);
@@ -17,7 +22,86 @@ const AssetQCView: React.FC = () => {
     const [qcDecision, setQcDecision] = useState<'approved' | 'rejected' | 'rework' | ''>('');
 
     const { data: users = [] } = useData<User>('users');
+    const { data: services = [] } = useData<Service>('services');
+    const { data: subServices = [] } = useData<SubServiceItem>('subServices');
+    const { data: tasks = [] } = useData<Task>('tasks');
+    const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
+    const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const currentUser = { id: 1, role: 'admin', name: 'Current User' }; // TODO: Get from auth context
+
+    // Helper functions to get linked entity names
+    const getLinkedServiceName = (asset: AssetLibraryItem) => {
+        const serviceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
+        if (!serviceId) return '-';
+        const service = services.find(s => s.id === serviceId);
+        return service?.service_name || '-';
+    };
+
+    const getLinkedTaskName = (asset: AssetLibraryItem) => {
+        const taskId = asset.linked_task_id || asset.linked_task;
+        if (!taskId) return '-';
+        const task = tasks.find(t => t.id === taskId);
+        return task?.name || '-';
+    };
+
+    const getDesignerName = (asset: AssetLibraryItem) => {
+        if (!asset.designed_by) return '-';
+        const user = users.find(u => u.id === asset.designed_by);
+        return user?.name || '-';
+    };
+
+    const getAssetTypeName = (asset: AssetLibraryItem) => {
+        // First try to match with asset type master
+        if (asset.type) {
+            const assetType = assetTypes.find(at =>
+                at.asset_type_name?.toLowerCase() === asset.type?.toLowerCase()
+            );
+            if (assetType) return assetType.asset_type_name;
+            return asset.type;
+        }
+        return '-';
+    };
+
+    const getAssetCategoryName = (asset: AssetLibraryItem) => {
+        if (asset.asset_category) {
+            const category = assetCategories.find(cat =>
+                cat.category_name?.toLowerCase() === asset.asset_category?.toLowerCase()
+            );
+            if (category) return category.category_name;
+            return asset.asset_category;
+        }
+        return '-';
+    };
+
+    const getQCStatusBadge = (asset: AssetLibraryItem) => {
+        const status = asset.qc_status || (asset.status === 'Pending QC Review' ? 'Pending' : asset.status);
+        switch (status) {
+            case 'Pass':
+            case 'QC Approved':
+                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Pass</span>;
+            case 'Fail':
+            case 'QC Rejected':
+                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Fail</span>;
+            case 'Rework':
+            case 'Rework Required':
+                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">Rework</span>;
+            case 'Pending':
+            case 'Pending QC Review':
+            default:
+                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending</span>;
+        }
+    };
+
+    // Handle opening asset side panel
+    const handleOpenSidePanel = (asset: AssetLibraryItem) => {
+        setSidePanelAsset(asset);
+        setShowSidePanel(true);
+    };
+
+    const handleCloseSidePanel = () => {
+        setShowSidePanel(false);
+        setSidePanelAsset(null);
+    };
 
     // Application-specific quality checklists
     const getQualityChecklist = (applicationType: string) => {
@@ -625,108 +709,161 @@ const AssetQCView: React.FC = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-slate-200 bg-slate-50">
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">ID</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Title</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Type</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Category</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Linked Services</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Status</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Reworks</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Created At</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Scores (AI)</th>
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600 text-sm">Action</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Thumbnail</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Asset Name</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Asset Type</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Asset Category</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Content Type</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Linked Service</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Linked Task</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">QC Status</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Version</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Designer</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Uploaded At</th>
+                                        <th className="text-center py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Usage Count</th>
+                                        <th className="text-left py-3 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Review Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {assetsForQC.map((asset, index) => (
-                                        <tr key={asset.id} className="border-b border-slate-100 hover:bg-slate-50">
-                                            <td className="py-4 px-4 text-sm text-slate-600">{index + 1}</td>
-                                            <td className="py-4 px-4">
-                                                <div>
-                                                    <p className="font-medium text-slate-900 text-sm">{asset.name}</p>
-                                                    <p className="text-xs text-slate-500">{asset.asset_category || 'N/A'}</p>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-4">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-800' :
-                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-800' :
-                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-800' :
-                                                            'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {asset.application_type?.toUpperCase() || 'N/A'}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-4 text-sm text-slate-600">{asset.asset_category || 'what science can do'}</td>
-                                            <td className="py-4 px-4 text-sm">
-                                                {asset.linked_service_ids && asset.linked_service_ids.length > 0 ? (
-                                                    <span className="text-slate-900">Oncology → Treatment</span>
-                                                ) : (
-                                                    <span className="text-slate-400">N/A</span>
-                                                )}
-                                            </td>
-                                            <td className="py-4 px-4">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${asset.status === 'Pending QC Review'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : asset.status === 'Rework Required'
-                                                        ? 'bg-orange-100 text-orange-800'
-                                                        : 'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {asset.status}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-4 text-sm text-center">
-                                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${(asset.rework_count || 0) > 0
-                                                    ? 'bg-orange-100 text-orange-800'
-                                                    : 'bg-slate-100 text-slate-600'
-                                                    }`}>
-                                                    {asset.rework_count || 0}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-4 text-sm text-slate-600">
-                                                {asset.submitted_at ? new Date(asset.submitted_at).toLocaleDateString('en-US', {
-                                                    month: '2-digit',
-                                                    day: '2-digit',
-                                                    year: 'numeric'
-                                                }) : 'N/A'}
-                                            </td>
-                                            <td className="py-4 px-4">
-                                                <div className="flex gap-1">
-                                                    {asset.seo_score && (
-                                                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                            SEO: {asset.seo_score}
-                                                        </span>
-                                                    )}
-                                                    {asset.grammar_score && (
-                                                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                            G: {asset.grammar_score}
-                                                        </span>
+                                    {assetsForQC.map((asset) => (
+                                        <tr key={asset.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                            {/* Thumbnail */}
+                                            <td className="py-3 px-4">
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200">
+                                                    {asset.thumbnail_url ? (
+                                                        <img
+                                                            src={asset.thumbnail_url}
+                                                            alt={asset.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-4">
-                                                <div className="flex gap-2">
-                                                    {/* Only admins can see Review action */}
+
+                                            {/* Asset Name - Clickable to open side panel */}
+                                            <td className="py-3 px-4">
+                                                <button
+                                                    onClick={() => handleOpenSidePanel(asset)}
+                                                    className="text-left hover:text-indigo-600 transition-colors group"
+                                                >
+                                                    <p className="font-medium text-slate-900 group-hover:text-indigo-600 text-sm">{asset.name}</p>
+                                                    <p className="text-xs text-slate-500">#{asset.id}</p>
+                                                </button>
+                                            </td>
+
+                                            {/* Asset Type */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">{getAssetTypeName(asset)}</span>
+                                            </td>
+
+                                            {/* Asset Category */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">{getAssetCategoryName(asset)}</span>
+                                            </td>
+
+                                            {/* Content Type */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">{asset.content_type || '-'}</span>
+                                            </td>
+
+                                            {/* Linked Service */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">{getLinkedServiceName(asset)}</span>
+                                            </td>
+
+                                            {/* Linked Task */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">{getLinkedTaskName(asset)}</span>
+                                            </td>
+
+                                            {/* QC Status */}
+                                            <td className="py-3 px-4">
+                                                {getQCStatusBadge(asset)}
+                                            </td>
+
+                                            {/* Version */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm font-medium text-slate-700">{asset.version_number || 'v1.0'}</span>
+                                            </td>
+
+                                            {/* Designer */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">{getDesignerName(asset)}</span>
+                                            </td>
+
+                                            {/* Uploaded At */}
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-600">
+                                                    {asset.submitted_at || asset.created_at ? new Date(asset.submitted_at || asset.created_at || '').toLocaleDateString('en-US', {
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        year: 'numeric'
+                                                    }) : '-'}
+                                                </span>
+                                            </td>
+
+                                            {/* Usage Count */}
+                                            <td className="py-3 px-4 text-center">
+                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                                                    {(asset as any).usage_count || 0}
+                                                </span>
+                                            </td>
+
+                                            {/* Review Action */}
+                                            <td className="py-3 px-4">
+                                                <div className="flex gap-2 flex-wrap">
+                                                    {/* View button - always visible */}
+                                                    <button
+                                                        onClick={() => handleOpenSidePanel(asset)}
+                                                        className="text-slate-600 hover:text-slate-800 font-medium text-xs px-2.5 py-1.5 rounded border border-slate-200 hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        View
+                                                    </button>
+
+                                                    {/* Admin actions */}
                                                     {currentUser.role === 'admin' && (
-                                                        <button
-                                                            onClick={() => handleAssetSelect(asset)}
-                                                            className="text-blue-600 hover:text-blue-800 font-medium text-sm px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
-                                                        >
-                                                            Review
-                                                        </button>
+                                                        <>
+                                                            {asset.status === 'Pending QC Review' && (
+                                                                <button
+                                                                    onClick={() => handleAssetSelect(asset)}
+                                                                    className="text-purple-600 hover:text-purple-800 font-medium text-xs px-2.5 py-1.5 rounded border border-purple-200 hover:bg-purple-50 transition-colors"
+                                                                >
+                                                                    Send to QC
+                                                                </button>
+                                                            )}
+                                                            {asset.status === 'Rework Required' && (
+                                                                <button
+                                                                    onClick={() => handleAssetSelect(asset)}
+                                                                    className="text-orange-600 hover:text-orange-800 font-medium text-xs px-2.5 py-1.5 rounded border border-orange-200 hover:bg-orange-50 transition-colors"
+                                                                >
+                                                                    Rework
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleAssetSelect(asset)}
+                                                                className="text-green-600 hover:text-green-800 font-medium text-xs px-2.5 py-1.5 rounded border border-green-200 hover:bg-green-50 transition-colors"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        </>
                                                     )}
 
-                                                    {/* Users can only Edit/Delete during QC review stage */}
+                                                    {/* User actions */}
                                                     {currentUser.role === 'user' && (
                                                         <>
                                                             <button
                                                                 onClick={() => handleUserEdit(asset)}
-                                                                className="text-green-600 hover:text-green-800 font-medium text-sm px-2 py-1 rounded border border-green-200 hover:bg-green-50"
+                                                                className="text-blue-600 hover:text-blue-800 font-medium text-xs px-2.5 py-1.5 rounded border border-blue-200 hover:bg-blue-50 transition-colors"
                                                             >
                                                                 Edit
                                                             </button>
                                                             <button
                                                                 onClick={() => handleUserDelete(asset)}
-                                                                className="text-red-600 hover:text-red-800 font-medium text-sm px-2 py-1 rounded border border-red-200 hover:bg-red-50"
+                                                                className="text-red-600 hover:text-red-800 font-medium text-xs px-2.5 py-1.5 rounded border border-red-200 hover:bg-red-50 transition-colors"
                                                             >
                                                                 Delete
                                                             </button>
@@ -741,7 +878,37 @@ const AssetQCView: React.FC = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Pagination Footer */}
+                {assetsForQC.length > 0 && (
+                    <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <span className="text-sm text-slate-600">
+                            Showing <span className="font-semibold text-slate-900">{assetsForQC.length}</span> {assetsForQC.length === 1 ? 'asset' : 'assets'}
+                        </span>
+                        <div className="flex gap-2">
+                            <button className="px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-white transition-colors">
+                                Previous
+                            </button>
+                            <button className="px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-white transition-colors">
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div >
+
+            {/* Asset Detail Side Panel */}
+            {sidePanelAsset && (
+                <AssetDetailSidePanel
+                    asset={sidePanelAsset}
+                    isOpen={showSidePanel}
+                    onClose={handleCloseSidePanel}
+                    onEdit={(asset) => {
+                        handleCloseSidePanel();
+                        handleUserEdit(asset);
+                    }}
+                />
+            )}
         </div >
     );
 };

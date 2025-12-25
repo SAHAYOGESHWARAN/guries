@@ -5,9 +5,10 @@ import CircularScore from '../components/CircularScore';
 import AssetCategoryMasterModal from '../components/AssetCategoryMasterModal';
 import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
 import UploadAssetModal from '../components/UploadAssetModal';
+import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
 import { useData } from '../hooks/useData';
 import { getStatusBadge } from '../constants';
-import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand, Campaign, Project, Task } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand, Campaign, Project, Task, ContentRepositoryItem } from '../types';
 
 interface AssetsViewProps {
     onNavigate?: (view: string, id?: number) => void;
@@ -28,6 +29,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: campaigns = [] } = useData<Campaign>('campaigns');
     const { data: projects = [] } = useData<Project>('projects');
     const { data: tasks = [] } = useData<Task>('tasks');
+    const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
 
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -35,10 +37,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Filter state variables matching the specification
     const [assetTypeFilter, setAssetTypeFilter] = useState('All');           // Asset Type - from Asset Type Master
     const [assetCategoryFilter, setAssetCategoryFilter] = useState('All');   // Asset Category - from Asset Category Master
+    const [contentTypeFilter, setContentTypeFilter] = useState('All');       // Content Type - Blog, Service Page, etc.
     const [campaignTypeFilter, setCampaignTypeFilter] = useState('All');     // Campaign Type - from Campaigns
     const [linkedServiceFilter, setLinkedServiceFilter] = useState('All');   // Linked Service - from Service Master
     const [linkedSubServiceFilter, setLinkedSubServiceFilter] = useState('All'); // Linked Sub-Service - mapped to selected service
     const [projectFilter, setProjectFilter] = useState('All');               // Project - from Projects
+    const [linkedTaskFilter, setLinkedTaskFilter] = useState('All');         // Linked Task - from Tasks
+    const [linkedRepositoryFilter, setLinkedRepositoryFilter] = useState('All'); // Linked Repository Item - from Content Repository
     const [createdByFilter, setCreatedByFilter] = useState('All');           // Created By - from Users
     const [dateRangeFilter, setDateRangeFilter] = useState('All');           // Date Range - date picker
     const [usageStatusFilter, setUsageStatusFilter] = useState('All');       // Usage Status - Used, Unused, Archived
@@ -69,6 +74,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [selectedKeywords, setSelectedKeywords] = useState<any[]>([]);
     const [markdownContent, setMarkdownContent] = useState<string>('');
     const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
+    const [showSidePanel, setShowSidePanel] = useState<boolean>(false);
 
     // QC state
     const [qcReviewAsset, setQcReviewAsset] = useState<AssetLibraryItem | null>(null);
@@ -225,6 +231,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // Asset Category filter (from Asset Category Master)
             if (assetCategoryFilter !== 'All' && a.asset_category !== assetCategoryFilter) return false;
 
+            // Content Type filter
+            if (contentTypeFilter !== 'All' && a.content_type !== contentTypeFilter) return false;
+
             // Campaign Type filter
             if (campaignTypeFilter !== 'All') {
                 const linkedCampaignId = a.linked_campaign_id;
@@ -247,6 +256,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             if (projectFilter !== 'All') {
                 const projectId = a.linked_project_id;
                 if (!projectId || projectId.toString() !== projectFilter) return false;
+            }
+
+            // Linked Task filter
+            if (linkedTaskFilter !== 'All') {
+                const taskId = a.linked_task_id || a.linked_task;
+                if (!taskId || taskId.toString() !== linkedTaskFilter) return false;
+            }
+
+            // Linked Repository Item filter
+            if (linkedRepositoryFilter !== 'All') {
+                const repoId = a.linked_repository_item_id;
+                if (!repoId || repoId.toString() !== linkedRepositoryFilter) return false;
             }
 
             // Created By filter
@@ -306,13 +327,43 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             const type = (a.type || '').toLowerCase();
             const category = (a.asset_category || '').toLowerCase();
             const status = (a.status || '').toLowerCase();
+            const contentType = (a.content_type || '').toLowerCase();
+
+            // Get linked entity names for search
+            const linkedServiceId = a.linked_service_id || (a.linked_service_ids && a.linked_service_ids[0]);
+            const linkedService = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
+            const serviceName = (linkedService?.service_name || '').toLowerCase();
+
+            const linkedSubServiceId = a.linked_sub_service_id || (a.linked_sub_service_ids && a.linked_sub_service_ids[0]);
+            const linkedSubService = linkedSubServiceId ? subServices.find(ss => ss.id === linkedSubServiceId) : null;
+            const subServiceName = (linkedSubService?.sub_service_name || '').toLowerCase();
+
+            const linkedTaskId = a.linked_task_id || a.linked_task;
+            const linkedTask = linkedTaskId ? tasks.find(t => t.id === linkedTaskId) : null;
+            const taskName = (linkedTask?.name || '').toLowerCase();
+
+            const linkedCampaign = a.linked_campaign_id ? campaigns.find(c => c.id === a.linked_campaign_id) : null;
+            const campaignName = (linkedCampaign?.campaign_name || '').toLowerCase();
+
+            const linkedProject = a.linked_project_id ? projects.find(p => p.id === a.linked_project_id) : null;
+            const projectName = (linkedProject?.project_name || '').toLowerCase();
+
+            const linkedRepo = a.linked_repository_item_id ? repositoryItems.find(r => r.id === a.linked_repository_item_id) : null;
+            const repoName = (linkedRepo?.content_title_clean || '').toLowerCase();
 
             return name.includes(query) ||
                 type.includes(query) ||
                 category.includes(query) ||
-                status.includes(query);
+                status.includes(query) ||
+                contentType.includes(query) ||
+                serviceName.includes(query) ||
+                subServiceName.includes(query) ||
+                taskName.includes(query) ||
+                campaignName.includes(query) ||
+                projectName.includes(query) ||
+                repoName.includes(query);
         });
-    }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, createdByFilter, dateRangeFilter, usageStatusFilter, qcMode, currentUser.id]);
+    }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter, qcMode, currentUser.id, services, subServices, tasks, campaigns, projects, repositoryItems]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -711,15 +762,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         }
     }, [qcReviewAsset, qcScore, qcRemarks, checklistCompleted, currentUser.id, updateAsset, refresh]);
 
-    // Handle row click to show detailed view
+    // Handle row click to show detailed view in side panel
     const handleRowClick = useCallback((asset: AssetLibraryItem) => {
         setSelectedAsset(asset);
-        setViewMode('detail');
+        setShowSidePanel(true);
     }, []);
 
     // Handle navigation back from detailed view
     const handleBackFromDetail = useCallback(() => {
         setSelectedAsset(null);
+        setShowSidePanel(false);
         setViewMode('list');
     }, []);
 
@@ -820,10 +872,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             header: 'CONTENT TYPE',
             accessor: (item: AssetLibraryItem) => (
                 <span className="text-sm text-slate-700">
-                    {item.application_type === 'web' ? 'Article' :
-                        item.application_type === 'seo' ? 'Visual' :
-                            item.application_type === 'smm' ? 'Video' :
-                                item.type || 'Document'}
+                    {item.content_type || '-'}
                 </span>
             )
         },
@@ -862,6 +911,54 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 return (
                     <div className="text-xs text-slate-700">
                         {task.name}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'LINKED CAMPAIGN',
+            accessor: (item: AssetLibraryItem) => {
+                const campaign = item.linked_campaign_id ? campaigns.find(c => c.id === item.linked_campaign_id) : null;
+
+                if (!campaign) {
+                    return <span className="text-xs text-slate-400">-</span>;
+                }
+
+                return (
+                    <div className="text-xs text-slate-700">
+                        {campaign.campaign_name}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'LINKED PROJECT',
+            accessor: (item: AssetLibraryItem) => {
+                const project = item.linked_project_id ? projects.find(p => p.id === item.linked_project_id) : null;
+
+                if (!project) {
+                    return <span className="text-xs text-slate-400">-</span>;
+                }
+
+                return (
+                    <div className="text-xs text-slate-700">
+                        {project.project_name}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'REPOSITORY ITEM',
+            accessor: (item: AssetLibraryItem) => {
+                const repoItem = item.linked_repository_item_id ? repositoryItems.find(r => r.id === item.linked_repository_item_id) : null;
+
+                if (!repoItem) {
+                    return <span className="text-xs text-slate-400">-</span>;
+                }
+
+                return (
+                    <div className="text-xs text-slate-700 max-w-[150px] truncate" title={repoItem.content_title_clean}>
+                        {repoItem.content_title_clean}
                     </div>
                 );
             }
@@ -944,6 +1041,36 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 return (
                     <div className="text-xs text-slate-600">
                         <div>{d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</div>
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'CREATED BY',
+            accessor: (item: AssetLibraryItem) => {
+                const creator = users.find(u => u.id === item.created_by);
+                if (!creator) return <span className="text-xs text-slate-400">-</span>;
+                return (
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {creator.name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <span className="text-xs text-slate-700">{creator.name}</span>
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'UPDATED BY',
+            accessor: (item: AssetLibraryItem) => {
+                const updater = users.find(u => u.id === item.updated_by);
+                if (!updater) return <span className="text-xs text-slate-400">-</span>;
+                return (
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {updater.name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <span className="text-xs text-slate-700">{updater.name}</span>
                     </div>
                 );
             }
@@ -1426,8 +1553,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 <h4 className="text-sm font-semibold text-slate-900 mb-3">Asset Classification</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
-                                        <div className="px-3 py-2 border rounded-lg bg-slate-50 text-sm text-slate-700">SMM</div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                        <select
+                                            value={newAsset.content_type || ''}
+                                            onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                                        >
+                                            <option value="">Select content type</option>
+                                            <option value="Blog">Blog</option>
+                                            <option value="Service Page">Service Page</option>
+                                            <option value="Sub-Service Page">Sub-Service Page</option>
+                                            <option value="SMM Post">SMM Post</option>
+                                            <option value="Backlink Asset">Backlink Asset</option>
+                                            <option value="Web UI Asset">Web UI Asset</option>
+                                        </select>
                                     </div>
 
                                     <div>
@@ -1447,50 +1586,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
                                             ))}
                                         </select>
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
-                                        <select
-                                            value={selectedServiceId || ''}
-                                            onChange={(e) => {
-                                                const id = e.target.value ? parseInt(e.target.value) : null;
-                                                setSelectedServiceId(id);
-                                                setSelectedSubServiceIds([]);
-                                            }}
-                                            className="w-full px-3 py-2 border rounded-lg text-sm"
-                                        >
-                                            <option value="">Select a service...</option>
-                                            {services.map(s => (
-                                                <option key={s.id} value={s.id}>{s.service_name}</option>
-                                            ))}
-                                        </select>
-
-                                        <div className="mt-3 border rounded-lg p-3 bg-slate-50">
-                                            {selectedServiceId ? (
-                                                subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
-                                                    subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                        <label key={ss.id} className="flex items-center gap-3 mb-2">
-                                                            <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                    setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                                } else {
-                                                                    const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                    setSelectedSubServiceIds(remaining);
-                                                                    setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                                }
-                                                            }} />
-                                                            <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                                        </label>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-sm text-slate-500">No sub-services available for this service</div>
-                                                )
-                                            ) : (
-                                                <div className="text-sm text-slate-500">Select a service to see sub-services</div>
-                                            )}
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1579,24 +1674,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Map Asset to Services</label>
-                        <select
-                            value={selectedServiceId || ''}
-                            onChange={(e) => {
-                                const id = e.target.value ? parseInt(e.target.value) : null;
-                                setSelectedServiceId(id);
-                                setSelectedSubServiceIds([]);
-                            }}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                        >
-                            <option value="">Select service...</option>
-                            {services.map(service => (
-                                <option key={service.id} value={service.id}>{service.service_name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Content Type</label>
                         {newAsset.application_type ? (
                             <div className="px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-700 font-medium">
@@ -1624,8 +1701,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             <h4 className="text-sm font-semibold text-slate-900 mb-3">Asset Classification</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
-                                    <div className="px-3 py-2 border rounded-lg bg-slate-50 text-sm text-slate-700">WEB</div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                    <select
+                                        value={newAsset.content_type || ''}
+                                        onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                                    >
+                                        <option value="">Select content type</option>
+                                        <option value="Blog">Blog</option>
+                                        <option value="Service Page">Service Page</option>
+                                        <option value="Sub-Service Page">Sub-Service Page</option>
+                                        <option value="SMM Post">SMM Post</option>
+                                        <option value="Backlink Asset">Backlink Asset</option>
+                                        <option value="Web UI Asset">Web UI Asset</option>
+                                    </select>
                                 </div>
 
                                 <div>
@@ -1657,50 +1746,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             return <option key={t.id} value={typeName}>{typeName}</option>;
                                         })}
                                     </select>
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
-                                    <select
-                                        value={selectedServiceId || ''}
-                                        onChange={(e) => {
-                                            const id = e.target.value ? parseInt(e.target.value) : null;
-                                            setSelectedServiceId(id);
-                                            setSelectedSubServiceIds([]);
-                                        }}
-                                        className="w-full px-3 py-2 border rounded-lg text-sm"
-                                    >
-                                        <option value="">Select a service...</option>
-                                        {services.map(s => (
-                                            <option key={s.id} value={s.id}>{s.service_name}</option>
-                                        ))}
-                                    </select>
-
-                                    <div className="mt-3 border rounded-lg p-3 bg-slate-50">
-                                        {selectedServiceId ? (
-                                            subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
-                                                subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                    <label key={ss.id} className="flex items-center gap-3 mb-2">
-                                                        <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                            } else {
-                                                                const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                setSelectedSubServiceIds(remaining);
-                                                                setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                            }
-                                                        }} />
-                                                        <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                                    </label>
-                                                ))
-                                            ) : (
-                                                <div className="text-sm text-slate-500">No sub-services available for this service</div>
-                                            )
-                                        ) : (
-                                            <div className="text-sm text-slate-500">Select a service to see sub-services</div>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2337,64 +2382,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        {/* Map Asset to Services */}
-                                        <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                Map Asset to Services
-                                            </label>
-                                            <select
-                                                value={selectedServiceId || ''}
-                                                onChange={(e) => {
-                                                    const serviceId = e.target.value ? parseInt(e.target.value) : null;
-                                                    setSelectedServiceId(serviceId);
-                                                    setSelectedSubServiceIds([]);
-                                                }}
-                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                            >
-                                                <option value="">Select a service...</option>
-                                                {services.map(service => (
-                                                    <option key={service.id} value={service.id}>
-                                                        {service.service_name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {selectedServiceId && (
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                    Sub-Service Mapping
-                                                </label>
-                                                <div className="border border-slate-300 rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                                                    {subServices
-                                                        .filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId))
-                                                        .length > 0 ? (
-                                                        subServices
-                                                            .filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId))
-                                                            .map(subService => (
-                                                                <label key={subService.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={selectedSubServiceIds.includes(subService.id)}
-                                                                        onChange={(e) => {
-                                                                            if (e.target.checked) {
-                                                                                setSelectedSubServiceIds([...selectedSubServiceIds, subService.id]);
-                                                                            } else {
-                                                                                setSelectedSubServiceIds(selectedSubServiceIds.filter(id => id !== subService.id));
-                                                                            }
-                                                                        }}
-                                                                        className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                                                                    />
-                                                                    <span className="text-sm text-slate-700">{subService.sub_service_name}</span>
-                                                                </label>
-                                                            ))
-                                                    ) : (
-                                                        <div className="text-sm text-slate-500 text-center py-2">No sub-services available for this service</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
                                         {/* Asset Type */}
                                         <div className="grid grid-cols-1 gap-6">
                                             <div>
@@ -2417,205 +2404,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Content Details Section */}
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            Content Details
-                                        </h3>
-                                        <p className="text-sm text-slate-600 mt-1">Descriptions, URLs, and content structure</p>
-                                    </div>
-
-                                    <div className="p-6 space-y-6">
-                                        {/* Description removed for WEB uploads per requirements */}
-
-                                        {/* Meta Description & URL */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                                    Meta Description
-                                                    <span className="text-xs font-normal text-slate-500 ml-2">(SEO, 150-160 chars)</span>
-                                                </label>
-                                                <textarea
-                                                    value={newAsset.web_meta_description || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_meta_description: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="Enter SEO meta description..."
-                                                    rows={3}
-                                                    maxLength={160}
-                                                />
-                                                <div className="text-xs text-slate-500 mt-1 text-right">
-                                                    {(newAsset.web_meta_description || '').length}/160 characters
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">URL</label>
-                                                <input
-                                                    type="url"
-                                                    value={newAsset.web_url || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="https://example.com/page"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* H1 Heading */}
-                                        <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-3">H1 Heading</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_h1 || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
-                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                placeholder="Enter the main heading (H1) for your content..."
-                                            />
-                                        </div>
-
-                                        {/* H2 Headings */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">H2 Heading (First)</label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.web_h2_1 || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="First H2 subheading..."
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold text-slate-700 mb-3">H2 Heading (Second)</label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.web_h2_2 || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
-                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                    placeholder="Second H2 subheading..."
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-
-                                {/* 13. Image Upload Option */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                                        13. Image Upload Option
-                                        <span className="text-xs font-normal text-slate-500 ml-2">(Preview option based on SMM)</span>
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="url"
-                                            value={newAsset.web_thumbnail || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
-                                            className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                            placeholder="https://example.com/image.jpg or upload file"
-                                        />
-                                        <input
-                                            ref={thumbnailInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
-                                            className="hidden"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => thumbnailInputRef.current?.click()}
-                                            className="px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            Upload
-                                        </button>
-                                    </div>
-                                    {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
-                                        <div className="mt-2">
-                                            <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Body Content Section with AI Scores */}
-                                <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                        {/* Body Content - Left Side */}
-                                        <div className="lg:col-span-2">
-                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                <span className="text-lg">📝</span>
-                                                Body content
-                                            </label>
-                                            <textarea
-                                                value={newAsset.web_body_content || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
-                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
-                                                placeholder="Paste your full article or body copy here for AI analysis..."
-                                                rows={8}
-                                            />
-
-                                            {/* Analyse Button */}
-                                            <button
-                                                type="button"
-                                                onClick={analyzeBodyContent}
-                                                disabled={analysisInProgress}
-                                                className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                </svg>
-                                                {analysisInProgress ? 'Analysing...' : 'Analyze'}
-                                            </button>
-                                        </div>
-
-                                        {/* AI Scores - Right Side */}
-                                        <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
-                                            <div className="space-y-6">
-                                                {/* SEO Score */}
-                                                <div className="flex flex-col items-center">
-                                                    <CircularScore
-                                                        score={newAsset.seo_score || 0}
-                                                        label="SEO SCORE"
-                                                        size="sm"
-                                                    />
-                                                </div>
-
-                                                {/* Grammar Score */}
-                                                <div className="flex flex-col items-center">
-                                                    <CircularScore
-                                                        score={newAsset.grammar_score || 0}
-                                                        label="GRAMMAR SCORE"
-                                                        size="sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 17. Status */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">17. Status</label>
-                                    <select
-                                        value={newAsset.status || 'Draft'}
-                                        onChange={(e) => setNewAsset({ ...newAsset, status: e.target.value as any })}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
-                                        disabled
-                                    >
-                                        <option value="Draft">Draft</option>
-                                    </select>
-                                    <p className="text-xs text-slate-500 mt-1">Status will be updated automatically based on workflow</p>
-                                </div>
                             </div>
 
-                            {/* Asset Applications Section */}
+                            {/* Asset Applications Section - Shows fields based on selected application type */}
                             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 space-y-6 shadow-sm">
                                 <div className="flex items-center gap-3 pb-3 border-b-2 border-purple-200">
                                     <div className="bg-purple-600 p-2 rounded-lg">
@@ -2864,10 +2655,22 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 Asset Classification
                                             </label>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {/* Content Type (Static - Locked as WEB) */}
+                                                {/* Content Type Dropdown */}
                                                 <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
-                                                    <div className="px-3 py-2 border rounded-lg bg-slate-100 text-sm text-slate-700 font-medium">WEB</div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                                    <select
+                                                        value={newAsset.content_type || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                                        className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                    >
+                                                        <option value="">Select content type</option>
+                                                        <option value="Blog">Blog</option>
+                                                        <option value="Service Page">Service Page</option>
+                                                        <option value="Sub-Service Page">Sub-Service Page</option>
+                                                        <option value="SMM Post">SMM Post</option>
+                                                        <option value="Backlink Asset">Backlink Asset</option>
+                                                        <option value="Web UI Asset">Web UI Asset</option>
+                                                    </select>
                                                 </div>
 
                                                 {/* Repository */}
@@ -2911,68 +2714,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </div>
 
                                                 {/* Asset Format removed for WEB assets per requirements */}
-
-                                                {/* Map Asset to Services */}
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
-                                                    <select
-                                                        value={selectedServiceId || ''}
-                                                        onChange={(e) => {
-                                                            const id = e.target.value ? parseInt(e.target.value) : null;
-                                                            setSelectedServiceId(id);
-                                                            setSelectedSubServiceIds([]);
-                                                        }}
-                                                        className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
-                                                    >
-                                                        <option value="">{services.length > 0 ? 'Select a service...' : '-- No services available --'}</option>
-                                                        {services.map(s => (
-                                                            <option key={s.id} value={s.id}>{s.service_name}</option>
-                                                        ))}
-                                                    </select>
-                                                    {services.length === 0 && (
-                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add services in Service Master first</p>
-                                                    )}
-
-                                                    {/* Sub-services section - always show when service is selected */}
-                                                    {selectedServiceId && (
-                                                        <div className="mt-3 border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
-                                                            <label className="block text-sm font-semibold text-indigo-700 mb-3">
-                                                                📋 Select Sub-Services:
-                                                            </label>
-                                                            {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
-                                                                <div className="space-y-2">
-                                                                    {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                                        <label key={ss.id} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 cursor-pointer transition-colors">
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={selectedSubServiceIds.includes(ss.id)}
-                                                                                onChange={(e) => {
-                                                                                    if (e.target.checked) {
-                                                                                        setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                                                    } else {
-                                                                                        const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                                        setSelectedSubServiceIds(remaining);
-                                                                                        setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                                                    }
-                                                                                }}
-                                                                                className="w-4 h-4 text-indigo-600 rounded"
-                                                                            />
-                                                                            <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                                                        </label>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                                                    <span className="font-medium">⚠️ No sub-services found for this service.</span>
-                                                                    <span className="block text-xs mt-1 text-amber-600">
-                                                                        Go to Sub-Service Master and create sub-services with this service as the parent.
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -3412,10 +3153,22 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         Asset Classification
                                                     </label>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {/* Content Type (Static - Locked as SMM) */}
+                                                        {/* Content Type Dropdown */}
                                                         <div>
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Content Type</label>
-                                                            <div className="px-3 py-2 border rounded-lg bg-slate-100 text-sm text-slate-700 font-medium">SMM</div>
+                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                                            <select
+                                                                value={newAsset.content_type || ''}
+                                                                onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                                                className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                            >
+                                                                <option value="">Select content type</option>
+                                                                <option value="Blog">Blog</option>
+                                                                <option value="Service Page">Service Page</option>
+                                                                <option value="Sub-Service Page">Sub-Service Page</option>
+                                                                <option value="SMM Post">SMM Post</option>
+                                                                <option value="Backlink Asset">Backlink Asset</option>
+                                                                <option value="Web UI Asset">Web UI Asset</option>
+                                                            </select>
                                                         </div>
 
                                                         {/* Repository */}
@@ -3454,59 +3207,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             </select>
                                                             {allActiveAssetTypes.length === 0 && (
                                                                 <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Type Master</p>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Map Asset to Services */}
-                                                        <div className="md:col-span-2">
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Map Asset to Services</label>
-                                                            <select
-                                                                value={selectedServiceId || ''}
-                                                                onChange={(e) => {
-                                                                    const id = e.target.value ? parseInt(e.target.value) : null;
-                                                                    setSelectedServiceId(id);
-                                                                    setSelectedSubServiceIds([]);
-                                                                }}
-                                                                className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
-                                                            >
-                                                                <option value="">{services.length > 0 ? 'Select a service...' : '-- No services --'}</option>
-                                                                {services.map(s => (
-                                                                    <option key={s.id} value={s.id}>{s.service_name}</option>
-                                                                ))}
-                                                            </select>
-                                                            {services.length === 0 && (
-                                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add in Service Master</p>
-                                                            )}
-
-                                                            {/* Sub-services */}
-                                                            {selectedServiceId && (
-                                                                <div className="mt-3 border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
-                                                                    <label className="block text-sm font-semibold text-purple-700 mb-3">📋 Select Sub-Services:</label>
-                                                                    {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).length > 0 ? (
-                                                                        <div className="space-y-2">
-                                                                            {subServices.filter(ss => Number(ss.parent_service_id) === Number(selectedServiceId)).map(ss => (
-                                                                                <label key={ss.id} className="flex items-center gap-3 p-2 bg-white rounded-lg border hover:border-purple-300 cursor-pointer">
-                                                                                    <input type="checkbox" checked={selectedSubServiceIds.includes(ss.id)} onChange={(e) => {
-                                                                                        if (e.target.checked) {
-                                                                                            setSelectedSubServiceIds([...selectedSubServiceIds, ss.id]);
-                                                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: [...(newAsset.linked_sub_service_ids || []), ss.id] });
-                                                                                        } else {
-                                                                                            const remaining = selectedSubServiceIds.filter(id => id !== ss.id);
-                                                                                            setSelectedSubServiceIds(remaining);
-                                                                                            setNewAsset({ ...newAsset, linked_sub_service_ids: remaining });
-                                                                                        }
-                                                                                    }} className="w-4 h-4 text-purple-600 rounded" />
-                                                                                    <span className="text-sm text-slate-700">{ss.sub_service_name}</span>
-                                                                                </label>
-                                                                            ))}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                                                            <span className="font-medium">⚠️ No sub-services found.</span>
-                                                                            <span className="block text-xs mt-1">Add in Sub-Service Master with this service as parent.</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
@@ -3867,6 +3567,170 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         )}
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Map Asset to Source Work Section - Common to all application types */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-4 border-b border-slate-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Map Asset to Source Work</h3>
+                                            <p className="text-sm text-slate-600">Link this asset to existing tasks, campaigns, projects, and services</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Left Column */}
+                                        <div className="space-y-4">
+                                            {/* Linked Task */}
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                                    Linked Task
+                                                </label>
+                                                <select
+                                                    value={newAsset.linked_task_id || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, linked_task_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                                >
+                                                    <option value="">Select task</option>
+                                                    {tasks.map(task => (
+                                                        <option key={task.id} value={task.id}>
+                                                            {task.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Linked Project */}
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                                    Linked Project
+                                                </label>
+                                                <select
+                                                    value={newAsset.linked_project_id || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, linked_project_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                                >
+                                                    <option value="">Select project</option>
+                                                    {projects.map(project => (
+                                                        <option key={project.id} value={project.id}>
+                                                            {project.project_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Linked Sub-Service */}
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                                    Linked Sub-Service
+                                                </label>
+                                                <select
+                                                    value={newAsset.linked_sub_service_id || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, linked_sub_service_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                                    disabled={!newAsset.linked_service_id}
+                                                >
+                                                    <option value="">Select sub-service</option>
+                                                    {subServices
+                                                        .filter(ss => !newAsset.linked_service_id || ss.service_id === newAsset.linked_service_id)
+                                                        .map(subService => (
+                                                            <option key={subService.id} value={subService.id}>
+                                                                {subService.sub_service_name}
+                                                            </option>
+                                                        ))}
+                                                </select>
+                                                {!newAsset.linked_service_id && (
+                                                    <p className="text-xs text-slate-500 mt-1">Select a service first to see sub-services</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Right Column */}
+                                        <div className="space-y-4">
+                                            {/* Linked Campaign */}
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                                    Linked Campaign
+                                                </label>
+                                                <select
+                                                    value={newAsset.linked_campaign_id || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, linked_campaign_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                                >
+                                                    <option value="">Select campaign</option>
+                                                    {campaigns.map(campaign => (
+                                                        <option key={campaign.id} value={campaign.id}>
+                                                            {campaign.campaign_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Linked Service */}
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                                    Linked Service
+                                                </label>
+                                                <select
+                                                    value={newAsset.linked_service_id || ''}
+                                                    onChange={(e) => {
+                                                        const newServiceId = e.target.value ? parseInt(e.target.value) : undefined;
+                                                        setNewAsset({
+                                                            ...newAsset,
+                                                            linked_service_id: newServiceId,
+                                                            linked_sub_service_id: undefined // Reset sub-service when service changes
+                                                        });
+                                                    }}
+                                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                                >
+                                                    <option value="">Select service</option>
+                                                    {services.map(service => (
+                                                        <option key={service.id} value={service.id}>
+                                                            {service.service_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Linked Repository Item */}
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-2 uppercase tracking-wide">
+                                                    Linked Repository Item
+                                                </label>
+                                                <select
+                                                    value={newAsset.linked_repository_item_id || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, linked_repository_item_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+                                                >
+                                                    <option value="">Select repository item</option>
+                                                    {/* Repository items would be loaded from API */}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Status - Common to all application types */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
+                                <select
+                                    value={newAsset.status || 'Draft'}
+                                    onChange={(e) => setNewAsset({ ...newAsset, status: e.target.value as any })}
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
+                                    disabled
+                                >
+                                    <option value="Draft">Draft</option>
+                                </select>
+                                <p className="text-xs text-slate-500 mt-1">Status will be updated automatically based on workflow</p>
                             </div>
                         </div>
                     </div >
@@ -4672,12 +4536,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {
                             header: 'Content Type',
                             accessor: (item: AssetLibraryItem) => (
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${item.application_type === 'web' ? 'bg-blue-100 text-blue-800' :
-                                    item.application_type === 'seo' ? 'bg-green-100 text-green-800' :
-                                        item.application_type === 'smm' ? 'bg-purple-100 text-purple-800' :
-                                            'bg-gray-100 text-gray-800'
-                                    }`}>
-                                    {item.application_type?.toUpperCase() || 'N/A'}
+                                <span className="text-sm text-slate-700">
+                                    {item.content_type || '-'}
                                 </span>
                             )
                         },
@@ -6669,6 +6529,24 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </select>
                                     </div>
 
+                                    {/* Content Type Filter */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Content Type</label>
+                                        <select
+                                            value={contentTypeFilter}
+                                            onChange={(e) => setContentTypeFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Content Types</option>
+                                            <option value="Blog">Blog</option>
+                                            <option value="Service Page">Service Page</option>
+                                            <option value="Sub-Service Page">Sub-Service Page</option>
+                                            <option value="SMM Post">SMM Post</option>
+                                            <option value="Backlink Asset">Backlink Asset</option>
+                                            <option value="Web UI Asset">Web UI Asset</option>
+                                        </select>
+                                    </div>
+
                                     {/* Campaign Type Filter - from Campaigns */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Campaign Type</label>
@@ -6731,6 +6609,36 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <option value="All">All Projects</option>
                                             {projects.map(project => (
                                                 <option key={project.id} value={project.id.toString()}>{project.project_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Linked Task Filter - from Tasks */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Task</label>
+                                        <select
+                                            value={linkedTaskFilter}
+                                            onChange={(e) => setLinkedTaskFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Tasks</option>
+                                            {tasks.map(task => (
+                                                <option key={task.id} value={task.id.toString()}>{task.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Linked Repository Item Filter - from Content Repository */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Repository Item</label>
+                                        <select
+                                            value={linkedRepositoryFilter}
+                                            onChange={(e) => setLinkedRepositoryFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        >
+                                            <option value="All">All Repository Items</option>
+                                            {repositoryItems.map(item => (
+                                                <option key={item.id} value={item.id.toString()}>{item.content_title_clean}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6815,6 +6723,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '70px' }}>Version</th>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '140px' }}>Designer</th>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Uploaded At</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '120px' }}>Created By</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '120px' }}>Updated By</th>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '90px' }}>Usage Count</th>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Actions</th>
                                                 </tr>
@@ -7514,6 +7424,23 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     });
                 }}
             />
+
+            {/* Asset Detail Side Panel */}
+            {selectedAsset && (
+                <AssetDetailSidePanel
+                    asset={selectedAsset}
+                    isOpen={showSidePanel}
+                    onClose={() => {
+                        setShowSidePanel(false);
+                        setSelectedAsset(null);
+                    }}
+                    onEdit={(asset) => {
+                        setShowSidePanel(false);
+                        handleEdit({ stopPropagation: () => { } } as any, asset);
+                    }}
+                    onNavigate={onNavigate}
+                />
+            )}
         </>
     );
 };
