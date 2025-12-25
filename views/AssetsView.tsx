@@ -123,16 +123,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         );
     }, [subServices, linkedServiceFilter]);
 
-    // Debug: Log master data on load
-    useEffect(() => {
-        console.log('=== Master Data Debug ===');
-        console.log('Services:', services);
-        console.log('Sub-Services:', subServices);
-        console.log('Asset Types:', assetTypes);
-        console.log('Asset Categories:', assetCategories);
-        console.log('All Active Asset Types:', allActiveAssetTypes);
-        console.log('All Active Asset Categories:', allActiveAssetCategories);
-    }, [services, subServices, assetTypes, assetCategories, allActiveAssetTypes, allActiveAssetCategories]);
+
 
     // Master table modals
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -407,17 +398,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     seo_score: scores.seo_score,
                     grammar_score: scores.grammar_score
                 }));
-                console.log('Analysis complete (API):', scores);
             } else {
                 // Use local scores
                 setNewAsset(prev => ({ ...prev, seo_score: seoScore, grammar_score: grammarScore }));
-                console.log('Analysis complete (local):', { seoScore, grammarScore });
             }
         } catch (err) {
             // Use local scores on error
-            console.warn('API unavailable, using local scores:', err);
             setNewAsset(prev => ({ ...prev, seo_score: seoScore, grammar_score: grammarScore }));
-            console.log('Analysis complete (local):', { seoScore, grammarScore });
         } finally {
             setAnalysisInProgress(false);
         }
@@ -2934,8 +2921,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             const id = e.target.value ? parseInt(e.target.value) : null;
                                                             setSelectedServiceId(id);
                                                             setSelectedSubServiceIds([]);
-                                                            console.log('Selected Service ID:', id);
-                                                            console.log('Filtered Sub-Services:', subServices.filter(ss => Number(ss.parent_service_id) === Number(id)));
                                                         }}
                                                         className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                                                     >
@@ -6627,118 +6612,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     My Submissions
                                 </button>
 
-                                {/* Quick Upload Toolbar - Enhanced */}
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                            setSelectedApplicationType('web');
-                                            setContentTypeLocked(true);
-                                            setUploadStep('form-fields');
-                                            setShowUploadModal(true);
-                                        }}
-                                        className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all"
-                                        title="Upload Web Content"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
-                                        </svg>
-                                        WEB
-                                    </button>
 
-                                    <button
-                                        onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                            setSelectedApplicationType('seo');
-                                            setContentTypeLocked(true);
-                                            setUploadStep('form-fields');
-                                            setShowUploadModal(true);
-                                        }}
-                                        className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-md hover:shadow-lg transition-all"
-                                        title="Upload SEO Content"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        SEO
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                            setSelectedApplicationType('smm');
-                                            setContentTypeLocked(true);
-                                            setUploadStep('form-fields');
-                                            setShowUploadModal(true);
-                                        }}
-                                        className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl shadow-md hover:shadow-lg transition-all"
-                                        title="Upload Social Media Content"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                                        </svg>
-                                        SMM
-                                    </button>
-                                </div>
-
-                                {/* Quick Update Toolbar */}
-                                <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-2 shadow-sm">
-                                    <span className="text-xs font-medium text-orange-700 px-2">Quick Update:</span>
-
-                                    <button
-                                        onClick={() => {
-                                            // Find the most recent asset to update
-                                            const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-                                            if (recentAsset) {
-                                                handleEdit({ stopPropagation: () => { } } as any, recentAsset);
-                                            } else {
-                                                alert('No assets available to update');
-                                            }
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors"
-                                        title="Update Most Recent Asset"
-                                    >
-                                        🔄 Recent
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            // Find assets pending updates (drafts or rejected)
-                                            const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
-                                            if (pendingAssets.length > 0) {
-                                                handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
-                                            } else {
-                                                alert('No assets pending updates');
-                                            }
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors"
-                                        title="Update Pending Assets"
-                                    >
-                                        ⏳ Pending
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            // Show a modal or dropdown to select asset to update
-                                            const assetName = prompt('Enter asset name or ID to update:');
-                                            if (assetName) {
-                                                const asset = assets.find(a =>
-                                                    a.name.toLowerCase().includes(assetName.toLowerCase()) ||
-                                                    a.id.toString() === assetName
-                                                );
-                                                if (asset) {
-                                                    handleEdit({ stopPropagation: () => { } } as any, asset);
-                                                } else {
-                                                    alert('Asset not found');
-                                                }
-                                            }
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors"
-                                        title="Search & Update Asset"
-                                    >
-                                        🔍 Search
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
@@ -6922,15 +6796,163 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </div>
 
                         {/* Display Content Based on View Mode */}
-                        <div className="flex-1 overflow-auto min-h-0">
+                        <div className="flex-1 min-h-0">
                             {displayMode === 'table' ? (
-                                <Table
-                                    columns={columns}
-                                    data={filteredAssets}
-                                    title=""
-                                    emptyMessage={qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}
-                                    onRowClick={handleRowClick}
-                                />
+                                <div className="bg-white rounded-xl border border-slate-200 h-full flex flex-col">
+                                    {/* Scrollable Table Container */}
+                                    <div className="flex-1 overflow-auto">
+                                        <table className="w-full" style={{ minWidth: '1600px' }}>
+                                            <thead className="bg-slate-50 sticky top-0 z-10">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '80px' }}>Thumbnail</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '180px' }}>Asset Name</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Asset Type</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '130px' }}>Asset Category</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Content Type</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '130px' }}>Linked Service</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '130px' }}>Linked Task</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>QC Status</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '70px' }}>Version</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '140px' }}>Designer</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Uploaded At</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '90px' }}>Usage Count</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {filteredAssets.length > 0 ? (
+                                                    filteredAssets.map((asset) => {
+                                                        const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
+                                                        const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
+                                                        const taskId = asset.linked_task_id || asset.linked_task;
+                                                        const task = taskId ? tasks.find(t => t.id === taskId) : null;
+                                                        const designer = users.find(u => u.id === (asset.designed_by || asset.submitted_by || asset.created_by));
+                                                        const status = asset.status || 'Draft';
+                                                        let statusColor = 'bg-slate-100 text-slate-700';
+                                                        let statusText = status;
+                                                        if (status === 'QC Approved' || status === 'Published') {
+                                                            statusColor = 'bg-green-100 text-green-700';
+                                                            statusText = 'Pass';
+                                                        } else if (status === 'Pending QC Review') {
+                                                            statusColor = 'bg-amber-100 text-amber-700';
+                                                            statusText = 'Pending';
+                                                        } else if (status === 'QC Rejected' || status === 'Rework Required') {
+                                                            statusColor = 'bg-red-100 text-red-700';
+                                                            statusText = 'Fail';
+                                                        }
+                                                        const date = asset.date || asset.created_at;
+                                                        const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-';
+
+                                                        return (
+                                                            <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer">
+                                                                <td className="px-4 py-3">
+                                                                    {asset.thumbnail_url ? (
+                                                                        <img src={asset.thumbnail_url} alt={asset.name} className="w-10 h-10 object-cover rounded-lg border border-slate-200" loading="lazy" />
+                                                                    ) : (
+                                                                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-lg border border-slate-200">
+                                                                            {getAssetIcon(asset.type)}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="max-w-[160px]">
+                                                                        <div className="font-medium text-slate-900 text-sm truncate" title={asset.name}>
+                                                                            {asset.name.length > 25 ? asset.name.substring(0, 25) + '...' : asset.name}
+                                                                        </div>
+                                                                        <div className="text-xs text-slate-400 truncate">
+                                                                            {(asset.file_url?.split('/').pop() || `asset-${asset.id}`).substring(0, 18)}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
+                                                                        {asset.type || '-'}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-sm text-slate-700">{asset.asset_category || '-'}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-sm text-slate-700">
+                                                                        {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-sm text-slate-700">{service?.service_name || '-'}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-sm text-slate-700 truncate block max-w-[120px]">{task?.name || '-'}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
+                                                                        {statusText}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-sm text-slate-700">{asset.version_number || 'v1.0'}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    {designer ? (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                                {designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                                                                            </div>
+                                                                            <span className="text-xs text-slate-700 truncate max-w-[80px]">{designer.name}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-sm text-slate-400">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-xs text-slate-600">{formattedDate}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                                                                        {(asset as any).usage_count || 0}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
+                                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                        </button>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
+                                                                            {deletingId === asset.id ? (
+                                                                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                            ) : (
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={13} className="px-6 py-12 text-center">
+                                                            <div className="flex flex-col items-center justify-center text-slate-400">
+                                                                <svg className="w-8 h-8 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                                <p className="text-xs font-medium">{qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}</p>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {filteredAssets.length > 0 && (
+                                        <div className="px-6 py-2.5 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 flex justify-between items-center flex-shrink-0">
+                                            <span>Showing <span className="font-bold text-slate-900">{filteredAssets.length}</span> results</span>
+                                            <div className="flex gap-2">
+                                                <button className="px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700">Previous</button>
+                                                <button className="px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700">Next</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {filteredAssets.length === 0 ? (
