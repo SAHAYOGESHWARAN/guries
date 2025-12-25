@@ -6388,7 +6388,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             {/* List View */}
             {
                 viewMode === 'list' && (
-                    <div className="h-full flex flex-col w-full p-6 overflow-hidden">
+                    <div className="h-full flex flex-col w-full p-6">
                         <div className="flex justify-between items-start flex-shrink-0 w-full mb-6">
                             <div>
                                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
@@ -6755,7 +6755,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             />
                         </div>
 
-                        <div className="mb-6 space-y-4">
+                        <div className="mb-4 space-y-4 flex-shrink-0">
                             {/* Enhanced Filters - Matching Screenshot */}
                             <div className="bg-white rounded-lg border border-slate-200 p-4">
                                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Filters</div>
@@ -6912,355 +6912,355 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Results Summary */}
-                            <div className="flex justify-between items-center">
-                                <p className="text-sm text-slate-600">
-                                    Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
-                                </p>
-                            </div>
+                        {/* Results Summary */}
+                        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                            <p className="text-sm text-slate-600">
+                                Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                            </p>
+                        </div>
 
-                            {/* Display Content Based on View Mode */}
-                            <div className="flex-1 overflow-auto min-h-0">
-                                {displayMode === 'table' ? (
-                                    <Table
-                                        columns={columns}
-                                        data={filteredAssets}
-                                        title=""
-                                        emptyMessage={qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}
-                                        onRowClick={handleRowClick}
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                        {filteredAssets.length === 0 ? (
-                                            <div className="col-span-full text-center py-12">
-                                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-slate-500 text-lg font-medium mb-4">
-                                                    {qcMode ? "No assets pending QC review." : "No assets yet."}
-                                                </p>
-                                                {!qcMode && (
-                                                    <div className="space-y-4">
-                                                        <p className="text-slate-400 text-sm">
-                                                            Get started by uploading your first asset
-                                                        </p>
-
-                                                        {/* Quick Upload Options */}
-                                                        <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                                    setShowUploadModal(true);
-                                                                }}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                            >
-                                                                🌐 Web Content
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                                    setShowUploadModal(true);
-                                                                }}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                                                            >
-                                                                🔍 SEO Content
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                                    setShowUploadModal(true);
-                                                                }}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                                                            >
-                                                                📱 Social Media
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
+                        {/* Display Content Based on View Mode */}
+                        <div className="flex-1 overflow-auto min-h-0">
+                            {displayMode === 'table' ? (
+                                <Table
+                                    columns={columns}
+                                    data={filteredAssets}
+                                    title=""
+                                    emptyMessage={qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}
+                                    onRowClick={handleRowClick}
+                                />
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {filteredAssets.length === 0 ? (
+                                        <div className="col-span-full text-center py-12">
+                                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
                                             </div>
-                                        ) : (
-                                            filteredAssets.map((asset) => (
-                                                <div
-                                                    key={asset.id}
-                                                    onClick={() => handleRowClick(asset)}
-                                                    className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
-                                                >
-                                                    {/* Asset Preview */}
-                                                    <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                                                        {asset.thumbnail_url ? (
-                                                            <img
-                                                                src={asset.thumbnail_url}
-                                                                alt={asset.name}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-                                                                <span className="text-4xl text-white">
-                                                                    {getAssetIcon(asset.type)}
-                                                                </span>
+                                            <p className="text-slate-500 text-lg font-medium mb-4">
+                                                {qcMode ? "No assets pending QC review." : "No assets yet."}
+                                            </p>
+                                            {!qcMode && (
+                                                <div className="space-y-4">
+                                                    <p className="text-slate-400 text-sm">
+                                                        Get started by uploading your first asset
+                                                    </p>
+
+                                                    {/* Quick Upload Options */}
+                                                    <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            🌐 Web Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                                        >
+                                                            🔍 SEO Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                                                        >
+                                                            📱 Social Media
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        filteredAssets.map((asset) => (
+                                            <div
+                                                key={asset.id}
+                                                onClick={() => handleRowClick(asset)}
+                                                className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
+                                            >
+                                                {/* Asset Preview */}
+                                                <div className="aspect-video bg-slate-100 relative overflow-hidden">
+                                                    {asset.thumbnail_url ? (
+                                                        <img
+                                                            src={asset.thumbnail_url}
+                                                            alt={asset.name}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                                                            <span className="text-4xl text-white">
+                                                                {getAssetIcon(asset.type)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Status Badge */}
+                                                    <div className="absolute top-3 left-3">
+                                                        {getStatusBadge(asset.status || 'Draft')}
+                                                    </div>
+
+                                                    {/* Enhanced Actions Overlay */}
+                                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                                        {(asset.file_url || asset.thumbnail_url) && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const url = asset.file_url || asset.thumbnail_url;
+                                                                    if (url) {
+                                                                        if (url.startsWith('data:')) {
+                                                                            const win = window.open();
+                                                                            if (win) {
+                                                                                win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
+                                                                            }
+                                                                        } else {
+                                                                            window.open(url, '_blank', 'noopener,noreferrer');
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
+                                                                title="View Asset"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+
+                                                        {/* Update Asset Button - More Prominent */}
+                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
+                                                            <button
+                                                                onClick={(e) => handleEdit(e, asset)}
+                                                                className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
+                                                                title="Update Asset"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+
+                                                        {/* Delete Button - creators or admins */}
+                                                        {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
+                                                                disabled={deletingId === asset.id}
+                                                                className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                title="Delete Asset"
+                                                            >
+                                                                {deletingId === asset.id ? (
+                                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Quick Update Badge */}
+                                                    {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
+                                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                </svg>
+                                                                Update Ready
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Asset Info */}
+                                                <div className="p-4 space-y-3">
+                                                    {/* Asset Name & ID */}
+                                                    <div className="flex items-start justify-between">
+                                                        <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
+                                                            {asset.name}
+                                                        </h3>
+                                                        <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
+                                                            ID: {asset.id}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Campaign/Project Name */}
+                                                    {asset.web_title && (
+                                                        <div className="text-sm text-slate-700 font-medium">
+                                                            {asset.web_title}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Service Linking */}
+                                                    <div className="space-y-1">
+                                                        {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
+                                                                <div className="text-slate-700 font-medium">
+                                                                    {asset.linked_service_ids.map(serviceId => {
+                                                                        const service = services.find(s => s.id === serviceId);
+                                                                        return service?.service_name;
+                                                                    }).filter(Boolean).join(', ')}
+                                                                </div>
                                                             </div>
                                                         )}
 
-                                                        {/* Status Badge */}
-                                                        <div className="absolute top-3 left-3">
-                                                            {getStatusBadge(asset.status || 'Draft')}
-                                                        </div>
+                                                        {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
+                                                                <div className="text-slate-700 font-medium">
+                                                                    {asset.linked_sub_service_ids.map(ssId => {
+                                                                        const subService = subServices.find(ss => ss.id === ssId);
+                                                                        return subService?.sub_service_name;
+                                                                    }).filter(Boolean).join(', ')}
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                                        {/* Enhanced Actions Overlay */}
-                                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                                            {(asset.file_url || asset.thumbnail_url) && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const url = asset.file_url || asset.thumbnail_url;
-                                                                        if (url) {
-                                                                            if (url.startsWith('data:')) {
-                                                                                const win = window.open();
-                                                                                if (win) {
-                                                                                    win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
-                                                                                }
-                                                                            } else {
-                                                                                window.open(url, '_blank', 'noopener,noreferrer');
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                    className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
-                                                                    title="View Asset"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
-
-                                                            {/* Update Asset Button - More Prominent */}
-                                                            {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
-                                                                <button
-                                                                    onClick={(e) => handleEdit(e, asset)}
-                                                                    className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
-                                                                    title="Update Asset"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
-
-                                                            {/* Delete Button - creators or admins */}
-                                                            {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
-                                                                    disabled={deletingId === asset.id}
-                                                                    className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                    title="Delete Asset"
-                                                                >
-                                                                    {deletingId === asset.id ? (
-                                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                        </svg>
-                                                                    )}
-                                                                </button>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Quick Update Badge */}
-                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
-                                                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
-                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                    </svg>
-                                                                    Update Ready
-                                                                </span>
+                                                        {asset.repository && (
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
+                                                                <div className="text-slate-700 font-medium">{asset.repository}</div>
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    {/* Asset Info */}
-                                                    <div className="p-4 space-y-3">
-                                                        {/* Asset Name & ID */}
-                                                        <div className="flex items-start justify-between">
-                                                            <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
-                                                                {asset.name}
-                                                            </h3>
-                                                            <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-                                                                ID: {asset.id}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Campaign/Project Name */}
-                                                        {asset.web_title && (
-                                                            <div className="text-sm text-slate-700 font-medium">
-                                                                {asset.web_title}
+                                                    {/* QC Panel */}
+                                                    {asset.qc_score && (
+                                                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <CircularScore
+                                                                        score={asset.qc_score}
+                                                                        label=""
+                                                                        size="xs"
+                                                                    />
+                                                                    <span className="text-xs font-bold text-slate-700">
+                                                                        {asset.qc_score}/100
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        )}
 
-                                                        {/* Service Linking */}
-                                                        <div className="space-y-1">
-                                                            {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
-                                                                    <div className="text-slate-700 font-medium">
-                                                                        {asset.linked_service_ids.map(serviceId => {
-                                                                            const service = services.find(s => s.id === serviceId);
-                                                                            return service?.service_name;
-                                                                        }).filter(Boolean).join(', ')}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
-                                                                    <div className="text-slate-700 font-medium">
-                                                                        {asset.linked_sub_service_ids.map(ssId => {
-                                                                            const subService = subServices.find(ss => ss.id === ssId);
-                                                                            return subService?.sub_service_name;
-                                                                        }).filter(Boolean).join(', ')}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {asset.repository && (
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
-                                                                    <div className="text-slate-700 font-medium">{asset.repository}</div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* QC Panel */}
-                                                        {asset.qc_score && (
-                                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                                <div className="flex items-center justify-between mb-2">
-                                                                    <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <CircularScore
-                                                                            score={asset.qc_score}
-                                                                            label=""
-                                                                            size="xs"
-                                                                        />
-                                                                        <span className="text-xs font-bold text-slate-700">
-                                                                            {asset.qc_score}/100
-                                                                        </span>
+                                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                <div>
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
+                                                                    <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                                        {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                {asset.qc_reviewed_at && (
                                                                     <div>
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
-                                                                        <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                                            {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {asset.qc_reviewed_at && (
-                                                                        <div>
-                                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
-                                                                            <div className="text-slate-700 font-medium">
-                                                                                {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
-                                                                                    year: 'numeric',
-                                                                                    month: '2-digit',
-                                                                                    day: '2-digit'
-                                                                                })}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Reviewer Info */}
-                                                                {asset.qc_reviewer_id && (
-                                                                    <div className="mt-2 text-xs">
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
+                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
                                                                         <div className="text-slate-700 font-medium">
-                                                                            {(() => {
-                                                                                const reviewer = users.find(u => u.id === asset.qc_reviewer_id);
-                                                                                return reviewer ? reviewer.name : 'Unknown Reviewer';
-                                                                            })()}
+                                                                            {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
+                                                                                year: 'numeric',
+                                                                                month: '2-digit',
+                                                                                day: '2-digit'
+                                                                            })}
                                                                         </div>
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        )}
 
-                                                        {/* Type and Repository Tags */}
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
-                                                                <span>{getAssetIcon(asset.type)}</span>
-                                                                {asset.type}
-                                                            </span>
-                                                            {asset.application_type && (
-                                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
-                                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
-                                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
-                                                                            'bg-slate-100 text-slate-700'
-                                                                    }`}>
-                                                                    {asset.application_type === 'web' && '🌐 WEB'}
-                                                                    {asset.application_type === 'seo' && '🔍 SEO'}
-                                                                    {asset.application_type === 'smm' && '📱 SMM'}
-                                                                    {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
-                                                                </span>
+                                                            {/* Reviewer Info */}
+                                                            {asset.qc_reviewer_id && (
+                                                                <div className="mt-2 text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
+                                                                    <div className="text-slate-700 font-medium">
+                                                                        {(() => {
+                                                                            const reviewer = users.find(u => u.id === asset.qc_reviewer_id);
+                                                                            return reviewer ? reviewer.name : 'Unknown Reviewer';
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                         </div>
+                                                    )}
 
-                                                        {/* AI Scores */}
-                                                        {(asset.seo_score || asset.grammar_score) && (
-                                                            <div className="flex gap-2">
-                                                                {asset.seo_score && (
-                                                                    <CircularScore
-                                                                        score={asset.seo_score}
-                                                                        label="SEO"
-                                                                        size="xs"
-                                                                    />
-                                                                )}
-                                                                {asset.grammar_score && (
-                                                                    <CircularScore
-                                                                        score={asset.grammar_score}
-                                                                        label="Grammar"
-                                                                        size="xs"
-                                                                    />
-                                                                )}
-                                                            </div>
+                                                    {/* Type and Repository Tags */}
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
+                                                            <span>{getAssetIcon(asset.type)}</span>
+                                                            {asset.type}
+                                                        </span>
+                                                        {asset.application_type && (
+                                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
+                                                                asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
+                                                                    asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
+                                                                        'bg-slate-100 text-slate-700'
+                                                                }`}>
+                                                                {asset.application_type === 'web' && '🌐 WEB'}
+                                                                {asset.application_type === 'seo' && '🔍 SEO'}
+                                                                {asset.application_type === 'smm' && '📱 SMM'}
+                                                                {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
+                                                            </span>
                                                         )}
+                                                    </div>
 
-                                                        {/* Usage Panel */}
-                                                        <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                            <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
-                                                                <div className="flex items-center justify-between mt-1">
-                                                                    {asset.linking_active && (
-                                                                        <span className="text-green-600 font-medium text-xs">🔗 Active</span>
-                                                                    )}
-                                                                </div>
-                                                                {asset.date && (
-                                                                    <div className="text-slate-500 text-xs mt-1">
-                                                                        Created: {new Date(asset.date).toLocaleDateString('en-US', {
-                                                                            month: 'short',
-                                                                            day: 'numeric',
-                                                                            year: 'numeric'
-                                                                        })}
-                                                                    </div>
+                                                    {/* AI Scores */}
+                                                    {(asset.seo_score || asset.grammar_score) && (
+                                                        <div className="flex gap-2">
+                                                            {asset.seo_score && (
+                                                                <CircularScore
+                                                                    score={asset.seo_score}
+                                                                    label="SEO"
+                                                                    size="xs"
+                                                                />
+                                                            )}
+                                                            {asset.grammar_score && (
+                                                                <CircularScore
+                                                                    score={asset.grammar_score}
+                                                                    label="Grammar"
+                                                                    size="xs"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Usage Panel */}
+                                                    <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                        <div className="text-xs">
+                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
+                                                            <div className="flex items-center justify-between mt-1">
+                                                                {asset.linking_active && (
+                                                                    <span className="text-green-600 font-medium text-xs">🔗 Active</span>
                                                                 )}
                                                             </div>
+                                                            {asset.date && (
+                                                                <div className="text-slate-500 text-xs mt-1">
+                                                                    Created: {new Date(asset.date).toLocaleDateString('en-US', {
+                                                                        month: 'short',
+                                                                        day: 'numeric',
+                                                                        year: 'numeric'
+                                                                    })}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div >
-                    </div >
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )
             }
 
