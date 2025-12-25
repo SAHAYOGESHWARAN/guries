@@ -390,10 +390,11 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </label>
                                         <input
                                             type="text"
-                                            value={newAsset.seo_keywords?.join(', ') || newAsset.keywords?.join(', ') || ''}
-                                            onChange={(e) => {
+                                            value={typeof (newAsset as any).seo_keywords_text === 'string' ? (newAsset as any).seo_keywords_text : (newAsset.seo_keywords?.join(', ') || newAsset.keywords?.join(', ') || '')}
+                                            onChange={(e) => setNewAsset({ ...newAsset, seo_keywords_text: e.target.value })}
+                                            onBlur={(e) => {
                                                 const keywords = e.target.value.split(',').map(k => k.trim()).filter(k => k);
-                                                setNewAsset({ ...newAsset, seo_keywords: keywords, keywords: keywords });
+                                                setNewAsset({ ...newAsset, seo_keywords: keywords, keywords: keywords, seo_keywords_text: e.target.value });
                                             }}
                                             placeholder="primary keyword, secondary keyword..."
                                             className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -1255,8 +1256,12 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                         </label>
                                         <input
                                             type="text"
-                                            value={newAsset.keywords?.join(', ') || ''}
-                                            onChange={(e) => setNewAsset({ ...newAsset, keywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) })}
+                                            value={typeof (newAsset as any).keywords_text === 'string' ? (newAsset as any).keywords_text : (newAsset.keywords?.join(', ') || '')}
+                                            onChange={(e) => setNewAsset({ ...newAsset, keywords_text: e.target.value })}
+                                            onBlur={(e) => {
+                                                const keywords = e.target.value.split(',').map(k => k.trim()).filter(k => k);
+                                                setNewAsset({ ...newAsset, keywords: keywords, keywords_text: e.target.value });
+                                            }}
                                             placeholder="keyword1, keyword2, keyword3..."
                                             className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
