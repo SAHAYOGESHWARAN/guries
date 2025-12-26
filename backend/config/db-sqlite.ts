@@ -422,6 +422,78 @@ export const initDatabase = () => {
         (2, 'Healthcare', 'Medical Services', 'Patient Care', 'US', 'active'),
         (3, 'Finance', 'Banking', 'Digital Banking', 'Global', 'active'),
         (4, 'E-commerce', 'Retail', 'Online Shopping', 'Global', 'active');
+
+        -- Asset Website Usage Table
+        CREATE TABLE IF NOT EXISTS asset_website_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id INTEGER NOT NULL,
+            website_url TEXT NOT NULL,
+            page_title TEXT,
+            added_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        );
+
+        -- Asset Social Media Usage Table
+        CREATE TABLE IF NOT EXISTS asset_social_media_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id INTEGER NOT NULL,
+            platform_name TEXT NOT NULL,
+            post_url TEXT,
+            post_id TEXT,
+            status TEXT DEFAULT 'Published',
+            engagement_impressions INTEGER DEFAULT 0,
+            engagement_clicks INTEGER DEFAULT 0,
+            engagement_shares INTEGER DEFAULT 0,
+            engagement_likes INTEGER DEFAULT 0,
+            engagement_comments INTEGER DEFAULT 0,
+            posted_at DATETIME,
+            added_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        );
+
+        -- Asset Backlink Usage Table
+        CREATE TABLE IF NOT EXISTS asset_backlink_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id INTEGER NOT NULL,
+            domain_name TEXT NOT NULL,
+            backlink_url TEXT,
+            anchor_text TEXT,
+            approval_status TEXT DEFAULT 'Pending',
+            da_score INTEGER,
+            submitted_at DATETIME,
+            approved_at DATETIME,
+            added_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        );
+
+        -- Asset Engagement Metrics Table (aggregated metrics)
+        CREATE TABLE IF NOT EXISTS asset_engagement_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id INTEGER NOT NULL UNIQUE,
+            total_impressions INTEGER DEFAULT 0,
+            total_clicks INTEGER DEFAULT 0,
+            total_shares INTEGER DEFAULT 0,
+            total_likes INTEGER DEFAULT 0,
+            total_comments INTEGER DEFAULT 0,
+            ctr_percentage REAL DEFAULT 0,
+            performance_summary TEXT,
+            last_calculated_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        );
+
+        -- Indexes for asset usage tables
+        CREATE INDEX IF NOT EXISTS idx_website_usage_asset ON asset_website_usage(asset_id);
+        CREATE INDEX IF NOT EXISTS idx_social_usage_asset ON asset_social_media_usage(asset_id);
+        CREATE INDEX IF NOT EXISTS idx_backlink_usage_asset ON asset_backlink_usage(asset_id);
+        CREATE INDEX IF NOT EXISTS idx_engagement_asset ON asset_engagement_metrics(asset_id);
     `);
 
     console.log('✅ SQLite database initialized');
@@ -454,9 +526,12 @@ export const pool = {
             } else if (text.trim().toUpperCase().startsWith('INSERT')) {
                 const result = stmt.run(...(params || []));
                 if (hasReturning) {
-                    // Get the last inserted row
+                    // Get the last inserted row from the correct table
                     const lastId = result.lastInsertRowid;
-                    const selectStmt = sqliteDb.prepare('SELECT * FROM assets WHERE id = ?');
+                    // Extract table name from INSERT INTO table_name
+                    const tableMatch = text.match(/INSERT\s+INTO\s+(\w+)/i);
+                    const tableName = tableMatch ? tableMatch[1] : 'assets';
+                    const selectStmt = sqliteDb.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
                     const row = selectStmt.get(lastId);
                     const rows = row ? [row] : [];
                     return { rows };
@@ -465,9 +540,12 @@ export const pool = {
             } else if (text.trim().toUpperCase().startsWith('UPDATE')) {
                 const result = stmt.run(...(params || []));
                 if (hasReturning) {
-                    // Get the updated row
+                    // Get the updated row from the correct table
                     const id = params?.[params.length - 1];
-                    const selectStmt = sqliteDb.prepare('SELECT * FROM assets WHERE id = ?');
+                    // Extract table name from UPDATE table_name SET
+                    const tableMatch = text.match(/UPDATE\s+(\w+)\s+SET/i);
+                    const tableName = tableMatch ? tableMatch[1] : 'assets';
+                    const selectStmt = sqliteDb.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
                     const rows = [selectStmt.get(id)];
                     return { rows };
                 }
