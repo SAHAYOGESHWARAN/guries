@@ -56,6 +56,23 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
     React.useEffect(() => {
         if (initialData) {
             setNewAsset(initialData);
+            // Also update the linked fields state
+            setLinkedTaskId(initialData.linked_task_id || initialData.linked_task || null);
+            setLinkedCampaignId(initialData.linked_campaign_id || null);
+            setLinkedProjectId(initialData.linked_project_id || null);
+            setLinkedServiceId(initialData.linked_service_id || (initialData.linked_service_ids && initialData.linked_service_ids[0]) || null);
+            setLinkedSubServiceId(initialData.linked_sub_service_id || (initialData.linked_sub_service_ids && initialData.linked_sub_service_ids[0]) || null);
+            setLinkedRepositoryItemId(initialData.linked_repository_item_id || null);
+            setDesignedBy(initialData.designed_by || null);
+            setWorkflowStage(initialData.status || 'Draft');
+            setVersionNumber(initialData.version_number || 'v1.0');
+            // Set preview URL if available
+            if (initialData.thumbnail_url || initialData.file_url || initialData.smm_media_url) {
+                setPreviewUrl(initialData.thumbnail_url || initialData.file_url || initialData.smm_media_url || '');
+            }
+            if (initialData.smm_media_url) {
+                setSmmMediaUrl(initialData.smm_media_url);
+            }
         }
     }, [initialData]);
     // use locked state from parent when provided

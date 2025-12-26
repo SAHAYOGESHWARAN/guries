@@ -646,27 +646,54 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         setEditingAsset(asset);
         setSelectedApplicationType(asset.application_type as any);
         setNewAsset({
+            // Basic Asset Information
             name: asset.name,
             type: asset.type,
             repository: asset.repository,
-            // Removed usage_status as per requirement 3
             status: asset.status,
             asset_category: asset.asset_category,
-            // asset_format removed per requirements
+            content_type: asset.content_type,
             mapped_to: asset.mapped_to,
+
+            // Scores
             qc_score: asset.qc_score,
             seo_score: asset.seo_score,
             grammar_score: asset.grammar_score,
+
+            // File Information
             file_url: asset.file_url,
             thumbnail_url: asset.thumbnail_url,
             file_size: asset.file_size,
             file_type: asset.file_type,
+            dimensions: asset.dimensions,
+
+            // Service/Sub-Service Linking
             linked_service_ids: asset.linked_service_ids || [],
             linked_sub_service_ids: asset.linked_sub_service_ids || [],
+            linked_service_id: asset.linked_service_id,
+            linked_sub_service_id: asset.linked_sub_service_id,
+
+            // Map Assets to Source Work fields
+            linked_task_id: asset.linked_task_id,
+            linked_task: asset.linked_task,
+            linked_campaign_id: asset.linked_campaign_id,
+            linked_project_id: asset.linked_project_id,
+            linked_repository_item_id: asset.linked_repository_item_id,
+
+            // User & Workflow fields
+            designed_by: asset.designed_by,
+            created_by: asset.created_by,
+            updated_by: asset.updated_by,
+            version_number: asset.version_number,
+
+            // Application Type
             application_type: asset.application_type,
+
+            // Web Application Fields - All fields pre-populated
             web_title: asset.web_title,
             web_description: asset.web_description,
             web_meta_description: asset.web_meta_description,
+            web_keywords: asset.web_keywords,
             web_url: asset.web_url,
             web_h1: asset.web_h1,
             web_h2_1: asset.web_h2_1,
@@ -675,32 +702,63 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             web_body_content: asset.web_body_content,
             web_body_attachment: (asset as any).web_body_attachment,
             web_body_attachment_name: (asset as any).web_body_attachment_name,
+
+            // SMM Application Fields - All fields pre-populated
             smm_platform: asset.smm_platform,
+            smm_title: asset.smm_title,
+            smm_tag: asset.smm_tag,
+            smm_url: asset.smm_url,
             smm_description: asset.smm_description,
             smm_hashtags: asset.smm_hashtags,
             smm_media_url: asset.smm_media_url,
             smm_media_type: asset.smm_media_type,
             smm_additional_pages: asset.smm_additional_pages || [],
+            smm_post_type: asset.smm_post_type,
+            smm_campaign_type: asset.smm_campaign_type,
+            smm_cta: asset.smm_cta,
+            smm_target_audience: asset.smm_target_audience,
+
+            // SEO Application Fields - All fields pre-populated
+            seo_title: asset.seo_title,
+            seo_target_url: asset.seo_target_url,
+            seo_keywords: asset.seo_keywords || [],
+            seo_focus_keyword: asset.seo_focus_keyword,
+            seo_content_type: asset.seo_content_type,
+            seo_meta_description: asset.seo_meta_description,
+            seo_content_description: asset.seo_content_description,
+            seo_h1: asset.seo_h1,
+            seo_h2_1: asset.seo_h2_1,
+            seo_h2_2: asset.seo_h2_2,
+            seo_content_body: asset.seo_content_body,
+
+            // Keywords
             keywords: asset.keywords || []
         });
 
         // Set selected keywords for the UI
         setSelectedKeywords(asset.keywords || []);
 
-        // Set markdown content for the editor
-        setMarkdownContent(asset.web_body_content || '');
+        // Set markdown content for the editor (use appropriate content based on application type)
+        if (asset.application_type === 'seo') {
+            setMarkdownContent(asset.seo_content_body || asset.web_body_content || '');
+        } else {
+            setMarkdownContent(asset.web_body_content || '');
+        }
 
         // Set selected service and sub-services for the UI
-        if (asset.linked_service_ids && asset.linked_service_ids.length > 0) {
-            setSelectedServiceId(asset.linked_service_ids[0]);
+        const serviceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
+        if (serviceId) {
+            setSelectedServiceId(serviceId);
         } else {
             setSelectedServiceId(null);
         }
-        setSelectedSubServiceIds(asset.linked_sub_service_ids || []);
+
+        const subServiceIds = asset.linked_sub_service_ids || (asset.linked_sub_service_id ? [asset.linked_sub_service_id] : []);
+        setSelectedSubServiceIds(subServiceIds);
 
         // Set preview URL if available
-        if (asset.thumbnail_url || asset.file_url) {
-            setPreviewUrl(asset.thumbnail_url || asset.file_url || '');
+        if (asset.thumbnail_url || asset.file_url || asset.smm_media_url) {
+            setPreviewUrl(asset.thumbnail_url || asset.file_url || asset.smm_media_url || '');
         } else {
             setPreviewUrl('');
         }
@@ -1991,7 +2049,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             )}
 
             {(viewMode === 'edit' || (viewMode === 'upload' && uploadStep === 'asset-details')) && (
-                <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-indigo-50">
                     {/* Fixed Header */}
                     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
                         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -2407,1167 +2465,1174 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </div>
 
                             {/* Asset Applications Section - Shows fields based on selected application type */}
-                            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 space-y-6 shadow-sm">
-                                <div className="flex items-center gap-3 pb-3 border-b-2 border-purple-200">
-                                    <div className="bg-purple-600 p-2 rounded-lg">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-purple-900">Asset Applications</h3>
-                                        <p className="text-xs text-purple-600">Configure how this asset will be used</p>
-                                    </div>
-                                </div>
-
-                                {/* Application Type Selector */}
-                                <div>
-                                    <label className="block text-sm font-bold text-purple-900 mb-2">Application Type</label>
-                                    {newAsset.application_type ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
-                                                {newAsset.application_type === 'web' && '🌐 Web'}
-                                                {newAsset.application_type === 'seo' && '🔍 SEO'}
-                                                {newAsset.application_type === 'smm' && '📱 SMM (Social Media Marketing)'}
-                                                <span className="text-slate-500 ml-2">(Content type is now static)</span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <select
-                                            value={newAsset.application_type || ''}
-                                            onChange={(e) => handleApplicationTypeSelect(e.target.value as any)}
-                                            disabled={contentTypeLocked}
-                                            className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
-                                        >
-                                            <option value="">Select application type...</option>
-                                            <option value="web">Web</option>
-                                            <option value="seo">SEO</option>
-                                            <option value="smm">SMM (Social Media Marketing)</option>
-                                        </select>
-                                    )}
-                                </div>
-
-                                {/* Web Application Fields */}
-                                {newAsset.application_type === 'web' && (
-                                    <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            {newAsset.application_type && (
+                                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 space-y-6 shadow-sm">
+                                    <div className="flex items-center gap-3 pb-3 border-b-2 border-purple-200">
+                                        <div className="bg-purple-600 p-2 rounded-lg">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            <h4 className="font-bold text-purple-900">Web Application Fields</h4>
                                         </div>
-
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Title</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_title || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter web title..."
-                                            />
-                                        </div>
-
-                                        {/* Description field removed per WEB requirements */}
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">URL</label>
-                                            <input
-                                                type="url"
-                                                value={newAsset.web_url || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="https://example.com/page"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">H1</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_h1 || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Main heading (H1)..."
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">H2 (First)</label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.web_h2_1 || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="First H2 heading..."
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">H2 (Second)</label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.web_h2_2 || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="Second H2 heading..."
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Body Content Section with AI Scores beside it */}
-                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
-                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                {/* Body Content - Left Side */}
-                                                <div className="lg:col-span-2">
-                                                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                        <span className="text-lg">📝</span>
-                                                        Body Content
-                                                    </label>
-                                                    <textarea
-                                                        value={newAsset.web_body_content || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
-                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
-                                                        placeholder="Paste your full article or body copy here for AI analysis..."
-                                                        rows={8}
-                                                    />
-
-                                                    {/* Analyze Score Button - below Body Content */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={analyzeBodyContent}
-                                                        disabled={analysisInProgress}
-                                                        className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                        </svg>
-                                                        {analysisInProgress ? 'Analysing...' : 'Analyze Score'}
-                                                    </button>
-                                                </div>
-
-                                                {/* AI Quality Scores - Right Side (beside Body Content, updates in real-time) */}
-                                                <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
-                                                    <h5 className="text-sm font-semibold text-slate-600 mb-4">AI Quality Scores</h5>
-                                                    <div className="space-y-6">
-                                                        {/* SEO Score */}
-                                                        <div className="flex flex-col items-center">
-                                                            <CircularScore
-                                                                score={newAsset.seo_score || 0}
-                                                                label="SEO SCORE"
-                                                                size="sm"
-                                                            />
-                                                        </div>
-
-                                                        {/* Grammar Score */}
-                                                        <div className="flex flex-col items-center">
-                                                            <CircularScore
-                                                                score={newAsset.grammar_score || 0}
-                                                                label="GRAMMAR SCORE"
-                                                                size="sm"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Upload Web Assets Section - below Body Content */}
-                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
-                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                <span className="text-lg">📤</span>
-                                                Upload Web Assets
-                                            </label>
-                                            <div className="space-y-4">
-                                                {/* Thumbnail/Blog Image */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-slate-600 mb-2">Thumbnail/Blog Image</label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="url"
-                                                            value={newAsset.web_thumbnail || ''}
-                                                            onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
-                                                            className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                            placeholder="https://example.com/image.jpg or upload file"
-                                                        />
-                                                        <input
-                                                            ref={thumbnailInputRef}
-                                                            type="file"
-                                                            accept="image/*"
-                                                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
-                                                            className="hidden"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => thumbnailInputRef.current?.click()}
-                                                            className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                            Upload
-                                                        </button>
-                                                    </div>
-                                                    {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
-                                                        <div className="mt-2">
-                                                            <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Additional File Upload */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-slate-600 mb-2">Additional Files</label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            ref={fileInputRef}
-                                                            type="file"
-                                                            onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                                                            className="hidden"
-                                                            accept="image/*,video/*,.pdf,.doc,.docx,.zip"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => fileInputRef.current?.click()}
-                                                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-                                                        >
-                                                            Choose File
-                                                        </button>
-                                                        <div className="flex-1 text-sm text-slate-600 self-center">
-                                                            {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
-                                                        </div>
-                                                    </div>
-
-                                                    {previewUrl && (
-                                                        <div className="mt-2">
-                                                            <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Asset Classification - below Upload Web Assets */}
-                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
-                                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
-                                                <span className="text-lg">🏷️</span>
-                                                Asset Classification
-                                            </label>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {/* Content Type Dropdown */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
-                                                    <select
-                                                        value={newAsset.content_type || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
-                                                        className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
-                                                    >
-                                                        <option value="">Select content type</option>
-                                                        <option value="Blog">Blog</option>
-                                                        <option value="Service Page">Service Page</option>
-                                                        <option value="Sub-Service Page">Sub-Service Page</option>
-                                                        <option value="SMM Post">SMM Post</option>
-                                                        <option value="Backlink Asset">Backlink Asset</option>
-                                                        <option value="Web UI Asset">Web UI Asset</option>
-                                                    </select>
-                                                </div>
-
-                                                {/* Repository */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
-                                                    <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                                                        <option value="Content Repository">Content Repository</option>
-                                                        <option value="SMM Repository">SMM Repository</option>
-                                                        <option value="SEO Repository">SEO Repository</option>
-                                                        <option value="Design Repository">Design Repository</option>
-                                                    </select>
-                                                </div>
-
-                                                {/* Asset Category (from master table - no Add icon) */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
-                                                    <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                        <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories available --'}</option>
-                                                        {allActiveAssetCategories.map(cat => (
-                                                            <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
-                                                        ))}
-                                                    </select>
-                                                    {allActiveAssetCategories.length === 0 && (
-                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add categories in Asset Category Master</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Asset Type (from master table - no Add icon) */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
-                                                    <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                        <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types available --'}</option>
-                                                        {allActiveAssetTypes.map(t => {
-                                                            const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
-                                                            return <option key={t.id} value={typeName}>{typeName}</option>;
-                                                        })}
-                                                    </select>
-                                                    {allActiveAssetTypes.length === 0 && (
-                                                        <p className="text-xs text-amber-600 mt-1">⚠️ Add types in Asset Type Master</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Asset Format removed for WEB assets per requirements */}
-                                            </div>
+                                            <h3 className="text-lg font-bold text-purple-900">
+                                                {newAsset.application_type === 'web' && '🌐 Web Application Fields'}
+                                                {newAsset.application_type === 'seo' && '🔍 SEO Application Fields'}
+                                                {newAsset.application_type === 'smm' && '📱 SMM Application Fields'}
+                                            </h3>
+                                            <p className="text-xs text-purple-600">Configure fields specific to your selected application type</p>
                                         </div>
                                     </div>
-                                )}
 
-                                {/* SEO Application Fields (same as Web) */}
-                                {newAsset.application_type === 'seo' && (
-                                    <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                            </svg>
-                                            <h4 className="font-bold text-purple-900">SEO Application Fields</h4>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Title</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_title || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter SEO title..."
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
-                                            <textarea
-                                                value={newAsset.web_description || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_description: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Enter SEO description..."
-                                                rows={3}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">URL</label>
-                                            <input
-                                                type="url"
-                                                value={newAsset.web_url || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="https://example.com/page"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">H1</label>
-                                            <input
-                                                type="text"
-                                                value={newAsset.web_h1 || ''}
-                                                onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
-                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                placeholder="Main heading (H1)..."
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">H2 (First)</label>
-                                                <input
-                                                    type="text"
-                                                    value={newAsset.web_h2_1 || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="First H2 heading..."
-                                                />
+                                    {/* Web Application Fields */}
+                                    {newAsset.application_type === 'web' && (
+                                        <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                                </svg>
+                                                <h4 className="font-bold text-purple-900">Web Application Fields</h4>
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">H2 (Second)</label>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Title</label>
                                                 <input
                                                     type="text"
-                                                    value={newAsset.web_h2_2 || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
+                                                    value={newAsset.web_title || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, web_title: e.target.value })}
                                                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="Second H2 heading..."
+                                                    placeholder="Enter web title..."
                                                 />
                                             </div>
-                                        </div>
 
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Thumbnail/Blog Image</label>
-                                            <div className="flex gap-2">
+                                            {/* Description field removed per WEB requirements */}
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">URL</label>
                                                 <input
                                                     type="url"
-                                                    value={newAsset.web_thumbnail || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
-                                                    className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="https://example.com/image.jpg or upload file"
+                                                    value={newAsset.web_url || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, web_url: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="https://example.com/page"
                                                 />
-                                                <input
-                                                    ref={thumbnailInputRef}
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
-                                                    className="hidden"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => thumbnailInputRef.current?.click()}
-                                                    className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                    Upload
-                                                </button>
                                             </div>
-                                            {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
-                                                <div className="mt-2">
-                                                    <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
-                                                </div>
-                                            )}
-                                        </div>
 
-                                        {/* Body Content Section with AI Scores */}
-                                        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
-                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                {/* Body Content - Left Side */}
-                                                <div className="lg:col-span-2">
-                                                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                        <span className="text-lg">📝</span>
-                                                        Body content
-                                                    </label>
-                                                    <textarea
-                                                        value={newAsset.web_body_content || ''}
-                                                        onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
-                                                        className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
-                                                        placeholder="Paste your full article or body copy here for AI analysis..."
-                                                        rows={8}
-                                                    />
-
-                                                    {/* Analyse Button */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={analyzeBodyContent}
-                                                        disabled={analysisInProgress}
-                                                        className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                        </svg>
-                                                        {analysisInProgress ? 'Analysing...' : 'Analyze'}
-                                                    </button>
-                                                </div>
-
-                                                {/* AI Scores - Right Side */}
-                                                <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
-                                                    <div className="space-y-6">
-                                                        {/* SEO Score */}
-                                                        <div className="flex flex-col items-center">
-                                                            <CircularScore
-                                                                score={newAsset.seo_score || 0}
-                                                                label="SEO SCORE"
-                                                                size="sm"
-                                                            />
-                                                        </div>
-
-                                                        {/* Grammar Score */}
-                                                        <div className="flex flex-col items-center">
-                                                            <CircularScore
-                                                                score={newAsset.grammar_score || 0}
-                                                                label="GRAMMAR SCORE"
-                                                                size="sm"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* SMM Application Fields */}
-                                {newAsset.application_type === 'smm' && (
-                                    <div className="space-y-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 shadow-sm">
-                                        <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200">
-                                            <div className="bg-purple-600 p-2 rounded-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                                                </svg>
-                                            </div>
                                             <div>
-
-                                                <h4 className="text-lg font-bold text-purple-900">📱 SMM Application Fields</h4>
-                                                <p className="text-sm text-purple-600">Configure your social media content</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Platform Selector - Enhanced */}
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-3">
-                                                🌐 Social Media Platform
-                                                <span className="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                                                {[
-                                                    { value: 'facebook', label: 'Facebook', icon: '📘', color: 'from-blue-600 to-blue-700', description: 'Share with friends and family' },
-                                                    { value: 'instagram', label: 'Instagram', icon: '📷', color: 'from-pink-500 to-purple-600', description: 'Visual storytelling platform' },
-                                                    { value: 'twitter', label: 'Twitter/X', icon: '🐦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
-                                                    { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
-                                                    { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' }
-                                                    /* TikTok, Pinterest, Snapchat, WhatsApp removed per SMM spec - only core platforms */
-                                                ].map((platform) => (
-                                                    <button
-                                                        key={platform.value}
-                                                        type="button"
-                                                        onClick={() => setNewAsset({ ...newAsset, smm_platform: platform.value as any })}
-                                                        className={`p-4 rounded-xl border-2 transition-all text-left hover:scale-105 ${newAsset.smm_platform === platform.value
-                                                            ? `bg-gradient-to-r ${platform.color} text-white border-transparent shadow-lg`
-                                                            : 'bg-white border-slate-200 hover:border-purple-300 hover:shadow-md'
-                                                            }`}
-                                                    >
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <span className="text-2xl">{platform.icon}</span>
-                                                            <span className={`font-bold text-sm ${newAsset.smm_platform === platform.value ? 'text-white' : 'text-slate-800'
-                                                                }`}>
-                                                                {platform.label}
-                                                            </span>
-                                                        </div>
-                                                        <p className={`text-xs ${newAsset.smm_platform === platform.value ? 'text-white/90' : 'text-slate-500'
-                                                            }`}>
-                                                            {platform.description}
-                                                        </p>
-                                                    </button>
-                                                ))}
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">H1</label>
+                                                <input
+                                                    type="text"
+                                                    value={newAsset.web_h1 || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, web_h1: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Main heading (H1)..."
+                                                />
                                             </div>
 
-                                            {/* Fallback dropdown for additional platforms */}
-                                            <div className="mt-4">
-                                                <label className="block text-xs font-medium text-slate-600 mb-2">Or select from dropdown:</label>
-                                                <select
-                                                    value={newAsset.smm_platform || ''}
-                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
-                                                >
-                                                    <option value="">Select platform...</option>
-                                                    <option value="facebook">📘 Facebook</option>
-                                                    <option value="instagram">📷 Instagram</option>
-                                                    <option value="twitter">🐦 Twitter/X</option>
-                                                    <option value="linkedin">💼 LinkedIn</option>
-                                                    <option value="youtube">🎥 YouTube</option>
-                                                    {/* TikTok and other platforms removed per SMM spec */}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Platform-specific fields */}
-                                        {newAsset.smm_platform && (
-                                            <div className="space-y-6 bg-white rounded-xl p-6 border-2 border-slate-200 shadow-sm">
-                                                <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg">
-                                                        {newAsset.smm_platform === 'facebook' && '📘'}
-                                                        {newAsset.smm_platform === 'instagram' && '📷'}
-                                                        {newAsset.smm_platform === 'twitter' && '�'}
-                                                        {newAsset.smm_platform === 'linkedin' && '💼'}
-                                                        {newAsset.smm_platform === 'youtube' && '🎥'}
-                                                        {newAsset.smm_platform === 'pinterest' && '📌'}
-                                                        {newAsset.smm_platform === 'snapchat' && '👻'}
-                                                        {newAsset.smm_platform === 'whatsapp' && '💬'}
-                                                        {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && '🌐'}
-                                                    </div>
-                                                    <div>
-                                                        <h5 className="text-lg font-bold text-slate-800 capitalize">
-                                                            {newAsset.smm_platform === 'twitter' ? 'Twitter/X' : newAsset.smm_platform} Content
-                                                        </h5>
-                                                        <p className="text-sm text-slate-600">
-                                                            {newAsset.smm_platform === 'facebook' && 'Engage with your Facebook community'}
-                                                            {newAsset.smm_platform === 'instagram' && 'Share visual stories on Instagram'}
-                                                            {newAsset.smm_platform === 'twitter' && 'Join real-time conversations'}
-                                                            {newAsset.smm_platform === 'linkedin' && 'Connect with professionals'}
-                                                            {newAsset.smm_platform === 'youtube' && 'Create engaging video content'}
-                                                            {newAsset.smm_platform === 'pinterest' && 'Inspire with visual content'}
-                                                            {newAsset.smm_platform === 'snapchat' && 'Share moments that disappear'}
-                                                            {newAsset.smm_platform === 'whatsapp' && 'Connect through messaging'}
-                                                            {!(newAsset.smm_platform && ['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform)) && 'Create engaging social content'}
-                                                        </p>
-                                                    </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 (First)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.web_h2_1 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_1: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                        placeholder="First H2 heading..."
+                                                    />
                                                 </div>
 
-                                                {/* Content Fields */}
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                    <div>
-                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                            📝 Post Caption/Description
-                                                            <span className="text-red-500 ml-1">*</span>
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 (Second)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.web_h2_2 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_h2_2: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                        placeholder="Second H2 heading..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Body Content Section with AI Scores beside it */}
+                                            <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    {/* Body Content - Left Side */}
+                                                    <div className="lg:col-span-2">
+                                                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                            <span className="text-lg">📝</span>
+                                                            Body Content
                                                         </label>
                                                         <textarea
-                                                            value={newAsset.smm_description || ''}
-                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                            placeholder={(() => {
-                                                                switch (newAsset.smm_platform) {
-                                                                    case 'twitter': return "What's happening? (280 characters)";
-                                                                    case 'linkedin': return 'Share your professional insights...';
-                                                                    case 'instagram': return 'Share your story with a captivating caption...';
-                                                                    case 'facebook': return "What's on your mind?";
-                                                                    case 'youtube': return 'Describe your video content...';
-                                                                    default: return 'Enter your post content...';
-                                                                }
-                                                            })()}
-                                                            rows={5}
-                                                            maxLength={
-                                                                newAsset.smm_platform === 'twitter' ? 280 :
-                                                                    newAsset.smm_platform === 'instagram' ? 2200 :
-                                                                        newAsset.smm_platform === 'linkedin' ? 3000 :
-                                                                            undefined
-                                                            }
+                                                            value={newAsset.web_body_content || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, web_body_content: e.target.value })}
+                                                            className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                                            placeholder="Paste your full article or body copy here for AI analysis..."
+                                                            rows={8}
                                                         />
-                                                        {newAsset.smm_platform === 'twitter' && (
-                                                            <div className="text-xs text-slate-500 mt-1 text-right">
-                                                                {(newAsset.smm_description || '').length}/280 characters
+
+                                                        {/* Analyze Score Button - below Body Content */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={analyzeBodyContent}
+                                                            disabled={analysisInProgress}
+                                                            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                            </svg>
+                                                            {analysisInProgress ? 'Analysing...' : 'Analyze Score'}
+                                                        </button>
+                                                    </div>
+
+                                                    {/* AI Quality Scores - Right Side (beside Body Content, updates in real-time) */}
+                                                    <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                                        <h5 className="text-sm font-semibold text-slate-600 mb-4">AI Quality Scores</h5>
+                                                        <div className="space-y-6">
+                                                            {/* SEO Score */}
+                                                            <div className="flex flex-col items-center">
+                                                                <CircularScore
+                                                                    score={newAsset.seo_score || 0}
+                                                                    label="SEO SCORE"
+                                                                    size="sm"
+                                                                />
+                                                            </div>
+
+                                                            {/* Grammar Score */}
+                                                            <div className="flex flex-col items-center">
+                                                                <CircularScore
+                                                                    score={newAsset.grammar_score || 0}
+                                                                    label="GRAMMAR SCORE"
+                                                                    size="sm"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Upload Web Assets Section - below Body Content */}
+                                            <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                    <span className="text-lg">📤</span>
+                                                    Upload Web Assets
+                                                </label>
+                                                <div className="space-y-4">
+                                                    {/* Thumbnail/Blog Image */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-slate-600 mb-2">Thumbnail/Blog Image</label>
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="url"
+                                                                value={newAsset.web_thumbnail || ''}
+                                                                onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
+                                                                className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                                placeholder="https://example.com/image.jpg or upload file"
+                                                            />
+                                                            <input
+                                                                ref={thumbnailInputRef}
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
+                                                                className="hidden"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => thumbnailInputRef.current?.click()}
+                                                                className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                                Upload
+                                                            </button>
+                                                        </div>
+                                                        {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
+                                                            <div className="mt-2">
+                                                                <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
                                                             </div>
                                                         )}
-                                                        {newAsset.smm_platform === 'instagram' && (
-                                                            <div className="text-xs text-slate-500 mt-1 text-right">
-                                                                {(newAsset.smm_description || '').length}/2,200 characters
+                                                    </div>
+
+                                                    {/* Additional File Upload */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-slate-600 mb-2">Additional Files</label>
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                ref={fileInputRef}
+                                                                type="file"
+                                                                onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                                                className="hidden"
+                                                                accept="image/*,video/*,.pdf,.doc,.docx,.zip"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => fileInputRef.current?.click()}
+                                                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                                                            >
+                                                                Choose File
+                                                            </button>
+                                                            <div className="flex-1 text-sm text-slate-600 self-center">
+                                                                {selectedFile ? selectedFile.name : (previewUrl ? 'Using preview image' : 'No file selected')}
+                                                            </div>
+                                                        </div>
+
+                                                        {previewUrl && (
+                                                            <div className="mt-2">
+                                                                <img src={previewUrl} alt="Preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
                                                             </div>
                                                         )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Asset Classification - below Upload Web Assets */}
+                                            <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
+                                                    <span className="text-lg">🏷️</span>
+                                                    Asset Classification
+                                                </label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Content Type Dropdown */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                                        <select
+                                                            value={newAsset.content_type || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                                            className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                        >
+                                                            <option value="">Select content type</option>
+                                                            <option value="Blog">Blog</option>
+                                                            <option value="Service Page">Service Page</option>
+                                                            <option value="Sub-Service Page">Sub-Service Page</option>
+                                                            <option value="SMM Post">SMM Post</option>
+                                                            <option value="Backlink Asset">Backlink Asset</option>
+                                                            <option value="Web UI Asset">Web UI Asset</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Repository */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
+                                                        <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                            <option value="Content Repository">Content Repository</option>
+                                                            <option value="SMM Repository">SMM Repository</option>
+                                                            <option value="SEO Repository">SEO Repository</option>
+                                                            <option value="Design Repository">Design Repository</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Asset Category (from master table - no Add icon) */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                                        <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                            <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories available --'}</option>
+                                                            {allActiveAssetCategories.map(cat => (
+                                                                <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                            ))}
+                                                        </select>
+                                                        {allActiveAssetCategories.length === 0 && (
+                                                            <p className="text-xs text-amber-600 mt-1">⚠️ Add categories in Asset Category Master</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Asset Type (from master table - no Add icon) */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                                        <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                            <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types available --'}</option>
+                                                            {allActiveAssetTypes.map(t => {
+                                                                const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                                                return <option key={t.id} value={typeName}>{typeName}</option>;
+                                                            })}
+                                                        </select>
+                                                        {allActiveAssetTypes.length === 0 && (
+                                                            <p className="text-xs text-amber-600 mt-1">⚠️ Add types in Asset Type Master</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Asset Format removed for WEB assets per requirements */}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* SEO Application Fields */}
+                                    {newAsset.application_type === 'seo' && (
+                                        <div className="space-y-4 bg-white rounded-lg p-5 border-2 border-purple-200">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                                <h4 className="font-bold text-purple-900">SEO Application Fields</h4>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">SEO Title</label>
+                                                <input
+                                                    type="text"
+                                                    value={newAsset.seo_title || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_title: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Enter SEO title..."
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Meta Description</label>
+                                                <textarea
+                                                    value={newAsset.seo_meta_description || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_meta_description: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Enter meta description for search engines..."
+                                                    rows={3}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Target URL</label>
+                                                <input
+                                                    type="url"
+                                                    value={newAsset.seo_target_url || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_target_url: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="https://example.com/target-page"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Focus Keyword</label>
+                                                <input
+                                                    type="text"
+                                                    value={newAsset.seo_focus_keyword || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_focus_keyword: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Primary keyword to target..."
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">SEO Content Type</label>
+                                                <select
+                                                    value={newAsset.seo_content_type || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_content_type: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer"
+                                                >
+                                                    <option value="">Select content type...</option>
+                                                    <option value="blog">Blog Post</option>
+                                                    <option value="landing_page">Landing Page</option>
+                                                    <option value="product_page">Product Page</option>
+                                                    <option value="service_page">Service Page</option>
+                                                    <option value="category_page">Category Page</option>
+                                                    <option value="pillar_content">Pillar Content</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">H1</label>
+                                                <input
+                                                    type="text"
+                                                    value={newAsset.seo_h1 || ''}
+                                                    onChange={(e) => setNewAsset({ ...newAsset, seo_h1: e.target.value })}
+                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                    placeholder="Main heading (H1)..."
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 (First)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.seo_h2_1 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, seo_h2_1: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                        placeholder="First H2 heading..."
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">H2 (Second)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAsset.seo_h2_2 || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, seo_h2_2: e.target.value })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                        placeholder="Second H2 heading..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Thumbnail/Blog Image</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="url"
+                                                        value={newAsset.web_thumbnail || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, web_thumbnail: e.target.value })}
+                                                        className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                                        placeholder="https://example.com/image.jpg or upload file"
+                                                    />
+                                                    <input
+                                                        ref={thumbnailInputRef}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'thumbnail')}
+                                                        className="hidden"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => thumbnailInputRef.current?.click()}
+                                                        className="px-4 py-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        Upload
+                                                    </button>
+                                                </div>
+                                                {newAsset.web_thumbnail && newAsset.web_thumbnail.startsWith('data:') && (
+                                                    <div className="mt-2">
+                                                        <img src={newAsset.web_thumbnail} alt="Thumbnail preview" className="max-h-32 rounded-lg border-2 border-slate-200" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Body Content Section with AI Scores */}
+                                            <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    {/* Body Content - Left Side */}
+                                                    <div className="lg:col-span-2">
+                                                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                                            <span className="text-lg">📝</span>
+                                                            SEO Content Body
+                                                        </label>
+                                                        <textarea
+                                                            value={newAsset.seo_content_body || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, seo_content_body: e.target.value })}
+                                                            className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y bg-white"
+                                                            placeholder="Paste your full SEO content here for AI analysis..."
+                                                            rows={8}
+                                                        />
+
+                                                        {/* Analyse Button */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={analyzeBodyContent}
+                                                            disabled={analysisInProgress}
+                                                            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                            </svg>
+                                                            {analysisInProgress ? 'Analysing...' : 'Analyze'}
+                                                        </button>
+                                                    </div>
+
+                                                    {/* AI Scores - Right Side */}
+                                                    <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 p-6">
+                                                        <div className="space-y-6">
+                                                            {/* SEO Score */}
+                                                            <div className="flex flex-col items-center">
+                                                                <CircularScore
+                                                                    score={newAsset.seo_score || 0}
+                                                                    label="SEO SCORE"
+                                                                    size="sm"
+                                                                />
+                                                            </div>
+
+                                                            {/* Grammar Score */}
+                                                            <div className="flex flex-col items-center">
+                                                                <CircularScore
+                                                                    score={newAsset.grammar_score || 0}
+                                                                    label="GRAMMAR SCORE"
+                                                                    size="sm"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* SMM Application Fields */}
+                                    {newAsset.application_type === 'smm' && (
+                                        <div className="space-y-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 shadow-sm">
+                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200">
+                                                <div className="bg-purple-600 p-2 rounded-lg">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+
+                                                    <h4 className="text-lg font-bold text-purple-900">📱 SMM Application Fields</h4>
+                                                    <p className="text-sm text-purple-600">Configure your social media content</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Platform Selector - Enhanced */}
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-3">
+                                                    🌐 Social Media Platform
+                                                    <span className="text-red-500 ml-1">*</span>
+                                                </label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                                                    {[
+                                                        { value: 'facebook', label: 'Facebook', icon: '📘', color: 'from-blue-600 to-blue-700', description: 'Share with friends and family' },
+                                                        { value: 'instagram', label: 'Instagram', icon: '📷', color: 'from-pink-500 to-purple-600', description: 'Visual storytelling platform' },
+                                                        { value: 'twitter', label: 'Twitter/X', icon: '🐦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
+                                                        { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
+                                                        { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' }
+                                                        /* TikTok, Pinterest, Snapchat, WhatsApp removed per SMM spec - only core platforms */
+                                                    ].map((platform) => (
+                                                        <button
+                                                            key={platform.value}
+                                                            type="button"
+                                                            onClick={() => setNewAsset({ ...newAsset, smm_platform: platform.value as any })}
+                                                            className={`p-4 rounded-xl border-2 transition-all text-left hover:scale-105 ${newAsset.smm_platform === platform.value
+                                                                ? `bg-gradient-to-r ${platform.color} text-white border-transparent shadow-lg`
+                                                                : 'bg-white border-slate-200 hover:border-purple-300 hover:shadow-md'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <span className="text-2xl">{platform.icon}</span>
+                                                                <span className={`font-bold text-sm ${newAsset.smm_platform === platform.value ? 'text-white' : 'text-slate-800'
+                                                                    }`}>
+                                                                    {platform.label}
+                                                                </span>
+                                                            </div>
+                                                            <p className={`text-xs ${newAsset.smm_platform === platform.value ? 'text-white/90' : 'text-slate-500'
+                                                                }`}>
+                                                                {platform.description}
+                                                            </p>
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                {/* Fallback dropdown for additional platforms */}
+                                                <div className="mt-4">
+                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Or select from dropdown:</label>
+                                                    <select
+                                                        value={newAsset.smm_platform || ''}
+                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_platform: e.target.value as any })}
+                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
+                                                    >
+                                                        <option value="">Select platform...</option>
+                                                        <option value="facebook">📘 Facebook</option>
+                                                        <option value="instagram">📷 Instagram</option>
+                                                        <option value="twitter">🐦 Twitter/X</option>
+                                                        <option value="linkedin">💼 LinkedIn</option>
+                                                        <option value="youtube">🎥 YouTube</option>
+                                                        {/* TikTok and other platforms removed per SMM spec */}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Platform-specific fields */}
+                                            {newAsset.smm_platform && (
+                                                <div className="space-y-6 bg-white rounded-xl p-6 border-2 border-slate-200 shadow-sm">
+                                                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg">
+                                                            {newAsset.smm_platform === 'facebook' && '📘'}
+                                                            {newAsset.smm_platform === 'instagram' && '📷'}
+                                                            {newAsset.smm_platform === 'twitter' && '�'}
+                                                            {newAsset.smm_platform === 'linkedin' && '💼'}
+                                                            {newAsset.smm_platform === 'youtube' && '🎥'}
+                                                            {newAsset.smm_platform === 'pinterest' && '📌'}
+                                                            {newAsset.smm_platform === 'snapchat' && '👻'}
+                                                            {newAsset.smm_platform === 'whatsapp' && '💬'}
+                                                            {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && '🌐'}
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-lg font-bold text-slate-800 capitalize">
+                                                                {newAsset.smm_platform === 'twitter' ? 'Twitter/X' : newAsset.smm_platform} Content
+                                                            </h5>
+                                                            <p className="text-sm text-slate-600">
+                                                                {newAsset.smm_platform === 'facebook' && 'Engage with your Facebook community'}
+                                                                {newAsset.smm_platform === 'instagram' && 'Share visual stories on Instagram'}
+                                                                {newAsset.smm_platform === 'twitter' && 'Join real-time conversations'}
+                                                                {newAsset.smm_platform === 'linkedin' && 'Connect with professionals'}
+                                                                {newAsset.smm_platform === 'youtube' && 'Create engaging video content'}
+                                                                {newAsset.smm_platform === 'pinterest' && 'Inspire with visual content'}
+                                                                {newAsset.smm_platform === 'snapchat' && 'Share moments that disappear'}
+                                                                {newAsset.smm_platform === 'whatsapp' && 'Connect through messaging'}
+                                                                {!(newAsset.smm_platform && ['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform)) && 'Create engaging social content'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Content Fields */}
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                        <div>
+                                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                                📝 Post Caption/Description
+                                                                <span className="text-red-500 ml-1">*</span>
+                                                            </label>
+                                                            <textarea
+                                                                value={newAsset.smm_description || ''}
+                                                                onChange={(e) => setNewAsset({ ...newAsset, smm_description: e.target.value })}
+                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                                placeholder={(() => {
+                                                                    switch (newAsset.smm_platform) {
+                                                                        case 'twitter': return "What's happening? (280 characters)";
+                                                                        case 'linkedin': return 'Share your professional insights...';
+                                                                        case 'instagram': return 'Share your story with a captivating caption...';
+                                                                        case 'facebook': return "What's on your mind?";
+                                                                        case 'youtube': return 'Describe your video content...';
+                                                                        default: return 'Enter your post content...';
+                                                                    }
+                                                                })()}
+                                                                rows={5}
+                                                                maxLength={
+                                                                    newAsset.smm_platform === 'twitter' ? 280 :
+                                                                        newAsset.smm_platform === 'instagram' ? 2200 :
+                                                                            newAsset.smm_platform === 'linkedin' ? 3000 :
+                                                                                undefined
+                                                                }
+                                                            />
+                                                            {newAsset.smm_platform === 'twitter' && (
+                                                                <div className="text-xs text-slate-500 mt-1 text-right">
+                                                                    {(newAsset.smm_description || '').length}/280 characters
+                                                                </div>
+                                                            )}
+                                                            {newAsset.smm_platform === 'instagram' && (
+                                                                <div className="text-xs text-slate-500 mt-1 text-right">
+                                                                    {(newAsset.smm_description || '').length}/2,200 characters
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                                🏷️ Hashtags & Tags
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={newAsset.smm_hashtags || ''}
+                                                                onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
+                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                                placeholder={(() => {
+                                                                    switch (newAsset.smm_platform) {
+                                                                        case 'twitter': return '#hashtag1 #hashtag2 (max 2-3)';
+                                                                        case 'instagram': return '#hashtag1 #hashtag2 #hashtag3 (max 30)';
+                                                                        case 'linkedin': return '#hashtag1 #hashtag2 #hashtag3 (max 5)';
+                                                                        default: return '#hashtag1 #hashtag2 #hashtag3';
+                                                                    }
+                                                                })()}
+                                                            />
+                                                            <div className="mt-2 text-xs text-slate-500">
+                                                                {newAsset.smm_platform === 'twitter' && '💡 Use 1-2 relevant hashtags for better engagement'}
+                                                                {newAsset.smm_platform === 'instagram' && '💡 Use 5-10 hashtags for optimal reach'}
+                                                                {newAsset.smm_platform === 'linkedin' && '💡 Use 3-5 professional hashtags'}
+                                                                {newAsset.smm_platform === 'youtube' && '💡 Use hashtags in description for discoverability'}
+                                                                {!['twitter', 'instagram', 'linkedin', 'youtube'].includes(newAsset.smm_platform) && '💡 Use relevant hashtags for your platform'}
+                                                            </div>
+                                                        </div>
                                                     </div>
 
                                                     <div>
-                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                            🏷️ Hashtags & Tags
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={newAsset.smm_hashtags || ''}
-                                                            onChange={(e) => setNewAsset({ ...newAsset, smm_hashtags: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                            placeholder={(() => {
-                                                                switch (newAsset.smm_platform) {
-                                                                    case 'twitter': return '#hashtag1 #hashtag2 (max 2-3)';
-                                                                    case 'instagram': return '#hashtag1 #hashtag2 #hashtag3 (max 30)';
-                                                                    case 'linkedin': return '#hashtag1 #hashtag2 #hashtag3 (max 5)';
-                                                                    default: return '#hashtag1 #hashtag2 #hashtag3';
-                                                                }
-                                                            })()}
-                                                        />
-                                                        <div className="mt-2 text-xs text-slate-500">
-                                                            {newAsset.smm_platform === 'twitter' && '💡 Use 1-2 relevant hashtags for better engagement'}
-                                                            {newAsset.smm_platform === 'instagram' && '💡 Use 5-10 hashtags for optimal reach'}
-                                                            {newAsset.smm_platform === 'linkedin' && '💡 Use 3-5 professional hashtags'}
-                                                            {newAsset.smm_platform === 'youtube' && '💡 Use hashtags in description for discoverability'}
-                                                            {!['twitter', 'instagram', 'linkedin', 'youtube'].includes(newAsset.smm_platform) && '💡 Use relevant hashtags for your platform'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-3">
-                                                        🎬 Content Type
-                                                        <span className="text-red-500 ml-1">*</span>
-                                                    </label>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                        {(() => {
-                                                            const getMediaTypes = (platform: string) => {
-                                                                switch (platform) {
-                                                                    case 'instagram':
-                                                                        return [
-                                                                            { value: 'image', label: 'Photo', icon: '📸' },
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'story', label: 'Story', icon: '📱' },
-                                                                            { value: 'reel', label: 'Reel', icon: '🎬' }
-                                                                        ];
-                                                                    case 'facebook':
-                                                                        return [
-                                                                            { value: 'image', label: 'Photo', icon: '📸' },
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'story', label: 'Story', icon: '📱' },
-                                                                            { value: 'live', label: 'Live', icon: '�' }
-                                                                        ];
-                                                                    case 'twitter':
-                                                                        return [
-                                                                            { value: 'text', label: 'Tweet', icon: '💬' },
-                                                                            { value: 'image', label: 'Photo', icon: '📸' },
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'gif', label: 'GIF', icon: '🎭' }
-                                                                        ];
-                                                                    case 'linkedin':
-                                                                        return [
-                                                                            { value: 'text', label: 'Post', icon: '📝' },
-                                                                            { value: 'image', label: 'Image', icon: '📸' },
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'document', label: 'Document', icon: '📄' },
-                                                                            { value: 'article', label: 'Article', icon: '📰' }
-                                                                        ];
-                                                                    case 'youtube':
-                                                                        return [
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'short', label: 'Short', icon: '📱' },
-                                                                            { value: 'live', label: 'Live Stream', icon: '🔴' }
-                                                                        ];
-                                                                    /* TikTok removed per SMM spec */
-                                                                    case 'pinterest':
-                                                                        return [
-                                                                            { value: 'image', label: 'Pin', icon: '📌' },
-                                                                            { value: 'video', label: 'Video Pin', icon: '🎥' }
-                                                                        ];
-                                                                    default:
-                                                                        return [
-                                                                            { value: 'image', label: 'Image', icon: '📸' },
-                                                                            { value: 'video', label: 'Video', icon: '🎥' },
-                                                                            { value: 'text', label: 'Text', icon: '📝' }
-                                                                        ];
-                                                                }
-                                                            };
-
-                                                            return getMediaTypes(newAsset.smm_platform).map((type) => (
-                                                                <button
-                                                                    key={type.value}
-                                                                    type="button"
-                                                                    onClick={() => setNewAsset({ ...newAsset, smm_media_type: type.value as any })}
-                                                                    className={`p-3 rounded-lg border-2 transition-all text-center hover:scale-105 ${newAsset.smm_media_type === type.value
-                                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
-                                                                        : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
-                                                                        }`}
-                                                                >
-                                                                    <div className="text-2xl mb-1">{type.icon}</div>
-                                                                    <div className={`text-xs font-bold ${newAsset.smm_media_type === type.value ? 'text-white' : 'text-slate-700'
-                                                                        }`}>
-                                                                        {type.label}
-                                                                    </div>
-                                                                </button>
-                                                            ));
-                                                        })()}
-                                                    </div>
-                                                </div>
-
-                                                {/* SMM Asset Classification - below upload & preview */}
-                                                <div className="bg-purple-50/50 rounded-xl border border-purple-200 p-6">
-                                                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
-                                                        <span className="text-lg">🏷️</span>
-                                                        Asset Classification
-                                                    </label>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {/* Content Type Dropdown */}
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
-                                                            <select
-                                                                value={newAsset.content_type || ''}
-                                                                onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
-                                                                className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
-                                                            >
-                                                                <option value="">Select content type</option>
-                                                                <option value="Blog">Blog</option>
-                                                                <option value="Service Page">Service Page</option>
-                                                                <option value="Sub-Service Page">Sub-Service Page</option>
-                                                                <option value="SMM Post">SMM Post</option>
-                                                                <option value="Backlink Asset">Backlink Asset</option>
-                                                                <option value="Web UI Asset">Web UI Asset</option>
-                                                            </select>
-                                                        </div>
-
-                                                        {/* Repository */}
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
-                                                            <select value={newAsset.repository || 'SMM Repository'} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                                <option value="SMM Repository">SMM Repository</option>
-                                                                <option value="Content Repository">Content Repository</option>
-                                                                <option value="Design Repository">Design Repository</option>
-                                                            </select>
-                                                        </div>
-
-                                                        {/* Asset Category (from master table) */}
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
-                                                            <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                                <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories --'}</option>
-                                                                {allActiveAssetCategories.map(cat => (
-                                                                    <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
-                                                                ))}
-                                                            </select>
-                                                            {allActiveAssetCategories.length === 0 && (
-                                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Category Master</p>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Asset Type (from master table) */}
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
-                                                            <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                                                <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types --'}</option>
-                                                                {allActiveAssetTypes.map(t => {
-                                                                    const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
-                                                                    return <option key={t.id} value={typeName}>{typeName}</option>;
-                                                                })}
-                                                            </select>
-                                                            {allActiveAssetTypes.length === 0 && (
-                                                                <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Type Master</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Media Upload Section */}
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-3">
-                                                        🎨 Media Upload
-                                                        {(newAsset.smm_media_type === 'image' || newAsset.smm_media_type === 'video') && (
+                                                        <label className="block text-sm font-bold text-slate-700 mb-3">
+                                                            🎬 Content Type
                                                             <span className="text-red-500 ml-1">*</span>
-                                                        )}
-                                                    </label>
-
-                                                    {/* single-image SMM upload removed; using consolidated uploader below */}
-
-                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                        <div className="lg:col-span-2 space-y-4">
-                                                            <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
-                                                                onClick={() => mediaInputRef.current?.click()}>
-                                                                <input
-                                                                    ref={mediaInputRef}
-                                                                    type="file"
-                                                                    accept={
-                                                                        newAsset.smm_media_type === 'video' ? 'video/*' :
-                                                                            newAsset.smm_media_type === 'image' ? 'image/*' :
-                                                                                'image/*,video/*,.gif'
+                                                        </label>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                            {(() => {
+                                                                const getMediaTypes = (platform: string) => {
+                                                                    switch (platform) {
+                                                                        case 'instagram':
+                                                                            return [
+                                                                                { value: 'image', label: 'Photo', icon: '📸' },
+                                                                                { value: 'video', label: 'Video', icon: '🎥' },
+                                                                                { value: 'story', label: 'Story', icon: '📱' },
+                                                                                { value: 'reel', label: 'Reel', icon: '🎬' }
+                                                                            ];
+                                                                        case 'facebook':
+                                                                            return [
+                                                                                { value: 'image', label: 'Photo', icon: '📸' },
+                                                                                { value: 'video', label: 'Video', icon: '🎥' },
+                                                                                { value: 'story', label: 'Story', icon: '📱' },
+                                                                                { value: 'live', label: 'Live', icon: '�' }
+                                                                            ];
+                                                                        case 'twitter':
+                                                                            return [
+                                                                                { value: 'text', label: 'Tweet', icon: '💬' },
+                                                                                { value: 'image', label: 'Photo', icon: '📸' },
+                                                                                { value: 'video', label: 'Video', icon: '🎥' },
+                                                                                { value: 'gif', label: 'GIF', icon: '🎭' }
+                                                                            ];
+                                                                        case 'linkedin':
+                                                                            return [
+                                                                                { value: 'text', label: 'Post', icon: '📝' },
+                                                                                { value: 'image', label: 'Image', icon: '📸' },
+                                                                                { value: 'video', label: 'Video', icon: '🎥' },
+                                                                                { value: 'document', label: 'Document', icon: '📄' },
+                                                                                { value: 'article', label: 'Article', icon: '📰' }
+                                                                            ];
+                                                                        case 'youtube':
+                                                                            return [
+                                                                                { value: 'video', label: 'Video', icon: '🎥' },
+                                                                                { value: 'short', label: 'Short', icon: '📱' },
+                                                                                { value: 'live', label: 'Live Stream', icon: '🔴' }
+                                                                            ];
+                                                                        /* TikTok removed per SMM spec */
+                                                                        case 'pinterest':
+                                                                            return [
+                                                                                { value: 'image', label: 'Pin', icon: '📌' },
+                                                                                { value: 'video', label: 'Video Pin', icon: '🎥' }
+                                                                            ];
+                                                                        default:
+                                                                            return [
+                                                                                { value: 'image', label: 'Image', icon: '📸' },
+                                                                                { value: 'video', label: 'Video', icon: '🎥' },
+                                                                                { value: 'text', label: 'Text', icon: '📝' }
+                                                                            ];
                                                                     }
-                                                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
-                                                                    className="hidden"
-                                                                />
+                                                                };
 
-                                                                {newAsset.smm_media_url && newAsset.smm_media_url.startsWith('data:') ? (
-                                                                    <div className="space-y-3">
-                                                                        {newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
-                                                                            <video src={newAsset.smm_media_url} controls className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
-                                                                        ) : (
-                                                                            <img src={newAsset.smm_media_url} alt="Media preview" className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
-                                                                        )}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setNewAsset({ ...newAsset, smm_media_url: '' });
-                                                                            }}
-                                                                            className="text-sm text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                                                                        >
-                                                                            Remove Media
-                                                                        </button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="space-y-4">
-                                                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
-                                                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                                            </svg>
+                                                                return getMediaTypes(newAsset.smm_platform).map((type) => (
+                                                                    <button
+                                                                        key={type.value}
+                                                                        type="button"
+                                                                        onClick={() => setNewAsset({ ...newAsset, smm_media_type: type.value as any })}
+                                                                        className={`p-3 rounded-lg border-2 transition-all text-center hover:scale-105 ${newAsset.smm_media_type === type.value
+                                                                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                                                                            : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                                                                            }`}
+                                                                    >
+                                                                        <div className="text-2xl mb-1">{type.icon}</div>
+                                                                        <div className={`text-xs font-bold ${newAsset.smm_media_type === type.value ? 'text-white' : 'text-slate-700'
+                                                                            }`}>
+                                                                            {type.label}
                                                                         </div>
-                                                                        <div>
-                                                                            <p className="text-base font-semibold text-slate-700 mb-2">
-                                                                                Drop your {newAsset.smm_media_type || 'media'} here or click to browse
-                                                                            </p>
-                                                                            <p className="text-sm text-slate-500">
-                                                                                {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB • Videos up to 60s'}
-                                                                                {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB • Videos up to 2:20'}
-                                                                                {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB • Videos up to 10min'}
-                                                                                {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB • Videos up to 240min'}
-                                                                                {newAsset.smm_platform === 'youtube' && 'Videos up to 15min (or longer with verification)'}
-                                                                                {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && 'JPG, PNG, MP4, GIF up to 50MB'}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
+                                                                    </button>
+                                                                ));
+                                                            })()}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* SMM Asset Classification - below upload & preview */}
+                                                    <div className="bg-purple-50/50 rounded-xl border border-purple-200 p-6">
+                                                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
+                                                            <span className="text-lg">🏷️</span>
+                                                            Asset Classification
+                                                        </label>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {/* Content Type Dropdown */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                                                <select
+                                                                    value={newAsset.content_type || ''}
+                                                                    onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                                                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                                >
+                                                                    <option value="">Select content type</option>
+                                                                    <option value="Blog">Blog</option>
+                                                                    <option value="Service Page">Service Page</option>
+                                                                    <option value="Sub-Service Page">Sub-Service Page</option>
+                                                                    <option value="SMM Post">SMM Post</option>
+                                                                    <option value="Backlink Asset">Backlink Asset</option>
+                                                                    <option value="Web UI Asset">Web UI Asset</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Repository */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
+                                                                <select value={newAsset.repository || 'SMM Repository'} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                                    <option value="SMM Repository">SMM Repository</option>
+                                                                    <option value="Content Repository">Content Repository</option>
+                                                                    <option value="Design Repository">Design Repository</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Asset Category (from master table) */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                                                <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                                    <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories --'}</option>
+                                                                    {allActiveAssetCategories.map(cat => (
+                                                                        <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                                    ))}
+                                                                </select>
+                                                                {allActiveAssetCategories.length === 0 && (
+                                                                    <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Category Master</p>
                                                                 )}
                                                             </div>
 
-                                                            <div className="mt-2">
-                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Or paste media URL:</label>
-                                                                <input
-                                                                    type="url"
-                                                                    value={newAsset.smm_media_url && !newAsset.smm_media_url.startsWith('data:') ? newAsset.smm_media_url : ''}
-                                                                    onChange={(e) => setNewAsset({ ...newAsset, smm_media_url: e.target.value })}
-                                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                                    placeholder="https://example.com/media.jpg"
-                                                                />
+                                                            {/* Asset Type (from master table) */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                                                <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                                    <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types --'}</option>
+                                                                    {allActiveAssetTypes.map(t => {
+                                                                        const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                                                        return <option key={t.id} value={typeName}>{typeName}</option>;
+                                                                    })}
+                                                                </select>
+                                                                {allActiveAssetTypes.length === 0 && (
+                                                                    <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Type Master</p>
+                                                                )}
                                                             </div>
                                                         </div>
+                                                    </div>
 
-                                                        <div className="lg:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col items-center justify-center">
-                                                            <div className="w-full">
-                                                                <label className="block text-sm font-semibold text-slate-700 mb-2">Preview</label>
-                                                                <div className="w-full h-48 flex items-center justify-center bg-white rounded-lg border-2 border-slate-100">
-                                                                    {newAsset.smm_media_url ? (
-                                                                        newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
-                                                                            <video src={newAsset.smm_media_url} controls className="max-h-44 mx-auto rounded-lg" />
-                                                                        ) : (
-                                                                            <img src={newAsset.smm_media_url} alt="Preview" className="max-h-44 mx-auto rounded-lg" />
-                                                                        )
+                                                    {/* Media Upload Section */}
+                                                    <div>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-3">
+                                                            🎨 Media Upload
+                                                            {(newAsset.smm_media_type === 'image' || newAsset.smm_media_type === 'video') && (
+                                                                <span className="text-red-500 ml-1">*</span>
+                                                            )}
+                                                        </label>
+
+                                                        {/* single-image SMM upload removed; using consolidated uploader below */}
+
+                                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                                            <div className="lg:col-span-2 space-y-4">
+                                                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
+                                                                    onClick={() => mediaInputRef.current?.click()}>
+                                                                    <input
+                                                                        ref={mediaInputRef}
+                                                                        type="file"
+                                                                        accept={
+                                                                            newAsset.smm_media_type === 'video' ? 'video/*' :
+                                                                                newAsset.smm_media_type === 'image' ? 'image/*' :
+                                                                                    'image/*,video/*,.gif'
+                                                                        }
+                                                                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'media')}
+                                                                        className="hidden"
+                                                                    />
+
+                                                                    {newAsset.smm_media_url && newAsset.smm_media_url.startsWith('data:') ? (
+                                                                        <div className="space-y-3">
+                                                                            {newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
+                                                                                <video src={newAsset.smm_media_url} controls className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
+                                                                            ) : (
+                                                                                <img src={newAsset.smm_media_url} alt="Media preview" className="max-h-48 mx-auto rounded-lg border-2 border-slate-200 shadow-sm" />
+                                                                            )}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setNewAsset({ ...newAsset, smm_media_url: '' });
+                                                                                }}
+                                                                                className="text-sm text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                                            >
+                                                                                Remove Media
+                                                                            </button>
+                                                                        </div>
                                                                     ) : (
-                                                                        <div className="text-sm text-slate-400">No media selected</div>
+                                                                        <div className="space-y-4">
+                                                                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
+                                                                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                                </svg>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-base font-semibold text-slate-700 mb-2">
+                                                                                    Drop your {newAsset.smm_media_type || 'media'} here or click to browse
+                                                                                </p>
+                                                                                <p className="text-sm text-slate-500">
+                                                                                    {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB • Videos up to 60s'}
+                                                                                    {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB • Videos up to 2:20'}
+                                                                                    {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB • Videos up to 10min'}
+                                                                                    {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB • Videos up to 240min'}
+                                                                                    {newAsset.smm_platform === 'youtube' && 'Videos up to 15min (or longer with verification)'}
+                                                                                    {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && 'JPG, PNG, MP4, GIF up to 50MB'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
                                                                     )}
                                                                 </div>
 
-                                                                <div className="mt-3 flex gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setShowInlinePreview(!showInlinePreview)}
-                                                                        className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-                                                                    >
-                                                                        {showInlinePreview ? 'Hide Post Preview' : `Show ${newAsset.smm_platform ? (newAsset.smm_platform.charAt(0).toUpperCase() + newAsset.smm_platform.slice(1)) : 'Post'} Preview`}
-                                                                    </button>
-
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => { setShowDemoPreview(false); setShowPreviewModal(true); }}
-                                                                        className="px-3 py-2 bg-white border rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
-                                                                    >
-                                                                        Open Modal
-                                                                    </button>
+                                                                <div className="mt-2">
+                                                                    <label className="block text-xs font-medium text-slate-600 mb-2">Or paste media URL:</label>
+                                                                    <input
+                                                                        type="url"
+                                                                        value={newAsset.smm_media_url && !newAsset.smm_media_url.startsWith('data:') ? newAsset.smm_media_url : ''}
+                                                                        onChange={(e) => setNewAsset({ ...newAsset, smm_media_url: e.target.value })}
+                                                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                                        placeholder="https://example.com/media.jpg"
+                                                                    />
                                                                 </div>
+                                                            </div>
 
-                                                                {showInlinePreview && (
-                                                                    <div className="mt-4 w-full">
-                                                                        {/* Compact platform-specific preview */}
-                                                                        {((newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
-                                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                                                                                <div className="p-3 flex items-center justify-between">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-[2px]">
-                                                                                            <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                                                                                                <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">{(newAsset.name || 'Y').charAt(0).toUpperCase()}</div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <p className="font-semibold text-sm text-slate-900">{newAsset.name || 'Your Page'}</p>
-                                                                                            <p className="text-xs text-slate-500">Just now · Public</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                                {(newAsset.smm_description || newAsset.smm_hashtags) && (
-                                                                                    <div className="px-3 pb-2">
-                                                                                        {newAsset.smm_description && <p className="text-sm text-slate-900 whitespace-pre-wrap leading-5 mb-1">{newAsset.smm_description}</p>}
-                                                                                        {newAsset.smm_hashtags && <p className="text-sm text-blue-600">{newAsset.smm_hashtags}</p>}
-                                                                                    </div>
-                                                                                )}
-                                                                                {newAsset.smm_media_url && (
-                                                                                    <div className="bg-black">
-                                                                                        {newAsset.smm_media_type === 'video' ? (
-                                                                                            <video src={newAsset.smm_media_url} controls className="w-full max-h-48 object-contain" />
-                                                                                        ) : (
-                                                                                            <img src={newAsset.smm_media_url} alt="Post media" className="w-full object-cover" style={{ maxHeight: '300px' }} />
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        )) || (newAsset.smm_platform === 'twitter' && (
-                                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-3">
-                                                                                <div className="flex gap-3">
-                                                                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">{(newAsset.name || 'Y').charAt(0)}</div>
-                                                                                    <div className="flex-1">
-                                                                                        <div className="flex items-center gap-2 mb-1">
-                                                                                            <p className="font-bold text-sm">{newAsset.name || 'Your Account'}</p>
-                                                                                            <span className="text-slate-500 text-sm">· 2m</span>
-                                                                                        </div>
-                                                                                        {newAsset.smm_description && <p className="text-sm text-slate-900 whitespace-pre-wrap">{newAsset.smm_description}</p>}
-                                                                                        {newAsset.smm_hashtags && <p className="text-sm text-blue-500 mt-2">{newAsset.smm_hashtags}</p>}
-                                                                                        {newAsset.smm_media_url && (
-                                                                                            <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
-                                                                                                {newAsset.smm_media_type === 'video' ? (
-                                                                                                    <video src={newAsset.smm_media_url} controls className="w-full" />
-                                                                                                ) : (
-                                                                                                    <img src={newAsset.smm_media_url} alt="Tweet media" className="w-full" />
-                                                                                                )}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        )) || (newAsset.smm_platform === 'linkedin' && (
-                                                                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                                                                                <div className="p-3 flex items-start gap-3 border-b border-slate-200">
-                                                                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold">{(newAsset.name || 'Y').charAt(0)}</div>
-                                                                                    <div className="flex-1">
-                                                                                        <p className="font-bold text-sm">{newAsset.name || 'Your Company'}</p>
-                                                                                        <p className="text-xs text-slate-500">1,234 followers · 1m</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="p-4">
-                                                                                    {newAsset.smm_description && <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{newAsset.smm_description}</p>}
-                                                                                    {newAsset.smm_hashtags && <p className="text-sm text-blue-700 mb-2">{newAsset.smm_hashtags}</p>}
-                                                                                </div>
-                                                                                {newAsset.smm_media_url && (
-                                                                                    <div className="bg-slate-100">
-                                                                                        {newAsset.smm_media_type === 'video' ? (
-                                                                                            <video src={newAsset.smm_media_url} controls className="w-full" />
-                                                                                        ) : (
-                                                                                            <img src={newAsset.smm_media_url} alt="Post media" className="w-full" />
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        ))}
+                                                            <div className="lg:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col items-center justify-center">
+                                                                <div className="w-full">
+                                                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Preview</label>
+                                                                    <div className="w-full h-48 flex items-center justify-center bg-white rounded-lg border-2 border-slate-100">
+                                                                        {newAsset.smm_media_url ? (
+                                                                            newAsset.smm_media_type === 'video' || newAsset.smm_media_url.includes('video') ? (
+                                                                                <video src={newAsset.smm_media_url} controls className="max-h-44 mx-auto rounded-lg" />
+                                                                            ) : (
+                                                                                <img src={newAsset.smm_media_url} alt="Preview" className="max-h-44 mx-auto rounded-lg" />
+                                                                            )
+                                                                        ) : (
+                                                                            <div className="text-sm text-slate-400">No media selected</div>
+                                                                        )}
                                                                     </div>
-                                                                )}
+
+                                                                    <div className="mt-3 flex gap-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setShowInlinePreview(!showInlinePreview)}
+                                                                            className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                                                                        >
+                                                                            {showInlinePreview ? 'Hide Post Preview' : `Show ${newAsset.smm_platform ? (newAsset.smm_platform.charAt(0).toUpperCase() + newAsset.smm_platform.slice(1)) : 'Post'} Preview`}
+                                                                        </button>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => { setShowDemoPreview(false); setShowPreviewModal(true); }}
+                                                                            className="px-3 py-2 bg-white border rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                                                                        >
+                                                                            Open Modal
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {showInlinePreview && (
+                                                                        <div className="mt-4 w-full">
+                                                                            {/* Compact platform-specific preview */}
+                                                                            {((newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram') && (
+                                                                                <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                                                                    <div className="p-3 flex items-center justify-between">
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-[2px]">
+                                                                                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                                                                                                    <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">{(newAsset.name || 'Y').charAt(0).toUpperCase()}</div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <p className="font-semibold text-sm text-slate-900">{newAsset.name || 'Your Page'}</p>
+                                                                                                <p className="text-xs text-slate-500">Just now · Public</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    {(newAsset.smm_description || newAsset.smm_hashtags) && (
+                                                                                        <div className="px-3 pb-2">
+                                                                                            {newAsset.smm_description && <p className="text-sm text-slate-900 whitespace-pre-wrap leading-5 mb-1">{newAsset.smm_description}</p>}
+                                                                                            {newAsset.smm_hashtags && <p className="text-sm text-blue-600">{newAsset.smm_hashtags}</p>}
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {newAsset.smm_media_url && (
+                                                                                        <div className="bg-black">
+                                                                                            {newAsset.smm_media_type === 'video' ? (
+                                                                                                <video src={newAsset.smm_media_url} controls className="w-full max-h-48 object-contain" />
+                                                                                            ) : (
+                                                                                                <img src={newAsset.smm_media_url} alt="Post media" className="w-full object-cover" style={{ maxHeight: '300px' }} />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            )) || (newAsset.smm_platform === 'twitter' && (
+                                                                                <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-3">
+                                                                                    <div className="flex gap-3">
+                                                                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">{(newAsset.name || 'Y').charAt(0)}</div>
+                                                                                        <div className="flex-1">
+                                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                                <p className="font-bold text-sm">{newAsset.name || 'Your Account'}</p>
+                                                                                                <span className="text-slate-500 text-sm">· 2m</span>
+                                                                                            </div>
+                                                                                            {newAsset.smm_description && <p className="text-sm text-slate-900 whitespace-pre-wrap">{newAsset.smm_description}</p>}
+                                                                                            {newAsset.smm_hashtags && <p className="text-sm text-blue-500 mt-2">{newAsset.smm_hashtags}</p>}
+                                                                                            {newAsset.smm_media_url && (
+                                                                                                <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200">
+                                                                                                    {newAsset.smm_media_type === 'video' ? (
+                                                                                                        <video src={newAsset.smm_media_url} controls className="w-full" />
+                                                                                                    ) : (
+                                                                                                        <img src={newAsset.smm_media_url} alt="Tweet media" className="w-full" />
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )) || (newAsset.smm_platform === 'linkedin' && (
+                                                                                <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                                                                    <div className="p-3 flex items-start gap-3 border-b border-slate-200">
+                                                                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold">{(newAsset.name || 'Y').charAt(0)}</div>
+                                                                                        <div className="flex-1">
+                                                                                            <p className="font-bold text-sm">{newAsset.name || 'Your Company'}</p>
+                                                                                            <p className="text-xs text-slate-500">1,234 followers · 1m</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="p-4">
+                                                                                        {newAsset.smm_description && <p className="text-sm text-slate-700 whitespace-pre-wrap mb-2">{newAsset.smm_description}</p>}
+                                                                                        {newAsset.smm_hashtags && <p className="text-sm text-blue-700 mb-2">{newAsset.smm_hashtags}</p>}
+                                                                                    </div>
+                                                                                    {newAsset.smm_media_url && (
+                                                                                        <div className="bg-slate-100">
+                                                                                            {newAsset.smm_media_type === 'video' ? (
+                                                                                                <video src={newAsset.smm_media_url} controls className="w-full" />
+                                                                                            ) : (
+                                                                                                <img src={newAsset.smm_media_url} alt="Post media" className="w-full" />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Scheduling & Additional Options */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div>
+                                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                                📅 Schedule Post (Optional)
+                                                            </label>
+                                                            <input
+                                                                type="datetime-local"
+                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-1">Leave empty to save as draft</p>
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                                🎯 Target Audience (Optional)
+                                                            </label>
+                                                            <select className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                                                                <option value="">All Followers</option>
+                                                                <option value="location">By Location</option>
+                                                                <option value="age">By Age Group</option>
+                                                                <option value="interests">By Interests</option>
+                                                                <option value="custom">Custom Audience</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Call-to-Action */}
+                                                    {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram' || newAsset.smm_platform === 'linkedin') && (
+                                                        <div>
+                                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                                🔗 Call-to-Action (Optional)
+                                                            </label>
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                {[
+                                                                    { value: 'learn_more', label: 'Learn More' },
+                                                                    { value: 'shop_now', label: 'Shop Now' },
+                                                                    { value: 'sign_up', label: 'Sign Up' },
+                                                                    { value: 'download', label: 'Download' },
+                                                                    { value: 'contact_us', label: 'Contact Us' },
+                                                                    { value: 'book_now', label: 'Book Now' }
+                                                                ].map((cta) => (
+                                                                    <button
+                                                                        key={cta.value}
+                                                                        type="button"
+                                                                        className="p-2 text-sm border-2 border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-center"
+                                                                    >
+                                                                        {cta.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Action Buttons */}
+                                                    <div className="flex gap-4 pt-6 border-t-2 border-slate-200">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                // Validate that user has entered some content
+                                                                if (!newAsset.smm_description && !newAsset.smm_media_url) {
+                                                                    alert('Please add a description or upload media to preview your post.');
+                                                                    return;
+                                                                }
+                                                                // Show real content immediately, no demo delay
+                                                                setShowDemoPreview(false);
+                                                                setShowPreviewModal(true);
+                                                            }}
+                                                            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                            Preview {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Post
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold shadow-md hover:bg-green-700 transition-all flex items-center gap-2"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                                            </svg>
+                                                            AI Optimize
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Platform-specific Tips */}
+                                                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="text-yellow-600 mt-0.5">💡</div>
+                                                            <div>
+                                                                <h6 className="font-bold text-yellow-800 mb-2">
+                                                                    {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Best Practices
+                                                                </h6>
+                                                                <ul className="text-sm text-yellow-700 space-y-1">
+                                                                    {newAsset.smm_platform === 'instagram' && (
+                                                                        <>
+                                                                            <li>• Use high-quality, visually appealing images</li>
+                                                                            <li>• Post consistently at optimal times (11 AM - 1 PM)</li>
+                                                                            <li>• Use 5-10 relevant hashtags for better reach</li>
+                                                                            <li>• Include a clear call-to-action in your caption</li>
+                                                                        </>
+                                                                    )}
+                                                                    {newAsset.smm_platform === 'twitter' && (
+                                                                        <>
+                                                                            <li>• Keep tweets concise and engaging</li>
+                                                                            <li>• Use 1-2 hashtags maximum</li>
+                                                                            <li>• Tweet during peak hours (9 AM - 3 PM)</li>
+                                                                            <li>• Include visuals to increase engagement by 150%</li>
+                                                                        </>
+                                                                    )}
+                                                                    {newAsset.smm_platform === 'linkedin' && (
+                                                                        <>
+                                                                            <li>• Share professional insights and industry news</li>
+                                                                            <li>• Post during business hours (8 AM - 6 PM)</li>
+                                                                            <li>• Use 3-5 professional hashtags</li>
+                                                                            <li>• Engage with comments to boost visibility</li>
+                                                                        </>
+                                                                    )}
+                                                                    {newAsset.smm_platform === 'facebook' && (
+                                                                        <>
+                                                                            <li>• Share engaging, community-focused content</li>
+                                                                            <li>• Post when your audience is most active</li>
+                                                                            <li>• Use Facebook-native video for better reach</li>
+                                                                            <li>• Encourage comments and shares</li>
+                                                                        </>
+                                                                    )}
+                                                                    {newAsset.smm_platform === 'youtube' && (
+                                                                        <>
+                                                                            <li>• Create compelling thumbnails and titles</li>
+                                                                            <li>• Upload consistently (2-3 times per week)</li>
+                                                                            <li>• Use relevant keywords in description</li>
+                                                                            <li>• Engage with comments within first hour</li>
+                                                                        </>
+                                                                    )}
+                                                                    {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && (
+                                                                        <>
+                                                                            <li>• Know your platform's optimal posting times</li>
+                                                                            <li>• Use platform-appropriate content formats</li>
+                                                                            <li>• Engage with your community regularly</li>
+                                                                            <li>• Monitor analytics to improve performance</li>
+                                                                        </>
+                                                                    )}
+                                                                </ul>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                {/* Scheduling & Additional Options */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div>
-                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                            📅 Schedule Post (Optional)
-                                                        </label>
-                                                        <input
-                                                            type="datetime-local"
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                                        />
-                                                        <p className="text-xs text-slate-500 mt-1">Leave empty to save as draft</p>
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                            🎯 Target Audience (Optional)
-                                                        </label>
-                                                        <select className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
-                                                            <option value="">All Followers</option>
-                                                            <option value="location">By Location</option>
-                                                            <option value="age">By Age Group</option>
-                                                            <option value="interests">By Interests</option>
-                                                            <option value="custom">Custom Audience</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                {/* Call-to-Action */}
-                                                {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram' || newAsset.smm_platform === 'linkedin') && (
-                                                    <div>
-                                                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                            🔗 Call-to-Action (Optional)
-                                                        </label>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            {[
-                                                                { value: 'learn_more', label: 'Learn More' },
-                                                                { value: 'shop_now', label: 'Shop Now' },
-                                                                { value: 'sign_up', label: 'Sign Up' },
-                                                                { value: 'download', label: 'Download' },
-                                                                { value: 'contact_us', label: 'Contact Us' },
-                                                                { value: 'book_now', label: 'Book Now' }
-                                                            ].map((cta) => (
-                                                                <button
-                                                                    key={cta.value}
-                                                                    type="button"
-                                                                    className="p-2 text-sm border-2 border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-center"
-                                                                >
-                                                                    {cta.label}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Action Buttons */}
-                                                <div className="flex gap-4 pt-6 border-t-2 border-slate-200">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            // Validate that user has entered some content
-                                                            if (!newAsset.smm_description && !newAsset.smm_media_url) {
-                                                                alert('Please add a description or upload media to preview your post.');
-                                                                return;
-                                                            }
-                                                            // Show real content immediately, no demo delay
-                                                            setShowDemoPreview(false);
-                                                            setShowPreviewModal(true);
-                                                        }}
-                                                        className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                        Preview {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Post
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold shadow-md hover:bg-green-700 transition-all flex items-center gap-2"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                                        </svg>
-                                                        AI Optimize
-                                                    </button>
-                                                </div>
-
-                                                {/* Platform-specific Tips */}
-                                                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="text-yellow-600 mt-0.5">💡</div>
-                                                        <div>
-                                                            <h6 className="font-bold text-yellow-800 mb-2">
-                                                                {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Best Practices
-                                                            </h6>
-                                                            <ul className="text-sm text-yellow-700 space-y-1">
-                                                                {newAsset.smm_platform === 'instagram' && (
-                                                                    <>
-                                                                        <li>• Use high-quality, visually appealing images</li>
-                                                                        <li>• Post consistently at optimal times (11 AM - 1 PM)</li>
-                                                                        <li>• Use 5-10 relevant hashtags for better reach</li>
-                                                                        <li>• Include a clear call-to-action in your caption</li>
-                                                                    </>
-                                                                )}
-                                                                {newAsset.smm_platform === 'twitter' && (
-                                                                    <>
-                                                                        <li>• Keep tweets concise and engaging</li>
-                                                                        <li>• Use 1-2 hashtags maximum</li>
-                                                                        <li>• Tweet during peak hours (9 AM - 3 PM)</li>
-                                                                        <li>• Include visuals to increase engagement by 150%</li>
-                                                                    </>
-                                                                )}
-                                                                {newAsset.smm_platform === 'linkedin' && (
-                                                                    <>
-                                                                        <li>• Share professional insights and industry news</li>
-                                                                        <li>• Post during business hours (8 AM - 6 PM)</li>
-                                                                        <li>• Use 3-5 professional hashtags</li>
-                                                                        <li>• Engage with comments to boost visibility</li>
-                                                                    </>
-                                                                )}
-                                                                {newAsset.smm_platform === 'facebook' && (
-                                                                    <>
-                                                                        <li>• Share engaging, community-focused content</li>
-                                                                        <li>• Post when your audience is most active</li>
-                                                                        <li>• Use Facebook-native video for better reach</li>
-                                                                        <li>• Encourage comments and shares</li>
-                                                                    </>
-                                                                )}
-                                                                {newAsset.smm_platform === 'youtube' && (
-                                                                    <>
-                                                                        <li>• Create compelling thumbnails and titles</li>
-                                                                        <li>• Upload consistently (2-3 times per week)</li>
-                                                                        <li>• Use relevant keywords in description</li>
-                                                                        <li>• Engage with comments within first hour</li>
-                                                                    </>
-                                                                )}
-                                                                {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && (
-                                                                    <>
-                                                                        <li>• Know your platform's optimal posting times</li>
-                                                                        <li>• Use platform-appropriate content formats</li>
-                                                                        <li>• Engage with your community regularly</li>
-                                                                        <li>• Monitor analytics to improve performance</li>
-                                                                    </>
-                                                                )}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Map Asset to Source Work Section - Common to all application types */}
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -3640,7 +3705,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 >
                                                     <option value="">Select sub-service</option>
                                                     {subServices
-                                                        .filter(ss => !newAsset.linked_service_id || ss.service_id === newAsset.linked_service_id)
+                                                        .filter(ss => !newAsset.linked_service_id || ss.parent_service_id === newAsset.linked_service_id)
                                                         .map(subService => (
                                                             <option key={subService.id} value={subService.id}>
                                                                 {subService.sub_service_name}
