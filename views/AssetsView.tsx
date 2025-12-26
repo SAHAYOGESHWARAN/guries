@@ -48,9 +48,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [dateRangeFilter, setDateRangeFilter] = useState('All');           // Date Range - date picker
     const [usageStatusFilter, setUsageStatusFilter] = useState('All');       // Usage Status - Used, Unused, Archived
 
-    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'qc' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [qcMode, setQcMode] = useState(false); // Toggle between user and QC mode
     const [displayMode, setDisplayMode] = useState<'table' | 'grid'>('table'); // List vs Large view toggle
     const [isRefreshing, setIsRefreshing] = useState(false); // Refresh state
     const [currentUser] = useState({ id: 1, role: 'user' }); // TODO: Get from auth context
@@ -75,12 +74,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [markdownContent, setMarkdownContent] = useState<string>('');
     const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
     const [showSidePanel, setShowSidePanel] = useState<boolean>(false);
-
-    // QC state
-    const [qcReviewAsset, setQcReviewAsset] = useState<AssetLibraryItem | null>(null);
-    const [qcScore, setQcScore] = useState<number | undefined>(undefined);
-    const [qcRemarks, setQcRemarks] = useState<string>('');
-    const [checklistCompleted, setChecklistCompleted] = useState<boolean>(false);
 
     // Brands (used for filters/masters)
     const { data: brands = [] } = useData<Brand>('brands');
@@ -219,12 +212,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         const query = (searchQuery || '').toLowerCase().trim();
 
         return assets.filter(a => {
-            // QC Mode filter - only show assets pending QC review
-            if (qcMode && a.status !== 'Pending QC Review') return false;
-
-            // User Mode filter - show all except those in QC review (unless user is the creator)
-            if (!qcMode && a.status === 'Pending QC Review' && a.submitted_by !== currentUser.id) return false;
-
             // Asset Type filter (from Asset Type Master)
             if (assetTypeFilter !== 'All' && a.type !== assetTypeFilter) return false;
 
@@ -363,7 +350,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 projectName.includes(query) ||
                 repoName.includes(query);
         });
-    }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter, qcMode, currentUser.id, services, subServices, tasks, campaigns, projects, repositoryItems]);
+    }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter, currentUser.id, services, subServices, tasks, campaigns, projects, repositoryItems]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -765,60 +752,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
         setViewMode('edit');
     }, []);
-
-    // QC Review Functions
-    const handleQcReview = useCallback((asset: AssetLibraryItem) => {
-        setQcReviewAsset(asset);
-        setQcScore(asset.qc_score);
-        setQcRemarks(asset.qc_remarks || '');
-        setChecklistCompleted(false);
-        setViewMode('qc');
-    }, []);
-
-    const handleQcSubmit = useCallback(async (approved: boolean) => {
-        if (!qcReviewAsset) return;
-
-        if (!qcScore || qcScore < 0 || qcScore > 100) {
-            alert('Please enter a valid QC score (0-100)');
-            return;
-        }
-
-        if (!checklistCompleted) {
-            alert('Please complete the QC checklist before submitting');
-            return;
-        }
-
-        try {
-            const updatedAsset = {
-                ...qcReviewAsset,
-                status: approved ? 'QC Approved' : 'QC Rejected',
-                qc_score: qcScore || 0,
-                qc_remarks: qcRemarks,
-                qc_reviewer_id: currentUser.id,
-                qc_reviewed_at: new Date().toISOString(),
-                linking_active: approved, // Only activate linking after approval
-                rework_count: approved ? (qcReviewAsset?.rework_count || 0) : ((qcReviewAsset?.rework_count || 0) + 1)
-            };
-
-            await updateAsset(qcReviewAsset?.id || 0, updatedAsset);
-
-            // Reset QC state
-            setQcReviewAsset(null);
-            setQcScore(undefined);
-            setQcRemarks('');
-            setChecklistCompleted(false);
-            setViewMode('list');
-
-            // Show success message
-            alert(`Asset ${approved ? 'approved' : 'rejected'} successfully!`);
-
-            // Force refresh
-            setTimeout(() => refresh?.(), 100);
-        } catch (error) {
-            console.error('QC review failed:', error);
-            alert('Failed to submit QC review. Please try again.');
-        }
-    }, [qcReviewAsset, qcScore, qcRemarks, checklistCompleted, currentUser.id, updateAsset, refresh]);
 
     // Handle row click to show detailed view in side panel
     const handleRowClick = useCallback((asset: AssetLibraryItem) => {
@@ -4056,504 +3989,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 })()
             }
 
-            {/* QC Review View */}
-            {
-                viewMode === 'qc' && qcReviewAsset && (() => {
-                    return (
-                        <div className="h-full flex flex-col w-full p-6 overflow-hidden">
-                            <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                                <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 w-full flex-shrink-0">
-                                    <div>
-                                        <h2 className="text-lg font-bold text-slate-900">QC Review</h2>
-                                        <p className="text-slate-600 text-xs mt-0.5">
-                                            Review asset for quality control approval
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {/* Quick Upload Button in QC View */}
-                                        <button
-                                            onClick={() => setShowUploadModal(true)}
-                                            className="px-4 py-2 text-sm font-medium text-indigo-600 border-2 border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
-                                            title="Upload New Asset"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Upload Asset
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setQcReviewAsset(null);
-                                                setViewMode('list');
-                                            }}
-                                            className="px-4 py-2 text-sm font-medium text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-white transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={() => handleQcSubmit(false)}
-                                            disabled={!qcScore || !checklistCompleted}
-                                            className={`bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-red-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            Reject Asset
-                                        </button>
-                                        <button
-                                            onClick={() => handleQcSubmit(true)}
-                                            disabled={!qcScore || !checklistCompleted}
-                                            className={`bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 transition-colors text-sm ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            Approve Asset
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto p-8 bg-slate-50 w-full">
-                                    <div className="max-w-4xl mx-auto space-y-6">
-                                        {/* Asset Information (Read-Only) */}
-                                        <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
-                                                <div className="bg-indigo-600 p-2 rounded-lg">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-indigo-900">Asset Information</h3>
-                                                    <p className="text-xs text-indigo-600">Read-only view for QC review</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Name</label>
-                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                        {qcReviewAsset?.name || 'N/A'}
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Application Type</label>
-                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700 uppercase">
-                                                        {qcReviewAsset?.application_type || 'Not specified'}
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Type</label>
-                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                        {qcReviewAsset?.type || 'N/A'}
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Asset Category</label>
-                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                        {qcReviewAsset?.asset_category || 'Not specified'}
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2">Repository</label>
-                                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-sm text-slate-700">
-                                                        {qcReviewAsset?.repository || 'N/A'}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* AI Scores Display */}
-                                            {(qcReviewAsset?.seo_score || qcReviewAsset?.grammar_score) && (
-                                                <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                    <h4 className="text-sm font-bold text-slate-700 mb-4">AI Quality Scores</h4>
-                                                    <div className="flex justify-center gap-8">
-                                                        {qcReviewAsset?.seo_score && qcReviewAsset.seo_score > 0 && (
-                                                            <CircularScore
-                                                                score={qcReviewAsset.seo_score}
-                                                                label="SEO Score"
-                                                                size="md"
-                                                            />
-                                                        )}
-                                                        {qcReviewAsset?.grammar_score && qcReviewAsset.grammar_score > 0 && (
-                                                            <CircularScore
-                                                                score={qcReviewAsset.grammar_score}
-                                                                label="Grammar Score"
-                                                                size="md"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Content Preview */}
-                                            {qcReviewAsset?.web_body_content && (
-                                                <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                    <h4 className="text-sm font-bold text-slate-700 mb-4">Body Content</h4>
-                                                    <div className="max-h-64 overflow-y-auto bg-slate-50 border-2 border-slate-200 rounded-lg p-4">
-                                                        <div className="prose prose-sm max-w-none text-slate-700">
-                                                            {qcReviewAsset?.web_body_content?.split('\n').map((line, index) => (
-                                                                <p key={index} className="mb-2">{line}</p>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Media Preview */}
-                                            {(qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url) && (
-                                                <div className="mt-6 pt-6 border-t-2 border-slate-200">
-                                                    <h4 className="text-sm font-bold text-slate-700 mb-4">Asset Preview</h4>
-                                                    <div className="flex justify-center">
-                                                        <img
-                                                            src={qcReviewAsset?.thumbnail_url || qcReviewAsset?.file_url || ''}
-                                                            alt="Asset preview"
-                                                            className="max-h-64 rounded-lg border-2 border-slate-200 shadow-sm"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* QC Input Section */}
-                                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6 shadow-sm">
-                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-purple-200 mb-6">
-                                                <div className="bg-purple-600 p-2 rounded-lg">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-purple-900">QC Review Input</h3>
-                                                    <p className="text-xs text-purple-600">Provide your quality control assessment</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-6">
-                                                {/* QC Score Input */}
-                                                <div>
-                                                    <label className="block text-sm font-bold text-purple-900 mb-3">
-                                                        QC Score (0-100)
-                                                        <span className="text-red-500 ml-1">*</span>
-                                                    </label>
-                                                    <div className="flex items-center gap-4">
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            max="100"
-                                                            value={qcScore || ''}
-                                                            onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
-                                                            className="w-32 px-4 py-3 border-2 border-purple-300 rounded-lg text-lg font-bold text-center focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                            placeholder="0"
-                                                        />
-                                                        <div className="flex-1">
-                                                            <input
-                                                                type="range"
-                                                                min="0"
-                                                                max="100"
-                                                                value={qcScore || 0}
-                                                                onChange={(e) => setQcScore(parseInt(e.target.value))}
-                                                                className="w-full h-3 bg-purple-200 rounded-lg appearance-none cursor-pointer slider"
-                                                            />
-                                                            <div className="flex justify-between text-xs text-purple-600 mt-1">
-                                                                <span>Poor (0)</span>
-                                                                <span>Average (50)</span>
-                                                                <span>Excellent (100)</span>
-                                                            </div>
-                                                        </div>
-                                                        {qcScore && (
-                                                            <div className="w-16 h-16">
-                                                                <CircularScore
-                                                                    score={qcScore}
-                                                                    label="QC"
-                                                                    size="sm"
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* QC Remarks */}
-                                                <div>
-                                                    <label className="block text-sm font-bold text-purple-900 mb-3">
-                                                        QC Remarks & Feedback
-                                                    </label>
-                                                    <textarea
-                                                        value={qcRemarks}
-                                                        onChange={(e) => setQcRemarks(e.target.value)}
-                                                        className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
-                                                        rows={4}
-                                                        placeholder="Provide detailed feedback about the asset quality, areas for improvement, or approval notes..."
-                                                    />
-                                                    <div className="flex justify-between items-center mt-2">
-                                                        <div className="text-xs text-purple-600">
-                                                            {qcRemarks.length}/500 characters
-                                                        </div>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => setQcRemarks(qcRemarks + '\n\n✅ Approved: ')}
-                                                                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
-                                                            >
-                                                                + Approval Note
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setQcRemarks(qcRemarks + '\n\n❌ Issue: ')}
-                                                                className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
-                                                            >
-                                                                + Issue Note
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* QC Checklist */}
-                                                <div>
-                                                    <label className="block text-sm font-bold text-purple-900 mb-3">
-                                                        QC Checklist
-                                                        <span className="text-red-500 ml-1">*</span>
-                                                    </label>
-                                                    <div className="bg-white rounded-lg border-2 border-purple-200 p-4">
-                                                        <div className="space-y-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id="content-quality"
-                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                                />
-                                                                <label htmlFor="content-quality" className="text-sm text-slate-700">
-                                                                    Content quality meets standards
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id="brand-guidelines"
-                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                                />
-                                                                <label htmlFor="brand-guidelines" className="text-sm text-slate-700">
-                                                                    Follows brand guidelines and style
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id="technical-specs"
-                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                                />
-                                                                <label htmlFor="technical-specs" className="text-sm text-slate-700">
-                                                                    Technical specifications are correct
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id="seo-optimization"
-                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                                />
-                                                                <label htmlFor="seo-optimization" className="text-sm text-slate-700">
-                                                                    SEO optimization is adequate
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id="final-approval"
-                                                                    checked={checklistCompleted}
-                                                                    onChange={(e) => setChecklistCompleted(e.target.checked)}
-                                                                    className="w-4 h-4 text-purple-600 border-2 border-purple-300 rounded focus:ring-purple-500"
-                                                                />
-                                                                <label htmlFor="final-approval" className="text-sm font-bold text-purple-900">
-                                                                    I have completed the QC review process
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Action Buttons */}
-                                                <div className="flex justify-between items-center pt-4 border-t-2 border-purple-200">
-                                                    <div className="text-sm text-purple-700">
-                                                        {!qcScore && <span className="text-red-600">⚠️ QC Score required</span>}
-                                                        {!checklistCompleted && qcScore && <span className="text-red-600">⚠️ Complete checklist required</span>}
-                                                        {qcScore && checklistCompleted && <span className="text-green-600">✅ Ready for submission</span>}
-                                                    </div>
-                                                    <div className="flex gap-3">
-                                                        <button
-                                                            onClick={() => handleQcSubmit(false)}
-                                                            disabled={!qcScore || !checklistCompleted}
-                                                            className={`bg-red-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-red-700 transition-all text-sm flex items-center gap-2 ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
-                                                            Reject Asset
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleQcSubmit(true)}
-                                                            disabled={!qcScore || !checklistCompleted}
-                                                            className={`bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 transition-all text-sm flex items-center gap-2 ${!qcScore || !checklistCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                            Approve Asset
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Asset History & Timeline */}
-                                        <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                            <div className="flex items-center gap-3 pb-4 border-b-2 border-slate-200 mb-6">
-                                                <div className="bg-slate-600 p-2 rounded-lg">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-slate-900">Asset Timeline</h3>
-                                                    <p className="text-xs text-slate-600">Review history and workflow progress</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="text-sm font-medium text-slate-900">Asset Created</div>
-                                                        <div className="text-xs text-slate-500">
-                                                            {qcReviewAsset?.date ? new Date(qcReviewAsset.date).toLocaleString() : 'Unknown date'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {qcReviewAsset?.submitted_at && (
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="text-sm font-medium text-slate-900">Submitted for QC Review</div>
-                                                            <div className="text-xs text-slate-500">
-                                                                {new Date(qcReviewAsset.submitted_at).toLocaleString()}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="text-sm font-medium text-slate-900">QC Review in Progress</div>
-                                                        <div className="text-xs text-slate-500">Currently being reviewed</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            {/* QC Score */}
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                    QC Score (0-100)
-                                                    <span className="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    value={qcScore || ''}
-                                                    onChange={(e) => setQcScore(parseInt(e.target.value) || undefined)}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="Enter QC score (0-100)"
-                                                />
-                                                {qcScore && qcScore > 0 && (
-                                                    <div className={`mt-2 text-xs font-bold ${qcScore >= 80 ? 'text-green-600' : qcScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                        {qcScore >= 80 ? '✓ Excellent quality' : qcScore >= 60 ? '⚠ Good quality' : '✗ Needs improvement'}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Checklist Completion */}
-                                            <div>
-                                                <label className="flex items-center gap-3 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checklistCompleted}
-                                                        onChange={(e) => setChecklistCompleted(e.target.checked)}
-                                                        className="w-5 h-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
-                                                    />
-                                                    <span className="text-sm font-bold text-slate-700">
-                                                        QC Checklist Completed
-                                                        <span className="text-red-500 ml-1">*</span>
-                                                    </span>
-                                                </label>
-                                                <p className="text-xs text-slate-500 mt-1 ml-8">
-                                                    Confirm that all quality control checks have been completed
-                                                </p>
-                                            </div>
-
-                                            {/* QC Remarks */}
-                                            <div>
-                                                <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                    QC Remarks / Comments
-                                                </label>
-                                                <textarea
-                                                    value={qcRemarks}
-                                                    onChange={(e) => setQcRemarks(e.target.value)}
-                                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                                    placeholder="Enter your QC remarks and comments..."
-                                                    rows={4}
-                                                />
-                                                <p className="text-xs text-slate-500 mt-1">
-                                                    Provide detailed feedback for the asset creator
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Workflow Information */}
-                                    <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
-                                        <h3 className="text-lg font-bold text-slate-900 mb-4">Workflow Information</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="font-bold text-slate-700">Submitted by:</span>
-                                                <span className="ml-2 text-slate-600">
-                                                    {users.find(u => u.id === qcReviewAsset?.submitted_by)?.name || 'Unknown'}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="font-bold text-slate-700">Submitted at:</span>
-                                                <span className="ml-2 text-slate-600">
-                                                    {qcReviewAsset?.submitted_at ? new Date(qcReviewAsset.submitted_at).toLocaleString() : 'Unknown'}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="font-bold text-slate-700">Current status:</span>
-                                                <span className="ml-2">{getStatusBadge(qcReviewAsset?.status || 'Draft')}</span>
-                                            </div>
-                                            <div>
-                                                <span className="font-bold text-slate-700">Rework count:</span>
-                                                <span className="ml-2 text-slate-600">{qcReviewAsset?.rework_count || 0}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })()
-            }
-
             {/* My Submissions View */}
             {
                 viewMode === 'mysubmissions' && (() => {
@@ -6303,7 +5738,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             <div>
                                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
                                 <p className="text-slate-600 text-sm mt-1">
-                                    {qcMode ? 'QC Review Mode - Review assets for quality control' : 'Manage and organize all your marketing assets'}
+                                    Manage and organize all your marketing assets
                                 </p>
                             </div>
 
@@ -6504,27 +5939,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </button>
                                 </div>
 
-                                {/* Mode Toggle */}
-                                <div className="bg-slate-100 p-1 rounded-lg flex">
-                                    <button
-                                        onClick={() => setQcMode(false)}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${!qcMode
-                                            ? 'bg-white text-slate-900 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                            }`}
-                                    >
-                                        User Mode
-                                    </button>
-                                    <button
-                                        onClick={() => setQcMode(true)}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${qcMode
-                                            ? 'bg-white text-purple-600 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                            }`}
-                                    >
-                                        QC Mode
-                                    </button>
-                                </div>
+                                {/* QC Review Button - Navigate to AssetQCView */}
+                                <button
+                                    onClick={() => onNavigate?.('asset-qc')}
+                                    className="bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-purple-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                    </svg>
+                                    QC Review
+                                </button>
 
                                 {/* My Submissions Button */}
                                 <button
@@ -6910,7 +6334,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 <svg className="w-8 h-8 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                                 </svg>
-                                                                <p className="text-xs font-medium">{qcMode ? "No assets pending QC review." : "No assets yet. Click 'Upload Asset' to add your first file!"}</p>
+                                                                <p className="text-xs font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -6938,46 +6362,44 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </svg>
                                             </div>
                                             <p className="text-slate-500 text-lg font-medium mb-4">
-                                                {qcMode ? "No assets pending QC review." : "No assets yet."}
+                                                No assets yet.
                                             </p>
-                                            {!qcMode && (
-                                                <div className="space-y-4">
-                                                    <p className="text-slate-400 text-sm">
-                                                        Get started by uploading your first asset
-                                                    </p>
+                                            <div className="space-y-4">
+                                                <p className="text-slate-400 text-sm">
+                                                    Get started by uploading your first asset
+                                                </p>
 
-                                                    {/* Quick Upload Options */}
-                                                    <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                                setShowUploadModal(true);
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                        >
-                                                            🌐 Web Content
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                                setShowUploadModal(true);
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                                                        >
-                                                            🔍 SEO Content
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                                setShowUploadModal(true);
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                                                        >
-                                                            📱 Social Media
-                                                        </button>
-                                                    </div>
+                                                {/* Quick Upload Options */}
+                                                <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
+                                                    <button
+                                                        onClick={() => {
+                                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                            setShowUploadModal(true);
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                                    >
+                                                        🌐 Web Content
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                            setShowUploadModal(true);
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                                    >
+                                                        🔍 SEO Content
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                            setShowUploadModal(true);
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                                                    >
+                                                        📱 Social Media
+                                                    </button>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     ) : (
                                         filteredAssets.map((asset) => (
@@ -7491,21 +6913,23 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             />
 
             {/* Asset Detail Side Panel */}
-            {selectedAsset && (
-                <AssetDetailSidePanel
-                    asset={selectedAsset}
-                    isOpen={showSidePanel}
-                    onClose={() => {
-                        setShowSidePanel(false);
-                        setSelectedAsset(null);
-                    }}
-                    onEdit={(asset) => {
-                        setShowSidePanel(false);
-                        handleEdit({ stopPropagation: () => { } } as any, asset);
-                    }}
-                    onNavigate={onNavigate}
-                />
-            )}
+            {
+                selectedAsset && (
+                    <AssetDetailSidePanel
+                        asset={selectedAsset}
+                        isOpen={showSidePanel}
+                        onClose={() => {
+                            setShowSidePanel(false);
+                            setSelectedAsset(null);
+                        }}
+                        onEdit={(asset) => {
+                            setShowSidePanel(false);
+                            handleEdit({ stopPropagation: () => { } } as any, asset);
+                        }}
+                        onNavigate={onNavigate}
+                    />
+                )
+            }
         </>
     );
 };
