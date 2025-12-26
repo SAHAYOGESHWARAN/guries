@@ -2884,6 +2884,66 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* SEO Asset Classification Section */}
+                                            <div className="bg-green-50 rounded-xl border border-green-200 p-6 mt-6">
+                                                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
+                                                    <span className="text-lg">🏷️</span>
+                                                    Asset Classification
+                                                </label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Content Type Dropdown */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Content Type <span className="text-red-500">*</span></label>
+                                                        <select
+                                                            value={newAsset.content_type || ''}
+                                                            onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                                            className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                        >
+                                                            <option value="">Select content type</option>
+                                                            <option value="Blog">Blog</option>
+                                                            <option value="Service Page">Service Page</option>
+                                                            <option value="Sub-Service Page">Sub-Service Page</option>
+                                                            <option value="SMM Post">SMM Post</option>
+                                                            <option value="Backlink Asset">Backlink Asset</option>
+                                                            <option value="Web UI Asset">Web UI Asset</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Repository */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Repository</label>
+                                                        <select value={newAsset.repository} onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                                            <option value="SEO Repository">SEO Repository</option>
+                                                            <option value="Content Repository">Content Repository</option>
+                                                            <option value="Design Repository">Design Repository</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Asset Category (from master table) */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                                        <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                            <option value="">{allActiveAssetCategories.length > 0 ? 'Select category...' : '-- No categories available --'}</option>
+                                                            {allActiveAssetCategories.map(cat => (
+                                                                <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Asset Type (from master table) */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                                        <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                                                            <option value="">{allActiveAssetTypes.length > 0 ? 'Select type...' : '-- No types available --'}</option>
+                                                            {allActiveAssetTypes.map(t => {
+                                                                const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                                                return <option key={t.id} value={typeName}>{typeName}</option>;
+                                                            })}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 

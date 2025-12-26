@@ -528,6 +528,100 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                                     {(newAsset.seo_content_body || newAsset.web_body_content || '').split(' ').filter((w: string) => w.length > 0).length} words
                                 </div>
                             </div>
+
+                            {/* SEO Asset Classification Section */}
+                            <div className="mt-6 bg-green-50/50 rounded-xl border border-green-200 p-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="text-xl">🏷️</span>
+                                    <h4 className="text-md font-bold text-slate-800">Asset Classification</h4>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Left Column */}
+                                    <div className="space-y-4">
+                                        {/* Content Type Dropdown */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                                Content Type <span className="text-red-500">*</span>
+                                            </label>
+                                            <select
+                                                value={newAsset.content_type || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, content_type: e.target.value as any })}
+                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-slate-900"
+                                            >
+                                                <option value="">Select content type</option>
+                                                <option value="Blog">Blog</option>
+                                                <option value="Service Page">Service Page</option>
+                                                <option value="Sub-Service Page">Sub-Service Page</option>
+                                                <option value="SMM Post">SMM Post</option>
+                                                <option value="Backlink Asset">Backlink Asset</option>
+                                                <option value="Web UI Asset">Web UI Asset</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Asset Category (Linked to Asset Category Master Table) */}
+                                        <div>
+                                            <label className="block text-sm text-slate-600 mb-2">
+                                                Asset Category <span className="text-xs text-slate-400">(Linked to Asset Category Master Table)</span>
+                                            </label>
+                                            <select
+                                                value={newAsset.asset_category || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
+                                            >
+                                                <option value="">Select category...</option>
+                                                {filteredAssetCategories.map(category => (
+                                                    <option key={category.id} value={category.category_name}>
+                                                        {category.category_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Asset Type (Linked to Asset Type Master Table) */}
+                                        <div>
+                                            <label className="block text-sm text-slate-600 mb-2">
+                                                Asset Type <span className="text-xs text-slate-400">(Linked to Asset Type Master Table)</span>
+                                            </label>
+                                            <select
+                                                value={newAsset.type || ''}
+                                                onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-slate-900"
+                                            >
+                                                <option value="" className="text-slate-900">Select type...</option>
+                                                {filteredAssetTypes.map(type => {
+                                                    const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
+                                                    return (
+                                                        <option key={type.id} value={typeName} className="text-slate-900">
+                                                            {typeName}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Column */}
+                                    <div className="space-y-4">
+                                        {/* Repository */}
+                                        <div>
+                                            <label className="block text-sm text-slate-600 mb-2">
+                                                Repository
+                                            </label>
+                                            <select
+                                                value={newAsset.repository || 'SEO Repository'}
+                                                onChange={(e) => setNewAsset({ ...newAsset, repository: e.target.value })}
+                                                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
+                                            >
+                                                <option value="SEO Repository">SEO Repository</option>
+                                                <option value="Content Repository">Content Repository</option>
+                                                <option value="Media Repository">Media</option>
+                                                <option value="Document Repository">Document</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
