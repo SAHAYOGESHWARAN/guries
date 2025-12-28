@@ -22,6 +22,18 @@ export default defineConfig(({ mode }) => {
       watch: {
         usePolling: true,
       },
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3003',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/socket.io': {
+          target: 'http://localhost:3003',
+          changeOrigin: true,
+          ws: true,
+        },
+      },
     },
     build: {
       outDir: 'dist',

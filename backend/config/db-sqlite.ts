@@ -494,9 +494,66 @@ export const initDatabase = () => {
         CREATE INDEX IF NOT EXISTS idx_social_usage_asset ON asset_social_media_usage(asset_id);
         CREATE INDEX IF NOT EXISTS idx_backlink_usage_asset ON asset_backlink_usage(asset_id);
         CREATE INDEX IF NOT EXISTS idx_engagement_asset ON asset_engagement_metrics(asset_id);
+
+        -- Projects table
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_name TEXT NOT NULL,
+            project_code TEXT,
+            description TEXT,
+            status TEXT DEFAULT 'Active',
+            start_date DATE,
+            end_date DATE,
+            budget REAL,
+            owner_id INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Notifications table
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT,
+            message TEXT,
+            type TEXT DEFAULT 'info',
+            is_read INTEGER DEFAULT 0,
+            link TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
     console.log('✅ SQLite database initialized');
+
+    // Add missing columns to assets table (migrations)
+    const addColumnIfNotExists = (table: string, column: string, type: string) => {
+        try {
+            const tableInfo = sqliteDb.prepare(`PRAGMA table_info(${table})`).all() as any[];
+            const columnExists = tableInfo.some((col: any) => col.name === column);
+            if (!columnExists) {
+                sqliteDb.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+                console.log(`  Added column ${column} to ${table}`);
+            }
+        } catch (e) {
+            // Column might already exist or table doesn't exist
+        }
+    };
+
+    // Add missing columns to assets table
+    addColumnIfNotExists('assets', 'content_type', 'TEXT');
+    addColumnIfNotExists('assets', 'dimensions', 'TEXT');
+    addColumnIfNotExists('assets', 'linked_task_id', 'INTEGER');
+    addColumnIfNotExists('assets', 'linked_campaign_id', 'INTEGER');
+    addColumnIfNotExists('assets', 'linked_project_id', 'INTEGER');
+    addColumnIfNotExists('assets', 'linked_service_id', 'INTEGER');
+    addColumnIfNotExists('assets', 'linked_sub_service_id', 'INTEGER');
+    addColumnIfNotExists('assets', 'linked_repository_item_id', 'INTEGER');
+    addColumnIfNotExists('assets', 'qc_status', 'TEXT');
+    addColumnIfNotExists('assets', 'qc_checklist_items', 'TEXT');
+    addColumnIfNotExists('assets', 'version_number', 'TEXT DEFAULT "v1.0"');
+    addColumnIfNotExists('assets', 'designed_by', 'INTEGER');
+    addColumnIfNotExists('assets', 'created_by', 'INTEGER');
+    addColumnIfNotExists('assets', 'updated_by', 'INTEGER');
 };
 
 // PostgreSQL-compatible pool interface

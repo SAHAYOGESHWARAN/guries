@@ -285,27 +285,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
                 smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by,
                 submitted_at, workflow_log, linking_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48) RETURNING 
-                id,
-                asset_name as name,
-                asset_type as type,
-                asset_category,
-                asset_format,
-                content_type,
-                tags as repository,
-                usage_status,
-                status,
-                file_url,
-                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
-                file_size,
-                file_type,
-                linked_service_ids,
-                linked_sub_service_ids,
-                created_at as date,
-                application_type, keywords, seo_score, grammar_score, qc_score, qc_status, qc_checklist_items,
-                web_title, web_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
-                smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
-                submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49) RETURNING *`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
@@ -320,7 +300,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null, smm_tag || null, smm_url || null, smm_description || null,
                 smm_hashtags || null, smm_media_url || null, smm_media_type || null, seo_score || null, grammar_score || null, submitted_by || null,
                 status === 'Pending QC Review' ? new Date().toISOString() : null,
-                JSON.stringify(workflowLog), 0 // linking_active starts as false (0 for SQLite)
+                JSON.stringify(workflowLog), 0
             ]
         );
 

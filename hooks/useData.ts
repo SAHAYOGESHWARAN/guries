@@ -83,8 +83,14 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
 
 // Singleton socket instance to manage connection
 let socketInstance: Socket | null = null;
-let backendAvailable = false;
+let backendAvailable = true; // Default to true to attempt connection
 let backendCheckDone = false;
+
+// Reset backend check on page load
+if (typeof window !== 'undefined') {
+    backendCheckDone = false;
+    backendAvailable = true;
+}
 
 // Check if backend is available before attempting socket connection
 const checkBackendAvailability = async (): Promise<boolean> => {
@@ -92,7 +98,7 @@ const checkBackendAvailability = async (): Promise<boolean> => {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 500);
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // Increased timeout to 3s
 
         const response = await fetch(`${API_BASE_URL}/users`, {
             signal: controller.signal,
@@ -189,9 +195,9 @@ export function useData<T>(collection: string) {
         }
 
         try {
-            // Very short timeout for initial fetch to prevent hanging
+            // Increased timeout for initial fetch
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 500); // 500ms max wait
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s max wait
 
             const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
                 signal: controller.signal
