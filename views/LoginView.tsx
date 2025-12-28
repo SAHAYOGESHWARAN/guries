@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SparkIcon, GoogleIcon } from '../constants';
+import { AuthUser, UserRole } from '../hooks/useAuth';
 
 interface LoginViewProps {
-    onLogin: () => void;
+    onLogin: (user: AuthUser) => void;
 }
 
 const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
@@ -12,6 +13,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [timer, setTimer] = useState(30);
     const [canResend, setCanResend] = useState(false);
+    const [error, setError] = useState('');
 
     // Form State
     const [formData, setFormData] = useState({
@@ -20,7 +22,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         password: '',
         phone: '',
         countryCode: '+1',
-        role: 'Marketing Manager'
+        role: 'user' as UserRole,
+        department: ''
     });
 
     const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -37,6 +40,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError('');
     };
 
     const handleOtpChange = (index: number, value: string) => {
@@ -53,9 +57,43 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         }
     };
 
+    // Create user object from form data
+    const createUserFromForm = (): AuthUser => {
+        const userName = mode === 'signup' ? formData.name : formData.email.split('@')[0];
+        return {
+            id: Date.now(),
+            name: userName || 'User',
+            email: formData.email || `${formData.phone}@phone.user`,
+            role: formData.role,
+            status: 'active',
+            created_at: new Date().toISOString(),
+            department: formData.department || 'Marketing',
+            last_login: new Date().toISOString()
+        };
+    };
+
     const initiateLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         setIsLoading(true);
+
+        // Validation
+        if (authMethod === 'email' && !formData.email) {
+            setError('Please enter your email');
+            setIsLoading(false);
+            return;
+        }
+        if (authMethod === 'email' && !formData.password) {
+            setError('Please enter your password');
+            setIsLoading(false);
+            return;
+        }
+        if (mode === 'signup' && !formData.name) {
+            setError('Please enter your name');
+            setIsLoading(false);
+            return;
+        }
+
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         if (authMethod === 'phone') {
@@ -65,7 +103,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setOtp(['', '', '', '', '', '']);
             setIsLoading(false);
         } else {
-            onLogin();
+            const user = createUserFromForm();
+            onLogin(user);
         }
     };
 
@@ -73,9 +112,10 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         setIsLoading(true);
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (otp.join('').length === 6) {
-            onLogin();
+            const user = createUserFromForm();
+            onLogin(user);
         } else {
-            alert("Invalid OTP code. Try 123456.");
+            setError("Invalid OTP code. Try 123456.");
             setIsLoading(false);
         }
     };
@@ -83,7 +123,18 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         await new Promise(resolve => setTimeout(resolve, 1500));
-        onLogin();
+        // Simulate Google login with a demo user
+        const googleUser: AuthUser = {
+            id: Date.now(),
+            name: 'Google User',
+            email: 'user@gmail.com',
+            role: 'user',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            department: 'Marketing',
+            last_login: new Date().toISOString()
+        };
+        onLogin(googleUser);
     };
 
     return (
@@ -133,6 +184,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
                     {/* Form Content */}
                     <div>
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                <p className="text-red-400 text-xs font-medium">{error}</p>
+                            </div>
+                        )}
+
                         {mode === 'otp' ? (
                             <div className="space-y-6 text-center">
                                 <div className="space-y-1">
@@ -179,6 +237,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                         <input
                                             type="text"
                                             name="name"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
                                             className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all placeholder-slate-600"
                                             placeholder="Jane Doe"
                                             required

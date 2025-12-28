@@ -1,9 +1,10 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginView from './views/LoginView';
 import SplashScreen from './components/SplashScreen';
 import Chatbot from './components/Chatbot';
+import { AuthUser } from './hooks/useAuth';
 
 // Lazy Load Views
 const DashboardView = React.lazy(() => import('./views/DashboardView'));
@@ -68,6 +69,7 @@ const KpiTrackingView = React.lazy(() => import('./views/KpiTrackingView'));
 const CommunicationHubView = React.lazy(() => import('./views/CommunicationHubView'));
 const KnowledgeBaseView = React.lazy(() => import('./views/KnowledgeBaseView'));
 const QualityComplianceView = React.lazy(() => import('./views/QualityComplianceView'));
+const UserProfileView = React.lazy(() => import('./views/UserProfileView'));
 
 const LoadingSpinner = () => (
   <div className="flex flex-col items-center justify-center h-full w-full min-h-[400px] animate-fade-in">
@@ -79,12 +81,29 @@ const LoadingSpinner = () => (
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [viewState, setViewState] = useState<{ view: string; id: string | number | null }>({
     view: 'dashboard',
     id: null,
   });
 
+  // Check for existing user session on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser) as AuthUser;
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } catch (e) {
+        localStorage.removeItem('currentUser');
+      }
+    }
+  }, []);
+
   const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
     setIsAuthenticated(false);
     setViewState({ view: 'dashboard', id: null });
     setIsLoading(false);
@@ -103,7 +122,10 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleLogin = () => {
+  const handleLogin = (user: AuthUser) => {
+    // Store user in localStorage
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    setCurrentUser(user);
     setIsAuthenticated(true);
   };
 
@@ -189,6 +211,8 @@ const App: React.FC = () => {
       case 'reward-penalty': return <RewardPenaltyDashboard onNavigate={handleNavigate} />;
       case 'reward-penalty-dashboard': return <RewardPenaltyDashboard onNavigate={handleNavigate} />;
       case 'users': return <UsersView />;
+      case 'my-profile': return <UserProfileView onNavigateBack={() => handleNavigate('dashboard')} />;
+      case 'profile': return <UserProfileView onNavigateBack={() => handleNavigate('dashboard')} />;
 
       default: return <DashboardView onNavigate={handleNavigate} />;
     }

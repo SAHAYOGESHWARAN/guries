@@ -7,6 +7,7 @@ export type UserRole = 'admin' | 'user' | 'guest';
 // Extended user interface with role-based permissions
 export interface AuthUser extends User {
   role: UserRole;
+  last_login?: string;
   permissions?: {
     canPerformQC: boolean;
     canApproveAssets: boolean;
