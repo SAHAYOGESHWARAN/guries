@@ -33,3 +33,4 @@ backend/.env.local
 *.sw?
 
 .vercel
+.env*.local
