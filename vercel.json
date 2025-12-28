@@ -9,6 +9,11 @@
             "maxDuration": 10
         }
     },
+    "build": {
+        "env": {
+            "NODE_VERSION": "20"
+        }
+    },
     "rewrites": [
         {
             "source": "/api/v1/:path*",
