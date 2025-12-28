@@ -186,12 +186,17 @@ export function useData<T>(collection: string) {
         }
     }, [collection]);
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isRefresh = false) => {
         // If no endpoint (local only) or known offline, just ensure loading is false
         if (!resource) {
             loadLocal();
             setLoading(false);
             return;
+        }
+
+        // Don't set loading to true during refresh to prevent flickering
+        if (!isRefresh) {
+            // Keep existing data while loading initially
         }
 
         try {
@@ -207,7 +212,10 @@ export function useData<T>(collection: string) {
 
             if (!response.ok) throw new Error('API Error');
             const result = await response.json();
-            setData(result); // Update with server data
+            // Only update data if we got a valid response (prevents flickering)
+            if (Array.isArray(result)) {
+                setData(result);
+            }
             setIsOffline(false);
         } catch (err: any) {
             // If fetch fails or times out, we are effectively "offline" or backend is down.
@@ -216,11 +224,14 @@ export function useData<T>(collection: string) {
             if (err.name !== 'AbortError') {
                 setIsOffline(true);
             }
-            loadLocal(); // Ensure state is consistent with local storage
+            // Only load local if we don't have data yet (prevents flickering)
+            if (data.length === 0) {
+                loadLocal();
+            }
         } finally {
             setLoading(false);
         }
-    }, [collection, resource, loadLocal]);
+    }, [collection, resource, loadLocal, data.length]);
 
     useEffect(() => {
         // Check backend availability first, then fetch data
@@ -380,6 +391,8 @@ export function useData<T>(collection: string) {
         setData(prev => prev.filter(item => (item as any).id !== id));
     };
 
-    // Added refresh method explicitly exposing fetch
-    return { data, loading, error: isOffline ? null : error, create, update, remove, refresh: fetchData };
+    // Added refresh method explicitly exposing fetch (with isRefresh flag to prevent flickering)
+    const refresh = useCallback(() => fetchData(true), [fetchData]);
+
+    return { data, loading, error: isOffline ? null : error, create, update, remove, refresh };
 }

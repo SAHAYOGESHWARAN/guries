@@ -12,7 +12,7 @@ interface AssetQCViewProps {
 
 const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>('all');
     const [sidePanelAsset, setSidePanelAsset] = useState<AssetLibraryItem | null>(null);
@@ -27,7 +27,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     });
 
     // Use the useData hook for real-time data
-    const { data: assetsForQC = [], refresh: refreshAssets } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assetsForQC = [], loading: dataLoading, refresh: refreshAssets } = useData<AssetLibraryItem>('assetLibrary');
     const { data: users = [] } = useData<User>('users');
     const { data: services = [] } = useData<Service>('services');
     const { data: tasks = [] } = useData<Task>('tasks');
@@ -37,12 +37,15 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
 
     const canPerformQC = isAdmin || hasPermission('canPerformQC');
 
-    // Set loading to false once data is loaded
+    // Only show loading on initial load, not during refresh
+    const [initialLoadDone, setInitialLoadDone] = useState(false);
     useEffect(() => {
-        if (assetsForQC) {
-            setLoading(false);
+        if (!dataLoading && !initialLoadDone) {
+            setInitialLoadDone(true);
         }
-    }, [assetsForQC]);
+    }, [dataLoading, initialLoadDone]);
+
+    const loading = !initialLoadDone && dataLoading;
 
     // Helper: Get linked service name from Map Assets to Source Work
     const getLinkedServiceName = (asset: AssetLibraryItem): string => {
@@ -113,10 +116,13 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     };
 
     // Refresh assets
-    const handleRefresh = () => {
-        setLoading(true);
-        refreshAssets?.();
-        setTimeout(() => setLoading(false), 500);
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await refreshAssets?.();
+        } finally {
+            setTimeout(() => setIsRefreshing(false), 500);
+        }
     };
 
     // Filter assets based on view mode
@@ -448,9 +454,13 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                         </svg>
                         Back to Assets
                     </button>
-                    <button onClick={handleRefresh} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        Refresh
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className={`px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : ''}`}
+                    >
+                        <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
                     </button>
                 </div>
             </div>
