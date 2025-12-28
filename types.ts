@@ -430,10 +430,15 @@ export interface Task {
 export interface Notification {
     id: number;
     text: string;
+    title?: string;
+    message?: string;
     type: 'success' | 'warning' | 'info' | 'error';
     read: boolean;
+    is_read?: boolean;
     time: string;
     created_at?: string;
+    user_id?: number;
+    link?: string;
 }
 
 export interface OnPageSeoAudit {

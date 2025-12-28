@@ -488,19 +488,20 @@ export const submitAssetForQC = async (req: any, res: any) => {
 
     try {
         // Get current asset data
-        const currentAsset = await pool.query('SELECT workflow_log, status, rework_count FROM assets WHERE id = $1', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
+        const assetData = currentAsset.rows[0];
         let workflowLog = [];
         try {
-            workflowLog = currentAsset.rows[0].workflow_log ? JSON.parse(currentAsset.rows[0].workflow_log) : [];
+            workflowLog = assetData.workflow_log ? JSON.parse(assetData.workflow_log) : [];
         } catch (e) {
             workflowLog = [];
         }
 
-        const newReworkCount = rework_count || currentAsset.rows[0].rework_count || 0;
+        const newReworkCount = rework_count || assetData.rework_count || 0;
 
         workflowLog.push({
             action: 'submitted_for_qc',
@@ -510,20 +511,38 @@ export const submitAssetForQC = async (req: any, res: any) => {
             rework_count: newReworkCount
         });
 
-        const result = await pool.query(
+        await pool.query(
             `UPDATE assets SET 
                 status = 'Pending QC Review',
                 seo_score = COALESCE($1, seo_score),
                 grammar_score = COALESCE($2, grammar_score),
                 submitted_by = $3,
-                submitted_at = NOW(),
+                submitted_at = datetime('now'),
                 workflow_log = $4,
                 rework_count = $5,
-                updated_at = NOW()
-            WHERE id = $6 RETURNING 
-                id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count`,
+                updated_at = datetime('now')
+            WHERE id = $6`,
             [seo_score || null, grammar_score || null, submitted_by, JSON.stringify(workflowLog), newReworkCount, id]
         );
+
+        // Get the updated asset
+        const result = await pool.query('SELECT id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = $1', [id]);
+
+        // Create notification for admins about new QC submission
+        try {
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES ($1, $2, $3, $4, $5, datetime(\'now\'))',
+                [null, 'New QC Submission', `Asset "${assetData.asset_name}" has been submitted for QC review.`, 'info', 0]
+            );
+            getSocket().emit('notification_created', {
+                title: 'New QC Submission',
+                message: `Asset "${assetData.asset_name}" has been submitted for QC review.`,
+                type: 'info',
+                is_read: false
+            });
+        } catch (notifError) {
+            console.error('Failed to create notification:', notifError);
+        }
 
         getSocket().emit('assetLibrary_submitted_for_qc', result.rows[0]);
         res.status(200).json(result.rows[0]);
@@ -611,18 +630,19 @@ export const reviewAsset = async (req: any, res: any) => {
         const finalQcScore = qc_score || 0;
 
         // Get current asset data including rework count
-        const currentAsset = await pool.query('SELECT workflow_log, linked_service_ids, linked_sub_service_ids, rework_count FROM assets WHERE id = $1', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
+        const assetData = currentAsset.rows[0];
         let workflowLog = [];
         try {
-            workflowLog = currentAsset.rows[0].workflow_log ? JSON.parse(currentAsset.rows[0].workflow_log) : [];
+            workflowLog = assetData.workflow_log ? JSON.parse(assetData.workflow_log) : [];
         } catch (e) {
             workflowLog = [];
         }
-        const currentReworkCount = currentAsset.rows[0].rework_count || 0;
+        const currentReworkCount = assetData.rework_count || 0;
 
         // Determine new status and rework count
         let newStatus: string;
@@ -658,41 +678,68 @@ export const reviewAsset = async (req: any, res: any) => {
         });
 
         // If approved, activate linking to service/sub-service
-        const linkingActive = qc_decision === 'approved';
+        const linkingActive = qc_decision === 'approved' ? 1 : 0;
 
         // Determine qc_status based on decision
         const qcStatus = qc_decision === 'approved' ? 'Pass' : qc_decision === 'rejected' ? 'Fail' : 'Rework';
 
+        // Update the asset with QC review data
         const result = await pool.query(
             `UPDATE assets SET 
                 status = $1,
                 qc_score = $2,
-                qc_status = $3,
-                qc_checklist_items = $4,
-                qc_remarks = $5,
-                qc_reviewer_id = $6,
-                qc_reviewed_at = NOW(),
-                qc_checklist_completion = $7,
-                linking_active = $8,
-                workflow_log = $9,
-                rework_count = $10,
-                updated_at = NOW()
-            WHERE id = $11 RETURNING 
-                id, asset_name as name, status, qc_score, qc_status, qc_checklist_items, qc_remarks, qc_reviewed_at, linking_active, rework_count`,
-            [newStatus, finalQcScore, qcStatus, JSON.stringify(checklist_items || {}), qc_remarks || '', qc_reviewer_id, checklist_completion || false, linkingActive ? 1 : 0, JSON.stringify(workflowLog), newReworkCount, id]
+                qc_remarks = $3,
+                qc_reviewer_id = $4,
+                qc_reviewed_at = datetime('now'),
+                qc_checklist_completion = $5,
+                linking_active = $6,
+                workflow_log = $7,
+                rework_count = $8,
+                updated_at = datetime('now')
+            WHERE id = $9`,
+            [newStatus, finalQcScore, qc_remarks || '', qc_reviewer_id, checklist_completion ? 1 : 0, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
         );
+
+        // Get the updated asset
+        const updatedAsset = await pool.query('SELECT id, asset_name as name, status, qc_score, qc_remarks, qc_reviewed_at, linking_active, rework_count, submitted_by FROM assets WHERE id = $1', [id]);
 
         // Create QC review record with checklist items
         try {
             await pool.query(
                 `INSERT INTO asset_qc_reviews (
-                    asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, datetime('now'))`,
                 [id, qc_reviewer_id, finalQcScore, checklist_completion ? 1 : 0, qc_remarks || '', qc_decision, JSON.stringify(checklist_items || {})]
             );
         } catch (insertError) {
             // Log but don't fail if the review record insert fails
             console.error('Failed to insert QC review record:', insertError);
+        }
+
+        // Create notification for the asset owner
+        const notificationText = qc_decision === 'approved'
+            ? `Your asset "${assetData.asset_name}" has been approved!`
+            : qc_decision === 'rework'
+                ? `Your asset "${assetData.asset_name}" requires rework. Please review the feedback.`
+                : `Your asset "${assetData.asset_name}" has been rejected.`;
+
+        const notificationType = qc_decision === 'approved' ? 'success' : qc_decision === 'rework' ? 'warning' : 'error';
+
+        try {
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES ($1, $2, $3, $4, $5, datetime(\'now\'))',
+                [assetData.submitted_by, 'QC Review Update', notificationText, notificationType, 0]
+            );
+            // Emit notification via socket
+            getSocket().emit('notification_created', {
+                title: 'QC Review Update',
+                message: notificationText,
+                type: notificationType,
+                user_id: assetData.submitted_by,
+                is_read: false
+            });
+        } catch (notifError) {
+            console.error('Failed to create notification:', notifError);
         }
 
         // If approved, create service/sub-service asset links
@@ -701,16 +748,16 @@ export const reviewAsset = async (req: any, res: any) => {
             let linkedSubServiceIds: number[] = [];
 
             try {
-                linkedServiceIds = currentAsset.rows[0].linked_service_ids
-                    ? JSON.parse(currentAsset.rows[0].linked_service_ids)
+                linkedServiceIds = assetData.linked_service_ids
+                    ? JSON.parse(assetData.linked_service_ids)
                     : [];
             } catch (e) {
                 linkedServiceIds = [];
             }
 
             try {
-                linkedSubServiceIds = currentAsset.rows[0].linked_sub_service_ids
-                    ? JSON.parse(currentAsset.rows[0].linked_sub_service_ids)
+                linkedSubServiceIds = assetData.linked_sub_service_ids
+                    ? JSON.parse(assetData.linked_sub_service_ids)
                     : [];
             } catch (e) {
                 linkedSubServiceIds = [];
@@ -753,11 +800,11 @@ export const reviewAsset = async (req: any, res: any) => {
             }
         }
 
-        getSocket().emit('assetLibrary_qc_reviewed', result.rows[0]);
-        res.status(200).json(result.rows[0]);
+        getSocket().emit('assetLibrary_qc_reviewed', updatedAsset.rows[0]);
+        res.status(200).json(updatedAsset.rows[0]);
     } catch (error: any) {
         console.error('QC Review error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message || 'Failed to submit QC review' });
     }
 };
 

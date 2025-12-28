@@ -9,9 +9,17 @@ interface UseNotificationsOptions {
 
 export function useNotifications(options: UseNotificationsOptions = {}) {
     const { enableSound = true, enableBrowserNotifications = true } = options;
-    const { data: notifications, create, update, remove } = useData<Notification>('notifications');
-    const prevCountRef = useRef(notifications.length);
+    const { data: rawNotifications, create, update, remove } = useData<Notification>('notifications');
+    const prevCountRef = useRef(rawNotifications.length);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Normalize notifications to ensure consistent format
+    const notifications = rawNotifications.map(n => ({
+        ...n,
+        text: n.text || n.message || n.title || '',
+        read: n.read === true || n.is_read === true || (n as any).is_read === 1,
+        time: n.time || n.created_at || new Date().toISOString()
+    }));
 
     // Initialize audio element for notification sound
     useEffect(() => {
@@ -53,17 +61,17 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
             }
         }
         prevCountRef.current = notifications.length;
-    }, [notifications.length, enableSound, enableBrowserNotifications]);
+    }, [notifications.length, enableSound, enableBrowserNotifications, notifications]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const markAsRead = useCallback((id: number) => {
-        update(id, { read: true });
+        update(id, { read: true, is_read: 1 });
     }, [update]);
 
     const markAllAsRead = useCallback(() => {
         notifications.filter(n => !n.read).forEach(n => {
-            update(n.id, { read: true });
+            update(n.id, { read: true, is_read: 1 });
         });
     }, [notifications, update]);
 

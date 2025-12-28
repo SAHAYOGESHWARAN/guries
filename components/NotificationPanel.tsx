@@ -121,15 +121,15 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                             key={tab.key}
                             onClick={() => setFilter(tab.key as any)}
                             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filter === tab.key
-                                    ? 'bg-white text-brand-700 shadow-sm border border-brand-200'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                ? 'bg-white text-brand-700 shadow-sm border border-brand-200'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                 }`}
                         >
                             {tab.label}
                             {tab.count > 0 && (
                                 <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full ${filter === tab.key
-                                        ? 'bg-brand-100 text-brand-700'
-                                        : 'bg-slate-200 text-slate-600'
+                                    ? 'bg-brand-100 text-brand-700'
+                                    : 'bg-slate-200 text-slate-600'
                                     }`}>
                                     {tab.count}
                                 </span>
@@ -155,11 +155,11 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-sm leading-relaxed ${!notification.read ? 'text-slate-900 font-medium' : 'text-slate-700'
                                             }`}>
-                                            {notification.text}
+                                            {notification.text || notification.message || notification.title}
                                         </p>
                                         <div className="flex items-center justify-between mt-2">
                                             <p className="text-xs text-slate-500">
-                                                {formatTime(notification.time)}
+                                                {formatTime(notification.time || notification.created_at || '')}
                                             </p>
                                             {!notification.read && onMarkAsRead && (
                                                 <button

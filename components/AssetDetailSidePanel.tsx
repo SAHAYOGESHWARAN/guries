@@ -253,6 +253,40 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                             </div>
                                         </div>
 
+                                        {/* Asset Category */}
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Asset Category</label>
+                                            <div className="mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {asset.asset_category || '-'}
+                                            </div>
+                                        </div>
+
+                                        {/* Asset Format */}
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Asset Format</label>
+                                            <div className="mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
+                                                {asset.asset_format || '-'}
+                                            </div>
+                                        </div>
+
+                                        {/* Application Type */}
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Application Type</label>
+                                            <div className="mt-1">
+                                                {asset.application_type ? (
+                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
+                                                        asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
+                                                            asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
+                                                                'bg-slate-100 text-slate-700'
+                                                        }`}>
+                                                        {asset.application_type.toUpperCase()}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm text-slate-500">-</span>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         {/* Dimensions - From Asset Type Master */}
                                         <div className="col-span-2 sm:col-span-1">
                                             <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Dimensions</label>
@@ -285,9 +319,65 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                             <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Version</label>
                                             <p className="text-sm text-slate-900 mt-1">{asset.version_number || 'v1.0'}</p>
                                         </div>
+
+                                        {/* Repository */}
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Repository</label>
+                                            <p className="text-sm text-slate-900 mt-1">{asset.repository || '-'}</p>
+                                        </div>
+
+                                        {/* Usage Count */}
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Usage Count</label>
+                                            <p className="text-sm text-slate-900 mt-1">{asset.usage_count ?? 0}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Keywords */}
+                            {asset.keywords && asset.keywords.length > 0 && (
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-amber-50 px-4 py-3 border-b border-amber-200">
+                                        <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                            <span>🏷️</span> Keywords
+                                        </h3>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="flex flex-wrap gap-2">
+                                            {asset.keywords.map((keyword, index) => (
+                                                <span key={index} className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                                                    {keyword}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* File Download */}
+                            {asset.file_url && (
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-green-50 px-4 py-3 border-b border-green-200">
+                                        <h3 className="text-sm font-semibold text-green-700 flex items-center gap-2">
+                                            <span>📥</span> File Download
+                                        </h3>
+                                    </div>
+                                    <div className="p-4">
+                                        <a
+                                            href={asset.file_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            Download Asset
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* User & Date Information */}
                             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -332,6 +422,23 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                             </div>
                                         </div>
 
+                                        {/* Designed By */}
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Designed By</label>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                {getDesignedByUser() ? (
+                                                    <>
+                                                        <div className="w-6 h-6 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                            {getDesignedByUser()?.name?.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <span className="text-sm text-slate-900">{getDesignedByUser()?.name}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-sm text-slate-500">-</span>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         {/* Created Date */}
                                         <div className="col-span-2 sm:col-span-1">
                                             <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Created Date</label>
@@ -358,6 +465,203 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Web Application Fields */}
+                            {asset.application_type === 'web' && (
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-blue-50 px-4 py-3 border-b border-blue-200">
+                                        <h3 className="text-sm font-semibold text-blue-700 flex items-center gap-2">
+                                            <span>🌐</span> Web Application Fields
+                                        </h3>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Web Title</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_title || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Web Description</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_description || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Meta Description</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_meta_description || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Web URL</label>
+                                                {asset.web_url ? (
+                                                    <a href={asset.web_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-1 block truncate">{asset.web_url}</a>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 mt-1">-</p>
+                                                )}
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Web Keywords</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_keywords || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">H1</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_h1 || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">H2 (1)</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_h2_1 || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">H2 (2)</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.web_h2_2 || '-'}</p>
+                                            </div>
+                                            {asset.web_body_content && (
+                                                <div className="col-span-2">
+                                                    <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Body Content</label>
+                                                    <p className="text-sm text-slate-900 mt-1 whitespace-pre-wrap max-h-32 overflow-y-auto">{asset.web_body_content}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SEO Application Fields */}
+                            {asset.application_type === 'seo' && (
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-green-50 px-4 py-3 border-b border-green-200">
+                                        <h3 className="text-sm font-semibold text-green-700 flex items-center gap-2">
+                                            <span>🔍</span> SEO Application Fields
+                                        </h3>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">SEO Title</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_title || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Target URL</label>
+                                                {asset.seo_target_url ? (
+                                                    <a href={asset.seo_target_url} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 hover:underline mt-1 block truncate">{asset.seo_target_url}</a>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 mt-1">-</p>
+                                                )}
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Focus Keyword</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_focus_keyword || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Content Type</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_content_type || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Meta Description</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_meta_description || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Content Description</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_content_description || '-'}</p>
+                                            </div>
+                                            {asset.seo_keywords && asset.seo_keywords.length > 0 && (
+                                                <div className="col-span-2">
+                                                    <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">SEO Keywords</label>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {asset.seo_keywords.map((kw, idx) => (
+                                                            <span key={idx} className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">{kw}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">H1</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_h1 || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">H2 (1)</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_h2_1 || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">H2 (2)</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.seo_h2_2 || '-'}</p>
+                                            </div>
+                                            {asset.seo_content_body && (
+                                                <div className="col-span-2">
+                                                    <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Content Body</label>
+                                                    <p className="text-sm text-slate-900 mt-1 whitespace-pre-wrap max-h-32 overflow-y-auto">{asset.seo_content_body}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SMM Application Fields */}
+                            {asset.application_type === 'smm' && (
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-purple-50 px-4 py-3 border-b border-purple-200">
+                                        <h3 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                            <span>📱</span> SMM Application Fields
+                                        </h3>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Platform</label>
+                                                <p className="text-sm text-slate-900 mt-1 capitalize">{asset.smm_platform || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Post Type</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_post_type || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Title</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_title || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Description</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_description || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">URL</label>
+                                                {asset.smm_url ? (
+                                                    <a href={asset.smm_url} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 hover:underline mt-1 block truncate">{asset.smm_url}</a>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 mt-1">-</p>
+                                                )}
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tag</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_tag || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Hashtags</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_hashtags || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Media Type</label>
+                                                <p className="text-sm text-slate-900 mt-1 capitalize">{asset.smm_media_type || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Campaign Type</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_campaign_type || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">CTA</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_cta || '-'}</p>
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1">
+                                                <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Target Audience</label>
+                                                <p className="text-sm text-slate-900 mt-1">{asset.smm_target_audience || '-'}</p>
+                                            </div>
+                                            {asset.smm_media_url && (
+                                                <div className="col-span-2">
+                                                    <label className="text-xs text-slate-500 uppercase tracking-wide font-medium">Media URL</label>
+                                                    <a href={asset.smm_media_url} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 hover:underline mt-1 block truncate">{asset.smm_media_url}</a>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
