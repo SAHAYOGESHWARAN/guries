@@ -143,7 +143,7 @@ const App: React.FC = () => {
       case 'assets': return <AssetsView onNavigate={handleNavigate} />;
       case 'asset-detail':
         return viewState.id ? <AssetDetailView assetId={Number(viewState.id)} onNavigateBack={() => handleNavigate('assets')} /> : <AssetsView onNavigate={handleNavigate} />;
-      case 'asset-qc': return <AssetQCView />;
+      case 'asset-qc': return <AssetQCView onNavigate={handleNavigate} />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;

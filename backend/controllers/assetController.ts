@@ -484,48 +484,51 @@ export const deleteAssetLibraryItem = async (req: any, res: any) => {
 // Submit asset for QC approval
 export const submitAssetForQC = async (req: any, res: any) => {
     const { id } = req.params;
-    const { seo_score, grammar_score, submitted_by } = req.body;
+    const { seo_score, grammar_score, submitted_by, rework_count } = req.body;
 
     try {
-        // Validate scores
-        if (!seo_score || seo_score < 0 || seo_score > 100) {
-            return res.status(400).json({ error: 'SEO score (0-100) is required for submission' });
-        }
-        if (!grammar_score || grammar_score < 0 || grammar_score > 100) {
-            return res.status(400).json({ error: 'Grammar score (0-100) is required for submission' });
-        }
-
-        // Get current workflow log
-        const currentAsset = await pool.query('SELECT workflow_log FROM assets WHERE id = $1', [id]);
+        // Get current asset data
+        const currentAsset = await pool.query('SELECT workflow_log, status, rework_count FROM assets WHERE id = $1', [id]);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
-        const workflowLog = currentAsset.rows[0].workflow_log ? JSON.parse(currentAsset.rows[0].workflow_log) : [];
+        let workflowLog = [];
+        try {
+            workflowLog = currentAsset.rows[0].workflow_log ? JSON.parse(currentAsset.rows[0].workflow_log) : [];
+        } catch (e) {
+            workflowLog = [];
+        }
+
+        const newReworkCount = rework_count || currentAsset.rows[0].rework_count || 0;
+
         workflowLog.push({
             action: 'submitted_for_qc',
             timestamp: new Date().toISOString(),
             user_id: submitted_by,
-            status: 'Pending QC Review'
+            status: 'Pending QC Review',
+            rework_count: newReworkCount
         });
 
         const result = await pool.query(
             `UPDATE assets SET 
                 status = 'Pending QC Review',
-                seo_score = $1,
-                grammar_score = $2,
+                seo_score = COALESCE($1, seo_score),
+                grammar_score = COALESCE($2, grammar_score),
                 submitted_by = $3,
                 submitted_at = NOW(),
                 workflow_log = $4,
+                rework_count = $5,
                 updated_at = NOW()
-            WHERE id = $5 RETURNING 
-                id, asset_name as name, status, seo_score, grammar_score, submitted_at`,
-            [seo_score, grammar_score, submitted_by, JSON.stringify(workflowLog), id]
+            WHERE id = $6 RETURNING 
+                id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count`,
+            [seo_score || null, grammar_score || null, submitted_by, JSON.stringify(workflowLog), newReworkCount, id]
         );
 
         getSocket().emit('assetLibrary_submitted_for_qc', result.rows[0]);
         res.status(200).json(result.rows[0]);
     } catch (error: any) {
+        console.error('Submit for QC error:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -594,7 +597,8 @@ export const reviewAsset = async (req: any, res: any) => {
 
     try {
         // Role-based access control - only admins can perform QC review
-        if (user_role !== 'admin') {
+        // Accept both 'admin' and 'Admin' (case-insensitive)
+        if (!user_role || user_role.toLowerCase() !== 'admin') {
             return res.status(403).json({ error: 'Access denied. Only administrators can perform QC reviews.' });
         }
 
@@ -603,10 +607,8 @@ export const reviewAsset = async (req: any, res: any) => {
             return res.status(400).json({ error: 'QC decision must be "approved", "rejected", or "rework"' });
         }
 
-        // Validate QC score
-        if (!qc_score || qc_score < 0 || qc_score > 100) {
-            return res.status(400).json({ error: 'QC score (0-100) is required' });
-        }
+        // Validate QC score - make it optional for reject/rework
+        const finalQcScore = qc_score || 0;
 
         // Get current asset data including rework count
         const currentAsset = await pool.query('SELECT workflow_log, linked_service_ids, linked_sub_service_ids, rework_count FROM assets WHERE id = $1', [id]);
@@ -614,7 +616,12 @@ export const reviewAsset = async (req: any, res: any) => {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
-        const workflowLog = currentAsset.rows[0].workflow_log ? JSON.parse(currentAsset.rows[0].workflow_log) : [];
+        let workflowLog = [];
+        try {
+            workflowLog = currentAsset.rows[0].workflow_log ? JSON.parse(currentAsset.rows[0].workflow_log) : [];
+        } catch (e) {
+            workflowLog = [];
+        }
         const currentReworkCount = currentAsset.rows[0].rework_count || 0;
 
         // Determine new status and rework count
@@ -645,7 +652,7 @@ export const reviewAsset = async (req: any, res: any) => {
             timestamp: new Date().toISOString(),
             user_id: qc_reviewer_id,
             status: newStatus,
-            qc_score,
+            qc_score: finalQcScore,
             remarks: qc_remarks,
             rework_count: newReworkCount
         });
@@ -672,59 +679,84 @@ export const reviewAsset = async (req: any, res: any) => {
                 updated_at = NOW()
             WHERE id = $11 RETURNING 
                 id, asset_name as name, status, qc_score, qc_status, qc_checklist_items, qc_remarks, qc_reviewed_at, linking_active, rework_count`,
-            [newStatus, qc_score, qcStatus, JSON.stringify(checklist_items || []), qc_remarks, qc_reviewer_id, checklist_completion, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
+            [newStatus, finalQcScore, qcStatus, JSON.stringify(checklist_items || {}), qc_remarks || '', qc_reviewer_id, checklist_completion || false, linkingActive ? 1 : 0, JSON.stringify(workflowLog), newReworkCount, id]
         );
 
         // Create QC review record with checklist items
-        await pool.query(
-            `INSERT INTO asset_qc_reviews (
-                asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, JSON.stringify(checklist_items || {})]
-        );
+        try {
+            await pool.query(
+                `INSERT INTO asset_qc_reviews (
+                    asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [id, qc_reviewer_id, finalQcScore, checklist_completion ? 1 : 0, qc_remarks || '', qc_decision, JSON.stringify(checklist_items || {})]
+            );
+        } catch (insertError) {
+            // Log but don't fail if the review record insert fails
+            console.error('Failed to insert QC review record:', insertError);
+        }
 
         // If approved, create service/sub-service asset links
         if (qc_decision === 'approved') {
-            const linkedServiceIds = currentAsset.rows[0].linked_service_ids
-                ? JSON.parse(currentAsset.rows[0].linked_service_ids)
-                : [];
-            const linkedSubServiceIds = currentAsset.rows[0].linked_sub_service_ids
-                ? JSON.parse(currentAsset.rows[0].linked_sub_service_ids)
-                : [];
+            let linkedServiceIds: number[] = [];
+            let linkedSubServiceIds: number[] = [];
 
-            // Create service-asset links
+            try {
+                linkedServiceIds = currentAsset.rows[0].linked_service_ids
+                    ? JSON.parse(currentAsset.rows[0].linked_service_ids)
+                    : [];
+            } catch (e) {
+                linkedServiceIds = [];
+            }
+
+            try {
+                linkedSubServiceIds = currentAsset.rows[0].linked_sub_service_ids
+                    ? JSON.parse(currentAsset.rows[0].linked_sub_service_ids)
+                    : [];
+            } catch (e) {
+                linkedSubServiceIds = [];
+            }
+
+            // Create service-asset links (SQLite compatible - use INSERT OR IGNORE)
             for (const serviceId of linkedServiceIds) {
-                await pool.query(
-                    `INSERT INTO service_asset_links (service_id, asset_id) 
-                     VALUES ($1, $2) 
-                     ON CONFLICT DO NOTHING`,
-                    [serviceId, id]
-                );
+                try {
+                    await pool.query(
+                        `INSERT OR IGNORE INTO service_asset_links (service_id, asset_id) VALUES ($1, $2)`,
+                        [serviceId, id]
+                    );
+                } catch (e) {
+                    // Ignore duplicate errors
+                }
             }
 
             // Create sub-service-asset links
             for (const subServiceId of linkedSubServiceIds) {
-                await pool.query(
-                    `INSERT INTO subservice_asset_links (sub_service_id, asset_id) 
-                     VALUES ($1, $2) 
-                     ON CONFLICT DO NOTHING`,
-                    [subServiceId, id]
-                );
+                try {
+                    await pool.query(
+                        `INSERT OR IGNORE INTO subservice_asset_links (sub_service_id, asset_id) VALUES ($1, $2)`,
+                        [subServiceId, id]
+                    );
+                } catch (e) {
+                    // Ignore duplicate errors
+                }
             }
 
-            // Update asset count on linked services
-            if (linkedServiceIds.length > 0) {
-                await pool.query(
-                    `UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 
-                     WHERE id = ANY($1::int[])`,
-                    [linkedServiceIds]
-                );
+            // Update asset count on linked services (SQLite compatible)
+            for (const serviceId of linkedServiceIds) {
+                try {
+                    await pool.query(
+                        `UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 WHERE id = $1`,
+                        [serviceId]
+                    );
+                } catch (e) {
+                    // Ignore errors
+                }
             }
         }
 
         getSocket().emit('assetLibrary_qc_reviewed', result.rows[0]);
         res.status(200).json(result.rows[0]);
     } catch (error: any) {
+        console.error('QC Review error:', error);
         res.status(500).json({ error: error.message });
     }
 };

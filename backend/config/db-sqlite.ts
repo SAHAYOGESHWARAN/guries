@@ -406,6 +406,24 @@ export const initDatabase = () => {
             FOREIGN KEY (asset_id) REFERENCES assets(id)
         );
 
+        -- Service Asset Links Table
+        CREATE TABLE IF NOT EXISTS service_asset_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            service_id INTEGER NOT NULL,
+            asset_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(service_id, asset_id)
+        );
+
+        -- Sub-service Asset Links Table
+        CREATE TABLE IF NOT EXISTS subservice_asset_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sub_service_id INTEGER NOT NULL,
+            asset_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(sub_service_id, asset_id)
+        );
+
         CREATE TABLE IF NOT EXISTS industry_sectors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             industry TEXT NOT NULL,
