@@ -575,7 +575,8 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                                             {canPerformQC ? (
                                                 <div className="flex gap-2">
                                                     <button onClick={() => handleOpenSidePanel(asset)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">View</button>
-                                                    {(asset.status === 'Pending QC Review' || asset.status === 'Draft' || asset.status === 'Rework Required' || !asset.status) && (
+                                                    {/* Show Review button for any asset that hasn't been approved or rejected */}
+                                                    {(asset.status !== 'QC Approved' && asset.status !== 'QC Rejected' && asset.status !== 'Published' && asset.qc_status !== 'Pass' && asset.qc_status !== 'Fail') && (
                                                         <button onClick={() => handleReviewAsset(asset)} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Review</button>
                                                     )}
                                                 </div>

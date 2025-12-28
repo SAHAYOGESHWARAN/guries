@@ -961,7 +961,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 const qcScore = item.qc_score;
 
                 let statusColor = 'bg-slate-100 text-slate-700';
-                let statusText = status;
+                let statusText: string = status;
 
                 if (status === 'QC Approved' || status === 'Published') {
                     statusColor = 'bg-green-100 text-green-700';
@@ -6288,7 +6288,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         const designer = users.find(u => u.id === (asset.designed_by || asset.submitted_by || asset.created_by));
                                                         const status = asset.status || 'Draft';
                                                         let statusColor = 'bg-slate-100 text-slate-700';
-                                                        let statusText = status;
+                                                        let statusText: string = status;
                                                         if (status === 'QC Approved' || status === 'Published') {
                                                             statusColor = 'bg-green-100 text-green-700';
                                                             statusText = 'Pass';
