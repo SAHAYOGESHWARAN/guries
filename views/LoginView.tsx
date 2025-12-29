@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SparkIcon, GoogleIcon } from '../constants';
 import { AuthUser, UserRole } from '../hooks/useAuth';
+import { db } from '../utils/storage';
 
 interface LoginViewProps {
     onLogin: (user: AuthUser) => void;
@@ -103,8 +104,62 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setOtp(['', '', '', '', '', '']);
             setIsLoading(false);
         } else {
-            const user = createUserFromForm();
-            onLogin(user);
+            // Try backend API first for login validation
+            const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: formData.email, password: formData.password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.user) {
+                    const authUser: AuthUser = {
+                        ...data.user,
+                        role: data.user.role as UserRole,
+                        last_login: new Date().toISOString()
+                    };
+                    onLogin(authUser);
+                    return;
+                } else if (response.status === 403) {
+                    // User is deactivated
+                    setError('User deactivated');
+                    setIsLoading(false);
+                    return;
+                } else if (response.status === 401) {
+                    // Invalid credentials - fall through to localStorage check
+                }
+            } catch (apiError) {
+                // API not available, fall back to localStorage
+                console.log('Backend not available, using localStorage');
+            }
+
+            // Fallback: Check localStorage if user exists and is inactive
+            const existingUsers = db.users.getAll();
+            const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
+
+            if (existingUser && existingUser.status === 'inactive') {
+                setError('User deactivated');
+                setIsLoading(false);
+                return;
+            }
+
+            // If user exists, use their data; otherwise create new user
+            if (existingUser) {
+                const authUser: AuthUser = {
+                    ...existingUser,
+                    role: existingUser.role as UserRole,
+                    last_login: new Date().toISOString()
+                };
+                // Update last login
+                db.users.update(existingUser.id, { last_login: new Date().toISOString() });
+                onLogin(authUser);
+            } else {
+                const user = createUserFromForm();
+                onLogin(user);
+            }
         }
     };
 

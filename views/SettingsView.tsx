@@ -318,6 +318,29 @@ const AdminConsole: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavi
 
     return (
         <div className="space-y-6 animate-fade-in">
+            {/* Employee Management Quick Access */}
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800">Employee Management</h3>
+                            <p className="text-sm text-slate-600">Manage employee accounts, roles, and access</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => onNavigate('admin-console')}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                    >
+                        Open Console
+                    </button>
+                </div>
+            </div>
+
             {/* System Health */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">

@@ -70,6 +70,7 @@ const CommunicationHubView = React.lazy(() => import('./views/CommunicationHubVi
 const KnowledgeBaseView = React.lazy(() => import('./views/KnowledgeBaseView'));
 const QualityComplianceView = React.lazy(() => import('./views/QualityComplianceView'));
 const UserProfileView = React.lazy(() => import('./views/UserProfileView'));
+const AdminConsoleView = React.lazy(() => import('./views/AdminConsoleView'));
 
 const LoadingSpinner = () => (
   <div className="flex flex-col items-center justify-center h-full w-full min-h-[400px] animate-fade-in">
@@ -164,7 +165,8 @@ const App: React.FC = () => {
       case 'graphics-plan': return <GraphicsPlanView />;
 
       // CONFIGURATION & SETTINGS
-      case 'admin-console': return <SettingsView onNavigate={handleNavigate} />;
+      case 'admin-console': return <AdminConsoleView currentUser={currentUser} onNavigate={handleNavigate} />;
+      case 'employee-management': return <AdminConsoleView currentUser={currentUser} onNavigate={handleNavigate} />;
       case 'integrations': return <IntegrationsView />;
       case 'backend-source': return <DeveloperNotesView />;
       case 'settings': return <SettingsView onNavigate={handleNavigate} />;

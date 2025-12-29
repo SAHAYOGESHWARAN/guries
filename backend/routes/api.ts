@@ -48,6 +48,7 @@ import * as teamLeaderDashboardController from '../controllers/teamLeaderDashboa
 import * as aiEvaluationController from '../controllers/aiEvaluationController';
 import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
+import * as adminController from '../controllers/adminController';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
 import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
@@ -283,6 +284,18 @@ router.get('/roles', userController.getRoles);
 router.post('/roles', userController.createRole);
 router.put('/roles/:id', userController.updateRole);
 router.delete('/roles/:id', userController.deleteRole);
+
+// --- Admin Console - Employee Management ---
+router.get('/admin/employees', adminController.getEmployees);
+router.get('/admin/employees/metrics', adminController.getEmployeeMetrics);
+router.post('/admin/employees', adminController.createEmployee);
+router.put('/admin/employees/:id', adminController.updateEmployee);
+router.post('/admin/employees/:id/reset-password', adminController.resetPassword);
+router.post('/admin/employees/:id/deactivate', adminController.deactivateEmployee);
+router.post('/admin/employees/:id/activate', adminController.activateEmployee);
+router.post('/admin/employees/:id/toggle-status', adminController.toggleEmployeeStatus);
+router.delete('/admin/employees/:id', adminController.deleteEmployee);
+router.post('/admin/auth/login', adminController.validateLogin);
 
 // --- QC ---
 router.get('/qc-runs', qcController.getQcRuns);
