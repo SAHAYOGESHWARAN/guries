@@ -4,10 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Check if Supabase is configured
+const isSupabaseConfigured = supabaseUrl && supabaseKey && supabaseUrl.includes('supabase');
+const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Storage table name in Supabase
 const STORAGE_TABLE = 'app_storage';
+
+// In-memory fallback storage for when Supabase is not configured
+const memoryStorage: Record<string, any[]> = {};
 
 // Default data for collections
 const DEFAULT_DATA: Record<string, any[]> = {
@@ -21,8 +27,14 @@ const DEFAULT_DATA: Record<string, any[]> = {
     ]
 };
 
-// Helper to get collection from Supabase
+// Helper to get collection from Supabase or memory
 async function getCollection(collection: string): Promise<any[]> {
+    // If Supabase is not configured, use memory storage
+    if (!supabase) {
+        console.log(`[Storage] Using memory storage for ${collection} (Supabase not configured)`);
+        return memoryStorage[collection] || DEFAULT_DATA[collection] || [];
+    }
+
     try {
         const { data, error } = await supabase
             .from(STORAGE_TABLE)
@@ -30,23 +42,58 @@ async function getCollection(collection: string): Promise<any[]> {
             .eq('key', collection)
             .single();
 
-        if (error || !data) {
+        if (error) {
+            console.log(`[Supabase] Error fetching ${collection}:`, error.message);
+            // If table doesn't exist or no data, return defaults
+            if (error.code === 'PGRST116' || error.code === '42P01') {
+                return DEFAULT_DATA[collection] || [];
+            }
             return DEFAULT_DATA[collection] || [];
         }
+
+        if (!data || !data.data) {
+            console.log(`[Supabase] No data found for ${collection}, returning defaults`);
+            return DEFAULT_DATA[collection] || [];
+        }
+
+        console.log(`[Supabase] Fetched ${collection}: ${Array.isArray(data.data) ? data.data.length : 0} items`);
         return data.data || [];
-    } catch (e) {
+    } catch (e: any) {
+        console.error(`[Supabase] Exception fetching ${collection}:`, e.message);
         return DEFAULT_DATA[collection] || [];
     }
 }
 
-// Helper to save collection to Supabase
-async function saveCollection(collection: string, items: any[]): Promise<void> {
+// Helper to save collection to Supabase or memory
+async function saveCollection(collection: string, items: any[]): Promise<boolean> {
+    // If Supabase is not configured, use memory storage
+    if (!supabase) {
+        console.log(`[Storage] Saving to memory storage for ${collection}: ${items.length} items`);
+        memoryStorage[collection] = items;
+        return true;
+    }
+
     try {
-        await supabase
+        const { error } = await supabase
             .from(STORAGE_TABLE)
-            .upsert({ key: collection, data: items, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-    } catch (e) {
-        console.error(`Save error for ${collection}:`, e);
+            .upsert(
+                { key: collection, data: items, updated_at: new Date().toISOString() },
+                { onConflict: 'key' }
+            );
+
+        if (error) {
+            console.error(`[Supabase] Error saving ${collection}:`, error.message);
+            // Fallback to memory storage
+            memoryStorage[collection] = items;
+            return false;
+        }
+
+        console.log(`[Supabase] Saved ${collection}: ${items.length} items`);
+        return true;
+    } catch (e: any) {
+        console.error(`[Supabase] Exception saving ${collection}:`, e.message);
+        memoryStorage[collection] = items;
+        return false;
     }
 }
 
@@ -71,6 +118,71 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const pathArray = Array.isArray(path) ? path : [path];
     const fullPath = pathArray.join('/');
     const method = req.method || 'GET';
+
+    // Debug endpoint to check configuration
+    if (fullPath === 'debug/config') {
+        return res.status(200).json({
+            supabaseConfigured: isSupabaseConfigured,
+            supabaseUrl: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'NOT SET',
+            hasKey: !!supabaseKey,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Debug endpoint to check stored data
+    if (fullPath === 'debug/data') {
+        const assets = await getCollection('assets');
+        const services = await getCollection('services');
+        const users = await getCollection('users');
+        return res.status(200).json({
+            assets: assets.length,
+            services: services.length,
+            users: users.length,
+            sampleAsset: assets[0] || null,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Initialize default data endpoint
+    if (fullPath === 'debug/init' && method === 'POST') {
+        // Initialize default services if empty
+        const services = await getCollection('services');
+        if (services.length === 0) {
+            await saveCollection('services', [
+                { id: 1, service_name: 'Web Development', status: 'active', created_at: new Date().toISOString() },
+                { id: 2, service_name: 'SEO Services', status: 'active', created_at: new Date().toISOString() },
+                { id: 3, service_name: 'Content Marketing', status: 'active', created_at: new Date().toISOString() }
+            ]);
+        }
+
+        // Initialize default asset types if empty
+        const assetTypes = await getCollection('assetTypeMaster');
+        if (assetTypes.length === 0) {
+            await saveCollection('assetTypeMaster', [
+                { id: 1, asset_type_name: 'Image', status: 'active', created_at: new Date().toISOString() },
+                { id: 2, asset_type_name: 'Video', status: 'active', created_at: new Date().toISOString() },
+                { id: 3, asset_type_name: 'Document', status: 'active', created_at: new Date().toISOString() },
+                { id: 4, asset_type_name: 'Blog Banner', status: 'active', created_at: new Date().toISOString() }
+            ]);
+        }
+
+        // Initialize default asset categories if empty
+        const assetCategories = await getCollection('assetCategoryMaster');
+        if (assetCategories.length === 0) {
+            await saveCollection('assetCategoryMaster', [
+                { id: 1, category_name: 'Marketing', status: 'active', created_at: new Date().toISOString() },
+                { id: 2, category_name: 'Sales', status: 'active', created_at: new Date().toISOString() },
+                { id: 3, category_name: 'Support', status: 'active', created_at: new Date().toISOString() }
+            ]);
+        }
+
+        return res.status(200).json({
+            message: 'Default data initialized',
+            services: (await getCollection('services')).length,
+            assetTypes: (await getCollection('assetTypeMaster')).length,
+            assetCategories: (await getCollection('assetCategoryMaster')).length
+        });
+    }
 
     try {
         // Route handling
@@ -212,6 +324,8 @@ async function handleCRUD(req: VercelRequest, res: VercelResponse, collection: s
     const id = pathParts.length > 1 && !isNaN(parseInt(pathParts[1])) ? parseInt(pathParts[1]) : null;
     let items = await getCollection(collection);
 
+    console.log(`[CRUD] ${method} ${collection} - Items: ${items.length}, ID: ${id || 'none'}`);
+
     switch (method) {
         case 'GET':
             if (id) {
@@ -221,21 +335,36 @@ async function handleCRUD(req: VercelRequest, res: VercelResponse, collection: s
             return res.status(200).json(items);
         case 'POST':
             const newId = await getNextId(collection);
-            const newItem = { ...req.body, id: newId, created_at: new Date().toISOString() };
+            const newItem = {
+                ...req.body,
+                id: newId,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
             items.push(newItem);
             await saveCollection(collection, items);
+            console.log(`[CRUD] Created ${collection} item ${newId}`);
             return res.status(201).json(newItem);
         case 'PUT':
             if (!id) return res.status(400).json({ error: 'ID required' });
             const updateIndex = items.findIndex((i: any) => i.id === id);
             if (updateIndex === -1) return res.status(404).json({ error: 'Not found' });
-            items[updateIndex] = { ...items[updateIndex], ...req.body, updated_at: new Date().toISOString() };
+            items[updateIndex] = {
+                ...items[updateIndex],
+                ...req.body,
+                id: id, // Preserve ID
+                updated_at: new Date().toISOString()
+            };
             await saveCollection(collection, items);
+            console.log(`[CRUD] Updated ${collection} item ${id}`);
             return res.status(200).json(items[updateIndex]);
         case 'DELETE':
             if (!id) return res.status(400).json({ error: 'ID required' });
+            const deleteIndex = items.findIndex((i: any) => i.id === id);
+            if (deleteIndex === -1) return res.status(404).json({ error: 'Not found' });
             items = items.filter((i: any) => i.id !== id);
             await saveCollection(collection, items);
+            console.log(`[CRUD] Deleted ${collection} item ${id}`);
             return res.status(204).send('');
         default:
             return res.status(405).json({ error: 'Method not allowed' });
@@ -246,6 +375,8 @@ async function handleCRUD(req: VercelRequest, res: VercelResponse, collection: s
 async function handleAssetLibrary(req: VercelRequest, res: VercelResponse, fullPath: string, method: string) {
     const pathParts = fullPath.split('/');
     let assets = await getCollection('assets');
+
+    console.log(`[AssetLibrary] ${method} ${fullPath} - Current assets: ${assets.length}`);
 
     if (pathParts.length >= 3) {
         const assetId = parseInt(pathParts[1]);
@@ -274,24 +405,43 @@ async function handleAssetLibrary(req: VercelRequest, res: VercelResponse, fullP
                 const asset = assets.find((a: any) => a.id === id);
                 return asset ? res.status(200).json(asset) : res.status(404).json({ error: 'Asset not found' });
             }
+            console.log(`[AssetLibrary] Returning ${assets.length} assets`);
             return res.status(200).json(assets);
         case 'POST':
             const newId = await getNextId('assets');
-            const newAsset = { ...req.body, id: newId, status: req.body.status || 'Draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+            // Preserve all fields from the request body
+            const newAsset = {
+                ...req.body,
+                id: newId,
+                status: req.body.status || 'Draft',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
             assets.push(newAsset);
-            await saveCollection('assets', assets);
+            const saveResult = await saveCollection('assets', assets);
+            console.log(`[AssetLibrary] Created asset ${newId}, save result: ${saveResult}`);
             return res.status(201).json(newAsset);
         case 'PUT':
             if (!id) return res.status(400).json({ error: 'Asset ID required' });
             const assetIndex = assets.findIndex((a: any) => a.id === id);
             if (assetIndex === -1) return res.status(404).json({ error: 'Asset not found' });
-            assets[assetIndex] = { ...assets[assetIndex], ...req.body, updated_at: new Date().toISOString() };
+            // Merge all fields from request body with existing asset
+            assets[assetIndex] = {
+                ...assets[assetIndex],
+                ...req.body,
+                id: id, // Ensure ID is preserved
+                updated_at: new Date().toISOString()
+            };
             await saveCollection('assets', assets);
+            console.log(`[AssetLibrary] Updated asset ${id}`);
             return res.status(200).json(assets[assetIndex]);
         case 'DELETE':
             if (!id) return res.status(400).json({ error: 'Asset ID required' });
+            const deleteIndex = assets.findIndex((a: any) => a.id === id);
+            if (deleteIndex === -1) return res.status(404).json({ error: 'Asset not found' });
             assets = assets.filter((a: any) => a.id !== id);
             await saveCollection('assets', assets);
+            console.log(`[AssetLibrary] Deleted asset ${id}, remaining: ${assets.length}`);
             return res.status(204).send('');
         default:
             return res.status(405).json({ error: 'Method not allowed' });

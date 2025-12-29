@@ -379,10 +379,18 @@ export function useData<T>(collection: string) {
         // Await backend delete for proper persistence
         if (resource && !isOffline) {
             try {
-                await fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/${resource.endpoint}/${id}`, {
                     method: 'DELETE',
                 });
-            } catch (e) {
+
+                if (!response.ok && response.status !== 204) {
+                    const errorData = await response.json().catch(() => ({ error: 'Delete failed' }));
+                    throw new Error(errorData.error || 'Failed to delete');
+                }
+            } catch (e: any) {
+                if (e.message !== 'Failed to fetch') {
+                    throw e; // Re-throw non-network errors
+                }
                 setIsOffline(true);
             }
         }

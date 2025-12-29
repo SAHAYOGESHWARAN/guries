@@ -577,29 +577,29 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
 
                 {/* Assets Table */}
                 {!loading && filteredAssets.length > 0 && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                    <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                        <table className="w-full" style={{ minWidth: 'max-content' }}>
+                            <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Thumbnail</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Asset Name</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Asset Type</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Content Type</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Linked Service</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Linked Task</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">QC Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Version</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Designer</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Uploaded At</th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Usage</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '150px' }}>Asset Name</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Type</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '120px' }}>Category</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '130px' }}>Content Type</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '140px' }}>Linked Service</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '130px' }}>Linked Task</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '110px' }}>QC Status</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '90px' }}>Version</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '120px' }}>Designer</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '120px' }}>Uploaded At</th>
+                                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '80px' }}>Usage</th>
+                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap" style={{ minWidth: '150px' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {filteredAssets.map((asset) => (
                                     <tr key={asset.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3">
+                                        <td className="px-4 py-4">
                                             <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
                                                 {asset.thumbnail_url || asset.file_url ? (
                                                     <img src={asset.thumbnail_url || asset.file_url} alt={asset.name} className="w-full h-full object-cover" />
@@ -608,24 +608,24 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline">{asset.name}</button>
+                                        <td className="px-4 py-4">
+                                            <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline whitespace-nowrap">{asset.name}</button>
                                         </td>
-                                        <td className="px-4 py-3"><span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">{getAssetTypeName(asset)}</span></td>
-                                        <td className="px-4 py-3"><span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">{getAssetCategoryName(asset)}</span></td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{asset.content_type || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{getLinkedServiceName(asset)}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{getLinkedTaskName(asset)}</td>
-                                        <td className="px-4 py-3">{getQCStatusBadge(asset)}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{asset.version_number || 'v1.0'}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{getDesignerName(asset)}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{formatUploadDate(asset)}</td>
-                                        <td className="px-4 py-3 text-center">
+                                        <td className="px-4 py-4 whitespace-nowrap"><span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">{getAssetTypeName(asset)}</span></td>
+                                        <td className="px-4 py-4 whitespace-nowrap"><span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">{getAssetCategoryName(asset)}</span></td>
+                                        <td className="px-4 py-4 text-gray-700 text-sm whitespace-nowrap">{asset.content_type || '-'}</td>
+                                        <td className="px-4 py-4 text-gray-700 text-sm whitespace-nowrap">{getLinkedServiceName(asset)}</td>
+                                        <td className="px-4 py-4 text-gray-700 text-sm whitespace-nowrap">{getLinkedTaskName(asset)}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap">{getQCStatusBadge(asset)}</td>
+                                        <td className="px-4 py-4 text-gray-700 text-sm whitespace-nowrap">{asset.version_number || 'v1.0'}</td>
+                                        <td className="px-4 py-4 text-gray-700 text-sm whitespace-nowrap">{getDesignerName(asset)}</td>
+                                        <td className="px-4 py-4 text-gray-700 text-sm whitespace-nowrap">{formatUploadDate(asset)}</td>
+                                        <td className="px-4 py-4 text-center whitespace-nowrap">
                                             <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                                                 {asset.usage_count || 0}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="px-4 py-4 whitespace-nowrap">
                                             {canPerformQC ? (
                                                 <div className="flex gap-2">
                                                     <button onClick={() => handleOpenSidePanel(asset)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">View</button>

@@ -6270,25 +6270,25 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             {displayMode === 'table' ? (
                                 <div className="bg-white rounded-xl border border-slate-200 h-full flex flex-col">
                                     {/* Scrollable Table Container */}
-                                    <div className="flex-1 overflow-auto">
-                                        <table className="w-full" style={{ minWidth: '1600px' }}>
+                                    <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                                        <table className="w-full" style={{ minWidth: '1800px' }}>
                                             <thead className="bg-slate-50 sticky top-0 z-10">
                                                 <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '80px' }}>Thumbnail</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '180px' }}>Asset Name</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Asset Type</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '130px' }}>Asset Category</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Content Type</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '130px' }}>Linked Service</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '130px' }}>Linked Task</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>QC Status</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '70px' }}>Version</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '140px' }}>Designer</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Uploaded At</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '120px' }}>Created By</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '120px' }}>Updated By</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '90px' }}>Usage Count</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 bg-slate-50" style={{ minWidth: '100px' }}>Actions</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '180px' }}>Asset Name</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Type</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Asset Category</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Content Type</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Linked Service</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Linked Task</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>QC Status</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Version</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Designer</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Uploaded At</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Created By</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Updated By</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Usage Count</th>
+                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -6321,16 +6321,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                                         return (
                                                             <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer">
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     {asset.thumbnail_url ? (
-                                                                        <img src={asset.thumbnail_url} alt={asset.name} className="w-10 h-10 object-cover rounded-lg border border-slate-200" loading="lazy" />
+                                                                        <img src={asset.thumbnail_url} alt={asset.name} className="w-12 h-12 object-cover rounded-lg border border-slate-200" loading="lazy" />
                                                                     ) : (
-                                                                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-lg border border-slate-200">
+                                                                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-lg border border-slate-200">
                                                                             {getAssetIcon(asset.type)}
                                                                         </div>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <div className="max-w-[160px]">
                                                                         <div className="font-medium text-slate-900 text-sm truncate" title={asset.name}>
                                                                             {asset.name.length > 25 ? asset.name.substring(0, 25) + '...' : asset.name}
@@ -6340,78 +6340,78 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                         </div>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-4 py-3">
-                                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
+                                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
                                                                         {asset.type || '-'}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <span className="text-sm text-slate-700">{asset.asset_category || '-'}</span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <span className="text-sm text-slate-700">
                                                                         {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <span className="text-sm text-slate-700">{service?.service_name || '-'}</span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <span className="text-sm text-slate-700 truncate block max-w-[120px]">{task?.name || '-'}</span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
-                                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
+                                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${statusColor}`}>
                                                                         {statusText}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <span className="text-sm text-slate-700">{asset.version_number || 'v1.0'}</span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     {designer ? (
                                                                         <div className="flex items-center gap-2">
-                                                                            <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                                                 {designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
                                                                             </div>
-                                                                            <span className="text-xs text-slate-700 truncate max-w-[80px]">{designer.name}</span>
+                                                                            <span className="text-sm text-slate-700 truncate max-w-[80px]">{designer.name}</span>
                                                                         </div>
                                                                     ) : (
                                                                         <span className="text-sm text-slate-400">-</span>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3">
-                                                                    <span className="text-xs text-slate-600">{formattedDate}</span>
+                                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <span className="text-sm text-slate-600">{formattedDate}</span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     {createdByUser ? (
                                                                         <div className="flex items-center gap-2">
-                                                                            <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                            <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                                                 {createdByUser.name?.charAt(0).toUpperCase() || 'U'}
                                                                             </div>
-                                                                            <span className="text-xs text-slate-700 truncate max-w-[70px]">{createdByUser.name}</span>
+                                                                            <span className="text-sm text-slate-700 truncate max-w-[70px]">{createdByUser.name}</span>
                                                                         </div>
                                                                     ) : (
                                                                         <span className="text-sm text-slate-400">-</span>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     {updatedByUser ? (
                                                                         <div className="flex items-center gap-2">
-                                                                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                            <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                                                 {updatedByUser.name?.charAt(0).toUpperCase() || 'U'}
                                                                             </div>
-                                                                            <span className="text-xs text-slate-700 truncate max-w-[70px]">{updatedByUser.name}</span>
+                                                                            <span className="text-sm text-slate-700 truncate max-w-[70px]">{updatedByUser.name}</span>
                                                                         </div>
                                                                     ) : (
                                                                         <span className="text-sm text-slate-400">-</span>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3">
-                                                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
                                                                         {(asset as any).usage_count || 0}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-4 py-3">
+                                                                <td className="px-4 py-4 whitespace-nowrap">
                                                                     <div className="flex items-center gap-1">
                                                                         <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
                                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -6430,12 +6430,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     })
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan={13} className="px-6 py-12 text-center">
+                                                        <td colSpan={15} className="px-6 py-16 text-center">
                                                             <div className="flex flex-col items-center justify-center text-slate-400">
-                                                                <svg className="w-8 h-8 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                                 </svg>
-                                                                <p className="text-xs font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
+                                                                <p className="text-sm font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -6444,11 +6444,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </table>
                                     </div>
                                     {filteredAssets.length > 0 && (
-                                        <div className="px-6 py-2.5 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 flex justify-between items-center flex-shrink-0">
+                                        <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 text-sm text-slate-600 flex justify-between items-center flex-shrink-0">
                                             <span>Showing <span className="font-bold text-slate-900">{filteredAssets.length}</span> results</span>
                                             <div className="flex gap-2">
-                                                <button className="px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700">Previous</button>
-                                                <button className="px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700">Next</button>
+                                                <button className="px-4 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm">Previous</button>
+                                                <button className="px-4 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm">Next</button>
                                             </div>
                                         </div>
                                     )}

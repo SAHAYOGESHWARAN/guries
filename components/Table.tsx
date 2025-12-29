@@ -6,6 +6,7 @@ export interface Column<T = any> {
   accessor: keyof T | ((item: T) => React.ReactNode);
   className?: string;
   tooltip?: string;
+  minWidth?: string;
 }
 
 interface TableProps {
@@ -26,6 +27,15 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
     }
     const value = item[column.accessor];
     return typeof value === 'string' || typeof value === 'number' ? value : '';
+  };
+
+  // Calculate minimum width based on header text length
+  const getMinWidth = (header: string, minWidth?: string): string => {
+    if (minWidth) return minWidth;
+    const headerLength = header.length;
+    // Base minimum width calculation: at least 80px, plus 8px per character
+    const calculatedWidth = Math.max(100, headerLength * 9 + 32);
+    return `${calculatedWidth}px`;
   };
 
   return (
@@ -49,7 +59,8 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: 'white'
+          backgroundColor: 'white',
+          flexShrink: 0
         }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{title}</h2>
           {actionButton}
@@ -62,15 +73,17 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
           flex: 1,
           overflowX: 'auto',
           overflowY: 'auto',
-          maxHeight: 'calc(100vh - 500px)',
-          minHeight: '250px'
+          maxHeight: 'calc(100vh - 300px)',
+          minHeight: '300px',
+          position: 'relative'
         }}
       >
         <table
           style={{
             borderCollapse: 'collapse',
-            width: 'max-content',
-            minWidth: '100%'
+            width: '100%',
+            tableLayout: 'auto',
+            minWidth: 'max-content'
           }}
         >
           <thead>
@@ -79,26 +92,27 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
                 <th
                   key={index}
                   style={{
-                    padding: '12px 16px',
+                    padding: '14px 16px',
                     textAlign: 'left',
-                    fontSize: '11px',
+                    fontSize: '12px',
                     fontWeight: 600,
-                    color: '#64748b',
+                    color: '#475569',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
-                    borderBottom: '1px solid #e2e8f0',
+                    borderBottom: '2px solid #e2e8f0',
                     backgroundColor: '#f8fafc',
                     position: 'sticky',
                     top: 0,
-                    zIndex: 10
+                    zIndex: 10,
+                    minWidth: getMinWidth(col.header, col.minWidth)
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span>{col.header}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ overflow: 'visible' }}>{col.header}</span>
                     {col.tooltip && (
                       <Tooltip content={col.tooltip} position="top">
-                        <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '12px', width: '12px', color: '#94a3b8', cursor: 'help' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '14px', width: '14px', color: '#94a3b8', cursor: 'help', flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </Tooltip>
@@ -127,11 +141,12 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
                     <td
                       key={index}
                       style={{
-                        padding: '12px 16px',
-                        fontSize: '14px',
+                        padding: '14px 16px',
+                        fontSize: '13px',
                         color: '#475569',
                         fontWeight: 500,
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        minWidth: getMinWidth(col.header, col.minWidth)
                       }}
                     >
                       {renderCell(item, col)}
@@ -141,12 +156,12 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: 'white' }}>
+                <td colSpan={columns.length} style={{ padding: '64px 24px', textAlign: 'center', backgroundColor: 'white' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                    <svg style={{ width: '32px', height: '32px', marginBottom: '8px', opacity: 0.5 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg style={{ width: '48px', height: '48px', marginBottom: '12px', opacity: 0.5 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <p style={{ fontSize: '12px', fontWeight: 500 }}>{emptyMessage || 'No records found'}</p>
+                    <p style={{ fontSize: '14px', fontWeight: 500 }}>{emptyMessage || 'No assets yet. Click "Upload Asset" to add your first file.'}</p>
                   </div>
                 </td>
               </tr>

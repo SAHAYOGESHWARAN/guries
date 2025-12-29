@@ -472,11 +472,24 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
 
 export const deleteAssetLibraryItem = async (req: any, res: any) => {
     const { id } = req.params;
+    const numericId = parseInt(id, 10);
+
+    if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'Invalid asset ID' });
+    }
+
     try {
-        await pool.query('DELETE FROM assets WHERE id = $1', [id]);
-        getSocket().emit('assetLibrary_deleted', { id });
+        // Check if asset exists first
+        const existingAsset = await pool.query('SELECT id FROM assets WHERE id = $1', [numericId]);
+        if (existingAsset.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        await pool.query('DELETE FROM assets WHERE id = $1', [numericId]);
+        getSocket().emit('assetLibrary_deleted', { id: numericId });
         res.status(204).send();
     } catch (error: any) {
+        console.error('Delete asset error:', error);
         res.status(500).json({ error: error.message });
     }
 };
