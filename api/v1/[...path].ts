@@ -1,21 +1,28 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { Redis } from '@upstash/redis';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+// Initialize Upstash Redis client
+const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '';
+const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
 
-// Check if Supabase is configured
-const isSupabaseConfigured = supabaseUrl && supabaseKey && supabaseUrl.includes('supabase');
-const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
+// Check if Redis is configured
+const isRedisConfigured = !!(redisUrl && redisToken);
+let redis: Redis | null = null;
+if (isRedisConfigured) {
+    try {
+        redis = new Redis({ url: redisUrl, token: redisToken });
+        console.log('[Redis] Initialized successfully');
+    } catch (e) {
+        console.error('[Redis] Failed to initialize:', e);
+    }
+} else {
+    console.log('[Redis] Not configured - KV_REST_API_URL:', !!process.env.KV_REST_API_URL, 'KV_REST_API_TOKEN:', !!process.env.KV_REST_API_TOKEN);
+}
 
-// Storage table name in Supabase
-const STORAGE_TABLE = 'app_storage';
-
-// In-memory fallback storage for when Supabase is not configured
+// In-memory fallback storage (only for single request, not persistent)
 const memoryStorage: Record<string, any[]> = {};
 
-// Default data for collections
+// Default data for collections - used when no storage is configured
 const DEFAULT_DATA: Record<string, any[]> = {
     users: [
         { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'Admin', status: 'Active' },
@@ -24,77 +31,59 @@ const DEFAULT_DATA: Record<string, any[]> = {
     roles: [
         { id: 1, name: 'Admin', permissions: ['all'] },
         { id: 2, name: 'User', permissions: ['read', 'write'] }
+    ],
+    assets: [
+        { id: 1, name: 'Sample Asset', type: 'Image', asset_category: 'Marketing', application_type: 'web', status: 'Draft', created_at: new Date().toISOString() }
+    ],
+    assetTypeMaster: [
+        { id: 1, asset_type_name: 'Image', status: 'active' },
+        { id: 2, asset_type_name: 'Video', status: 'active' },
+        { id: 3, asset_type_name: 'Document', status: 'active' }
+    ],
+    assetCategoryMaster: [
+        { id: 1, category_name: 'Marketing', status: 'active' },
+        { id: 2, category_name: 'Sales', status: 'active' },
+        { id: 3, category_name: 'Support', status: 'active' }
     ]
 };
 
-// Helper to get collection from Supabase or memory
+// Helper to get collection from Redis or defaults
 async function getCollection(collection: string): Promise<any[]> {
-    // If Supabase is not configured, use memory storage
-    if (!supabase) {
-        console.log(`[Storage] Using memory storage for ${collection} (Supabase not configured)`);
-        return memoryStorage[collection] || DEFAULT_DATA[collection] || [];
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from(STORAGE_TABLE)
-            .select('data')
-            .eq('key', collection)
-            .single();
-
-        if (error) {
-            console.log(`[Supabase] Error fetching ${collection}:`, error.message);
-            // If table doesn't exist or no data, return defaults
-            if (error.code === 'PGRST116' || error.code === '42P01') {
-                return DEFAULT_DATA[collection] || [];
+    // Try Redis first
+    if (redis) {
+        try {
+            const data = await redis.get<any[]>(`mcc:${collection}`);
+            if (data && Array.isArray(data)) {
+                console.log(`[Redis] Fetched ${collection}: ${data.length} items`);
+                return data;
             }
-            return DEFAULT_DATA[collection] || [];
+            console.log(`[Redis] No data for ${collection}, using defaults`);
+        } catch (e: any) {
+            console.log(`[Redis] Error fetching ${collection}:`, e.message);
         }
-
-        if (!data || !data.data) {
-            console.log(`[Supabase] No data found for ${collection}, returning defaults`);
-            return DEFAULT_DATA[collection] || [];
-        }
-
-        console.log(`[Supabase] Fetched ${collection}: ${Array.isArray(data.data) ? data.data.length : 0} items`);
-        return data.data || [];
-    } catch (e: any) {
-        console.error(`[Supabase] Exception fetching ${collection}:`, e.message);
-        return DEFAULT_DATA[collection] || [];
     }
+
+    // Fallback to memory/defaults
+    return memoryStorage[collection] || DEFAULT_DATA[collection] || [];
 }
 
-// Helper to save collection to Supabase or memory
+// Helper to save collection to Redis
 async function saveCollection(collection: string, items: any[]): Promise<boolean> {
-    // If Supabase is not configured, use memory storage
-    if (!supabase) {
-        console.log(`[Storage] Saving to memory storage for ${collection}: ${items.length} items`);
-        memoryStorage[collection] = items;
-        return true;
-    }
-
-    try {
-        const { error } = await supabase
-            .from(STORAGE_TABLE)
-            .upsert(
-                { key: collection, data: items, updated_at: new Date().toISOString() },
-                { onConflict: 'key' }
-            );
-
-        if (error) {
-            console.error(`[Supabase] Error saving ${collection}:`, error.message);
-            // Fallback to memory storage
-            memoryStorage[collection] = items;
-            return false;
+    // Save to Redis
+    if (redis) {
+        try {
+            await redis.set(`mcc:${collection}`, items);
+            console.log(`[Redis] Saved ${collection}: ${items.length} items`);
+            return true;
+        } catch (e: any) {
+            console.error(`[Redis] Error saving ${collection}:`, e.message);
         }
-
-        console.log(`[Supabase] Saved ${collection}: ${items.length} items`);
-        return true;
-    } catch (e: any) {
-        console.error(`[Supabase] Exception saving ${collection}:`, e.message);
-        memoryStorage[collection] = items;
-        return false;
     }
+
+    // Fallback to memory (won't persist between requests)
+    memoryStorage[collection] = items;
+    console.log(`[Memory] Saved ${collection}: ${items.length} items (WARNING: not persistent!)`);
+    return false;
 }
 
 // Helper to get next ID
@@ -129,10 +118,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Debug endpoint to check configuration
     if (fullPath === 'debug/config') {
+        const testAssets = await getCollection('assets');
         return res.status(200).json({
-            supabaseConfigured: isSupabaseConfigured,
-            supabaseUrl: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'NOT SET',
-            hasKey: !!supabaseKey,
+            redisConfigured: isRedisConfigured,
+            redisUrl: redisUrl ? redisUrl.substring(0, 40) + '...' : 'NOT SET',
+            hasToken: !!redisToken,
+            assetsCount: testAssets.length,
             timestamp: new Date().toISOString()
         });
     }
