@@ -32,6 +32,13 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
     const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
 
+    // Create a memoized user lookup map for O(1) access instead of O(n) find operations
+    const usersMap = useMemo(() => {
+        const map = new Map<number, User>();
+        users.forEach(u => map.set(u.id, u));
+        return map;
+    }, [users]);
+
     // Get asset type master data for dimensions/size/format
     const assetTypeMaster = useMemo(() => {
         if (!asset.type) return null;
@@ -71,19 +78,19 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
     };
 
     const getCreatedByUser = () => {
-        return asset.created_by ? users.find(u => u.id === asset.created_by) : null;
+        return asset.created_by ? usersMap.get(asset.created_by) : null;
     };
 
     const getUpdatedByUser = () => {
-        return asset.updated_by ? users.find(u => u.id === asset.updated_by) : null;
+        return asset.updated_by ? usersMap.get(asset.updated_by) : null;
     };
 
     const getDesignedByUser = () => {
-        return asset.designed_by ? users.find(u => u.id === asset.designed_by) : null;
+        return asset.designed_by ? usersMap.get(asset.designed_by) : null;
     };
 
     const getQCReviewer = () => {
-        return asset.qc_reviewer_id ? users.find(u => u.id === asset.qc_reviewer_id) : null;
+        return asset.qc_reviewer_id ? usersMap.get(asset.qc_reviewer_id) : null;
     };
 
     const getStatusColor = (status: string) => {

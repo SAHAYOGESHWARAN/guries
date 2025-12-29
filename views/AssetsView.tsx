@@ -4,9 +4,10 @@ import MarkdownEditor from '../components/MarkdownEditor';
 import CircularScore from '../components/CircularScore';
 import AssetCategoryMasterModal from '../components/AssetCategoryMasterModal';
 import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
-import UploadAssetModal from '../components/UploadAssetModal';
+import UploadAssetPopup from '../components/UploadAssetPopup';
 import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
 import { useData } from '../hooks/useData';
+import { useAuth } from '../hooks/useAuth';
 import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand, Campaign, Project, Task, ContentRepositoryItem } from '../types';
 
@@ -18,8 +19,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
-    const { data: users = [] } = useData<User>('users');
+    const { data: users = [], loading: usersLoading } = useData<User>('users');
     const { data: keywords = [] } = useData<any>('keywords');
+
+    // Create a memoized user lookup map for O(1) access instead of O(n) find operations
+    const usersMap = useMemo(() => {
+        const map = new Map<number, User>();
+        users.forEach(user => map.set(user.id, user));
+        return map;
+    }, [users]);
     const { data: assetCategories = [], refresh: refreshAssetCategories } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [], refresh: refreshAssetTypes } = useData<AssetTypeMasterItem>('asset-type-master');
     const { create: createAssetCategory, update: updateAssetCategory } = useData<AssetCategoryMasterItem>('asset-category-master');
@@ -52,7 +60,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [displayMode, setDisplayMode] = useState<'table' | 'grid'>('table'); // List vs Large view toggle
     const [isRefreshing, setIsRefreshing] = useState(false); // Refresh state
-    const [currentUser] = useState({ id: 1, role: 'user' }); // TODO: Get from auth context
+    const { user: authUser, isAdmin } = useAuth(); // Get current user from auth context
+    const currentUser = authUser || { id: 1, role: 'user' as const }; // Fallback for safety
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState('');
     const [dragActive, setDragActive] = useState(false);
@@ -561,6 +570,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             const assetPayload = {
                 ...newAsset,
                 date: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+                created_by: currentUser.id, // Always set created_by for proper ownership tracking
                 linked_service_ids: linkedServiceIds,
                 linked_sub_service_ids: linkedSubServiceIds,
                 mapped_to: mappedToString || newAsset.mapped_to,
@@ -997,7 +1008,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         {
             header: 'DESIGNER',
             accessor: (item: AssetLibraryItem) => {
-                const designer = users.find(u => u.id === (item.designed_by || item.submitted_by || item.created_by));
+                const designerId = item.designed_by || item.submitted_by || item.created_by;
+                const designer = designerId ? usersMap.get(designerId) : undefined;
 
                 if (!designer) {
                     return <span className="text-xs text-slate-400">-</span>;
@@ -1039,7 +1051,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         {
             header: 'CREATED BY',
             accessor: (item: AssetLibraryItem) => {
-                const creator = users.find(u => u.id === item.created_by);
+                const creator = item.created_by ? usersMap.get(item.created_by) : undefined;
                 if (!creator) return <span className="text-xs text-slate-400">-</span>;
                 return (
                     <div className="flex items-center gap-2">
@@ -1054,7 +1066,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         {
             header: 'UPDATED BY',
             accessor: (item: AssetLibraryItem) => {
-                const updater = users.find(u => u.id === item.updated_by);
+                const updater = item.updated_by ? usersMap.get(item.updated_by) : undefined;
                 if (!updater) return <span className="text-xs text-slate-400">-</span>;
                 return (
                     <div className="flex items-center gap-2">
@@ -1096,7 +1108,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             ),
             className: 'w-20'
         }
-    ], [getAssetIcon, getAssetTypeBadgeColor, services, subServices, tasks, users]);
+    ], [getAssetIcon, getAssetTypeBadgeColor, services, subServices, tasks, usersMap]);
 
     // Render application type selection step
     const renderApplicationTypeSelection = () => (
@@ -4184,7 +4196,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {
                             header: 'Designer',
                             accessor: (item: AssetLibraryItem) => {
-                                const designer = users.find(u => u.id === (item.designed_by || item.submitted_by));
+                                const designerId = item.designed_by || item.submitted_by;
+                                const designer = designerId ? usersMap.get(designerId) : undefined;
                                 return (
                                     <div className="text-xs">
                                         {designer ? (
@@ -6285,7 +6298,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
                                                         const taskId = asset.linked_task_id || asset.linked_task;
                                                         const task = taskId ? tasks.find(t => t.id === taskId) : null;
-                                                        const designer = users.find(u => u.id === (asset.designed_by || asset.submitted_by || asset.created_by));
+                                                        // Use memoized map for O(1) lookup instead of O(n) find
+                                                        const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
+                                                        const designer = designerId ? usersMap.get(designerId) : undefined;
+                                                        const createdByUser = asset.created_by ? usersMap.get(asset.created_by) : undefined;
+                                                        const updatedByUser = asset.updated_by ? usersMap.get(asset.updated_by) : undefined;
                                                         const status = asset.status || 'Draft';
                                                         let statusColor = 'bg-slate-100 text-slate-700';
                                                         let statusText: string = status;
@@ -6364,6 +6381,30 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 </td>
                                                                 <td className="px-4 py-3">
                                                                     <span className="text-xs text-slate-600">{formattedDate}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    {createdByUser ? (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                                {createdByUser.name?.charAt(0).toUpperCase() || 'U'}
+                                                                            </div>
+                                                                            <span className="text-xs text-slate-700 truncate max-w-[70px]">{createdByUser.name}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-sm text-slate-400">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    {updatedByUser ? (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                                {updatedByUser.name?.charAt(0).toUpperCase() || 'U'}
+                                                                            </div>
+                                                                            <span className="text-xs text-slate-700 truncate max-w-[70px]">{updatedByUser.name}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-sm text-slate-400">-</span>
+                                                                    )}
                                                                 </td>
                                                                 <td className="px-4 py-3">
                                                                     <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
@@ -6663,7 +6704,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
                                                                     <div className="text-slate-700 font-medium">
                                                                         {(() => {
-                                                                            const reviewer = users.find(u => u.id === asset.qc_reviewer_id);
+                                                                            const reviewer = usersMap.get(asset.qc_reviewer_id);
                                                                             return reviewer ? reviewer.name : 'Unknown Reviewer';
                                                                         })()}
                                                                     </div>
@@ -6908,10 +6949,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 editingItem={editingCategory}
             />
 
-            <UploadAssetModal
+            <UploadAssetPopup
                 isOpen={showUploadModal}
                 initialData={newAsset}
-                contentTypeLocked={contentTypeLocked}
                 onClose={() => {
                     setShowUploadModal(false);
                     // Reset the newAsset state when modal closes

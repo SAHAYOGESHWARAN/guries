@@ -35,6 +35,13 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const { user, isAdmin, hasPermission } = useAuth();
 
+    // Create a memoized user lookup map for O(1) access instead of O(n) find operations
+    const usersMap = useMemo(() => {
+        const map = new Map<number, User>();
+        users.forEach(u => map.set(u.id, u));
+        return map;
+    }, [users]);
+
     const canPerformQC = isAdmin || hasPermission('canPerformQC');
 
     // Only show loading on initial load, not during refresh
@@ -65,7 +72,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const getDesignerName = (asset: AssetLibraryItem): string => {
         const designerId = asset.designed_by || asset.created_by;
         if (!designerId) return '-';
-        return users.find(u => u.id === designerId)?.name || '-';
+        return usersMap.get(designerId)?.name || '-';
     };
 
     // Helper: Get asset type from Asset Type Master
@@ -97,12 +104,15 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
         return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending</span>;
     };
 
-    // Helper: Format upload date and time following system format
-    const formatDateTime = (dateString?: string): string => {
+    // Helper: Format upload date - uses submitted_at as primary, falls back to created_at
+    const formatUploadDate = (asset: AssetLibraryItem): string => {
+        const dateString = asset.submitted_at || asset.created_at;
         if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
+        const date = new Date(dateString);
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
     };
 
     // Side panel handlers - opens asset side-view panel when clicking asset name
@@ -125,25 +135,42 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
         }
     };
 
-    // Filter assets based on view mode
-    const filteredAssets = useMemo(() => {
-        switch (viewMode) {
-            case 'pending': return assetsForQC.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status);
-            case 'rework': return assetsForQC.filter(a => a.status === 'Rework Required' || a.qc_status === 'Rework');
-            case 'approved': return assetsForQC.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published');
-            case 'rejected': return assetsForQC.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail');
-            default: return assetsForQC;
-        }
-    }, [assetsForQC, viewMode]);
+    // Helper: Check if asset belongs to current user (for non-admin filtering)
+    const isUserAsset = (asset: AssetLibraryItem): boolean => {
+        if (!user) return false;
+        return asset.submitted_by === user.id ||
+            asset.created_by === user.id ||
+            asset.designed_by === user.id;
+    };
 
-    // Status counts for tabs
-    const statusCounts = useMemo(() => ({
-        all: assetsForQC.length,
-        pending: assetsForQC.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status).length,
-        rework: assetsForQC.filter(a => a.status === 'Rework Required' || a.qc_status === 'Rework').length,
-        approved: assetsForQC.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published').length,
-        rejected: assetsForQC.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail').length,
-    }), [assetsForQC]);
+    // Filter assets based on view mode and role
+    const filteredAssets = useMemo(() => {
+        // First filter by role - admins see all, non-admins see only their own
+        let roleFiltered = isAdmin ? assetsForQC : assetsForQC.filter(isUserAsset);
+
+        switch (viewMode) {
+            case 'pending': return roleFiltered.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status);
+            case 'rework': return roleFiltered.filter(a => a.status === 'Rework Required' || a.qc_status === 'Rework');
+            case 'approved': return roleFiltered.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published');
+            case 'rejected': return roleFiltered.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail');
+            default: return roleFiltered;
+        }
+    }, [assetsForQC, viewMode, isAdmin, user]);
+
+    // Status counts for tabs (respecting role-based filtering)
+    const statusCounts = useMemo(() => {
+        const roleFiltered = isAdmin ? assetsForQC : assetsForQC.filter(isUserAsset);
+        return {
+            all: roleFiltered.length,
+            pending: roleFiltered.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status).length,
+            rework: roleFiltered.filter(a => a.status === 'Rework Required' || a.qc_status === 'Rework').length,
+            approved: roleFiltered.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published').length,
+            rejected: roleFiltered.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail').length,
+        };
+    }, [assetsForQC, isAdmin, user]);
+
+    // Check if non-admin has rework assets (for tab highlighting)
+    const hasReworkAssets = !isAdmin && statusCounts.rework > 0;
 
     // ADMIN: Select asset for QC review - opens QC panel
     const handleReviewAsset = (asset: AssetLibraryItem) => {
@@ -438,11 +465,19 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
         <div className="p-6 bg-gray-50 min-h-screen">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Asset QC Review</h1>
-                    <p className="text-gray-500 mt-1">
-                        {canPerformQC ? 'Review and approve assets submitted for quality control' : 'View your assets and their QC status'}
-                    </p>
+                <div className="flex items-center gap-3">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Asset QC Review</h1>
+                        <p className="text-gray-500 mt-1">
+                            {canPerformQC ? 'Review and approve assets submitted for quality control' : 'View your assets and their QC status'}
+                        </p>
+                    </div>
+                    {/* Role Badge */}
+                    {isAdmin ? (
+                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">Admin</span>
+                    ) : (
+                        <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">User</span>
+                    )}
                 </div>
                 <div className="flex gap-3">
                     <button
@@ -483,11 +518,26 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                 {/* Status Filter Tabs */}
                 <div className="px-6 py-3 border-b border-gray-100 bg-gray-50">
                     <div className="flex gap-2 flex-wrap">
-                        {([{ key: 'all' as ViewMode, label: 'All' }, { key: 'pending' as ViewMode, label: 'Pending' }, { key: 'rework' as ViewMode, label: 'Rework' }, { key: 'approved' as ViewMode, label: 'Approved' }, { key: 'rejected' as ViewMode, label: 'Rejected' }]).map((tab) => (
-                            <button key={tab.key} onClick={() => setViewMode(tab.key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === tab.key ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                                {tab.label} ({statusCounts[tab.key]})
-                            </button>
-                        ))}
+                        {([{ key: 'all' as ViewMode, label: 'All' }, { key: 'pending' as ViewMode, label: 'Pending' }, { key: 'rework' as ViewMode, label: 'Rework' }, { key: 'approved' as ViewMode, label: 'Approved' }, { key: 'rejected' as ViewMode, label: 'Rejected' }]).map((tab) => {
+                            const isReworkHighlighted = tab.key === 'rework' && hasReworkAssets && viewMode !== 'rework';
+                            return (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setViewMode(tab.key)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === tab.key
+                                        ? 'bg-indigo-600 text-white'
+                                        : isReworkHighlighted
+                                            ? 'bg-orange-100 text-orange-700 border-2 border-orange-400 animate-pulse'
+                                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                        }`}
+                                >
+                                    {tab.label} ({statusCounts[tab.key]})
+                                    {isReworkHighlighted && (
+                                        <span className="ml-1.5 inline-flex items-center justify-center w-2 h-2 bg-orange-500 rounded-full"></span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -542,7 +592,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Version</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Designer</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Uploaded At</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Usage</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Usage</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
                                 </tr>
                             </thead>
@@ -569,8 +619,12 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                                         <td className="px-4 py-3">{getQCStatusBadge(asset)}</td>
                                         <td className="px-4 py-3 text-gray-700 text-sm">{asset.version_number || 'v1.0'}</td>
                                         <td className="px-4 py-3 text-gray-700 text-sm">{getDesignerName(asset)}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{formatDateTime(asset.created_at)}</td>
-                                        <td className="px-4 py-3 text-gray-700 text-sm">{asset.usage_count || 0}</td>
+                                        <td className="px-4 py-3 text-gray-700 text-sm">{formatUploadDate(asset)}</td>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                                                {asset.usage_count || 0}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-3">
                                             {canPerformQC ? (
                                                 <div className="flex gap-2">
