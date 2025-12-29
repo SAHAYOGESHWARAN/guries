@@ -44,6 +44,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [keywordsInput, setKeywordsInput] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string>('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,8 +78,44 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
             setLinkedSubServiceId(initialData.linked_sub_service_id || null);
             setLinkedRepositoryItemId(initialData.linked_repository_item_id || null);
             if (initialData.keywords) setKeywordsInput(initialData.keywords.join(', '));
+            // Set preview URL if there's an existing thumbnail
+            if (initialData.thumbnail_url || initialData.file_url) {
+                setPreviewUrl(initialData.thumbnail_url || initialData.file_url || '');
+            }
+        } else {
+            // Reset all state when no initialData (new upload)
+            setAsset({
+                application_type: 'web',
+                name: '',
+                type: '',
+                repository: 'Content',
+                status: 'Draft',
+                asset_category: '',
+                content_type: '',
+                web_title: '',
+                web_description: '',
+                web_url: '',
+                web_h1: '',
+                web_h2_1: '',
+                web_h2_2: '',
+                web_body_content: '',
+                keywords: [],
+                seo_score: 0,
+                grammar_score: 0,
+            });
+            setLinkedTaskId(null);
+            setLinkedCampaignId(null);
+            setLinkedProjectId(null);
+            setLinkedServiceId(null);
+            setLinkedSubServiceId(null);
+            setLinkedRepositoryItemId(null);
+            setDesignedBy(null);
+            setWorkflowStage('Draft');
+            setKeywordsInput('');
+            setSelectedFile(null);
+            setPreviewUrl('');
         }
-    }, [initialData]);
+    }, [initialData, isOpen]);
 
     const analyzeContent = useCallback(async () => {
         if (!asset.web_body_content?.trim()) {
@@ -94,6 +132,35 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
             setIsAnalyzing(false);
         }, 1500);
     }, [asset.web_body_content]);
+
+    // Handle file selection
+    const handleFileSelect = useCallback((file: File) => {
+        setSelectedFile(file);
+
+        // Create preview for images
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                setPreviewUrl(base64String);
+                setAsset(prev => ({
+                    ...prev,
+                    file_url: base64String,
+                    thumbnail_url: base64String,
+                    file_size: file.size,
+                    file_type: file.type
+                }));
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setPreviewUrl('');
+            setAsset(prev => ({
+                ...prev,
+                file_size: file.size,
+                file_type: file.type
+            }));
+        }
+    }, []);
 
     const handleSave = useCallback(async (submitForQC = false) => {
         if (!asset.name?.trim() && !asset.web_title?.trim()) {
@@ -123,9 +190,15 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
 
             if (initialData?.id) await updateAsset(initialData.id, data);
             else await createAsset(data as AssetLibraryItem);
+
+            // Reset file state after successful save
+            setSelectedFile(null);
+            setPreviewUrl('');
+
             onSuccess?.();
             onClose();
         } catch (err) {
+            console.error('Failed to save asset:', err);
             alert('Failed to save asset');
         } finally {
             setIsSaving(false);
@@ -365,14 +438,32 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 onClick={() => fileInputRef.current?.click()}
                                 className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer bg-slate-50"
                             >
-                                <input ref={fileInputRef} type="file" className="hidden" accept="image/*,video/*,.pdf,.doc,.docx" />
-                                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                    </svg>
-                                </div>
-                                <p className="text-sm font-semibold text-slate-700 mb-1">Upload Web Assets</p>
-                                <p className="text-xs text-slate-500">Drag & drop source files, or <span className="text-blue-600 hover:underline">browse local files</span></p>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*,video/*,.pdf,.doc,.docx"
+                                    onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                                />
+                                {previewUrl ? (
+                                    <div className="space-y-3">
+                                        <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg shadow-md" />
+                                        <p className="text-sm text-slate-600">Click to change file</p>
+                                        {selectedFile && (
+                                            <p className="text-xs text-slate-500">{selectedFile.name}</p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                        </div>
+                                        <p className="text-sm font-semibold text-slate-700 mb-1">Upload Web Assets</p>
+                                        <p className="text-xs text-slate-500">Drag & drop source files, or <span className="text-blue-600 hover:underline">browse local files</span></p>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -421,8 +512,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm"
                                     >
                                         <option value="">Select category...</option>
-                                        {assetCategories.filter(c => c.status === 'active').map(c => (
-                                            <option key={c.id} value={c.name}>{c.name}</option>
+                                        {assetCategories.filter(c => !c.status || c.status === 'active').map(c => (
+                                            <option key={c.id} value={c.category_name || c.name}>{c.category_name || c.name}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -437,7 +528,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     >
                                         <option value="">Select type...</option>
                                         {assetTypes.filter(t => !t.status || t.status === 'active').map(t => (
-                                            <option key={t.id} value={t.name}>{t.name}</option>
+                                            <option key={t.id} value={t.asset_type_name || t.name}>{t.asset_type_name || t.name}</option>
                                         ))}
                                     </select>
                                 </div>
