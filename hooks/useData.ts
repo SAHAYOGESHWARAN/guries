@@ -98,11 +98,12 @@ const checkBackendAvailability = async (): Promise<boolean> => {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // Increased timeout to 3s
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
 
+        // Use GET instead of HEAD for better compatibility
         const response = await fetch(`${API_BASE_URL}/users`, {
             signal: controller.signal,
-            method: 'HEAD'
+            method: 'GET'
         });
 
         clearTimeout(timeoutId);

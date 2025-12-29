@@ -106,13 +106,21 @@ async function getNextId(collection: string): Promise<number> {
 // CORS headers
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Handle preflight and HEAD requests
     if (req.method === 'OPTIONS') return res.status(200).json({ ok: true });
+
+    // Set CORS headers
     Object.entries(corsHeaders).forEach(([key, value]) => res.setHeader(key, value));
+
+    // Handle HEAD requests - just return 200 OK for health checks
+    if (req.method === 'HEAD') {
+        return res.status(200).end();
+    }
 
     const { path } = req.query;
     const pathArray = Array.isArray(path) ? path : [path];
