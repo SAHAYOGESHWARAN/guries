@@ -89,8 +89,7 @@ let backendCheckDone = false;
 // Check if running on Vercel (production) - WebSocket not supported
 const isVercelProduction = typeof window !== 'undefined' && (
     window.location.hostname.includes('vercel.app') ||
-    window.location.hostname.includes('guries') ||
-    !window.location.hostname.includes('localhost')
+    window.location.hostname.includes('guries')
 );
 
 // Reset backend check on page load
