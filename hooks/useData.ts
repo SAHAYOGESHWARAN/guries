@@ -86,6 +86,13 @@ let socketInstance: Socket | null = null;
 let backendAvailable = true; // Default to true to attempt connection
 let backendCheckDone = false;
 
+// Check if running on Vercel (production) - WebSocket not supported
+const isVercelProduction = typeof window !== 'undefined' && (
+    window.location.hostname.includes('vercel.app') ||
+    window.location.hostname.includes('guries') ||
+    !window.location.hostname.includes('localhost')
+);
+
 // Reset backend check on page load
 if (typeof window !== 'undefined') {
     backendCheckDone = false;
@@ -117,6 +124,11 @@ const checkBackendAvailability = async (): Promise<boolean> => {
 };
 
 const getSocket = () => {
+    // Don't create socket on Vercel production - WebSocket not supported
+    if (isVercelProduction) {
+        return null;
+    }
+
     // Don't create socket if backend is not available
     if (!backendAvailable) {
         return null;
@@ -242,6 +254,11 @@ export function useData<T>(collection: string) {
         };
 
         initializeData();
+
+        // Skip socket connection on Vercel production
+        if (isVercelProduction) {
+            return;
+        }
 
         // Only attempt socket connection if backend is available
         if (!backendAvailable) {

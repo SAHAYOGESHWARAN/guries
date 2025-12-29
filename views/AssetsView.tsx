@@ -16,7 +16,7 @@ interface AssetsViewProps {
 }
 
 const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
-    const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh, loading: assetsLoading } = useData<AssetLibraryItem>('assetLibrary');
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: users = [], loading: usersLoading } = useData<User>('users');
@@ -6261,525 +6261,547 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {/* Results Summary */}
                         <div className="flex justify-between items-center mb-4 flex-shrink-0">
                             <p className="text-sm text-slate-600">
-                                Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                                {assetsLoading ? (
+                                    <span className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Loading assets...
+                                    </span>
+                                ) : (
+                                    <>Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets</>
+                                )}
                             </p>
                         </div>
 
-                        {/* Display Content Based on View Mode */}
-                        <div className="flex-1 min-h-0">
-                            {displayMode === 'table' ? (
-                                <div className="bg-white rounded-xl border border-slate-200 h-full flex flex-col">
-                                    {/* Scrollable Table Container */}
-                                    <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-                                        <table className="w-full" style={{ minWidth: '1800px' }}>
-                                            <thead className="bg-slate-50 sticky top-0 z-10">
-                                                <tr>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '180px' }}>Asset Name</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Type</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Asset Category</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Content Type</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Linked Service</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Linked Task</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>QC Status</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Version</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Designer</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Uploaded At</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Created By</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Updated By</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Usage Count</th>
-                                                    <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {filteredAssets.length > 0 ? (
-                                                    filteredAssets.map((asset) => {
-                                                        const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
-                                                        const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
-                                                        const taskId = asset.linked_task_id || asset.linked_task;
-                                                        const task = taskId ? tasks.find(t => t.id === taskId) : null;
-                                                        // Use memoized map for O(1) lookup instead of O(n) find
-                                                        const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
-                                                        const designer = designerId ? usersMap.get(designerId) : undefined;
-                                                        const createdByUser = asset.created_by ? usersMap.get(asset.created_by) : undefined;
-                                                        const updatedByUser = asset.updated_by ? usersMap.get(asset.updated_by) : undefined;
-                                                        const status = asset.status || 'Draft';
-                                                        let statusColor = 'bg-slate-100 text-slate-700';
-                                                        let statusText: string = status;
-                                                        if (status === 'QC Approved' || status === 'Published') {
-                                                            statusColor = 'bg-green-100 text-green-700';
-                                                            statusText = 'Pass';
-                                                        } else if (status === 'Pending QC Review') {
-                                                            statusColor = 'bg-amber-100 text-amber-700';
-                                                            statusText = 'Pending';
-                                                        } else if (status === 'QC Rejected' || status === 'Rework Required') {
-                                                            statusColor = 'bg-red-100 text-red-700';
-                                                            statusText = 'Fail';
-                                                        }
-                                                        const date = asset.date || asset.created_at;
-                                                        const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-';
-
-                                                        return (
-                                                            <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer">
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    {asset.thumbnail_url ? (
-                                                                        <img src={asset.thumbnail_url} alt={asset.name} className="w-12 h-12 object-cover rounded-lg border border-slate-200" loading="lazy" />
-                                                                    ) : (
-                                                                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-lg border border-slate-200">
-                                                                            {getAssetIcon(asset.type)}
-                                                                        </div>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <div className="max-w-[160px]">
-                                                                        <div className="font-medium text-slate-900 text-sm truncate" title={asset.name}>
-                                                                            {asset.name.length > 25 ? asset.name.substring(0, 25) + '...' : asset.name}
-                                                                        </div>
-                                                                        <div className="text-xs text-slate-400 truncate">
-                                                                            {(asset.file_url?.split('/').pop() || `asset-${asset.id}`).substring(0, 18)}
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
-                                                                        {asset.type || '-'}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="text-sm text-slate-700">{asset.asset_category || '-'}</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="text-sm text-slate-700">
-                                                                        {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="text-sm text-slate-700">{service?.service_name || '-'}</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="text-sm text-slate-700 truncate block max-w-[120px]">{task?.name || '-'}</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${statusColor}`}>
-                                                                        {statusText}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="text-sm text-slate-700">{asset.version_number || 'v1.0'}</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    {designer ? (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                                                {designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-                                                                            </div>
-                                                                            <span className="text-sm text-slate-700 truncate max-w-[80px]">{designer.name}</span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="text-sm text-slate-400">-</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="text-sm text-slate-600">{formattedDate}</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    {createdByUser ? (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                                                {createdByUser.name?.charAt(0).toUpperCase() || 'U'}
-                                                                            </div>
-                                                                            <span className="text-sm text-slate-700 truncate max-w-[70px]">{createdByUser.name}</span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="text-sm text-slate-400">-</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    {updatedByUser ? (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                                                {updatedByUser.name?.charAt(0).toUpperCase() || 'U'}
-                                                                            </div>
-                                                                            <span className="text-sm text-slate-700 truncate max-w-[70px]">{updatedByUser.name}</span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="text-sm text-slate-400">-</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
-                                                                        {(asset as any).usage_count || 0}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
-                                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                                        </button>
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
-                                                                            {deletingId === asset.id ? (
-                                                                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                                            ) : (
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                                            )}
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan={15} className="px-6 py-16 text-center">
-                                                            <div className="flex flex-col items-center justify-center text-slate-400">
-                                                                <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                </svg>
-                                                                <p className="text-sm font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    {filteredAssets.length > 0 && (
-                                        <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 text-sm text-slate-600 flex justify-between items-center flex-shrink-0">
-                                            <span>Showing <span className="font-bold text-slate-900">{filteredAssets.length}</span> results</span>
-                                            <div className="flex gap-2">
-                                                <button className="px-4 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm">Previous</button>
-                                                <button className="px-4 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm">Next</button>
-                                            </div>
-                                        </div>
-                                    )}
+                        {/* Loading State */}
+                        {assetsLoading && (
+                            <div className="flex-1 flex items-center justify-center py-16">
+                                <div className="text-center">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                                    <p className="text-slate-500">Loading assets...</p>
                                 </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {filteredAssets.length === 0 ? (
-                                        <div className="col-span-full text-center py-12">
-                                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                </svg>
-                                            </div>
-                                            <p className="text-slate-500 text-lg font-medium mb-4">
-                                                No assets yet.
-                                            </p>
-                                            <div className="space-y-4">
-                                                <p className="text-slate-400 text-sm">
-                                                    Get started by uploading your first asset
-                                                </p>
+                            </div>
+                        )}
 
-                                                {/* Quick Upload Options */}
-                                                <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
-                                                    <button
-                                                        onClick={() => {
-                                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                            setShowUploadModal(true);
-                                                        }}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                    >
-                                                        🌐 Web Content
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                            setShowUploadModal(true);
-                                                        }}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                                                    >
-                                                        🔍 SEO Content
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                            setShowUploadModal(true);
-                                                        }}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                                                    >
-                                                        📱 Social Media
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        filteredAssets.map((asset) => (
-                                            <div
-                                                key={asset.id}
-                                                onClick={() => handleRowClick(asset)}
-                                                className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
-                                            >
-                                                {/* Asset Preview */}
-                                                <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                                                    {asset.thumbnail_url ? (
-                                                        <img
-                                                            src={asset.thumbnail_url}
-                                                            alt={asset.name}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                        />
+                        {/* Display Content Based on View Mode */}
+                        {!assetsLoading && (
+                            <div className="flex-1 min-h-0">
+                                {displayMode === 'table' ? (
+                                    <div className="bg-white rounded-xl border border-slate-200 h-full flex flex-col">
+                                        {/* Scrollable Table Container */}
+                                        <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                                            <table className="w-full" style={{ minWidth: '1800px' }}>
+                                                <thead className="bg-slate-50 sticky top-0 z-10">
+                                                    <tr>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '180px' }}>Asset Name</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Type</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Asset Category</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Content Type</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Linked Service</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Linked Task</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>QC Status</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Version</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Designer</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Uploaded At</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Created By</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Updated By</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Usage Count</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {filteredAssets.length > 0 ? (
+                                                        filteredAssets.map((asset) => {
+                                                            const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
+                                                            const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
+                                                            const taskId = asset.linked_task_id || asset.linked_task;
+                                                            const task = taskId ? tasks.find(t => t.id === taskId) : null;
+                                                            // Use memoized map for O(1) lookup instead of O(n) find
+                                                            const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
+                                                            const designer = designerId ? usersMap.get(designerId) : undefined;
+                                                            const createdByUser = asset.created_by ? usersMap.get(asset.created_by) : undefined;
+                                                            const updatedByUser = asset.updated_by ? usersMap.get(asset.updated_by) : undefined;
+                                                            const status = asset.status || 'Draft';
+                                                            let statusColor = 'bg-slate-100 text-slate-700';
+                                                            let statusText: string = status;
+                                                            if (status === 'QC Approved' || status === 'Published') {
+                                                                statusColor = 'bg-green-100 text-green-700';
+                                                                statusText = 'Pass';
+                                                            } else if (status === 'Pending QC Review') {
+                                                                statusColor = 'bg-amber-100 text-amber-700';
+                                                                statusText = 'Pending';
+                                                            } else if (status === 'QC Rejected' || status === 'Rework Required') {
+                                                                statusColor = 'bg-red-100 text-red-700';
+                                                                statusText = 'Fail';
+                                                            }
+                                                            const date = asset.date || asset.created_at;
+                                                            const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-';
+
+                                                            return (
+                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer">
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        {asset.thumbnail_url ? (
+                                                                            <img src={asset.thumbnail_url} alt={asset.name} className="w-12 h-12 object-cover rounded-lg border border-slate-200" loading="lazy" />
+                                                                        ) : (
+                                                                            <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-lg border border-slate-200">
+                                                                                {getAssetIcon(asset.type)}
+                                                                            </div>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <div className="max-w-[160px]">
+                                                                            <div className="font-medium text-slate-900 text-sm truncate" title={asset.name}>
+                                                                                {asset.name.length > 25 ? asset.name.substring(0, 25) + '...' : asset.name}
+                                                                            </div>
+                                                                            <div className="text-xs text-slate-400 truncate">
+                                                                                {(asset.file_url?.split('/').pop() || `asset-${asset.id}`).substring(0, 18)}
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
+                                                                            {asset.type || '-'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="text-sm text-slate-700">{asset.asset_category || '-'}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="text-sm text-slate-700">
+                                                                            {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="text-sm text-slate-700">{service?.service_name || '-'}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="text-sm text-slate-700 truncate block max-w-[120px]">{task?.name || '-'}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${statusColor}`}>
+                                                                            {statusText}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="text-sm text-slate-700">{asset.version_number || 'v1.0'}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        {designer ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                                    {designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                                                                                </div>
+                                                                                <span className="text-sm text-slate-700 truncate max-w-[80px]">{designer.name}</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="text-sm text-slate-600">{formattedDate}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        {createdByUser ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                                    {createdByUser.name?.charAt(0).toUpperCase() || 'U'}
+                                                                                </div>
+                                                                                <span className="text-sm text-slate-700 truncate max-w-[70px]">{createdByUser.name}</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        {updatedByUser ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                                    {updatedByUser.name?.charAt(0).toUpperCase() || 'U'}
+                                                                                </div>
+                                                                                <span className="text-sm text-slate-700 truncate max-w-[70px]">{updatedByUser.name}</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                                                                            {(asset as any).usage_count || 0}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                            </button>
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
+                                                                                {deletingId === asset.id ? (
+                                                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                                ) : (
+                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                                )}
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-                                                            <span className="text-4xl text-white">
-                                                                {getAssetIcon(asset.type)}
-                                                            </span>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Status Badge */}
-                                                    <div className="absolute top-3 left-3">
-                                                        {getStatusBadge(asset.status || 'Draft')}
-                                                    </div>
-
-                                                    {/* Enhanced Actions Overlay */}
-                                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                                        {(asset.file_url || asset.thumbnail_url) && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const url = asset.file_url || asset.thumbnail_url;
-                                                                    if (url) {
-                                                                        if (url.startsWith('data:')) {
-                                                                            const win = window.open();
-                                                                            if (win) {
-                                                                                win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
-                                                                            }
-                                                                        } else {
-                                                                            window.open(url, '_blank', 'noopener,noreferrer');
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
-                                                                title="View Asset"
-                                                            >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-
-                                                        {/* Update Asset Button - More Prominent */}
-                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
-                                                            <button
-                                                                onClick={(e) => handleEdit(e, asset)}
-                                                                className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
-                                                                title="Update Asset"
-                                                            >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-
-                                                        {/* Delete Button - creators or admins */}
-                                                        {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
-                                                                disabled={deletingId === asset.id}
-                                                                className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                title="Delete Asset"
-                                                            >
-                                                                {deletingId === asset.id ? (
-                                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        <tr>
+                                                            <td colSpan={15} className="px-6 py-16 text-center">
+                                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                                    <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                                     </svg>
-                                                                ) : (
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                    </svg>
-                                                                )}
-                                                            </button>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Quick Update Badge */}
-                                                    {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
-                                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
-                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                </svg>
-                                                                Update Ready
-                                                            </span>
-                                                        </div>
+                                                                    <p className="text-sm font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
                                                     )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {filteredAssets.length > 0 && (
+                                            <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 text-sm text-slate-600 flex justify-between items-center flex-shrink-0">
+                                                <span>Showing <span className="font-bold text-slate-900">{filteredAssets.length}</span> results</span>
+                                                <div className="flex gap-2">
+                                                    <button className="px-4 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm">Previous</button>
+                                                    <button className="px-4 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm">Next</button>
                                                 </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {filteredAssets.length === 0 ? (
+                                            <div className="col-span-full text-center py-12">
+                                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-slate-500 text-lg font-medium mb-4">
+                                                    No assets yet.
+                                                </p>
+                                                <div className="space-y-4">
+                                                    <p className="text-slate-400 text-sm">
+                                                        Get started by uploading your first asset
+                                                    </p>
 
-                                                {/* Asset Info */}
-                                                <div className="p-4 space-y-3">
-                                                    {/* Asset Name & ID */}
-                                                    <div className="flex items-start justify-between">
-                                                        <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
-                                                            {asset.name}
-                                                        </h3>
-                                                        <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-                                                            ID: {asset.id}
-                                                        </span>
+                                                    {/* Quick Upload Options */}
+                                                    <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            🌐 Web Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                                        >
+                                                            🔍 SEO Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                                                        >
+                                                            📱 Social Media
+                                                        </button>
                                                     </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            filteredAssets.map((asset) => (
+                                                <div
+                                                    key={asset.id}
+                                                    onClick={() => handleRowClick(asset)}
+                                                    className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
+                                                >
+                                                    {/* Asset Preview */}
+                                                    <div className="aspect-video bg-slate-100 relative overflow-hidden">
+                                                        {asset.thumbnail_url ? (
+                                                            <img
+                                                                src={asset.thumbnail_url}
+                                                                alt={asset.name}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                                                                <span className="text-4xl text-white">
+                                                                    {getAssetIcon(asset.type)}
+                                                                </span>
+                                                            </div>
+                                                        )}
 
-                                                    {/* Campaign/Project Name */}
-                                                    {asset.web_title && (
-                                                        <div className="text-sm text-slate-700 font-medium">
-                                                            {asset.web_title}
+                                                        {/* Status Badge */}
+                                                        <div className="absolute top-3 left-3">
+                                                            {getStatusBadge(asset.status || 'Draft')}
                                                         </div>
-                                                    )}
 
-                                                    {/* Service Linking */}
-                                                    <div className="space-y-1">
-                                                        {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
-                                                            <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
-                                                                <div className="text-slate-700 font-medium">
-                                                                    {asset.linked_service_ids.map(serviceId => {
-                                                                        const service = services.find(s => s.id === serviceId);
-                                                                        return service?.service_name;
-                                                                    }).filter(Boolean).join(', ')}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                        {/* Enhanced Actions Overlay */}
+                                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                                            {(asset.file_url || asset.thumbnail_url) && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const url = asset.file_url || asset.thumbnail_url;
+                                                                        if (url) {
+                                                                            if (url.startsWith('data:')) {
+                                                                                const win = window.open();
+                                                                                if (win) {
+                                                                                    win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
+                                                                                }
+                                                                            } else {
+                                                                                window.open(url, '_blank', 'noopener,noreferrer');
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
+                                                                    title="View Asset"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
 
-                                                        {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
-                                                            <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
-                                                                <div className="text-slate-700 font-medium">
-                                                                    {asset.linked_sub_service_ids.map(ssId => {
-                                                                        const subService = subServices.find(ss => ss.id === ssId);
-                                                                        return subService?.sub_service_name;
-                                                                    }).filter(Boolean).join(', ')}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                            {/* Update Asset Button - More Prominent */}
+                                                            {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
+                                                                <button
+                                                                    onClick={(e) => handleEdit(e, asset)}
+                                                                    className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
+                                                                    title="Update Asset"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
 
-                                                        {asset.repository && (
-                                                            <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
-                                                                <div className="text-slate-700 font-medium">{asset.repository}</div>
+                                                            {/* Delete Button - creators or admins */}
+                                                            {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
+                                                                    disabled={deletingId === asset.id}
+                                                                    className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                    title="Delete Asset"
+                                                                >
+                                                                    {deletingId === asset.id ? (
+                                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Quick Update Badge */}
+                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
+                                                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                    </svg>
+                                                                    Update Ready
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    {/* QC Panel */}
-                                                    {asset.qc_score && (
-                                                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
-                                                                <div className="flex items-center gap-2">
+                                                    {/* Asset Info */}
+                                                    <div className="p-4 space-y-3">
+                                                        {/* Asset Name & ID */}
+                                                        <div className="flex items-start justify-between">
+                                                            <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
+                                                                {asset.name}
+                                                            </h3>
+                                                            <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
+                                                                ID: {asset.id}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Campaign/Project Name */}
+                                                        {asset.web_title && (
+                                                            <div className="text-sm text-slate-700 font-medium">
+                                                                {asset.web_title}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Service Linking */}
+                                                        <div className="space-y-1">
+                                                            {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
+                                                                <div className="text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
+                                                                    <div className="text-slate-700 font-medium">
+                                                                        {asset.linked_service_ids.map(serviceId => {
+                                                                            const service = services.find(s => s.id === serviceId);
+                                                                            return service?.service_name;
+                                                                        }).filter(Boolean).join(', ')}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
+                                                                <div className="text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
+                                                                    <div className="text-slate-700 font-medium">
+                                                                        {asset.linked_sub_service_ids.map(ssId => {
+                                                                            const subService = subServices.find(ss => ss.id === ssId);
+                                                                            return subService?.sub_service_name;
+                                                                        }).filter(Boolean).join(', ')}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {asset.repository && (
+                                                                <div className="text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
+                                                                    <div className="text-slate-700 font-medium">{asset.repository}</div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* QC Panel */}
+                                                        {asset.qc_score && (
+                                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <CircularScore
+                                                                            score={asset.qc_score}
+                                                                            label=""
+                                                                            size="xs"
+                                                                        />
+                                                                        <span className="text-xs font-bold text-slate-700">
+                                                                            {asset.qc_score}/100
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                    <div>
+                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
+                                                                        <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                                            {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {asset.qc_reviewed_at && (
+                                                                        <div>
+                                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
+                                                                            <div className="text-slate-700 font-medium">
+                                                                                {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
+                                                                                    year: 'numeric',
+                                                                                    month: '2-digit',
+                                                                                    day: '2-digit'
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Reviewer Info */}
+                                                                {asset.qc_reviewer_id && (
+                                                                    <div className="mt-2 text-xs">
+                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
+                                                                        <div className="text-slate-700 font-medium">
+                                                                            {(() => {
+                                                                                const reviewer = usersMap.get(asset.qc_reviewer_id);
+                                                                                return reviewer ? reviewer.name : 'Unknown Reviewer';
+                                                                            })()}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Type and Repository Tags */}
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
+                                                                <span>{getAssetIcon(asset.type)}</span>
+                                                                {asset.type}
+                                                            </span>
+                                                            {asset.application_type && (
+                                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
+                                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
+                                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
+                                                                            'bg-slate-100 text-slate-700'
+                                                                    }`}>
+                                                                    {asset.application_type === 'web' && '🌐 WEB'}
+                                                                    {asset.application_type === 'seo' && '🔍 SEO'}
+                                                                    {asset.application_type === 'smm' && '📱 SMM'}
+                                                                    {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* AI Scores */}
+                                                        {(asset.seo_score || asset.grammar_score) && (
+                                                            <div className="flex gap-2">
+                                                                {asset.seo_score && (
                                                                     <CircularScore
-                                                                        score={asset.qc_score}
-                                                                        label=""
+                                                                        score={asset.seo_score}
+                                                                        label="SEO"
                                                                         size="xs"
                                                                     />
-                                                                    <span className="text-xs font-bold text-slate-700">
-                                                                        {asset.qc_score}/100
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                                <div>
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
-                                                                    <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                                        {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
-                                                                    </div>
-                                                                </div>
-
-                                                                {asset.qc_reviewed_at && (
-                                                                    <div>
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
-                                                                        <div className="text-slate-700 font-medium">
-                                                                            {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
-                                                                                year: 'numeric',
-                                                                                month: '2-digit',
-                                                                                day: '2-digit'
-                                                                            })}
-                                                                        </div>
-                                                                    </div>
+                                                                )}
+                                                                {asset.grammar_score && (
+                                                                    <CircularScore
+                                                                        score={asset.grammar_score}
+                                                                        label="Grammar"
+                                                                        size="xs"
+                                                                    />
                                                                 )}
                                                             </div>
-
-                                                            {/* Reviewer Info */}
-                                                            {asset.qc_reviewer_id && (
-                                                                <div className="mt-2 text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
-                                                                    <div className="text-slate-700 font-medium">
-                                                                        {(() => {
-                                                                            const reviewer = usersMap.get(asset.qc_reviewer_id);
-                                                                            return reviewer ? reviewer.name : 'Unknown Reviewer';
-                                                                        })()}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Type and Repository Tags */}
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
-                                                            <span>{getAssetIcon(asset.type)}</span>
-                                                            {asset.type}
-                                                        </span>
-                                                        {asset.application_type && (
-                                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
-                                                                asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
-                                                                    asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
-                                                                        'bg-slate-100 text-slate-700'
-                                                                }`}>
-                                                                {asset.application_type === 'web' && '🌐 WEB'}
-                                                                {asset.application_type === 'seo' && '🔍 SEO'}
-                                                                {asset.application_type === 'smm' && '📱 SMM'}
-                                                                {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
-                                                            </span>
                                                         )}
-                                                    </div>
 
-                                                    {/* AI Scores */}
-                                                    {(asset.seo_score || asset.grammar_score) && (
-                                                        <div className="flex gap-2">
-                                                            {asset.seo_score && (
-                                                                <CircularScore
-                                                                    score={asset.seo_score}
-                                                                    label="SEO"
-                                                                    size="xs"
-                                                                />
-                                                            )}
-                                                            {asset.grammar_score && (
-                                                                <CircularScore
-                                                                    score={asset.grammar_score}
-                                                                    label="Grammar"
-                                                                    size="xs"
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Usage Panel */}
-                                                    <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                        <div className="text-xs">
-                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
-                                                            <div className="flex items-center justify-between mt-1">
-                                                                {asset.linking_active && (
-                                                                    <span className="text-green-600 font-medium text-xs">🔗 Active</span>
+                                                        {/* Usage Panel */}
+                                                        <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
+                                                                <div className="flex items-center justify-between mt-1">
+                                                                    {asset.linking_active && (
+                                                                        <span className="text-green-600 font-medium text-xs">🔗 Active</span>
+                                                                    )}
+                                                                </div>
+                                                                {asset.date && (
+                                                                    <div className="text-slate-500 text-xs mt-1">
+                                                                        Created: {new Date(asset.date).toLocaleDateString('en-US', {
+                                                                            month: 'short',
+                                                                            day: 'numeric',
+                                                                            year: 'numeric'
+                                                                        })}
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                            {asset.date && (
-                                                                <div className="text-slate-500 text-xs mt-1">
-                                                                    Created: {new Date(asset.date).toLocaleDateString('en-US', {
-                                                                        month: 'short',
-                                                                        day: 'numeric',
-                                                                        year: 'numeric'
-                                                                    })}
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )
             }

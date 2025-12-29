@@ -237,7 +237,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
         name, type, repository, file_url, thumbnail_url, file_size, file_type, date,
         asset_category, asset_format, content_type, status, linked_service_ids, linked_sub_service_ids,
         linked_task_id, linked_campaign_id, linked_project_id, linked_service_id, linked_sub_service_id,
-        linked_repository_item_id, designed_by, version_number,
+        linked_repository_item_id, designed_by, version_number, created_by,
         application_type, keywords, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
         smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by
@@ -280,12 +280,12 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 file_url, og_image_url, thumbnail_url, file_size, file_type,
                 linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
                 linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
-                designed_by, version_number, created_at,
+                designed_by, version_number, created_at, created_by,
                 application_type, keywords, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
                 web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
                 smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by,
                 submitted_at, workflow_log, linking_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49) RETURNING *`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50) RETURNING *`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
@@ -294,7 +294,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 linked_task_id || null, linked_campaign_id || null, linked_project_id || null,
                 linked_service_id || null, linked_sub_service_id || null, linked_repository_item_id || null,
                 designed_by || null, version_number || 'v1.0',
-                date || new Date().toISOString(),
+                date || new Date().toISOString(), created_by || submitted_by || null,
                 application_type || null, keywords ? JSON.stringify(keywords) : null,
                 web_title || null, web_description || null, web_meta_description || null, web_keywords || null, web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
                 web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null, smm_tag || null, smm_url || null, smm_description || null,

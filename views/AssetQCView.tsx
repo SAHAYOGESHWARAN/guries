@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
 import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
@@ -136,12 +136,12 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     };
 
     // Helper: Check if asset belongs to current user (for non-admin filtering)
-    const isUserAsset = (asset: AssetLibraryItem): boolean => {
+    const isUserAsset = useCallback((asset: AssetLibraryItem): boolean => {
         if (!user) return false;
         return asset.submitted_by === user.id ||
             asset.created_by === user.id ||
             asset.designed_by === user.id;
-    };
+    }, [user]);
 
     // Filter assets based on view mode and role
     const filteredAssets = useMemo(() => {
@@ -155,7 +155,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
             case 'rejected': return roleFiltered.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail');
             default: return roleFiltered;
         }
-    }, [assetsForQC, viewMode, isAdmin, user]);
+    }, [assetsForQC, viewMode, isAdmin, isUserAsset]);
 
     // Status counts for tabs (respecting role-based filtering)
     const statusCounts = useMemo(() => {
@@ -167,7 +167,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
             approved: roleFiltered.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published').length,
             rejected: roleFiltered.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail').length,
         };
-    }, [assetsForQC, isAdmin, user]);
+    }, [assetsForQC, isAdmin, isUserAsset]);
 
     // Check if non-admin has rework assets (for tab highlighting)
     const hasReworkAssets = !isAdmin && statusCounts.rework > 0;
