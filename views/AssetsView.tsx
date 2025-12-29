@@ -6,6 +6,7 @@ import AssetCategoryMasterModal from '../components/AssetCategoryMasterModal';
 import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
 import UploadAssetPopup from '../components/UploadAssetPopup';
 import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
+import EditAssetForm from '../components/EditAssetForm';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
 import { getStatusBadge } from '../constants';
@@ -2002,7 +2003,35 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 renderFileUpload()
             )}
 
-            {(viewMode === 'edit' || (viewMode === 'upload' && uploadStep === 'asset-details')) && (
+            {viewMode === 'edit' && editingAsset && (
+                <EditAssetForm
+                    asset={editingAsset}
+                    onSave={async (assetData, submitForQC) => {
+                        try {
+                            setIsUploading(true);
+                            await updateAsset(editingAsset.id, {
+                                ...assetData,
+                                status: submitForQC ? 'Pending QC Review' : assetData.status,
+                            });
+                            setViewMode('list');
+                            setEditingAsset(null);
+                            refresh();
+                        } catch (error) {
+                            console.error('Failed to update asset:', error);
+                            alert('Failed to update asset');
+                        } finally {
+                            setIsUploading(false);
+                        }
+                    }}
+                    onCancel={() => {
+                        setViewMode('list');
+                        setEditingAsset(null);
+                    }}
+                    isUploading={isUploading}
+                />
+            )}
+
+            {(viewMode === 'upload' && uploadStep === 'asset-details') && (
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-indigo-50">
                     {/* Fixed Header */}
                     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -2021,10 +2050,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </button>
                                     <div>
                                         <h1 className="text-2xl font-bold text-slate-900">
-                                            {viewMode === 'edit' ? 'Edit Asset' : 'Upload New Asset'}
+                                            Upload New Asset
                                         </h1>
                                         <p className="text-slate-600 text-sm mt-1">
-                                            {viewMode === 'edit' ? 'Update asset information and settings' : 'Add new media content to the central asset library'}
+                                            Add new media content to the central asset library
                                         </p>
                                     </div>
                                 </div>
@@ -2042,32 +2071,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </svg>
                                         Cancel
                                     </button>
-
-                                    {/* Update Asset Button (for edit mode) */}
-                                    {viewMode === 'edit' && (
-                                        <button
-                                            onClick={() => handleUpload(false)}
-                                            disabled={isUploading}
-                                            className={`bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-2 rounded-lg font-medium shadow-sm hover:shadow-md transition-all text-sm flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            {isUploading ? (
-                                                <>
-                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                    </svg>
-                                                    Updating...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                    </svg>
-                                                    Update Asset
-                                                </>
-                                            )}
-                                        </button>
-                                    )}
 
                                     {/* Save as Draft Button */}
                                     <button
@@ -2088,7 +2091,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
-                                                {viewMode === 'edit' ? 'Save Changes' : 'Save as Draft'}
+                                                Save as Draft
                                             </>
                                         )}
                                     </button>
@@ -2112,7 +2115,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
-                                                {viewMode === 'edit' ? 'Update & Submit for QC' : 'Submit for QC Review'}
+                                                Submit for QC Review
                                             </>
                                         )}
                                     </button>
@@ -3649,7 +3652,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             )}
 
                             {/* Map Asset to Source Work Section - Common to all application types */}
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                                 <div className="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-4 border-b border-slate-200">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
@@ -3799,7 +3802,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             </div>
 
                             {/* Status - Common to all application types */}
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Status</label>
                                 <select
                                     value={newAsset.status || 'Draft'}

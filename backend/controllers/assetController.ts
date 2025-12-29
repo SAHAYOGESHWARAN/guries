@@ -485,6 +485,18 @@ export const deleteAssetLibraryItem = async (req: any, res: any) => {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
+        // Delete related records first to avoid foreign key constraint errors
+        await pool.query('DELETE FROM service_asset_links WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM subservice_asset_links WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM asset_qc_reviews WHERE asset_id = $1', [numericId]);
+
+        // Delete from usage tracking tables (these have ON DELETE CASCADE but being explicit)
+        await pool.query('DELETE FROM asset_website_usage WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM asset_social_media_usage WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM asset_backlink_usage WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM asset_engagement_metrics WHERE asset_id = $1', [numericId]);
+
+        // Now delete the asset itself
         await pool.query('DELETE FROM assets WHERE id = $1', [numericId]);
         getSocket().emit('assetLibrary_deleted', { id: numericId });
         res.status(204).send();
