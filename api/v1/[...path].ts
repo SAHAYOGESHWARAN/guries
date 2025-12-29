@@ -184,11 +184,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ]);
         }
 
+        // Initialize sample assets if empty
+        const assets = await getCollection('assets');
+        if (assets.length === 0) {
+            await saveCollection('assets', [
+                {
+                    id: 1,
+                    name: 'Sample Web Article',
+                    type: 'Blog Banner',
+                    asset_category: 'Marketing',
+                    application_type: 'web',
+                    status: 'Draft',
+                    created_by: 1,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    name: 'SEO Content Piece',
+                    type: 'Document',
+                    asset_category: 'Marketing',
+                    application_type: 'seo',
+                    status: 'Pending QC Review',
+                    seo_score: 85,
+                    grammar_score: 90,
+                    submitted_by: 1,
+                    created_by: 1,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                {
+                    id: 3,
+                    name: 'Social Media Post',
+                    type: 'Image',
+                    asset_category: 'Sales',
+                    application_type: 'smm',
+                    status: 'QC Approved',
+                    qc_score: 92,
+                    created_by: 1,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }
+            ]);
+        }
+
+        // Initialize default users if empty
+        const users = await getCollection('users');
+        if (users.length === 0) {
+            await saveCollection('users', [
+                { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'Admin', status: 'Active', created_at: new Date().toISOString() },
+                { id: 2, name: 'Test User', email: 'user@example.com', role: 'User', status: 'Active', created_at: new Date().toISOString() }
+            ]);
+        }
+
         return res.status(200).json({
             message: 'Default data initialized',
             services: (await getCollection('services')).length,
             assetTypes: (await getCollection('assetTypeMaster')).length,
-            assetCategories: (await getCollection('assetCategoryMaster')).length
+            assetCategories: (await getCollection('assetCategoryMaster')).length,
+            assets: (await getCollection('assets')).length,
+            users: (await getCollection('users')).length
         });
     }
 

@@ -22,6 +22,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: users = [], loading: usersLoading } = useData<User>('users');
     const { data: keywords = [] } = useData<any>('keywords');
 
+    // Debug: Log assets data state
+    useEffect(() => {
+        console.log('[AssetsView] Assets data:', {
+            count: assets.length,
+            loading: assetsLoading,
+            sample: assets[0] || null
+        });
+    }, [assets, assetsLoading]);
+
     // Create a memoized user lookup map for O(1) access instead of O(n) find operations
     const usersMap = useMemo(() => {
         const map = new Map<number, User>();

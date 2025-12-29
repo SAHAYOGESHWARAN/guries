@@ -215,7 +215,9 @@ export function useData<T>(collection: string) {
         try {
             // Increased timeout for initial fetch
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s max wait
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s max wait
+
+            console.log(`[useData] Fetching ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
 
             const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
                 signal: controller.signal
@@ -223,16 +225,31 @@ export function useData<T>(collection: string) {
 
             clearTimeout(timeoutId);
 
-            if (!response.ok) throw new Error('API Error');
+            if (!response.ok) {
+                console.error(`[useData] API Error for ${collection}: ${response.status} ${response.statusText}`);
+                throw new Error('API Error');
+            }
+
             const result = await response.json();
+            console.log(`[useData] Received ${collection}:`, Array.isArray(result) ? `${result.length} items` : result);
+
             // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(result)) {
                 setData(result);
+                // Also save to localStorage for offline access
+                if ((db as any)[collection]) {
+                    try {
+                        localStorage.setItem((db as any)[collection].key, JSON.stringify(result));
+                    } catch (e) {
+                        // Ignore localStorage errors
+                    }
+                }
             }
             setIsOffline(false);
         } catch (err: any) {
             // If fetch fails or times out, we are effectively "offline" or backend is down.
-            // We silently fall back to the local data we already loaded in state initialization.
+            console.warn(`[useData] Fetch failed for ${collection}:`, err.message);
+
             // Only log if it's not an abort error
             if (err.name !== 'AbortError') {
                 setIsOffline(true);
@@ -322,6 +339,8 @@ export function useData<T>(collection: string) {
     }, [collection, resource, fetchData, loadLocal]);
 
     const create = async (item: any) => {
+        console.log(`[useData] Creating ${collection} item:`, item);
+
         // 1. Optimistic Local Update
         let newItem = item;
         if ((db as any)[collection]) {
@@ -332,15 +351,22 @@ export function useData<T>(collection: string) {
         let serverItem = null;
         if (resource && !isOffline) {
             try {
+                console.log(`[useData] Sending POST to ${API_BASE_URL}/${resource.endpoint}`);
                 const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item),
                 });
+
                 if (response.ok) {
                     serverItem = await response.json();
+                    console.log(`[useData] Created ${collection} item on server:`, serverItem);
+                } else {
+                    const errorText = await response.text();
+                    console.error(`[useData] Failed to create ${collection}:`, response.status, errorText);
                 }
-            } catch (e) {
+            } catch (e: any) {
+                console.error(`[useData] Error creating ${collection}:`, e.message);
                 setIsOffline(true);
             }
         }
