@@ -49,6 +49,7 @@ import * as aiEvaluationController from '../controllers/aiEvaluationController';
 import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import * as adminController from '../controllers/adminController';
+import { requireAdmin, requirePermission, requireQCPermission } from '../middleware/roleAuth';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
 import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
@@ -120,8 +121,29 @@ router.use('/asset-type-master', assetTypeMasterRoutes);
 // Asset QC Workflow
 router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);
 router.get('/assetLibrary/qc/pending', assetController.getAssetsForQC);
+// QC Review - Admin only (permission enforced at both middleware and controller level)
 router.post('/assetLibrary/:id/qc-review', assetController.reviewAsset);
 router.post('/assetLibrary/ai-scores', assetController.generateAIScores);
+
+// Admin QC Asset Review - Admin only endpoints
+router.get('/admin/qc/assets', requireAdmin, assetController.getAssetsForQC);
+router.get('/admin/qc/audit-log', requireAdmin, async (req, res) => {
+    // Get QC audit log for admin review
+    try {
+        const { pool } = require('../config/db-sqlite');
+        const result = await pool.query(`
+            SELECT qal.*, u.name as reviewer_name, a.asset_name 
+            FROM qc_audit_log qal
+            LEFT JOIN users u ON qal.user_id = u.id
+            LEFT JOIN assets a ON qal.asset_id = a.id
+            ORDER BY qal.created_at DESC
+            LIMIT 100
+        `);
+        res.status(200).json(result.rows);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // User actions during QC review stage
 router.put('/assetLibrary/:id/qc-edit', assetController.editAssetInQC);
@@ -285,16 +307,16 @@ router.post('/roles', userController.createRole);
 router.put('/roles/:id', userController.updateRole);
 router.delete('/roles/:id', userController.deleteRole);
 
-// --- Admin Console - Employee Management ---
-router.get('/admin/employees', adminController.getEmployees);
-router.get('/admin/employees/metrics', adminController.getEmployeeMetrics);
-router.post('/admin/employees', adminController.createEmployee);
-router.put('/admin/employees/:id', adminController.updateEmployee);
-router.post('/admin/employees/:id/reset-password', adminController.resetPassword);
-router.post('/admin/employees/:id/deactivate', adminController.deactivateEmployee);
-router.post('/admin/employees/:id/activate', adminController.activateEmployee);
-router.post('/admin/employees/:id/toggle-status', adminController.toggleEmployeeStatus);
-router.delete('/admin/employees/:id', adminController.deleteEmployee);
+// --- Admin Console - Employee Management (Admin only) ---
+router.get('/admin/employees', requireAdmin, adminController.getEmployees);
+router.get('/admin/employees/metrics', requireAdmin, adminController.getEmployeeMetrics);
+router.post('/admin/employees', requireAdmin, adminController.createEmployee);
+router.put('/admin/employees/:id', requireAdmin, adminController.updateEmployee);
+router.post('/admin/employees/:id/reset-password', requireAdmin, adminController.resetPassword);
+router.post('/admin/employees/:id/deactivate', requireAdmin, adminController.deactivateEmployee);
+router.post('/admin/employees/:id/activate', requireAdmin, adminController.activateEmployee);
+router.post('/admin/employees/:id/toggle-status', requireAdmin, adminController.toggleEmployeeStatus);
+router.delete('/admin/employees/:id', requireAdmin, adminController.deleteEmployee);
 router.post('/admin/auth/login', adminController.validateLogin);
 
 // --- QC ---

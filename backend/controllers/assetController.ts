@@ -643,7 +643,10 @@ export const reviewAsset = async (req: any, res: any) => {
         // Role-based access control - only admins can perform QC review
         // Accept both 'admin' and 'Admin' (case-insensitive)
         if (!user_role || user_role.toLowerCase() !== 'admin') {
-            return res.status(403).json({ error: 'Access denied. Only administrators can perform QC reviews.' });
+            return res.status(403).json({
+                error: 'Access denied. Only administrators can perform QC reviews.',
+                code: 'ADMIN_REQUIRED'
+            });
         }
 
         // Validate QC decision
@@ -826,6 +829,26 @@ export const reviewAsset = async (req: any, res: any) => {
         }
 
         getSocket().emit('assetLibrary_qc_reviewed', updatedAsset.rows[0]);
+
+        // Log QC action for audit trail
+        try {
+            await pool.query(
+                `INSERT INTO qc_audit_log (asset_id, user_id, action, details, created_at) 
+                 VALUES ($1, $2, $3, $4, datetime('now'))`,
+                [id, qc_reviewer_id, `qc_${qc_decision}`, JSON.stringify({
+                    qc_score: finalQcScore,
+                    qc_remarks: qc_remarks,
+                    checklist_completion: checklist_completion,
+                    rework_count: newReworkCount,
+                    previous_status: assetData.status,
+                    new_status: newStatus
+                })]
+            );
+        } catch (auditError) {
+            console.error('Failed to log QC audit:', auditError);
+            // Don't fail the request if audit logging fails
+        }
+
         res.status(200).json(updatedAsset.rows[0]);
     } catch (error: any) {
         console.error('QC Review error:', error);

@@ -1,49 +1,115 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { User } from '../types';
 
-// Role types for the application
-export type UserRole = 'admin' | 'user' | 'guest';
+// Role types for the application - extended to support more roles
+export type UserRole = 'admin' | 'user' | 'manager' | 'qc' | 'guest';
 
 // Extended user interface with role-based permissions
 export interface AuthUser extends User {
   role: UserRole;
   last_login?: string;
   permissions?: {
+    // QC-related permissions
     canPerformQC: boolean;
     canApproveAssets: boolean;
     canRejectAssets: boolean;
     canRequestRework: boolean;
-    canEditOwnAssets: boolean;
-    canDeleteOwnAssets: boolean;
     canViewQCPanel: boolean;
     canSubmitForQC: boolean;
+    // Asset permissions
+    canEditOwnAssets: boolean;
+    canDeleteOwnAssets: boolean;
+    canEditAllAssets: boolean;
+    canDeleteAllAssets: boolean;
+    canViewAllAssets: boolean;
+    // Admin-only permissions
+    canViewAdminQCReview: boolean;
+    canViewAdminConsole: boolean;
+    canManageUsers: boolean;
+    canViewAuditLogs: boolean;
   };
 }
 
-// Get permissions based on role
+// Get permissions based on role - Role & Permission Matrix implementation
 const getPermissionsByRole = (role: UserRole) => {
   switch (role) {
     case 'admin':
       return {
+        // Admin has full QC permissions
         canPerformQC: true,
         canApproveAssets: true,
         canRejectAssets: true,
         canRequestRework: true,
-        canEditOwnAssets: true,
-        canDeleteOwnAssets: true,
         canViewQCPanel: true,
         canSubmitForQC: true,
+        // Admin has full asset permissions
+        canEditOwnAssets: true,
+        canDeleteOwnAssets: true,
+        canEditAllAssets: true,
+        canDeleteAllAssets: true,
+        canViewAllAssets: true,
+        // Admin-only screens
+        canViewAdminQCReview: true,
+        canViewAdminConsole: true,
+        canManageUsers: true,
+        canViewAuditLogs: true,
       };
-    case 'user':
+    case 'qc':
       return {
+        // QC role can perform reviews but not admin functions
+        canPerformQC: true,
+        canApproveAssets: true,
+        canRejectAssets: true,
+        canRequestRework: true,
+        canViewQCPanel: true,
+        canSubmitForQC: false,
+        canEditOwnAssets: true,
+        canDeleteOwnAssets: true,
+        canEditAllAssets: false,
+        canDeleteAllAssets: false,
+        canViewAllAssets: true,
+        canViewAdminQCReview: false, // QC role cannot access Admin QC Review screen
+        canViewAdminConsole: false,
+        canManageUsers: false,
+        canViewAuditLogs: false,
+      };
+    case 'manager':
+      return {
+        // Manager can view but not perform QC
         canPerformQC: false,
         canApproveAssets: false,
         canRejectAssets: false,
         canRequestRework: false,
+        canViewQCPanel: true,
+        canSubmitForQC: true,
         canEditOwnAssets: true,
         canDeleteOwnAssets: true,
-        canViewQCPanel: true, // Can view but with limited actions
-        canSubmitForQC: true,
+        canEditAllAssets: false,
+        canDeleteAllAssets: false,
+        canViewAllAssets: true,
+        canViewAdminQCReview: false,
+        canViewAdminConsole: false,
+        canManageUsers: false,
+        canViewAuditLogs: false,
+      };
+    case 'user':
+      return {
+        // Employee/User - can submit for QC, view panel (read-only), manage own assets
+        canPerformQC: false,
+        canApproveAssets: false,
+        canRejectAssets: false,
+        canRequestRework: false,
+        canViewQCPanel: true, // Can view QC panel in side drawer (read-only)
+        canSubmitForQC: true, // Can submit assets for QC review
+        canEditOwnAssets: true,
+        canDeleteOwnAssets: true,
+        canEditAllAssets: false,
+        canDeleteAllAssets: false,
+        canViewAllAssets: false, // Only sees own assets
+        canViewAdminQCReview: false, // Cannot access Admin QC Review screen
+        canViewAdminConsole: false,
+        canManageUsers: false,
+        canViewAuditLogs: false,
       };
     case 'guest':
     default:
@@ -52,10 +118,17 @@ const getPermissionsByRole = (role: UserRole) => {
         canApproveAssets: false,
         canRejectAssets: false,
         canRequestRework: false,
-        canEditOwnAssets: false,
-        canDeleteOwnAssets: false,
         canViewQCPanel: false,
         canSubmitForQC: false,
+        canEditOwnAssets: false,
+        canDeleteOwnAssets: false,
+        canEditAllAssets: false,
+        canDeleteAllAssets: false,
+        canViewAllAssets: false,
+        canViewAdminQCReview: false,
+        canViewAdminConsole: false,
+        canManageUsers: false,
+        canViewAuditLogs: false,
       };
   }
 };

@@ -64,6 +64,7 @@ const DeveloperNotesView = React.lazy(() => import('./views/DeveloperNotesView')
 const GraphicsPlanView = React.lazy(() => import('./views/GraphicsPlanView'));
 const QcView = React.lazy(() => import('./views/QcView'));
 const AssetQCView = React.lazy(() => import('./views/AssetQCView'));
+const AdminQCAssetReviewView = React.lazy(() => import('./views/AdminQCAssetReviewView'));
 const TrafficRankingView = React.lazy(() => import('./views/TrafficRankingView'));
 const KpiTrackingView = React.lazy(() => import('./views/KpiTrackingView'));
 const CommunicationHubView = React.lazy(() => import('./views/CommunicationHubView'));
@@ -71,6 +72,20 @@ const KnowledgeBaseView = React.lazy(() => import('./views/KnowledgeBaseView'));
 const QualityComplianceView = React.lazy(() => import('./views/QualityComplianceView'));
 const UserProfileView = React.lazy(() => import('./views/UserProfileView'));
 const AdminConsoleView = React.lazy(() => import('./views/AdminConsoleView'));
+const AdminConsoleConfigView = React.lazy(() => import('./views/AdminConsoleConfigView'));
+const RolePermissionMatrixView = React.lazy(() => import('./views/RolePermissionMatrixView'));
+// Admin Console Config Views
+const ObjectiveMasterView = React.lazy(() => import('./views/ObjectiveMasterView'));
+const KRAMasterView = React.lazy(() => import('./views/KRAMasterView'));
+const KPIMasterView = React.lazy(() => import('./views/KPIMasterView'));
+const KPITargetConfigView = React.lazy(() => import('./views/KPITargetConfigView'));
+const EffortUnitConfigView = React.lazy(() => import('./views/EffortUnitConfigView'));
+const ScoringEngineView = React.lazy(() => import('./views/ScoringEngineView'));
+const QCEngineConfigView = React.lazy(() => import('./views/QCEngineConfigView'));
+const RepositoryManagerView = React.lazy(() => import('./views/RepositoryManagerView'));
+const CompetitorIntelligenceView = React.lazy(() => import('./views/CompetitorIntelligenceView'));
+const AutomationNotificationsView = React.lazy(() => import('./views/AutomationNotificationsView'));
+const DashboardConfigView = React.lazy(() => import('./views/DashboardConfigView'));
 
 const LoadingSpinner = () => (
   <div className="flex flex-col items-center justify-center h-full w-full min-h-[400px] animate-fade-in">
@@ -138,6 +153,7 @@ const App: React.FC = () => {
       case 'asset-detail':
         return viewState.id ? <AssetDetailView assetId={Number(viewState.id)} onNavigateBack={() => handleNavigate('assets')} /> : <AssetsView onNavigate={handleNavigate} />;
       case 'asset-qc': return <AssetQCView onNavigate={handleNavigate} />;
+      case 'admin-qc-review': return <AdminQCAssetReviewView onNavigate={handleNavigate} />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;
@@ -159,6 +175,20 @@ const App: React.FC = () => {
 
       // CONFIGURATION & SETTINGS
       case 'admin-console': return <AdminConsoleView currentUser={currentUser} onNavigate={handleNavigate} />;
+      case 'admin-console-config': return <AdminConsoleConfigView onNavigate={handleNavigate} />;
+      case 'role-permission-matrix': return <RolePermissionMatrixView onNavigate={handleNavigate} />;
+      // Admin Console Config Views
+      case 'objective-master': return <ObjectiveMasterView onNavigate={handleNavigate} />;
+      case 'kra-master': return <KRAMasterView onNavigate={handleNavigate} />;
+      case 'kpi-master': return <KPIMasterView onNavigate={handleNavigate} />;
+      case 'kpi-target-config': return <KPITargetConfigView onNavigate={handleNavigate} />;
+      case 'effort-unit-config': return <EffortUnitConfigView onNavigate={handleNavigate} />;
+      case 'scoring-engine': return <ScoringEngineView onNavigate={handleNavigate} />;
+      case 'qc-engine-config': return <QCEngineConfigView onNavigate={handleNavigate} />;
+      case 'repository-manager': return <RepositoryManagerView onNavigate={handleNavigate} />;
+      case 'competitor-intelligence': return <CompetitorIntelligenceView onNavigate={handleNavigate} />;
+      case 'automation-notifications': return <AutomationNotificationsView onNavigate={handleNavigate} />;
+      case 'dashboard-config': return <DashboardConfigView onNavigate={handleNavigate} />;
       case 'employee-management': return <AdminConsoleView currentUser={currentUser} onNavigate={handleNavigate} />;
       case 'integrations': return <IntegrationsView />;
       case 'backend-source': return <DeveloperNotesView />;
