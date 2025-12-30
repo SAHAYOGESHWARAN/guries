@@ -80,20 +80,55 @@ const DEFAULT_DATA: Record<string, any[]> = {
         { id: 5, platform_name: 'YouTube', content_types_count: 2, asset_types_count: 2, recommended_size: '1280x720', scheduling: 'Manual', status: 'Active' }
     ],
     countries: [
-        { id: 1, country_name: 'United States', code: 'US', region: 'North America', status: 'active' },
-        { id: 2, country_name: 'United Kingdom', code: 'UK', region: 'Europe', status: 'active' },
-        { id: 3, country_name: 'Canada', code: 'CA', region: 'North America', status: 'active' },
-        { id: 4, country_name: 'Australia', code: 'AU', region: 'Oceania', status: 'active' }
+        { id: 1, country_name: 'United States', code: 'US', region: 'North America', has_backlinks: true, has_content: true, has_smm: true, status: 'Active' },
+        { id: 2, country_name: 'United Kingdom', code: 'UK', region: 'Europe', has_backlinks: true, has_content: true, has_smm: true, status: 'Active' },
+        { id: 3, country_name: 'Canada', code: 'CA', region: 'North America', has_backlinks: true, has_content: true, has_smm: false, status: 'Active' },
+        { id: 4, country_name: 'Australia', code: 'AU', region: 'Oceania', has_backlinks: true, has_content: false, has_smm: true, status: 'Active' },
+        { id: 5, country_name: 'Germany', code: 'DE', region: 'Europe', has_backlinks: false, has_content: true, has_smm: true, status: 'Active' },
+        { id: 6, country_name: 'India', code: 'IN', region: 'Asia', has_backlinks: true, has_content: true, has_smm: true, status: 'Active' }
     ],
     seoErrors: [
-        { id: 1, error_type: 'Missing Meta Title', category: 'Meta', severity: 'High', description: 'Page is missing meta title tag', status: 'active' },
-        { id: 2, error_type: 'Missing Meta Description', category: 'Meta', severity: 'High', description: 'Page is missing meta description', status: 'active' },
-        { id: 3, error_type: 'Broken Links', category: 'Links', severity: 'High', description: 'Page contains broken links', status: 'active' }
+        { id: 1, error_type: 'Missing Meta Title', category: 'On-page', severity: 'High', description: 'Page is missing meta title tag', status: 'Published' },
+        { id: 2, error_type: 'Missing Meta Description', category: 'On-page', severity: 'High', description: 'Page is missing meta description', status: 'Published' },
+        { id: 3, error_type: 'Broken Links', category: 'Technical SEO', severity: 'High', description: 'Page contains broken links', status: 'Published' },
+        { id: 4, error_type: 'Slow Page Speed', category: 'Technical SEO', severity: 'Medium', description: 'Page load time exceeds 3 seconds', status: 'Published' },
+        { id: 5, error_type: 'Missing Alt Text', category: 'On-page', severity: 'Medium', description: 'Images missing alt text', status: 'Published' },
+        { id: 6, error_type: 'Duplicate Content', category: 'On-page', severity: 'Low', description: 'Duplicate content detected', status: 'Published' }
     ],
     contentTypes: [
-        { id: 1, content_type: 'Blog Post', description: 'Standard blog article', status: 'active' },
-        { id: 2, content_type: 'Landing Page', description: 'Marketing landing page', status: 'active' },
-        { id: 3, content_type: 'Case Study', description: 'Customer success story', status: 'active' }
+        { id: 1, content_type: 'Blog Post', category: 'Long-form', description: 'Standard blog article', default_attributes: ['Title', 'Body', 'Meta Description'], use_in_campaigns: 1, status: 'Active' },
+        { id: 2, content_type: 'Landing Page', category: 'Long-form', description: 'Marketing landing page', default_attributes: ['Headline', 'CTA', 'Form'], use_in_campaigns: 1, status: 'Active' },
+        { id: 3, content_type: 'Case Study', category: 'Long-form', description: 'Customer success story', default_attributes: ['Challenge', 'Solution', 'Results'], use_in_campaigns: 0, status: 'Active' },
+        { id: 4, content_type: 'Social Post', category: 'Short-form', description: 'Social media content', default_attributes: ['Caption', 'Hashtags', 'Media'], use_in_campaigns: 1, status: 'Active' },
+        { id: 5, content_type: 'Infographic', category: 'Visual', description: 'Visual data representation', default_attributes: ['Title', 'Data Points', 'Design'], use_in_campaigns: 0, status: 'Active' }
+    ],
+    services: [
+        { id: 1, service_name: 'Web Development', status: 'active', description: 'Custom web development services' },
+        { id: 2, service_name: 'SEO Services', status: 'active', description: 'Search engine optimization' },
+        { id: 3, service_name: 'Content Marketing', status: 'active', description: 'Content strategy and creation' },
+        { id: 4, service_name: 'Social Media Marketing', status: 'active', description: 'Social media management' }
+    ],
+    subServices: [],
+    tasks: [
+        { id: 1, task_name: 'Write Blog Post', description: 'Create new blog content', status: 'In Progress', priority: 'High', assigned_to: 3 },
+        { id: 2, task_name: 'SEO Audit', description: 'Perform website SEO audit', status: 'Pending', priority: 'Medium', assigned_to: 2 }
+    ],
+    campaigns: [
+        { id: 1, campaign_name: 'Q1 Marketing Campaign', campaign_type: 'Digital Marketing', status: 'active', description: 'First quarter marketing initiative' }
+    ],
+    projects: [
+        { id: 1, project_name: 'Website Redesign', project_code: 'WR-001', status: 'Active', description: 'Complete website overhaul' }
+    ],
+    notifications: [],
+    qcChecklists: [
+        { id: 1, checklist_name: 'Content QC', checklist_type: 'content', category: 'Content', number_of_items: 10, scoring_mode: 'weighted', pass_threshold: 70, status: 'active' },
+        { id: 2, checklist_name: 'SEO QC', checklist_type: 'seo', category: 'SEO', number_of_items: 8, scoring_mode: 'weighted', pass_threshold: 75, status: 'active' }
+    ],
+    qcWeightageConfigs: [],
+    assetFormats: [
+        { id: 1, format_name: 'JPEG', extension: '.jpg', mime_type: 'image/jpeg', status: 'active' },
+        { id: 2, format_name: 'PNG', extension: '.png', mime_type: 'image/png', status: 'active' },
+        { id: 3, format_name: 'PDF', extension: '.pdf', mime_type: 'application/pdf', status: 'active' }
     ]
 };
 

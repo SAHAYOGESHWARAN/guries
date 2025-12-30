@@ -362,8 +362,13 @@ export const initDatabase = () => {
         CREATE TABLE IF NOT EXISTS content_types (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             content_type TEXT NOT NULL,
+            category TEXT DEFAULT 'Long-form',
             description TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            default_attributes TEXT,
+            use_in_campaigns INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'Active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS keywords (
@@ -445,6 +450,96 @@ export const initDatabase = () => {
         (2, 'Healthcare', 'Medical Services', 'Patient Care', 'US', 'active'),
         (3, 'Finance', 'Banking', 'Digital Banking', 'Global', 'active'),
         (4, 'E-commerce', 'Retail', 'Online Shopping', 'Global', 'active');
+
+        -- Workflow Stages Table
+        CREATE TABLE IF NOT EXISTS workflow_stages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workflow_name TEXT NOT NULL,
+            stage_order INTEGER DEFAULT 1,
+            total_stages INTEGER DEFAULT 1,
+            stage_label TEXT,
+            color_tag TEXT DEFAULT 'blue',
+            active_flag TEXT DEFAULT 'Active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO workflow_stages (id, workflow_name, stage_order, total_stages, stage_label, color_tag, active_flag) VALUES 
+        (1, 'Content Production', 1, 4, 'Draft', 'blue', 'Active'),
+        (2, 'Content Production', 2, 4, 'Review', 'amber', 'Active'),
+        (3, 'Content Production', 3, 4, 'QC', 'purple', 'Active'),
+        (4, 'Content Production', 4, 4, 'Published', 'green', 'Active');
+
+        -- Platforms Table
+        CREATE TABLE IF NOT EXISTS platforms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            platform_name TEXT NOT NULL,
+            content_types_count INTEGER DEFAULT 0,
+            asset_types_count INTEGER DEFAULT 0,
+            recommended_size TEXT,
+            scheduling TEXT DEFAULT 'Manual',
+            status TEXT DEFAULT 'Active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO platforms (id, platform_name, content_types_count, asset_types_count, recommended_size, scheduling, status) VALUES 
+        (1, 'Facebook', 5, 4, '1200x630', 'Both', 'Active'),
+        (2, 'Instagram', 4, 3, '1080x1080', 'Auto', 'Active'),
+        (3, 'LinkedIn', 3, 2, '1200x627', 'Manual', 'Active');
+
+        -- Countries Table
+        CREATE TABLE IF NOT EXISTS countries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            country_name TEXT NOT NULL,
+            code TEXT,
+            region TEXT,
+            has_backlinks INTEGER DEFAULT 0,
+            has_content INTEGER DEFAULT 0,
+            has_smm INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'Active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO countries (id, country_name, code, region, has_backlinks, has_content, has_smm, status) VALUES 
+        (1, 'United States', 'US', 'North America', 1, 1, 1, 'Active'),
+        (2, 'United Kingdom', 'UK', 'Europe', 1, 1, 1, 'Active'),
+        (3, 'Canada', 'CA', 'North America', 1, 1, 0, 'Active'),
+        (4, 'Australia', 'AU', 'Oceania', 1, 0, 1, 'Active');
+
+        -- SEO Errors Table
+        CREATE TABLE IF NOT EXISTS seo_errors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            error_type TEXT NOT NULL,
+            category TEXT,
+            severity TEXT DEFAULT 'Medium',
+            description TEXT,
+            status TEXT DEFAULT 'Published',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO seo_errors (id, error_type, category, severity, description, status) VALUES 
+        (1, 'Missing Meta Title', 'On-page', 'High', 'Page is missing meta title tag', 'Published'),
+        (2, 'Missing Meta Description', 'On-page', 'High', 'Page is missing meta description', 'Published'),
+        (3, 'Broken Links', 'Technical SEO', 'High', 'Page contains broken links', 'Published');
+
+        -- Roles Table
+        CREATE TABLE IF NOT EXISTS roles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role_name TEXT NOT NULL UNIQUE,
+            permissions TEXT,
+            status TEXT DEFAULT 'Active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR IGNORE INTO roles (id, role_name, permissions, status) VALUES 
+        (1, 'Admin', '{"read": true, "write": true, "delete": true}', 'Active'),
+        (2, 'SEO', '{"read": true, "write": true, "delete": false}', 'Active'),
+        (3, 'Content', '{"read": true, "write": true, "delete": false}', 'Active'),
+        (4, 'Developer', '{"read": true, "write": true, "delete": true}', 'Active');
 
         -- Asset Website Usage Table
         CREATE TABLE IF NOT EXISTS asset_website_usage (
