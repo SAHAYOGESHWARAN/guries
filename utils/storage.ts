@@ -14,6 +14,7 @@ import type {
 const STORAGE_KEYS = {
     // Identity
     USERS: 'mcc_users',
+    ROLES: 'mcc_roles',
     TEAMS: 'mcc_teams',
     TEAM_MEMBERS: 'mcc_team_members',
     BRANDS: 'mcc_brands',
@@ -134,6 +135,7 @@ class DataService<T extends { id: number | string }> {
 export const db = {
     // Identity
     users: new DataService<User>(STORAGE_KEYS.USERS),
+    roles: new DataService<any>(STORAGE_KEYS.ROLES),
     teams: new DataService<Team>(STORAGE_KEYS.TEAMS),
     teamMembers: new DataService<TeamMember>(STORAGE_KEYS.TEAM_MEMBERS),
     brands: new DataService<Brand>(STORAGE_KEYS.BRANDS),

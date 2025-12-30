@@ -26,12 +26,23 @@ const memoryStorage: Record<string, any[]> = {};
 const DEFAULT_DATA: Record<string, any[]> = {
     users: [
         { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', department: 'Administration', password_hash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9' },
-        { id: 2, name: 'Test User', email: 'user@example.com', role: 'user', status: 'active', department: 'Marketing' }
+        { id: 2, name: 'John Smith', email: 'john@example.com', role: 'SEO', status: 'active', department: 'Marketing', country: 'United States', target: '50', projects_count: 5, last_login: new Date().toISOString() },
+        { id: 3, name: 'Sarah Chen', email: 'sarah@example.com', role: 'Content', status: 'active', department: 'Content', country: 'United Kingdom', target: '40', projects_count: 8, last_login: new Date().toISOString() },
+        { id: 4, name: 'Mike Johnson', email: 'mike@example.com', role: 'Developer', status: 'active', department: 'Technology', country: 'Canada', target: '30', projects_count: 3, last_login: new Date().toISOString() }
     ],
     roles: [
-        { id: 1, name: 'Admin', permissions: ['all'] },
-        { id: 2, name: 'User', permissions: ['read', 'write'] }
+        { id: 1, role_name: 'Admin', permissions: { read: true, write: true, delete: true }, status: 'Active' },
+        { id: 2, role_name: 'SEO', permissions: { read: true, write: true, delete: false }, status: 'Active' },
+        { id: 3, role_name: 'Content', permissions: { read: true, write: true, delete: false }, status: 'Active' },
+        { id: 4, role_name: 'Developer', permissions: { read: true, write: true, delete: true }, status: 'Active' },
+        { id: 5, role_name: 'Manager', permissions: { read: true, write: true, delete: true }, status: 'Active' }
     ],
+    teams: [
+        { id: 1, name: 'Content Team', lead_user_id: 3, description: 'Content creation and management' },
+        { id: 2, name: 'SEO Team', lead_user_id: 2, description: 'Search engine optimization' },
+        { id: 3, name: 'Development Team', lead_user_id: 4, description: 'Technical development' }
+    ],
+    teamMembers: [],
     assets: [
         { id: 1, name: 'Sample Asset', type: 'Image', asset_category: 'Marketing', application_type: 'web', status: 'Draft', created_at: new Date().toISOString() }
     ],
@@ -44,6 +55,45 @@ const DEFAULT_DATA: Record<string, any[]> = {
         { id: 1, category_name: 'Marketing', status: 'active' },
         { id: 2, category_name: 'Sales', status: 'active' },
         { id: 3, category_name: 'Support', status: 'active' }
+    ],
+    workflowStages: [
+        { id: 1, workflow_name: 'Content Production', stage_order: 1, total_stages: 4, stage_label: 'Draft', color_tag: 'blue', active_flag: 'Active' },
+        { id: 2, workflow_name: 'Content Production', stage_order: 2, total_stages: 4, stage_label: 'Review', color_tag: 'amber', active_flag: 'Active' },
+        { id: 3, workflow_name: 'Content Production', stage_order: 3, total_stages: 4, stage_label: 'QC', color_tag: 'purple', active_flag: 'Active' },
+        { id: 4, workflow_name: 'Content Production', stage_order: 4, total_stages: 4, stage_label: 'Published', color_tag: 'green', active_flag: 'Active' },
+        { id: 5, workflow_name: 'SEO Campaign', stage_order: 1, total_stages: 3, stage_label: 'Planning', color_tag: 'blue', active_flag: 'Active' },
+        { id: 6, workflow_name: 'SEO Campaign', stage_order: 2, total_stages: 3, stage_label: 'Execution', color_tag: 'amber', active_flag: 'Active' },
+        { id: 7, workflow_name: 'SEO Campaign', stage_order: 3, total_stages: 3, stage_label: 'Complete', color_tag: 'green', active_flag: 'Active' }
+    ],
+    industrySectors: [
+        { id: 1, industry: 'Technology', sector: 'Software Development', application: 'Web Services', country: 'United States', status: 'Active' },
+        { id: 2, industry: 'Healthcare', sector: 'Medical Services', application: 'Patient Care', country: 'United States', status: 'Active' },
+        { id: 3, industry: 'Finance', sector: 'Banking', application: 'Digital Banking', country: 'United Kingdom', status: 'Active' },
+        { id: 4, industry: 'E-commerce', sector: 'Retail', application: 'Online Shopping', country: 'Canada', status: 'Active' },
+        { id: 5, industry: 'Education', sector: 'EdTech', application: 'Online Learning', country: 'Australia', status: 'Active' }
+    ],
+    platforms: [
+        { id: 1, platform_name: 'Facebook', content_types_count: 5, asset_types_count: 4, recommended_size: '1200x630', scheduling: 'Both', status: 'Active' },
+        { id: 2, platform_name: 'Instagram', content_types_count: 4, asset_types_count: 3, recommended_size: '1080x1080', scheduling: 'Auto', status: 'Active' },
+        { id: 3, platform_name: 'LinkedIn', content_types_count: 3, asset_types_count: 2, recommended_size: '1200x627', scheduling: 'Manual', status: 'Active' },
+        { id: 4, platform_name: 'Twitter/X', content_types_count: 3, asset_types_count: 2, recommended_size: '1200x675', scheduling: 'Both', status: 'Active' },
+        { id: 5, platform_name: 'YouTube', content_types_count: 2, asset_types_count: 2, recommended_size: '1280x720', scheduling: 'Manual', status: 'Active' }
+    ],
+    countries: [
+        { id: 1, country_name: 'United States', code: 'US', region: 'North America', status: 'active' },
+        { id: 2, country_name: 'United Kingdom', code: 'UK', region: 'Europe', status: 'active' },
+        { id: 3, country_name: 'Canada', code: 'CA', region: 'North America', status: 'active' },
+        { id: 4, country_name: 'Australia', code: 'AU', region: 'Oceania', status: 'active' }
+    ],
+    seoErrors: [
+        { id: 1, error_type: 'Missing Meta Title', category: 'Meta', severity: 'High', description: 'Page is missing meta title tag', status: 'active' },
+        { id: 2, error_type: 'Missing Meta Description', category: 'Meta', severity: 'High', description: 'Page is missing meta description', status: 'active' },
+        { id: 3, error_type: 'Broken Links', category: 'Links', severity: 'High', description: 'Page contains broken links', status: 'active' }
+    ],
+    contentTypes: [
+        { id: 1, content_type: 'Blog Post', description: 'Standard blog article', status: 'active' },
+        { id: 2, content_type: 'Landing Page', description: 'Marketing landing page', status: 'active' },
+        { id: 3, content_type: 'Case Study', description: 'Customer success story', status: 'active' }
     ]
 };
 
@@ -224,7 +274,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (users.length === 0) {
             await saveCollection('users', [
                 { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', department: 'Administration', password_hash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', created_at: new Date().toISOString() },
-                { id: 2, name: 'Test User', email: 'user@example.com', role: 'user', status: 'active', department: 'Marketing', created_at: new Date().toISOString() }
+                { id: 2, name: 'John Smith', email: 'john@example.com', role: 'SEO', status: 'active', department: 'Marketing', country: 'United States', target: '50', projects_count: 5, created_at: new Date().toISOString() },
+                { id: 3, name: 'Sarah Chen', email: 'sarah@example.com', role: 'Content', status: 'active', department: 'Content', country: 'United Kingdom', target: '40', projects_count: 8, created_at: new Date().toISOString() }
+            ]);
+        }
+
+        // Initialize roles if empty
+        const roles = await getCollection('roles');
+        if (roles.length === 0) {
+            await saveCollection('roles', [
+                { id: 1, role_name: 'Admin', permissions: { read: true, write: true, delete: true }, status: 'Active' },
+                { id: 2, role_name: 'SEO', permissions: { read: true, write: true, delete: false }, status: 'Active' },
+                { id: 3, role_name: 'Content', permissions: { read: true, write: true, delete: false }, status: 'Active' },
+                { id: 4, role_name: 'Developer', permissions: { read: true, write: true, delete: true }, status: 'Active' }
+            ]);
+        }
+
+        // Initialize teams if empty
+        const teams = await getCollection('teams');
+        if (teams.length === 0) {
+            await saveCollection('teams', [
+                { id: 1, name: 'Content Team', lead_user_id: 3, description: 'Content creation and management' },
+                { id: 2, name: 'SEO Team', lead_user_id: 2, description: 'Search engine optimization' }
+            ]);
+        }
+
+        // Initialize workflow stages if empty
+        const workflowStages = await getCollection('workflowStages');
+        if (workflowStages.length === 0) {
+            await saveCollection('workflowStages', [
+                { id: 1, workflow_name: 'Content Production', stage_order: 1, total_stages: 4, stage_label: 'Draft', color_tag: 'blue', active_flag: 'Active' },
+                { id: 2, workflow_name: 'Content Production', stage_order: 2, total_stages: 4, stage_label: 'Review', color_tag: 'amber', active_flag: 'Active' },
+                { id: 3, workflow_name: 'Content Production', stage_order: 3, total_stages: 4, stage_label: 'QC', color_tag: 'purple', active_flag: 'Active' },
+                { id: 4, workflow_name: 'Content Production', stage_order: 4, total_stages: 4, stage_label: 'Published', color_tag: 'green', active_flag: 'Active' }
+            ]);
+        }
+
+        // Initialize industry sectors if empty
+        const industrySectors = await getCollection('industrySectors');
+        if (industrySectors.length === 0) {
+            await saveCollection('industrySectors', [
+                { id: 1, industry: 'Technology', sector: 'Software Development', application: 'Web Services', country: 'United States', status: 'Active' },
+                { id: 2, industry: 'Healthcare', sector: 'Medical Services', application: 'Patient Care', country: 'United States', status: 'Active' },
+                { id: 3, industry: 'Finance', sector: 'Banking', application: 'Digital Banking', country: 'United Kingdom', status: 'Active' }
+            ]);
+        }
+
+        // Initialize platforms if empty
+        const platforms = await getCollection('platforms');
+        if (platforms.length === 0) {
+            await saveCollection('platforms', [
+                { id: 1, platform_name: 'Facebook', content_types_count: 5, asset_types_count: 4, recommended_size: '1200x630', scheduling: 'Both', status: 'Active' },
+                { id: 2, platform_name: 'Instagram', content_types_count: 4, asset_types_count: 3, recommended_size: '1080x1080', scheduling: 'Auto', status: 'Active' },
+                { id: 3, platform_name: 'LinkedIn', content_types_count: 3, asset_types_count: 2, recommended_size: '1200x627', scheduling: 'Manual', status: 'Active' }
             ]);
         }
 
@@ -234,7 +336,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             assetTypes: (await getCollection('assetTypeMaster')).length,
             assetCategories: (await getCollection('assetCategoryMaster')).length,
             assets: (await getCollection('assets')).length,
-            users: (await getCollection('users')).length
+            users: (await getCollection('users')).length,
+            roles: (await getCollection('roles')).length,
+            teams: (await getCollection('teams')).length,
+            workflowStages: (await getCollection('workflowStages')).length,
+            industrySectors: (await getCollection('industrySectors')).length,
+            platforms: (await getCollection('platforms')).length
         });
     }
 
@@ -255,6 +362,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (fullPath === 'asset-formats' || fullPath.startsWith('asset-formats')) return handleCRUD(req, res, 'assetFormats', fullPath, method);
         if (fullPath === 'qc-checklists' || fullPath.startsWith('qc-checklists')) return handleCRUD(req, res, 'qcChecklists', fullPath, method);
         if (fullPath === 'teams' || fullPath.startsWith('teams')) return handleCRUD(req, res, 'teams', fullPath, method);
+        if (fullPath === 'team-members' || fullPath.startsWith('team-members')) return handleCRUD(req, res, 'teamMembers', fullPath, method);
         if (fullPath === 'roles' || fullPath.startsWith('roles')) return handleCRUD(req, res, 'roles', fullPath, method);
         if (fullPath === 'backlinks' || fullPath.startsWith('backlinks')) return handleCRUD(req, res, 'backlinks', fullPath, method);
         if (fullPath === 'submissions' || fullPath.startsWith('submissions')) return handleCRUD(req, res, 'submissions', fullPath, method);
