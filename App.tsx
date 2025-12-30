@@ -88,18 +88,11 @@ const App: React.FC = () => {
     id: null,
   });
 
-  // Check for existing user session on mount
+  // Clear any existing session on mount - always require fresh login
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser) as AuthUser;
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } catch (e) {
-        localStorage.removeItem('currentUser');
-      }
-    }
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
+    setIsAuthenticated(false);
   }, []);
 
   const handleLogout = () => {
