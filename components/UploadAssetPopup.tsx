@@ -787,23 +787,6 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             </div>
                                             <p className="text-[11px] text-slate-500">Video content platform</p>
                                         </button>
-
-                                        {/* TikTok */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setAsset({ ...asset, web_h2_2: 'tiktok' })}
-                                            className={`p-4 rounded-xl border-2 transition-all text-left ${asset.web_h2_2 === 'tiktok'
-                                                ? 'border-slate-900 bg-slate-100 shadow-md'
-                                                : 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50'}`}
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-                                                </svg>
-                                                <span className="font-semibold text-slate-800 text-sm">TikTok</span>
-                                            </div>
-                                            <p className="text-[11px] text-slate-500">Short-form video content</p>
-                                        </button>
                                     </div>
                                 </div>
 
@@ -863,7 +846,6 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             {asset.web_h2_2 === 'twitter' && <span className="text-[10px] px-2 py-1 bg-slate-100 text-slate-600 rounded-full">Max: 280</span>}
                                             {asset.web_h2_2 === 'linkedin' && <span className="text-[10px] px-2 py-1 bg-blue-100 text-blue-600 rounded-full">Max: 3,000</span>}
                                             {asset.web_h2_2 === 'facebook' && <span className="text-[10px] px-2 py-1 bg-blue-100 text-blue-600 rounded-full">Max: 63,206</span>}
-                                            {asset.web_h2_2 === 'tiktok' && <span className="text-[10px] px-2 py-1 bg-slate-100 text-slate-600 rounded-full">Max: 2,200</span>}
                                         </div>
                                     </div>
                                 </div>
@@ -920,22 +902,20 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     <div className="p-4">
                                         {/* Preview Card */}
                                         <div className={`rounded-xl border overflow-hidden ${asset.web_h2_2 === 'instagram' ? 'border-pink-200 bg-gradient-to-b from-pink-50 to-white' :
-                                                asset.web_h2_2 === 'facebook' ? 'border-blue-200 bg-gradient-to-b from-blue-50 to-white' :
-                                                    asset.web_h2_2 === 'twitter' ? 'border-slate-200 bg-gradient-to-b from-slate-50 to-white' :
-                                                        asset.web_h2_2 === 'linkedin' ? 'border-blue-200 bg-gradient-to-b from-blue-50 to-white' :
-                                                            asset.web_h2_2 === 'youtube' ? 'border-red-200 bg-gradient-to-b from-red-50 to-white' :
-                                                                asset.web_h2_2 === 'tiktok' ? 'border-slate-200 bg-gradient-to-b from-slate-50 to-white' :
-                                                                    'border-slate-200 bg-slate-50'
+                                            asset.web_h2_2 === 'facebook' ? 'border-blue-200 bg-gradient-to-b from-blue-50 to-white' :
+                                                asset.web_h2_2 === 'twitter' ? 'border-slate-200 bg-gradient-to-b from-slate-50 to-white' :
+                                                    asset.web_h2_2 === 'linkedin' ? 'border-blue-200 bg-gradient-to-b from-blue-50 to-white' :
+                                                        asset.web_h2_2 === 'youtube' ? 'border-red-200 bg-gradient-to-b from-red-50 to-white' :
+                                                            'border-slate-200 bg-slate-50'
                                             }`}>
                                             {/* Post Header */}
                                             <div className="p-3 flex items-center gap-3 border-b border-slate-100">
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${asset.web_h2_2 === 'instagram' ? 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400' :
-                                                        asset.web_h2_2 === 'facebook' ? 'bg-blue-600' :
-                                                            asset.web_h2_2 === 'twitter' ? 'bg-slate-900' :
-                                                                asset.web_h2_2 === 'linkedin' ? 'bg-blue-700' :
-                                                                    asset.web_h2_2 === 'youtube' ? 'bg-red-600' :
-                                                                        asset.web_h2_2 === 'tiktok' ? 'bg-slate-900' :
-                                                                            'bg-purple-500'
+                                                    asset.web_h2_2 === 'facebook' ? 'bg-blue-600' :
+                                                        asset.web_h2_2 === 'twitter' ? 'bg-slate-900' :
+                                                            asset.web_h2_2 === 'linkedin' ? 'bg-blue-700' :
+                                                                asset.web_h2_2 === 'youtube' ? 'bg-red-600' :
+                                                                    'bg-purple-500'
                                                     }`}>
                                                     <span className="text-white text-sm font-bold">G</span>
                                                 </div>
