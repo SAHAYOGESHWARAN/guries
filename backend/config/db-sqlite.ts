@@ -351,6 +351,10 @@ export const initDatabase = () => {
             email TEXT UNIQUE,
             role TEXT,
             status TEXT DEFAULT 'active',
+            password_hash TEXT,
+            department TEXT,
+            country TEXT,
+            last_login DATETIME,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -381,8 +385,9 @@ export const initDatabase = () => {
         INSERT OR IGNORE INTO brands (id, name, code, industry, website) VALUES 
         (1, 'Sample Brand', 'SB', 'Technology', 'https://example.com');
 
-        INSERT OR IGNORE INTO users (id, name, email, role) VALUES 
-        (1, 'Admin User', 'admin@example.com', 'admin');
+        -- Admin user with password 'admin123' (SHA256 hash)
+        INSERT OR IGNORE INTO users (id, name, email, role, status, password_hash, department) VALUES 
+        (1, 'Admin User', 'admin@example.com', 'admin', 'active', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Administration');
 
         INSERT OR IGNORE INTO content_types (id, content_type, description) VALUES 
         (1, 'Pillar', 'Pillar content type'),
@@ -572,6 +577,29 @@ export const initDatabase = () => {
     addColumnIfNotExists('assets', 'designed_by', 'INTEGER');
     addColumnIfNotExists('assets', 'created_by', 'INTEGER');
     addColumnIfNotExists('assets', 'updated_by', 'INTEGER');
+
+    // Add missing columns to users table for admin functionality
+    addColumnIfNotExists('users', 'password_hash', 'TEXT');
+    addColumnIfNotExists('users', 'department', 'TEXT');
+    addColumnIfNotExists('users', 'country', 'TEXT');
+    addColumnIfNotExists('users', 'last_login', 'DATETIME');
+
+    // Ensure admin user has password set (SHA256 hash of 'admin123')
+    const adminPasswordHash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+    try {
+        const adminUser = sqliteDb.prepare("SELECT * FROM users WHERE email = 'admin@example.com'").get() as any;
+        if (adminUser && !adminUser.password_hash) {
+            sqliteDb.prepare("UPDATE users SET password_hash = ?, role = 'admin', status = 'active', department = 'Administration' WHERE email = 'admin@example.com'")
+                .run(adminPasswordHash);
+            console.log('  Updated admin user with password');
+        } else if (!adminUser) {
+            sqliteDb.prepare("INSERT INTO users (name, email, role, status, password_hash, department) VALUES (?, ?, ?, ?, ?, ?)")
+                .run('Admin User', 'admin@example.com', 'admin', 'active', adminPasswordHash, 'Administration');
+            console.log('  Created admin user');
+        }
+    } catch (e) {
+        console.log('  Admin user setup skipped');
+    }
 };
 
 // PostgreSQL-compatible pool interface

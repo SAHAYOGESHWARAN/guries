@@ -25,8 +25,8 @@ const memoryStorage: Record<string, any[]> = {};
 // Default data for collections - used when no storage is configured
 const DEFAULT_DATA: Record<string, any[]> = {
     users: [
-        { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'Admin', status: 'Active' },
-        { id: 2, name: 'Test User', email: 'user@example.com', role: 'User', status: 'Active' }
+        { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', department: 'Administration', password_hash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9' },
+        { id: 2, name: 'Test User', email: 'user@example.com', role: 'user', status: 'active', department: 'Marketing' }
     ],
     roles: [
         { id: 1, name: 'Admin', permissions: ['all'] },
@@ -223,8 +223,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const users = await getCollection('users');
         if (users.length === 0) {
             await saveCollection('users', [
-                { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'Admin', status: 'Active', created_at: new Date().toISOString() },
-                { id: 2, name: 'Test User', email: 'user@example.com', role: 'User', status: 'Active', created_at: new Date().toISOString() }
+                { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', department: 'Administration', password_hash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', created_at: new Date().toISOString() },
+                { id: 2, name: 'Test User', email: 'user@example.com', role: 'user', status: 'active', department: 'Marketing', created_at: new Date().toISOString() }
             ]);
         }
 
@@ -349,6 +349,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Auth
         if (fullPath === 'auth/send-otp') return res.status(200).json({ success: true, message: 'OTP sent' });
         if (fullPath === 'auth/verify-otp') return res.status(200).json({ success: true, token: 'mock-token' });
+        // Admin Auth - Login validation
+        if (fullPath === 'admin/auth/login' && method === 'POST') {
+            const { email, password } = req.body;
+            if (!email || !password) {
+                return res.status(400).json({ error: 'Email and password are required' });
+            }
+            const users = await getCollection('users');
+            const user = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+
+            if (!user) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            // Check if user is deactivated
+            if (user.status === 'inactive' || user.status === 'Inactive') {
+                return res.status(403).json({ error: 'User deactivated' });
+            }
+
+            // For deployed version, accept admin123 for admin@example.com or any password for demo
+            const isValidPassword = (email.toLowerCase() === 'admin@example.com' && password === 'admin123') ||
+                user.password_hash === password ||
+                !user.password_hash; // Allow login if no password set (demo mode)
+
+            if (!isValidPassword) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            // Update last login
+            const userIndex = users.findIndex((u: any) => u.id === user.id);
+            if (userIndex !== -1) {
+                users[userIndex] = { ...users[userIndex], last_login: new Date().toISOString() };
+                await saveCollection('users', users);
+            }
+
+            return res.status(200).json({
+                message: 'Login successful',
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role || 'user',
+                    status: user.status || 'active',
+                    department: user.department,
+                    last_login: new Date().toISOString()
+                }
+            });
+        }
         // Promotion Items
         if (fullPath === 'promotion-items') {
             const content = await getCollection('content');
