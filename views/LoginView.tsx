@@ -158,24 +158,33 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 console.log('Backend not available, using localStorage');
             }
 
-            // Fallback: Check localStorage if user exists and is inactive or pending
+            // Fallback: Check localStorage - ONLY allow registered and approved users
             const existingUsers = db.users.getAll();
             const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
 
-            if (existingUser && existingUser.status === 'inactive') {
+            // User not found - BLOCK login (no auto-registration)
+            if (!existingUser) {
+                setError('Account not found. Please request access from an administrator.');
+                setIsLoading(false);
+                return;
+            }
+
+            // User is deactivated - BLOCK login
+            if (existingUser.status === 'inactive') {
                 setError('Your account has been deactivated. Contact an administrator.');
                 setIsLoading(false);
                 return;
             }
 
-            if (existingUser && existingUser.status === 'pending') {
+            // User is pending approval - BLOCK login
+            if (existingUser.status === 'pending') {
                 setError('Your account is pending approval. Please wait for an administrator to activate your account.');
                 setIsLoading(false);
                 return;
             }
 
-            // If user exists, use their data; otherwise create new user
-            if (existingUser) {
+            // ONLY allow active users to login
+            if (existingUser.status === 'active') {
                 const authUser: AuthUser = {
                     ...existingUser,
                     role: existingUser.role as UserRole,
@@ -185,8 +194,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 db.users.update(existingUser.id, { last_login: new Date().toISOString() });
                 onLogin(authUser);
             } else {
-                const user = createUserFromForm();
-                onLogin(user);
+                setError('Access denied. Contact an administrator.');
+                setIsLoading(false);
             }
         }
     };
@@ -195,10 +204,42 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         setIsLoading(true);
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (otp.join('').length === 6) {
-            const user = createUserFromForm();
-            onLogin(user);
+            // Check if user exists and is approved before allowing OTP login
+            const existingUsers = db.users.getAll();
+            const existingUser = existingUsers.find(u => u.phone === formData.phone || u.email.toLowerCase() === formData.email.toLowerCase());
+
+            if (!existingUser) {
+                setError("Account not found. Please request access from an administrator.");
+                setIsLoading(false);
+                return;
+            }
+
+            if (existingUser.status === 'pending') {
+                setError("Your account is pending approval.");
+                setIsLoading(false);
+                return;
+            }
+
+            if (existingUser.status === 'inactive') {
+                setError("Your account has been deactivated.");
+                setIsLoading(false);
+                return;
+            }
+
+            if (existingUser.status === 'active') {
+                const authUser: AuthUser = {
+                    ...existingUser,
+                    role: existingUser.role as UserRole,
+                    last_login: new Date().toISOString()
+                };
+                db.users.update(existingUser.id, { last_login: new Date().toISOString() });
+                onLogin(authUser);
+            } else {
+                setError("Access denied.");
+                setIsLoading(false);
+            }
         } else {
-            setError("Invalid OTP code. Try 123456.");
+            setError("Invalid OTP code.");
             setIsLoading(false);
         }
     };
@@ -206,18 +247,25 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         await new Promise(resolve => setTimeout(resolve, 1500));
-        // Simulate Google login with a demo user
-        const googleUser: AuthUser = {
-            id: Date.now(),
-            name: 'Google User',
-            email: 'user@gmail.com',
-            role: 'user',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            department: 'Marketing',
-            last_login: new Date().toISOString()
-        };
-        onLogin(googleUser);
+
+        // For Google login, we need to check if the user is registered in the system
+        // In a real implementation, this would verify with Google OAuth and then check our database
+        // For now, we check if any user with a gmail.com domain exists and is approved
+
+        const existingUsers = db.users.getAll();
+        // Check if there's a registered Google user (for demo, check for any active user)
+        const googleUser = existingUsers.find(u => u.status === 'active');
+
+        if (!googleUser) {
+            setError('No registered account found. Please request access from an administrator first.');
+            setIsLoading(false);
+            return;
+        }
+
+        // In production, this would match the Google email with registered users
+        // For demo purposes, show error that Google login requires pre-registration
+        setError('Google login requires a pre-registered account. Please contact your administrator or use email/password login.');
+        setIsLoading(false);
     };
 
     return (
