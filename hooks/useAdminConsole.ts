@@ -9,11 +9,13 @@ interface EmployeeMetrics {
     totalUsers: number;
     activeAccounts: number;
     inactiveAccounts: number;
+    pendingAccounts: number;
     systemHealth: string;
 }
 
 interface UseAdminConsoleReturn {
     employees: User[];
+    pendingRegistrations: User[];
     metrics: EmployeeMetrics;
     loading: boolean;
     error: string | null;
@@ -24,14 +26,19 @@ interface UseAdminConsoleReturn {
     toggleStatus: (id: number) => Promise<User | null>;
     deleteEmployee: (id: number) => Promise<boolean>;
     validateLogin: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+    getPendingRegistrations: () => Promise<void>;
+    approveRegistration: (id: number, role?: string) => Promise<User | null>;
+    rejectRegistration: (id: number, reason?: string) => Promise<boolean>;
 }
 
 export const useAdminConsole = (): UseAdminConsoleReturn => {
     const [employees, setEmployees] = useState<User[]>([]);
+    const [pendingRegistrations, setPendingRegistrations] = useState<User[]>([]);
     const [metrics, setMetrics] = useState<EmployeeMetrics>({
         totalUsers: 0,
         activeAccounts: 0,
         inactiveAccounts: 0,
+        pendingAccounts: 0,
         systemHealth: 'Optimal'
     });
     const [loading, setLoading] = useState(true);
@@ -39,11 +46,12 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
     const [useLocalStorage, setUseLocalStorage] = useState(false);
 
     // Calculate metrics from employees
-    const calculateMetrics = useCallback((users: User[]): EmployeeMetrics => {
+    const calculateMetrics = useCallback((users: User[], pending: User[]): EmployeeMetrics => {
         return {
             totalUsers: users.length,
             activeAccounts: users.filter(u => u.status === 'active').length,
             inactiveAccounts: users.filter(u => u.status === 'inactive').length,
+            pendingAccounts: pending.length,
             systemHealth: 'Optimal'
         };
     }, []);
@@ -57,8 +65,12 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
             const response = await fetch(`${API_BASE_URL}/admin/employees`);
             if (response.ok) {
                 const data = await response.json();
-                setEmployees(data);
-                setMetrics(calculateMetrics(data));
+                // Filter out pending users from main employees list
+                const activeEmployees = data.filter((u: User) => u.status !== 'pending');
+                const pending = data.filter((u: User) => u.status === 'pending');
+                setEmployees(activeEmployees);
+                setPendingRegistrations(pending);
+                setMetrics(calculateMetrics(activeEmployees, pending));
                 setUseLocalStorage(false);
             } else {
                 throw new Error('API not available');
@@ -68,8 +80,11 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
             console.log('Using localStorage fallback for employees');
             setUseLocalStorage(true);
             const localUsers = db.users.getAll();
-            setEmployees(localUsers);
-            setMetrics(calculateMetrics(localUsers));
+            const activeEmployees = localUsers.filter(u => u.status !== 'pending');
+            const pending = localUsers.filter(u => u.status === 'pending');
+            setEmployees(activeEmployees);
+            setPendingRegistrations(pending);
+            setMetrics(calculateMetrics(activeEmployees, pending));
         } finally {
             setLoading(false);
         }
@@ -263,6 +278,10 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
                     return { success: false, error: 'User deactivated' };
                 }
 
+                if (user.status === 'pending') {
+                    return { success: false, error: 'Account pending approval' };
+                }
+
                 return { success: true, user };
             }
         } catch (err: any) {
@@ -270,8 +289,87 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
         }
     }, [useLocalStorage]);
 
+    // Get pending registrations
+    const getPendingRegistrations = useCallback(async (): Promise<void> => {
+        try {
+            if (!useLocalStorage) {
+                const response = await fetch(`${API_BASE_URL}/admin/employees/pending`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setPendingRegistrations(data);
+                }
+            } else {
+                const localUsers = db.users.getAll();
+                const pending = localUsers.filter(u => u.status === 'pending');
+                setPendingRegistrations(pending);
+            }
+        } catch (err: any) {
+            console.error('Error fetching pending registrations:', err);
+        }
+    }, [useLocalStorage]);
+
+    // Approve pending registration
+    const approveRegistration = useCallback(async (id: number, role?: string): Promise<User | null> => {
+        try {
+            if (!useLocalStorage) {
+                const response = await fetch(`${API_BASE_URL}/admin/employees/${id}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: role || 'user' })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    await fetchEmployees();
+                    return result.employee;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to approve registration');
+                }
+            } else {
+                // localStorage fallback
+                const updated = db.users.update(id, { status: 'active', role: role || 'user' });
+                await fetchEmployees();
+                return updated;
+            }
+        } catch (err: any) {
+            setError(err.message);
+            return null;
+        }
+    }, [useLocalStorage, fetchEmployees]);
+
+    // Reject pending registration
+    const rejectRegistration = useCallback(async (id: number, reason?: string): Promise<boolean> => {
+        try {
+            if (!useLocalStorage) {
+                const response = await fetch(`${API_BASE_URL}/admin/employees/${id}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                });
+
+                if (response.ok) {
+                    await fetchEmployees();
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to reject registration');
+                }
+            } else {
+                // localStorage fallback - delete the pending user
+                db.users.delete(id);
+                await fetchEmployees();
+                return true;
+            }
+        } catch (err: any) {
+            setError(err.message);
+            return false;
+        }
+    }, [useLocalStorage, fetchEmployees]);
+
     return {
         employees,
+        pendingRegistrations,
         metrics,
         loading,
         error,
@@ -281,7 +379,10 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
         resetPassword,
         toggleStatus,
         deleteEmployee,
-        validateLogin
+        validateLogin,
+        getPendingRegistrations,
+        approveRegistration,
+        rejectRegistration
     };
 };
 

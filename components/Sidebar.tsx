@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { NAV_ITEMS, NavItem } from '../constants';
+import { AuthUser } from '../hooks/useAuth';
 
 interface SidebarProps {
   currentView: string;
   setCurrentView: (view: string) => void;
+  currentUser?: AuthUser | null;
 }
+
+// Admin-only navigation items that should be hidden for non-admin users
+const ADMIN_ONLY_ITEMS = ['admin-console', 'admin-console-config', 'role-permission-matrix', 'admin-qc-review'];
 
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
@@ -35,11 +40,18 @@ const NavLink: React.FC<{ item: NavItem, isChild?: boolean, currentView: string,
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, currentUser }) => {
   const [openSections, setOpenSections] = useState<string[]>(['MAIN', 'REPOSITORIES']);
+  const isAdmin = currentUser?.role === 'admin';
 
   const toggleSection = (title: string) => {
     setOpenSections(prev => prev.includes(title) ? prev.filter(s => s !== title) : [...prev, title]);
+  };
+
+  // Filter out admin-only items for non-admin users
+  const filterNavItems = (items: NavItem[]) => {
+    if (isAdmin) return items;
+    return items.filter(item => !ADMIN_ONLY_ITEMS.includes(item.id));
   };
 
   return (
@@ -59,32 +71,39 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
 
       {/* Scrollable Nav */}
       <nav className="flex-1 overflow-y-auto py-6 px-1 space-y-1 scrollbar-thin scrollbar-thumb-slate-700">
-        {NAV_ITEMS.map((section) => (
-          <div key={section.title} className="mb-4">
-            {section.items ? (
-              <>
-                <button
-                  onClick={() => toggleSection(section.title)}
-                  className="w-full flex justify-between items-center px-5 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-slate-300 transition-colors group"
-                >
-                  <span>{section.title}</span>
-                  <span className={`text-slate-600 group-hover:text-slate-400`}>
-                    <ChevronIcon expanded={openSections.includes(section.title)} />
-                  </span>
-                </button>
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openSections.includes(section.title) ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="mt-1">
-                    {section.items.map((item) => (
-                      <NavLink key={item.id} item={item} isChild={true} currentView={currentView} setCurrentView={setCurrentView} />
-                    ))}
+        {NAV_ITEMS.map((section) => {
+          // Filter items for this section
+          const filteredItems = section.items ? filterNavItems(section.items) : [];
+          // Skip section if no items after filtering
+          if (section.items && filteredItems.length === 0) return null;
+
+          return (
+            <div key={section.title} className="mb-4">
+              {section.items ? (
+                <>
+                  <button
+                    onClick={() => toggleSection(section.title)}
+                    className="w-full flex justify-between items-center px-5 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-slate-300 transition-colors group"
+                  >
+                    <span>{section.title}</span>
+                    <span className={`text-slate-600 group-hover:text-slate-400`}>
+                      <ChevronIcon expanded={openSections.includes(section.title)} />
+                    </span>
+                  </button>
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openSections.includes(section.title) ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="mt-1">
+                      {filteredItems.map((item) => (
+                        <NavLink key={item.id} item={item} isChild={true} currentView={currentView} setCurrentView={setCurrentView} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </>
-            ) : (
-              section.item && <NavLink key={section.item.id} item={section.item} currentView={currentView} setCurrentView={setCurrentView} />
-            )}
-          </div>
-        ))}
+                </>
+              ) : (
+                section.item && <NavLink key={section.item.id} item={section.item} currentView={currentView} setCurrentView={setCurrentView} />
+              )}
+            </div>
+          )
+        })}
       </nav>
 
       {/* User Footer */}

@@ -8,6 +8,31 @@ const hashPassword = (password: string): string => {
     return crypto.createHash('sha256').update(password).digest('hex');
 };
 
+// Helper function to log admin actions for audit trail
+const logAdminAction = async (
+    adminUserId: number | null,
+    adminUserEmail: string | null,
+    actionType: string,
+    targetUserId: number | null,
+    targetUserEmail: string | null,
+    actionDetails: Record<string, any>,
+    req: Request
+) => {
+    try {
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
+
+        await pool.query(
+            `INSERT INTO admin_audit_log (admin_user_id, admin_user_email, action_type, target_user_id, target_user_email, action_details, ip_address, user_agent)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [adminUserId, adminUserEmail, actionType, targetUserId, targetUserEmail, JSON.stringify(actionDetails), ipAddress, userAgent]
+        );
+    } catch (error) {
+        console.error('Error logging admin action:', error);
+        // Don't throw - audit logging should not break the main operation
+    }
+};
+
 // Get all employees with metrics
 export const getEmployees = async (req: Request, res: Response) => {
     try {
@@ -77,6 +102,11 @@ export const createEmployee = async (req: Request, res: Response) => {
         // Remove password hash from response
         delete newEmployee.password_hash;
 
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'CREATE_USER', newEmployee.id, email, { name, role: role || 'user', department, country }, req);
+
         getSocket().emit('employee_created', newEmployee);
         res.status(201).json(newEmployee);
     } catch (error: any) {
@@ -124,6 +154,11 @@ export const updateEmployee = async (req: Request, res: Response) => {
         const updatedEmployee = result.rows[0];
         delete updatedEmployee.password_hash;
 
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'UPDATE_USER', Number(id), email, { name, role, department, country, status }, req);
+
         getSocket().emit('employee_updated', updatedEmployee);
         res.status(200).json(updatedEmployee);
     } catch (error: any) {
@@ -153,6 +188,11 @@ export const resetPassword = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Employee not found' });
         }
 
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'RESET_PASSWORD', Number(id), result.rows[0].email, { targetName: result.rows[0].name }, req);
+
         getSocket().emit('employee_password_reset', { id, name: result.rows[0].name });
         res.status(200).json({ message: 'Password reset successfully', employee: result.rows[0] });
     } catch (error: any) {
@@ -177,6 +217,11 @@ export const deactivateEmployee = async (req: Request, res: Response) => {
 
         const deactivatedEmployee = result.rows[0];
         delete deactivatedEmployee.password_hash;
+
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'DEACTIVATE_USER', Number(id), deactivatedEmployee.email, { targetName: deactivatedEmployee.name }, req);
 
         getSocket().emit('employee_deactivated', deactivatedEmployee);
         res.status(200).json({ message: 'Employee deactivated successfully', employee: deactivatedEmployee });
@@ -203,6 +248,11 @@ export const activateEmployee = async (req: Request, res: Response) => {
         const activatedEmployee = result.rows[0];
         delete activatedEmployee.password_hash;
 
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'ACTIVATE_USER', Number(id), activatedEmployee.email, { targetName: activatedEmployee.name }, req);
+
         getSocket().emit('employee_activated', activatedEmployee);
         res.status(200).json({ message: 'Employee activated successfully', employee: activatedEmployee });
     } catch (error: any) {
@@ -217,7 +267,7 @@ export const toggleEmployeeStatus = async (req: Request, res: Response) => {
 
     try {
         // Get current status
-        const currentResult = await pool.query('SELECT status FROM users WHERE id = $1', [id]);
+        const currentResult = await pool.query('SELECT status, email, name FROM users WHERE id = $1', [id]);
         if (currentResult.rows.length === 0) {
             return res.status(404).json({ error: 'Employee not found' });
         }
@@ -232,6 +282,12 @@ export const toggleEmployeeStatus = async (req: Request, res: Response) => {
 
         const updatedEmployee = result.rows[0];
         delete updatedEmployee.password_hash;
+
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        const actionType = newStatus === 'active' ? 'ACTIVATE_USER' : 'DEACTIVATE_USER';
+        await logAdminAction(adminUserId, adminUserEmail, actionType, Number(id), updatedEmployee.email, { targetName: updatedEmployee.name, previousStatus: currentStatus, newStatus }, req);
 
         getSocket().emit('employee_status_changed', updatedEmployee);
         res.status(200).json({
@@ -269,6 +325,11 @@ export const validateLogin = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'User deactivated' });
         }
 
+        // Check if user is pending approval
+        if (user.status === 'pending') {
+            return res.status(403).json({ error: 'Account pending approval. Please wait for an administrator to activate your account.' });
+        }
+
         // Verify password
         const hashedPassword = hashPassword(password);
         if (user.password_hash && user.password_hash !== hashedPassword) {
@@ -303,8 +364,19 @@ export const deleteEmployee = async (req: Request, res: Response) => {
     const { hardDelete } = req.query;
 
     try {
+        // Get user info before deletion for audit log
+        const userInfo = await pool.query('SELECT email, name FROM users WHERE id = $1', [id]);
+        const targetEmail = userInfo.rows[0]?.email || null;
+        const targetName = userInfo.rows[0]?.name || null;
+
         if (hardDelete === 'true') {
             await pool.query('DELETE FROM users WHERE id = $1', [id]);
+
+            // Log admin action for audit trail
+            const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+            const adminUserEmail = req.headers['x-user-email'] as string || null;
+            await logAdminAction(adminUserId, adminUserEmail, 'DELETE_USER', Number(id), targetEmail, { targetName, hardDelete: true }, req);
+
             getSocket().emit('employee_deleted', { id });
             res.status(204).send();
         } else {
@@ -318,11 +390,94 @@ export const deleteEmployee = async (req: Request, res: Response) => {
                 return res.status(404).json({ error: 'Employee not found' });
             }
 
+            // Log admin action for audit trail
+            const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+            const adminUserEmail = req.headers['x-user-email'] as string || null;
+            await logAdminAction(adminUserId, adminUserEmail, 'DEACTIVATE_USER', Number(id), targetEmail, { targetName, softDelete: true }, req);
+
             getSocket().emit('employee_deactivated', result.rows[0]);
             res.status(200).json({ message: 'Employee deactivated', employee: result.rows[0] });
         }
     } catch (error: any) {
         console.error('Error deleting employee:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get pending registration requests (for admin approval)
+export const getPendingRegistrations = async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, name, email, role, status, created_at, department, country
+            FROM users 
+            WHERE status = 'pending'
+            ORDER BY created_at DESC
+        `);
+        res.status(200).json(result.rows);
+    } catch (error: any) {
+        console.error('Error fetching pending registrations:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Approve pending registration
+export const approveRegistration = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    try {
+        const result = await pool.query(
+            `UPDATE users SET status = 'active', role = COALESCE($1, role), updated_at = NOW() WHERE id = $2 AND status = 'pending' RETURNING *`,
+            [role || 'user', id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Pending registration not found' });
+        }
+
+        const approvedUser = result.rows[0];
+        delete approvedUser.password_hash;
+
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'APPROVE_REGISTRATION', Number(id), approvedUser.email, { targetName: approvedUser.name, assignedRole: role || 'user' }, req);
+
+        getSocket().emit('registration_approved', approvedUser);
+        res.status(200).json({ message: 'Registration approved successfully', employee: approvedUser });
+    } catch (error: any) {
+        console.error('Error approving registration:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Reject pending registration
+export const rejectRegistration = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    try {
+        // Get user info before deletion
+        const userInfo = await pool.query('SELECT email, name FROM users WHERE id = $1 AND status = $2', [id, 'pending']);
+        if (userInfo.rows.length === 0) {
+            return res.status(404).json({ error: 'Pending registration not found' });
+        }
+
+        const targetEmail = userInfo.rows[0].email;
+        const targetName = userInfo.rows[0].name;
+
+        // Delete the pending registration
+        await pool.query('DELETE FROM users WHERE id = $1 AND status = $2', [id, 'pending']);
+
+        // Log admin action for audit trail
+        const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
+        const adminUserEmail = req.headers['x-user-email'] as string || null;
+        await logAdminAction(adminUserId, adminUserEmail, 'REJECT_REGISTRATION', Number(id), targetEmail, { targetName, reason }, req);
+
+        getSocket().emit('registration_rejected', { id, email: targetEmail });
+        res.status(200).json({ message: 'Registration rejected successfully' });
+    } catch (error: any) {
+        console.error('Error rejecting registration:', error);
         res.status(500).json({ error: error.message });
     }
 };

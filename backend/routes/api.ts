@@ -310,12 +310,15 @@ router.delete('/roles/:id', userController.deleteRole);
 // --- Admin Console - Employee Management (Admin only) ---
 router.get('/admin/employees', requireAdmin, adminController.getEmployees);
 router.get('/admin/employees/metrics', requireAdmin, adminController.getEmployeeMetrics);
+router.get('/admin/employees/pending', requireAdmin, adminController.getPendingRegistrations);
 router.post('/admin/employees', requireAdmin, adminController.createEmployee);
 router.put('/admin/employees/:id', requireAdmin, adminController.updateEmployee);
 router.post('/admin/employees/:id/reset-password', requireAdmin, adminController.resetPassword);
 router.post('/admin/employees/:id/deactivate', requireAdmin, adminController.deactivateEmployee);
 router.post('/admin/employees/:id/activate', requireAdmin, adminController.activateEmployee);
 router.post('/admin/employees/:id/toggle-status', requireAdmin, adminController.toggleEmployeeStatus);
+router.post('/admin/employees/:id/approve', requireAdmin, adminController.approveRegistration);
+router.post('/admin/employees/:id/reject', requireAdmin, adminController.rejectRegistration);
 router.delete('/admin/employees/:id', requireAdmin, adminController.deleteEmployee);
 router.post('/admin/auth/login', adminController.validateLogin);
 

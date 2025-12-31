@@ -257,6 +257,7 @@ const App: React.FC = () => {
       <Sidebar
         currentView={viewState.view}
         setCurrentView={(view) => handleNavigate(view)}
+        currentUser={currentUser}
       />
 
       {/* Main Content Area */}

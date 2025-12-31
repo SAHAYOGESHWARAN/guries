@@ -1191,3 +1191,30 @@ COMMENT ON TABLE asset_website_usage IS 'Tracks where assets are used on website
 COMMENT ON TABLE asset_social_media_usage IS 'Tracks asset usage on social media platforms with engagement metrics';
 COMMENT ON TABLE asset_backlink_usage IS 'Tracks backlink submissions using the asset';
 COMMENT ON TABLE asset_engagement_metrics IS 'Aggregated engagement metrics for assets';
+
+-- =====================================================
+-- ADMIN AUDIT LOG TABLE
+-- Added for Admin Console Access Control
+-- =====================================================
+
+-- Admin Audit Log Table - tracks all admin actions for security compliance
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+	id SERIAL PRIMARY KEY,
+	admin_user_id INTEGER REFERENCES users(id),
+	admin_user_email VARCHAR(255),
+	action_type VARCHAR(100) NOT NULL, -- 'CREATE_USER', 'UPDATE_USER', 'DEACTIVATE_USER', 'ACTIVATE_USER', 'RESET_PASSWORD', 'DELETE_USER'
+	target_user_id INTEGER REFERENCES users(id),
+	target_user_email VARCHAR(255),
+	action_details JSONB, -- Additional details about the action
+	ip_address VARCHAR(50),
+	user_agent TEXT,
+	created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for admin audit log
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_admin ON admin_audit_log(admin_user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_target ON admin_audit_log(target_user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_action ON admin_audit_log(action_type);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created ON admin_audit_log(created_at);
+
+COMMENT ON TABLE admin_audit_log IS 'Audit trail for all admin console actions - user creation, updates, status changes, and password resets';

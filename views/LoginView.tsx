@@ -66,7 +66,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             name: userName || 'User',
             email: formData.email || `${formData.phone}@phone.user`,
             role: formData.role,
-            status: 'active',
+            // For signup requests, status is 'pending' until admin approves
+            status: mode === 'signup' ? 'pending' : 'active',
             created_at: new Date().toISOString(),
             department: formData.department || 'Marketing',
             last_login: new Date().toISOString()
@@ -96,6 +97,27 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         }
 
         await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Handle signup (registration request) - creates pending account
+        if (mode === 'signup') {
+            // Check if email already exists
+            const existingUsers = db.users.getAll();
+            const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
+            if (existingUser) {
+                setError('An account with this email already exists');
+                setIsLoading(false);
+                return;
+            }
+            // Create pending user in localStorage (admin must approve)
+            const pendingUser = createUserFromForm();
+            db.users.create(pendingUser);
+            setError('');
+            setIsLoading(false);
+            // Show success message instead of logging in
+            alert('Your registration request has been submitted. Please wait for an administrator to review and approve your account.');
+            setMode('signin');
+            return;
+        }
 
         if (authMethod === 'phone') {
             setMode('otp');
@@ -136,12 +158,18 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 console.log('Backend not available, using localStorage');
             }
 
-            // Fallback: Check localStorage if user exists and is inactive
+            // Fallback: Check localStorage if user exists and is inactive or pending
             const existingUsers = db.users.getAll();
             const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
 
             if (existingUser && existingUser.status === 'inactive') {
-                setError('User deactivated');
+                setError('Your account has been deactivated. Contact an administrator.');
+                setIsLoading(false);
+                return;
+            }
+
+            if (existingUser && existingUser.status === 'pending') {
+                setError('Your account is pending approval. Please wait for an administrator to activate your account.');
                 setIsLoading(false);
                 return;
             }
@@ -232,7 +260,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                 onClick={() => setMode('signup')}
                                 className={`py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all duration-200 ${mode === 'signup' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                             >
-                                Register
+                                Request Access
                             </button>
                         </div>
                     )}
@@ -287,18 +315,28 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                         ) : (
                             <form onSubmit={initiateLogin} className="space-y-4">
                                 {mode === 'signup' && (
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Full Name</label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleInputChange}
-                                            className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all placeholder-slate-600"
-                                            placeholder="Jane Doe"
-                                            required
-                                        />
-                                    </div>
+                                    <>
+                                        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4">
+                                            <div className="flex items-start gap-2">
+                                                <svg className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <p className="text-[11px] text-amber-300">Registration requests require Admin approval. Your account will remain pending until an administrator reviews and activates it.</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Full Name</label>
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleInputChange}
+                                                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all placeholder-slate-600"
+                                                placeholder="Jane Doe"
+                                                required
+                                            />
+                                        </div>
+                                    </>
                                 )}
 
                                 <div className="space-y-1">
@@ -363,7 +401,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                     {isLoading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                     ) : (
-                                        <span>{mode === 'signup' ? 'Create Account' : 'Sign In'}</span>
+                                        <span>{mode === 'signup' ? 'Submit Request' : 'Sign In'}</span>
                                     )}
                                 </button>
                             </form>
