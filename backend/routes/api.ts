@@ -311,6 +311,8 @@ router.delete('/roles/:id', userController.deleteRole);
 router.get('/admin/employees', requireAdmin, adminController.getEmployees);
 router.get('/admin/employees/metrics', requireAdmin, adminController.getEmployeeMetrics);
 router.get('/admin/employees/pending', requireAdmin, adminController.getPendingRegistrations);
+router.get('/admin/employees/role/:role', requireAdmin, adminController.getEmployeesByRole);
+router.get('/admin/roles/stats', requireAdmin, adminController.getRoleStats);
 router.post('/admin/employees', requireAdmin, adminController.createEmployee);
 router.put('/admin/employees/:id', requireAdmin, adminController.updateEmployee);
 router.post('/admin/employees/:id/reset-password', requireAdmin, adminController.resetPassword);

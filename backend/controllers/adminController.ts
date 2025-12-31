@@ -51,18 +51,93 @@ export const getEmployees = async (req: Request, res: Response) => {
 // Get employee metrics for dashboard
 export const getEmployeeMetrics = async (req: Request, res: Response) => {
     try {
-        const totalResult = await pool.query('SELECT COUNT(*) as total FROM users');
+        const totalResult = await pool.query("SELECT COUNT(*) as total FROM users WHERE status != 'pending'");
         const activeResult = await pool.query("SELECT COUNT(*) as active FROM users WHERE status = 'active'");
         const inactiveResult = await pool.query("SELECT COUNT(*) as inactive FROM users WHERE status = 'inactive'");
+        const pendingResult = await pool.query("SELECT COUNT(*) as pending FROM users WHERE status = 'pending'");
+        const adminResult = await pool.query("SELECT COUNT(*) as admins FROM users WHERE role = 'admin' AND status != 'pending'");
+        const employeeResult = await pool.query("SELECT COUNT(*) as employees FROM users WHERE role != 'admin' AND status != 'pending'");
 
         res.status(200).json({
-            totalUsers: totalResult.rows[0]?.total || 0,
-            activeAccounts: activeResult.rows[0]?.active || 0,
-            inactiveAccounts: inactiveResult.rows[0]?.inactive || 0,
+            totalUsers: parseInt(totalResult.rows[0]?.total) || 0,
+            activeAccounts: parseInt(activeResult.rows[0]?.active) || 0,
+            inactiveAccounts: parseInt(inactiveResult.rows[0]?.inactive) || 0,
+            pendingAccounts: parseInt(pendingResult.rows[0]?.pending) || 0,
+            adminCount: parseInt(adminResult.rows[0]?.admins) || 0,
+            employeeCount: parseInt(employeeResult.rows[0]?.employees) || 0,
             systemHealth: 'Optimal'
         });
     } catch (error: any) {
         console.error('Error fetching employee metrics:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get employees by role (for role-based filtering)
+export const getEmployeesByRole = async (req: Request, res: Response) => {
+    const { role } = req.params;
+
+    try {
+        let query = `
+            SELECT id, name, email, role, status, created_at, updated_at, last_login, department, country
+            FROM users 
+            WHERE status != 'pending'
+        `;
+        const params: any[] = [];
+
+        if (role === 'admin') {
+            query += ` AND role = 'admin'`;
+        } else if (role === 'user' || role === 'employee') {
+            query += ` AND role != 'admin'`;
+        }
+
+        query += ` ORDER BY created_at DESC`;
+
+        const result = await pool.query(query, params);
+        res.status(200).json(result.rows);
+    } catch (error: any) {
+        console.error('Error fetching employees by role:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get role statistics
+export const getRoleStats = async (req: Request, res: Response) => {
+    try {
+        const adminStats = await pool.query(`
+            SELECT 
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+                COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive
+            FROM users 
+            WHERE role = 'admin' AND status != 'pending'
+        `);
+
+        const employeeStats = await pool.query(`
+            SELECT 
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+                COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive
+            FROM users 
+            WHERE role != 'admin' AND status != 'pending'
+        `);
+
+        res.status(200).json({
+            admin: {
+                total: parseInt(adminStats.rows[0]?.total) || 0,
+                active: parseInt(adminStats.rows[0]?.active) || 0,
+                inactive: parseInt(adminStats.rows[0]?.inactive) || 0,
+                permissions: 12 // Admin has all permissions
+            },
+            employee: {
+                total: parseInt(employeeStats.rows[0]?.total) || 0,
+                active: parseInt(employeeStats.rows[0]?.active) || 0,
+                inactive: parseInt(employeeStats.rows[0]?.inactive) || 0,
+                permissions: 4 // Employee has limited permissions
+            }
+        });
+    } catch (error: any) {
+        console.error('Error fetching role stats:', error);
         res.status(500).json({ error: error.message });
     }
 };

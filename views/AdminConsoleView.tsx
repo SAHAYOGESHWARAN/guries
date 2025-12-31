@@ -345,10 +345,11 @@ const permissionCategories = [
 
 // Main Admin Console View
 const AdminConsoleView: React.FC<AdminConsoleViewProps> = ({ currentUser, onNavigate }) => {
-    const { employees, pendingRegistrations, metrics, loading, createEmployee, updateEmployee, resetPassword, toggleStatus, approveRegistration, rejectRegistration } = useAdminConsole();
+    const { employees, pendingRegistrations, metrics, roleStats, loading, createEmployee, updateEmployee, resetPassword, toggleStatus, approveRegistration, rejectRegistration } = useAdminConsole();
 
     // Tab state for Admin Console sections
     const [activeTab, setActiveTab] = useState<'dashboard' | 'permissions' | 'pending'>('dashboard');
+    const [roleFilter, setRoleFilter] = useState<string | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
@@ -357,9 +358,21 @@ const AdminConsoleView: React.FC<AdminConsoleViewProps> = ({ currentUser, onNavi
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     const isAdmin = currentUser?.role === 'admin';
-    const userCountByRole = {
-        admin: employees.filter(u => u.role?.toLowerCase() === 'admin').length,
-        user: employees.filter(u => u.role?.toLowerCase() !== 'admin').length
+
+    // Filter employees by role if filter is set
+    const filteredEmployees = roleFilter
+        ? employees.filter(u => roleFilter === 'admin' ? u.role?.toLowerCase() === 'admin' : u.role?.toLowerCase() !== 'admin')
+        : employees;
+
+    // Handle role card click - navigate to dashboard with filter
+    const handleRoleCardClick = (role: string) => {
+        setRoleFilter(role);
+        setActiveTab('dashboard');
+    };
+
+    // Clear role filter
+    const clearRoleFilter = () => {
+        setRoleFilter(null);
     };
 
     const handleCreateEmployee = async (data: Partial<User> & { password?: string }) => {
@@ -554,8 +567,26 @@ const AdminConsoleView: React.FC<AdminConsoleViewProps> = ({ currentUser, onNavi
                         {/* Employee Management Table - Per Spec: Employee Name, Email ID, Role, Status, Actions */}
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Employee Management</h2>
-                                <p className="text-sm text-slate-500 mt-1">Manage all registered employee accounts</p>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-800">Employee Management</h2>
+                                        <p className="text-sm text-slate-500 mt-1">
+                                            {roleFilter
+                                                ? `Showing ${roleFilter === 'admin' ? 'Administrators' : 'Employees'} (${filteredEmployees.length})`
+                                                : `Manage all registered employee accounts (${employees.length})`
+                                            }
+                                        </p>
+                                    </div>
+                                    {roleFilter && (
+                                        <button
+                                            onClick={clearRoleFilter}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            Clear Filter
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
@@ -569,11 +600,11 @@ const AdminConsoleView: React.FC<AdminConsoleViewProps> = ({ currentUser, onNavi
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {employees.map((user) => (
+                                        {filteredEmployees.map((user) => (
                                             <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">{user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${user.role === 'admin' ? 'bg-gradient-to-br from-red-400 to-red-600' : 'bg-gradient-to-br from-indigo-400 to-indigo-600'}`}>{user.name?.charAt(0)?.toUpperCase() || 'U'}</div>
                                                         <span className="font-medium text-slate-800">{user.name}</span>
                                                     </div>
                                                 </td>
@@ -608,13 +639,13 @@ const AdminConsoleView: React.FC<AdminConsoleViewProps> = ({ currentUser, onNavi
                                                 </td>
                                             </tr>
                                         ))}
-                                        {employees.length === 0 && (
+                                        {filteredEmployees.length === 0 && (
                                             <tr>
                                                 <td colSpan={5} className="px-6 py-12 text-center">
                                                     <div className="text-slate-400">
                                                         <svg className="w-12 h-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                                                        <p className="font-medium">No employees found</p>
-                                                        <p className="text-sm mt-1">Click "Add New Employee" to create the first account.</p>
+                                                        <p className="font-medium">{roleFilter ? `No ${roleFilter === 'admin' ? 'administrators' : 'employees'} found` : 'No employees found'}</p>
+                                                        <p className="text-sm mt-1">{roleFilter ? 'Try clearing the filter or add new users.' : 'Click "Add New Employee" to create the first account.'}</p>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -713,18 +744,32 @@ const AdminConsoleView: React.FC<AdminConsoleViewProps> = ({ currentUser, onNavi
                         {/* Role & Permission Matrix Tab */}
                         <div className="mb-8">
                             <h2 className="text-lg font-bold text-slate-800 mb-4">System Roles</h2>
+                            <p className="text-sm text-slate-500 mb-4">Click on a role card to view users with that role</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {(['admin', 'user'] as UserRole[]).map((role) => {
                                     const def = roleDefinitions[role];
+                                    const stats = role === 'admin' ? roleStats.admin : roleStats.employee;
                                     return (
-                                        <div key={role} className="bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-indigo-300 hover:shadow-md transition-all">
+                                        <button
+                                            key={role}
+                                            onClick={() => handleRoleCardClick(role)}
+                                            className="bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-indigo-400 hover:shadow-lg transition-all text-left group cursor-pointer"
+                                        >
                                             <div className="flex items-center justify-between mb-3">
                                                 <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${def.bgColor} ${def.color}`}>{def.label}</span>
-                                                <span className="text-sm text-slate-500">{userCountByRole[role]} users</span>
+                                                <span className="text-sm font-semibold text-slate-700">{stats.total} user{stats.total !== 1 ? 's' : ''}</span>
                                             </div>
-                                            <div className="text-3xl font-bold text-slate-800 mb-1">{def.permissions.length}</div>
-                                            <div className="text-sm text-slate-500">permissions granted</div>
-                                        </div>
+                                            <div className="text-3xl font-bold text-slate-800 mb-1">{stats.permissions}</div>
+                                            <div className="text-sm text-slate-500 mb-3">permissions granted</div>
+                                            <div className="flex items-center justify-between text-xs text-slate-400">
+                                                <span>{stats.active} active</span>
+                                                <span>{stats.inactive} inactive</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-indigo-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                                                <span>View {def.label}s</span>
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                            </div>
+                                        </button>
                                     );
                                 })}
                             </div>

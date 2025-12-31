@@ -10,13 +10,21 @@ interface EmployeeMetrics {
     activeAccounts: number;
     inactiveAccounts: number;
     pendingAccounts: number;
+    adminCount: number;
+    employeeCount: number;
     systemHealth: string;
+}
+
+interface RoleStats {
+    admin: { total: number; active: number; inactive: number; permissions: number };
+    employee: { total: number; active: number; inactive: number; permissions: number };
 }
 
 interface UseAdminConsoleReturn {
     employees: User[];
     pendingRegistrations: User[];
     metrics: EmployeeMetrics;
+    roleStats: RoleStats;
     loading: boolean;
     error: string | null;
     refresh: () => Promise<void>;
@@ -29,6 +37,7 @@ interface UseAdminConsoleReturn {
     getPendingRegistrations: () => Promise<void>;
     approveRegistration: (id: number, role?: string) => Promise<User | null>;
     rejectRegistration: (id: number, reason?: string) => Promise<boolean>;
+    fetchEmployeesByRole: (role: string) => Promise<User[]>;
 }
 
 export const useAdminConsole = (): UseAdminConsoleReturn => {
@@ -39,20 +48,50 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
         activeAccounts: 0,
         inactiveAccounts: 0,
         pendingAccounts: 0,
+        adminCount: 0,
+        employeeCount: 0,
         systemHealth: 'Optimal'
+    });
+    const [roleStats, setRoleStats] = useState<RoleStats>({
+        admin: { total: 0, active: 0, inactive: 0, permissions: 12 },
+        employee: { total: 0, active: 0, inactive: 0, permissions: 4 }
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [useLocalStorage, setUseLocalStorage] = useState(false);
 
-    // Calculate metrics from employees
+    // Calculate metrics from employees (fallback for localStorage)
     const calculateMetrics = useCallback((users: User[], pending: User[]): EmployeeMetrics => {
+        const admins = users.filter(u => u.role?.toLowerCase() === 'admin');
+        const emps = users.filter(u => u.role?.toLowerCase() !== 'admin');
         return {
             totalUsers: users.length,
             activeAccounts: users.filter(u => u.status === 'active').length,
             inactiveAccounts: users.filter(u => u.status === 'inactive').length,
             pendingAccounts: pending.length,
+            adminCount: admins.length,
+            employeeCount: emps.length,
             systemHealth: 'Optimal'
+        };
+    }, []);
+
+    // Calculate role stats from employees (fallback for localStorage)
+    const calculateRoleStats = useCallback((users: User[]): RoleStats => {
+        const admins = users.filter(u => u.role?.toLowerCase() === 'admin');
+        const emps = users.filter(u => u.role?.toLowerCase() !== 'admin');
+        return {
+            admin: {
+                total: admins.length,
+                active: admins.filter(u => u.status === 'active').length,
+                inactive: admins.filter(u => u.status === 'inactive').length,
+                permissions: 12
+            },
+            employee: {
+                total: emps.length,
+                active: emps.filter(u => u.status === 'active').length,
+                inactive: emps.filter(u => u.status === 'inactive').length,
+                permissions: 4
+            }
         };
     }, []);
 
@@ -62,6 +101,7 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
         setError(null);
 
         try {
+            // Fetch employees
             const response = await fetch(`${API_BASE_URL}/admin/employees`);
             if (response.ok) {
                 const data = await response.json();
@@ -70,8 +110,33 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
                 const pending = data.filter((u: User) => u.status === 'pending');
                 setEmployees(activeEmployees);
                 setPendingRegistrations(pending);
-                setMetrics(calculateMetrics(activeEmployees, pending));
                 setUseLocalStorage(false);
+
+                // Fetch metrics from backend
+                try {
+                    const metricsResponse = await fetch(`${API_BASE_URL}/admin/employees/metrics`);
+                    if (metricsResponse.ok) {
+                        const metricsData = await metricsResponse.json();
+                        setMetrics(metricsData);
+                    } else {
+                        setMetrics(calculateMetrics(activeEmployees, pending));
+                    }
+                } catch {
+                    setMetrics(calculateMetrics(activeEmployees, pending));
+                }
+
+                // Fetch role stats from backend
+                try {
+                    const roleStatsResponse = await fetch(`${API_BASE_URL}/admin/roles/stats`);
+                    if (roleStatsResponse.ok) {
+                        const roleStatsData = await roleStatsResponse.json();
+                        setRoleStats(roleStatsData);
+                    } else {
+                        setRoleStats(calculateRoleStats(activeEmployees));
+                    }
+                } catch {
+                    setRoleStats(calculateRoleStats(activeEmployees));
+                }
             } else {
                 throw new Error('API not available');
             }
@@ -85,10 +150,11 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
             setEmployees(activeEmployees);
             setPendingRegistrations(pending);
             setMetrics(calculateMetrics(activeEmployees, pending));
+            setRoleStats(calculateRoleStats(activeEmployees));
         } finally {
             setLoading(false);
         }
-    }, [calculateMetrics]);
+    }, [calculateMetrics, calculateRoleStats]);
 
     // Initial fetch
     useEffect(() => {
@@ -367,10 +433,38 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
         }
     }, [useLocalStorage, fetchEmployees]);
 
+    // Fetch employees by role
+    const fetchEmployeesByRole = useCallback(async (role: string): Promise<User[]> => {
+        try {
+            if (!useLocalStorage) {
+                const response = await fetch(`${API_BASE_URL}/admin/employees/role/${role}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                }
+            }
+            // Fallback to filtering locally
+            if (role === 'admin') {
+                return employees.filter(u => u.role?.toLowerCase() === 'admin');
+            } else {
+                return employees.filter(u => u.role?.toLowerCase() !== 'admin');
+            }
+        } catch (err: any) {
+            console.error('Error fetching employees by role:', err);
+            // Fallback to filtering locally
+            if (role === 'admin') {
+                return employees.filter(u => u.role?.toLowerCase() === 'admin');
+            } else {
+                return employees.filter(u => u.role?.toLowerCase() !== 'admin');
+            }
+        }
+    }, [useLocalStorage, employees]);
+
     return {
         employees,
         pendingRegistrations,
         metrics,
+        roleStats,
         loading,
         error,
         refresh: fetchEmployees,
@@ -382,7 +476,8 @@ export const useAdminConsole = (): UseAdminConsoleReturn => {
         validateLogin,
         getPendingRegistrations,
         approveRegistration,
-        rejectRegistration
+        rejectRegistration,
+        fetchEmployeesByRole
     };
 };
 
