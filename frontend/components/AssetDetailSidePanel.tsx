@@ -1380,8 +1380,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                                     <span className="text-sm font-semibold text-indigo-800">Admin QC Score</span>
                                                     <div className="flex items-center gap-2">
                                                         <span className={`text-2xl font-bold ${qcReviewData.latestReview.qc_score >= 80 ? 'text-green-600' :
-                                                                qcReviewData.latestReview.qc_score >= 60 ? 'text-amber-600' :
-                                                                    'text-red-600'
+                                                            qcReviewData.latestReview.qc_score >= 60 ? 'text-amber-600' :
+                                                                'text-red-600'
                                                             }`}>
                                                             {qcReviewData.latestReview.qc_score}
                                                         </span>
@@ -1424,8 +1424,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-sm font-medium text-slate-700">Checklist Completion</span>
                                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${qcReviewData.latestReview.checklist_completion
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-amber-100 text-amber-700'
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : 'bg-amber-100 text-amber-700'
                                                                 }`}>
                                                                 {Object.values(qcReviewData.latestReview.checklist_items).filter(Boolean).length} / {Object.keys(qcReviewData.latestReview.checklist_items).length} items passed
                                                             </span>
@@ -1439,8 +1439,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-sm font-medium text-slate-700">QC Decision</span>
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${qcReviewData.latestReview.qc_decision === 'approved' ? 'bg-green-100 text-green-700' :
-                                                            qcReviewData.latestReview.qc_decision === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                                'bg-amber-100 text-amber-700'
+                                                        qcReviewData.latestReview.qc_decision === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                            'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {qcReviewData.latestReview.qc_decision}
                                                     </span>
@@ -1507,12 +1507,39 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8">
-                                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                <span className="text-2xl">📋</span>
+                                        <div className="space-y-4">
+                                            {/* Default Checklist Preview */}
+                                            <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                                                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">QC Checklist Items (Pending Review)</h4>
+                                                <div className="space-y-2">
+                                                    {['Brand Compliance', 'Technical Specs Met', 'Legal / Regulatory Check', 'Tone of Voice'].map((item) => (
+                                                        <div key={item} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-slate-200 text-slate-500">
+                                                                    ?
+                                                                </span>
+                                                                <span className="font-medium text-slate-700 text-sm">{item}</span>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">
+                                                                Pending
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <p className="text-sm text-slate-500">No QC checklist items available</p>
-                                            <p className="text-xs text-slate-400 mt-1">Checklist will be populated after QC review</p>
+                                            <div className="text-center py-4">
+                                                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                    <span className="text-xl">⏳</span>
+                                                </div>
+                                                <p className="text-sm text-slate-600 font-medium">Awaiting QC Review</p>
+                                                <p className="text-xs text-slate-400 mt-1">
+                                                    {asset.status === 'Draft'
+                                                        ? 'Submit this asset for QC review to get it evaluated'
+                                                        : asset.status === 'Pending QC Review'
+                                                            ? 'This asset is in the review queue'
+                                                            : 'Checklist scores will appear after admin review'}
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -1540,8 +1567,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                                         })}
                                                     </span>
                                                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${review.qc_decision === 'approved' ? 'bg-green-100 text-green-700' :
-                                                            review.qc_decision === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                                'bg-amber-100 text-amber-700'
+                                                        review.qc_decision === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                            'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {review.qc_decision}
                                                     </span>

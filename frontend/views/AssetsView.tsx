@@ -97,6 +97,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Pagination state for list view
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25); // Default 25 items per page
+    const [showFilters, setShowFilters] = useState(true); // Collapsible filters state
 
     // Brands (used for filters/masters)
     const { data: brands = [] } = useData<Brand>('brands');
@@ -6081,209 +6082,234 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </div>
 
                         <div className="mb-4 space-y-4 flex-shrink-0">
-                            {/* Enhanced Filters - Matching Screenshot */}
-                            <div className="bg-white rounded-lg border border-slate-200 p-4">
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Filters</div>
-
-                                {/* First Row of Filters */}
-                                <div className="grid grid-cols-4 gap-4 mb-4">
-                                    {/* Asset Type Filter - from Asset Type Master */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Type</label>
-                                        <select
-                                            value={assetTypeFilter}
-                                            onChange={(e) => setAssetTypeFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Types</option>
-                                            {allActiveAssetTypes.map(type => {
-                                                const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
-                                                return (
-                                                    <option key={type.id} value={typeName}>{typeName}</option>
-                                                );
-                                            })}
-                                        </select>
+                            {/* Enhanced Filters - Collapsible */}
+                            <div className="bg-white rounded-lg border border-slate-200">
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        </svg>
+                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Filters</span>
+                                        {(assetTypeFilter !== 'All' || assetCategoryFilter !== 'All' || contentTypeFilter !== 'All' ||
+                                            campaignTypeFilter !== 'All' || linkedServiceFilter !== 'All' || linkedSubServiceFilter !== 'All' ||
+                                            projectFilter !== 'All' || linkedTaskFilter !== 'All' || linkedRepositoryFilter !== 'All' ||
+                                            createdByFilter !== 'All' || dateRangeFilter !== 'All' || usageStatusFilter !== 'All') && (
+                                                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
+                                                    Active
+                                                </span>
+                                            )}
                                     </div>
+                                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
 
-                                    {/* Asset Category Filter - from Asset Category Master */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Category</label>
-                                        <select
-                                            value={assetCategoryFilter}
-                                            onChange={(e) => setAssetCategoryFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Categories</option>
-                                            {allActiveAssetCategories.map(category => (
-                                                <option key={category.id} value={category.category_name}>{category.category_name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                {showFilters && (
+                                    <div className="px-4 pb-4 border-t border-slate-100">
+                                        {/* First Row of Filters */}
+                                        <div className="grid grid-cols-4 gap-4 mb-4 mt-4">
+                                            {/* Asset Type Filter - from Asset Type Master */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Type</label>
+                                                <select
+                                                    value={assetTypeFilter}
+                                                    onChange={(e) => setAssetTypeFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Types</option>
+                                                    {allActiveAssetTypes.map(type => {
+                                                        const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
+                                                        return (
+                                                            <option key={type.id} value={typeName}>{typeName}</option>
+                                                        );
+                                                    })}
+                                                </select>
+                                            </div>
 
-                                    {/* Content Type Filter */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Content Type</label>
-                                        <select
-                                            value={contentTypeFilter}
-                                            onChange={(e) => setContentTypeFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Content Types</option>
-                                            <option value="Blog">Blog</option>
-                                            <option value="Service Page">Service Page</option>
-                                            <option value="Sub-Service Page">Sub-Service Page</option>
-                                            <option value="SMM Post">SMM Post</option>
-                                            <option value="Backlink Asset">Backlink Asset</option>
-                                            <option value="Web UI Asset">Web UI Asset</option>
-                                        </select>
-                                    </div>
+                                            {/* Asset Category Filter - from Asset Category Master */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Category</label>
+                                                <select
+                                                    value={assetCategoryFilter}
+                                                    onChange={(e) => setAssetCategoryFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Categories</option>
+                                                    {allActiveAssetCategories.map(category => (
+                                                        <option key={category.id} value={category.category_name}>{category.category_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                    {/* Campaign Type Filter - from Campaigns */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Campaign Type</label>
-                                        <select
-                                            value={campaignTypeFilter}
-                                            onChange={(e) => setCampaignTypeFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Campaigns</option>
-                                            {campaigns.map(campaign => (
-                                                <option key={campaign.id} value={campaign.id.toString()}>{campaign.campaign_name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                            {/* Content Type Filter */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Content Type</label>
+                                                <select
+                                                    value={contentTypeFilter}
+                                                    onChange={(e) => setContentTypeFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Content Types</option>
+                                                    <option value="Blog">Blog</option>
+                                                    <option value="Service Page">Service Page</option>
+                                                    <option value="Sub-Service Page">Sub-Service Page</option>
+                                                    <option value="SMM Post">SMM Post</option>
+                                                    <option value="Backlink Asset">Backlink Asset</option>
+                                                    <option value="Web UI Asset">Web UI Asset</option>
+                                                </select>
+                                            </div>
 
-                                    {/* Linked Service Filter - from Service Master */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Service</label>
-                                        <select
-                                            value={linkedServiceFilter}
-                                            onChange={(e) => {
-                                                setLinkedServiceFilter(e.target.value);
-                                                setLinkedSubServiceFilter('All'); // Reset sub-service when service changes
-                                            }}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Services</option>
-                                            {services.map(service => (
-                                                <option key={service.id} value={service.id.toString()}>{service.service_name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+                                            {/* Campaign Type Filter - from Campaigns */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Campaign Type</label>
+                                                <select
+                                                    value={campaignTypeFilter}
+                                                    onChange={(e) => setCampaignTypeFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Campaigns</option>
+                                                    {campaigns.map(campaign => (
+                                                        <option key={campaign.id} value={campaign.id.toString()}>{campaign.campaign_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                {/* Second Row of Filters */}
-                                <div className="grid grid-cols-4 gap-4 mb-4">
-                                    {/* Linked Sub-Service Filter - mapped to selected service */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Sub-Service</label>
-                                        <select
-                                            value={linkedSubServiceFilter}
-                                            onChange={(e) => setLinkedSubServiceFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Sub-services</option>
-                                            {filteredSubServicesForFilter.map(subService => (
-                                                <option key={subService.id} value={subService.id.toString()}>{subService.sub_service_name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                            {/* Linked Service Filter - from Service Master */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Service</label>
+                                                <select
+                                                    value={linkedServiceFilter}
+                                                    onChange={(e) => {
+                                                        setLinkedServiceFilter(e.target.value);
+                                                        setLinkedSubServiceFilter('All'); // Reset sub-service when service changes
+                                                    }}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Services</option>
+                                                    {services.map(service => (
+                                                        <option key={service.id} value={service.id.toString()}>{service.service_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
 
-                                    {/* Project Filter - from Projects */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Project</label>
-                                        <select
-                                            value={projectFilter}
-                                            onChange={(e) => setProjectFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Projects</option>
-                                            {projects.map(project => (
-                                                <option key={project.id} value={project.id.toString()}>{project.project_name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                        {/* Second Row of Filters */}
+                                        <div className="grid grid-cols-4 gap-4 mb-4">
+                                            {/* Linked Sub-Service Filter - mapped to selected service */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Sub-Service</label>
+                                                <select
+                                                    value={linkedSubServiceFilter}
+                                                    onChange={(e) => setLinkedSubServiceFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Sub-services</option>
+                                                    {filteredSubServicesForFilter.map(subService => (
+                                                        <option key={subService.id} value={subService.id.toString()}>{subService.sub_service_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                    {/* Linked Task Filter - from Tasks */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Task</label>
-                                        <select
-                                            value={linkedTaskFilter}
-                                            onChange={(e) => setLinkedTaskFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Tasks</option>
-                                            {tasks.map(task => (
-                                                <option key={task.id} value={task.id.toString()}>{task.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                            {/* Project Filter - from Projects */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Project</label>
+                                                <select
+                                                    value={projectFilter}
+                                                    onChange={(e) => setProjectFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Projects</option>
+                                                    {projects.map(project => (
+                                                        <option key={project.id} value={project.id.toString()}>{project.project_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                    {/* Linked Repository Item Filter - from Content Repository */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Repository Item</label>
-                                        <select
-                                            value={linkedRepositoryFilter}
-                                            onChange={(e) => setLinkedRepositoryFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Repository Items</option>
-                                            {repositoryItems.map(item => (
-                                                <option key={item.id} value={item.id.toString()}>{item.content_title_clean}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                            {/* Linked Task Filter - from Tasks */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Task</label>
+                                                <select
+                                                    value={linkedTaskFilter}
+                                                    onChange={(e) => setLinkedTaskFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Tasks</option>
+                                                    {tasks.map(task => (
+                                                        <option key={task.id} value={task.id.toString()}>{task.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                    {/* Created By Filter - from Users */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Created By</label>
-                                        <select
-                                            value={createdByFilter}
-                                            onChange={(e) => setCreatedByFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Users</option>
-                                            {users.map(user => (
-                                                <option key={user.id} value={user.id.toString()}>{user.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                            {/* Linked Repository Item Filter - from Content Repository */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Repository Item</label>
+                                                <select
+                                                    value={linkedRepositoryFilter}
+                                                    onChange={(e) => setLinkedRepositoryFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Repository Items</option>
+                                                    {repositoryItems.map(item => (
+                                                        <option key={item.id} value={item.id.toString()}>{item.content_title_clean}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                    {/* Date Range Filter - date picker */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Date Range</label>
-                                        <select
-                                            value={dateRangeFilter}
-                                            onChange={(e) => setDateRangeFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Time</option>
-                                            <option value="today">Today</option>
-                                            <option value="week">This Week</option>
-                                            <option value="month">This Month</option>
-                                            <option value="quarter">This Quarter</option>
-                                            <option value="year">This Year</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                            {/* Created By Filter - from Users */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Created By</label>
+                                                <select
+                                                    value={createdByFilter}
+                                                    onChange={(e) => setCreatedByFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Users</option>
+                                                    {users.map(user => (
+                                                        <option key={user.id} value={user.id.toString()}>{user.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                {/* Third Row - Usage Status */}
-                                <div className="grid grid-cols-4 gap-4">
-                                    {/* Usage Status Filter - Used, Unused, Archived */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Usage Status</label>
-                                        <select
-                                            value={usageStatusFilter}
-                                            onChange={(e) => setUsageStatusFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                        >
-                                            <option value="All">All Statuses</option>
-                                            <option value="Used">Used</option>
-                                            <option value="Unused">Unused</option>
-                                            <option value="Archived">Archived</option>
-                                        </select>
+                                            {/* Date Range Filter - date picker */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Date Range</label>
+                                                <select
+                                                    value={dateRangeFilter}
+                                                    onChange={(e) => setDateRangeFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Time</option>
+                                                    <option value="today">Today</option>
+                                                    <option value="week">This Week</option>
+                                                    <option value="month">This Month</option>
+                                                    <option value="quarter">This Quarter</option>
+                                                    <option value="year">This Year</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Third Row - Usage Status */}
+                                        <div className="grid grid-cols-4 gap-4">
+                                            {/* Usage Status Filter - Used, Unused, Archived */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Usage Status</label>
+                                                <select
+                                                    value={usageStatusFilter}
+                                                    onChange={(e) => setUsageStatusFilter(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Statuses</option>
+                                                    <option value="Used">Used</option>
+                                                    <option value="Unused">Unused</option>
+                                                    <option value="Archived">Archived</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
 
@@ -6316,12 +6342,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                         {/* Display Content Based on View Mode */}
                         {!assetsLoading && (
-                            <div className="flex-1 min-h-0">
+                            <div className="flex-1 min-h-0 flex flex-col">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white rounded-xl border border-slate-200 flex flex-col" style={{ height: 'calc(100vh - 380px)', minHeight: '500px' }}>
+                                    <div className="bg-white rounded-xl border border-slate-200 flex flex-col flex-1" style={{ height: 'calc(100vh - 320px)', minHeight: '600px', maxHeight: 'calc(100vh - 280px)' }}>
                                         {/* Scrollable Table Container - Full height with proper scrolling */}
                                         <div className="flex-1 overflow-auto">
-                                            <table className="w-full" style={{ minWidth: '1800px' }}>
+                                            <table className="w-full" style={{ minWidth: '1900px' }}>
                                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                                     <tr>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
@@ -6332,6 +6358,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Linked Service</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Linked Task</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>QC Status</th>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>QC Score</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Version</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Designer</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Uploaded At</th>
@@ -6415,6 +6442,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-4 whitespace-nowrap">
+                                                                        {asset.qc_score !== undefined && asset.qc_score !== null ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 ${asset.qc_score >= 80 ? 'border-green-500 bg-green-50 text-green-700' :
+                                                                                    asset.qc_score >= 60 ? 'border-amber-500 bg-amber-50 text-amber-700' :
+                                                                                        'border-red-500 bg-red-50 text-red-700'
+                                                                                    }`}>
+                                                                                    {asset.qc_score}
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
                                                                         <span className="text-sm text-slate-700">{asset.version_number || 'v1.0'}</span>
                                                                     </td>
                                                                     <td className="px-4 py-4 whitespace-nowrap">
@@ -6463,6 +6504,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     </td>
                                                                     <td className="px-4 py-4 whitespace-nowrap">
                                                                         <div className="flex items-center gap-1">
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); handleRowClick(asset); }}
+                                                                                className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded"
+                                                                                title="View QC Details"
+                                                                            >
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                                                                </svg>
+                                                                            </button>
                                                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                                             </button>
@@ -6480,7 +6530,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         })
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={15} className="px-6 py-16 text-center">
+                                                            <td colSpan={16} className="px-6 py-16 text-center">
                                                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                                                     <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -6502,7 +6552,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <select
                                                         value={pageSize}
                                                         onChange={(e) => {
-                                                            setPageSize(Number(e.target.value));
+                                                            const newSize = Number(e.target.value);
+                                                            setPageSize(newSize);
                                                             setCurrentPage(1);
                                                         }}
                                                         className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-1 focus:ring-indigo-500"
@@ -6511,6 +6562,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         <option value={25}>25 per page</option>
                                                         <option value={50}>50 per page</option>
                                                         <option value={100}>100 per page</option>
+                                                        <option value={250}>250 per page</option>
+                                                        <option value={500}>500 per page</option>
+                                                        <option value={filteredAssets.length}>Show All ({filteredAssets.length})</option>
                                                     </select>
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -6897,85 +6951,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             ))
                                         )}
                                     </div>
-                                    {/* Grid View Pagination */}
-                                {filteredAssets.length > 0 && (
-                                    <div className="mt-6 px-4 py-4 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-slate-600">
-                                                Showing <span className="font-bold text-slate-900">{((currentPage - 1) * pageSize) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
-                                            </span>
-                                            <select
-                                                value={pageSize}
-                                                onChange={(e) => {
-                                                    setPageSize(Number(e.target.value));
-                                                    setCurrentPage(1);
-                                                }}
-                                                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-1 focus:ring-indigo-500"
-                                            >
-                                                <option value={10}>10 per page</option>
-                                                <option value={25}>25 per page</option>
-                                                <option value={50}>50 per page</option>
-                                                <option value={100}>100 per page</option>
-                                            </select>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => setCurrentPage(1)}
-                                                disabled={currentPage === 1}
-                                                className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                First
-                                            </button>
-                                            <button
-                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                                disabled={currentPage === 1}
-                                                className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                Previous
-                                            </button>
-                                            <div className="flex items-center gap-1">
-                                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                                    let pageNum;
-                                                    if (totalPages <= 5) {
-                                                        pageNum = i + 1;
-                                                    } else if (currentPage <= 3) {
-                                                        pageNum = i + 1;
-                                                    } else if (currentPage >= totalPages - 2) {
-                                                        pageNum = totalPages - 4 + i;
-                                                    } else {
-                                                        pageNum = currentPage - 2 + i;
-                                                    }
-                                                    return (
-                                                        <button
-                                                            key={pageNum}
-                                                            onClick={() => setCurrentPage(pageNum)}
-                                                            className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNum
-                                                                ? 'bg-indigo-600 text-white'
-                                                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-                                                                }`}
-                                                        >
-                                                            {pageNum}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            <button
-                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                                disabled={currentPage === totalPages}
-                                                className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                Next
-                                            </button>
-                                            <button
-                                                onClick={() => setCurrentPage(totalPages)}
-                                                disabled={currentPage === totalPages}
-                                                className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                Last
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                                 )}
                             </div>
                         )}
