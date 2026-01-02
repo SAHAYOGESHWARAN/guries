@@ -149,6 +149,9 @@ router.get('/admin/qc/audit-log', requireAdmin, async (req, res) => {
 router.put('/assetLibrary/:id/qc-edit', assetController.editAssetInQC);
 router.delete('/assetLibrary/:id/qc-delete', assetController.deleteAssetInQC);
 
+// Get QC reviews for an asset (for side panel display)
+router.get('/assetLibrary/:id/qc-reviews', assetController.getAssetQCReviews);
+
 // --- Asset Usage Tracking ---
 // Get all usage data for an asset
 router.get('/assetLibrary/:assetId/usage', assetUsageController.getAssetAllUsage);

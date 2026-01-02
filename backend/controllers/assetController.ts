@@ -945,3 +945,78 @@ export const deleteAssetInQC = async (req: any, res: any) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Get QC reviews for an asset (for side panel display)
+export const getAssetQCReviews = async (req: any, res: any) => {
+    const { id } = req.params;
+
+    try {
+        // Get all QC reviews for this asset with reviewer info
+        const reviewsResult = await pool.query(`
+            SELECT 
+                aqr.id,
+                aqr.asset_id,
+                aqr.qc_reviewer_id,
+                aqr.qc_score,
+                aqr.checklist_completion,
+                aqr.qc_remarks,
+                aqr.qc_decision,
+                aqr.checklist_items,
+                aqr.created_at,
+                u.name as reviewer_name,
+                u.email as reviewer_email
+            FROM asset_qc_reviews aqr
+            LEFT JOIN users u ON aqr.qc_reviewer_id = u.id
+            WHERE aqr.asset_id = $1
+            ORDER BY aqr.created_at DESC
+        `, [id]);
+
+        // Get the latest QC review details
+        const latestReview = reviewsResult.rows[0] || null;
+
+        // Parse checklist items if they exist
+        const reviews = reviewsResult.rows.map(review => ({
+            ...review,
+            checklist_items: review.checklist_items ? JSON.parse(review.checklist_items) : {}
+        }));
+
+        // Get the asset's current QC status info
+        const assetResult = await pool.query(`
+            SELECT 
+                qc_score,
+                qc_status,
+                qc_remarks,
+                qc_reviewer_id,
+                qc_reviewed_at,
+                qc_checklist_completion,
+                rework_count,
+                status
+            FROM assets 
+            WHERE id = $1
+        `, [id]);
+
+        const assetQCInfo = assetResult.rows[0] || {};
+
+        res.status(200).json({
+            reviews,
+            latestReview: latestReview ? {
+                ...latestReview,
+                checklist_items: latestReview.checklist_items ? JSON.parse(latestReview.checklist_items) : {}
+            } : null,
+            assetQCInfo: {
+                qc_score: assetQCInfo.qc_score,
+                qc_status: assetQCInfo.qc_status,
+                qc_remarks: assetQCInfo.qc_remarks,
+                qc_reviewer_id: assetQCInfo.qc_reviewer_id,
+                qc_reviewed_at: assetQCInfo.qc_reviewed_at,
+                qc_checklist_completion: assetQCInfo.qc_checklist_completion,
+                rework_count: assetQCInfo.rework_count,
+                status: assetQCInfo.status
+            },
+            totalReviews: reviews.length
+        });
+    } catch (error: any) {
+        console.error('Get QC Reviews error:', error);
+        res.status(500).json({ error: error.message || 'Failed to get QC reviews' });
+    }
+};

@@ -1,9 +1,40 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
 import AssetUsagePanel from './AssetUsagePanel';
 import ReworkIndicator from './ReworkIndicator';
 import type { AssetLibraryItem, Service, SubServiceItem, User, Task, Campaign, Project, ContentRepositoryItem, AssetTypeMasterItem, QcChecklistItemResult } from '../types';
+
+// QC Review data from backend
+interface QCReviewData {
+    id: number;
+    asset_id: number;
+    qc_reviewer_id: number;
+    qc_score: number;
+    checklist_completion: boolean;
+    qc_remarks: string;
+    qc_decision: string;
+    checklist_items: { [key: string]: boolean };
+    created_at: string;
+    reviewer_name: string;
+    reviewer_email: string;
+}
+
+interface QCReviewResponse {
+    reviews: QCReviewData[];
+    latestReview: QCReviewData | null;
+    assetQCInfo: {
+        qc_score: number;
+        qc_status: string;
+        qc_remarks: string;
+        qc_reviewer_id: number;
+        qc_reviewed_at: string;
+        qc_checklist_completion: boolean;
+        rework_count: number;
+        status: string;
+    };
+    totalReviews: number;
+}
 
 interface AssetDetailSidePanelProps {
     asset: AssetLibraryItem;
@@ -26,6 +57,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<TabType>('metadata');
     const [submitting, setSubmitting] = useState(false);
+    const [qcReviewData, setQcReviewData] = useState<QCReviewResponse | null>(null);
+    const [loadingQCData, setLoadingQCData] = useState(false);
 
     // Get current user and permissions
     const { user, isAdmin, hasPermission } = useAuth();
@@ -40,6 +73,28 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
     const { data: projects = [] } = useData<Project>('projects');
     const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
+
+    // Fetch QC review data when QC tab is active or panel opens
+    useEffect(() => {
+        const fetchQCReviewData = async () => {
+            if (!asset?.id || !isOpen) return;
+
+            setLoadingQCData(true);
+            try {
+                const response = await fetch(`/api/v1/assetLibrary/${asset.id}/qc-reviews`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setQcReviewData(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch QC review data:', error);
+            } finally {
+                setLoadingQCData(false);
+            }
+        };
+
+        fetchQCReviewData();
+    }, [asset?.id, isOpen]);
 
     // Create a memoized user lookup map for O(1) access instead of O(n) find operations
     const usersMap = useMemo(() => {
@@ -1299,15 +1354,108 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                 </div>
                             </div>
 
-                            {/* QC Checklist & Scoring */}
+                            {/* QC Checklist & Scoring - From Admin QC Review Module */}
                             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                                 <div className="bg-purple-50 px-4 py-3 border-b border-purple-200">
                                     <h3 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
                                         <span>📋</span> QC Checklist & Scoring
+                                        {qcReviewData?.totalReviews && qcReviewData.totalReviews > 0 && (
+                                            <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full text-xs">
+                                                {qcReviewData.totalReviews} review{qcReviewData.totalReviews > 1 ? 's' : ''}
+                                            </span>
+                                        )}
                                     </h3>
                                 </div>
                                 <div className="p-4">
-                                    {asset.qc_checklist_items && asset.qc_checklist_items.length > 0 ? (
+                                    {loadingQCData ? (
+                                        <div className="text-center py-8">
+                                            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                                            <p className="text-sm text-slate-500">Loading QC review data...</p>
+                                        </div>
+                                    ) : qcReviewData?.latestReview ? (
+                                        <div className="space-y-4">
+                                            {/* Admin Score from QC Review */}
+                                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-sm font-semibold text-indigo-800">Admin QC Score</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-2xl font-bold ${qcReviewData.latestReview.qc_score >= 80 ? 'text-green-600' :
+                                                                qcReviewData.latestReview.qc_score >= 60 ? 'text-amber-600' :
+                                                                    'text-red-600'
+                                                            }`}>
+                                                            {qcReviewData.latestReview.qc_score}
+                                                        </span>
+                                                        <span className="text-sm text-slate-500">/ 100</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-indigo-600">
+                                                    Reviewed by: {qcReviewData.latestReview.reviewer_name || 'Admin'} on{' '}
+                                                    {new Date(qcReviewData.latestReview.created_at).toLocaleDateString('en-US', {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric'
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Checklist Items from Admin Review */}
+                                            {qcReviewData.latestReview.checklist_items && Object.keys(qcReviewData.latestReview.checklist_items).length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Compliance Checklist</h4>
+                                                    {Object.entries(qcReviewData.latestReview.checklist_items).map(([key, value]) => (
+                                                        <div key={key} className={`flex items-center justify-between p-3 rounded-lg border ${value ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                                                            }`}>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${value ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                                                    }`}>
+                                                                    {value ? '✓' : '✗'}
+                                                                </span>
+                                                                <span className="font-medium text-slate-900 text-sm">{key}</span>
+                                                            </div>
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${value ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {value ? 'Pass' : 'Fail'}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+
+                                                    {/* Checklist Completion Summary */}
+                                                    <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-sm font-medium text-slate-700">Checklist Completion</span>
+                                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${qcReviewData.latestReview.checklist_completion
+                                                                    ? 'bg-green-100 text-green-700'
+                                                                    : 'bg-amber-100 text-amber-700'
+                                                                }`}>
+                                                                {Object.values(qcReviewData.latestReview.checklist_items).filter(Boolean).length} / {Object.keys(qcReviewData.latestReview.checklist_items).length} items passed
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* QC Decision */}
+                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium text-slate-700">QC Decision</span>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${qcReviewData.latestReview.qc_decision === 'approved' ? 'bg-green-100 text-green-700' :
+                                                            qcReviewData.latestReview.qc_decision === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                                'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        {qcReviewData.latestReview.qc_decision}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* QC Remarks from Admin */}
+                                            {qcReviewData.latestReview.qc_remarks && (
+                                                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Admin Remarks</h4>
+                                                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{qcReviewData.latestReview.qc_remarks}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : asset.qc_checklist_items && asset.qc_checklist_items.length > 0 ? (
                                         <div className="space-y-3">
                                             {asset.qc_checklist_items.map((item: QcChecklistItemResult, index: number) => (
                                                 <div key={item.id || index} className="border border-slate-200 rounded-lg overflow-hidden">
@@ -1370,8 +1518,49 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                 </div>
                             </div>
 
+                            {/* QC Review History */}
+                            {qcReviewData && qcReviewData.reviews.length > 1 && (
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                                        <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                            <span>📜</span> QC Review History
+                                        </h3>
+                                    </div>
+                                    <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
+                                        {qcReviewData.reviews.slice(1).map((review, index) => (
+                                            <div key={review.id || index} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-xs text-slate-500">
+                                                        {new Date(review.created_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${review.qc_decision === 'approved' ? 'bg-green-100 text-green-700' :
+                                                            review.qc_decision === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                                'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        {review.qc_decision}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-slate-700">Score: {review.qc_score}/100</span>
+                                                    <span className="text-xs text-slate-500">by {review.reviewer_name || 'Admin'}</span>
+                                                </div>
+                                                {review.qc_remarks && (
+                                                    <p className="text-xs text-slate-600 mt-2 italic">"{review.qc_remarks}"</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* QC Remarks */}
-                            {asset.qc_remarks && (
+                            {(asset.qc_remarks || qcReviewData?.assetQCInfo?.qc_remarks) && (
                                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                                     <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                                         <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -1379,7 +1568,9 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                         </h3>
                                     </div>
                                     <div className="p-4">
-                                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{asset.qc_remarks}</p>
+                                        <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                                            {qcReviewData?.assetQCInfo?.qc_remarks || asset.qc_remarks}
+                                        </p>
                                     </div>
                                 </div>
                             )}

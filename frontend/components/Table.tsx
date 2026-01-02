@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import Tooltip from './Tooltip';
 
 export interface Column<T = any> {
@@ -17,9 +17,28 @@ interface TableProps {
   emptyMessage?: string;
   rowClassName?: (item: any) => string;
   onRowClick?: (item: any) => void;
+  pageSize?: number;
+  showPagination?: boolean;
 }
 
-function Table({ columns, data = [], title, actionButton, emptyMessage, rowClassName, onRowClick }: TableProps) {
+function Table({ columns, data = [], title, actionButton, emptyMessage, rowClassName, onRowClick, pageSize = 15, showPagination = true }: TableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Calculate pagination
+  const totalPages = Math.ceil((data?.length || 0) / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedData = useMemo(() => {
+    return showPagination ? (data || []).slice(startIndex, endIndex) : data;
+  }, [data, startIndex, endIndex, showPagination]);
+
+  // Reset to page 1 when data changes significantly
+  React.useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [data?.length, totalPages, currentPage]);
+
   const renderCell = (item: any, column: Column<any>) => {
     if (!item) return '';
     if (typeof column.accessor === 'function') {
@@ -36,6 +55,35 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
     // Base minimum width calculation: at least 80px, plus 8px per character
     const calculatedWidth = Math.max(100, headerLength * 9 + 32);
     return `${calculatedWidth}px`;
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
   };
 
   return (
@@ -73,7 +121,7 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
           flex: 1,
           overflowX: 'auto',
           overflowY: 'auto',
-          maxHeight: 'calc(100vh - 300px)',
+          maxHeight: 'calc(100vh - 350px)',
           minHeight: '300px',
           position: 'relative'
         }}
@@ -123,8 +171,8 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
             </tr>
           </thead>
           <tbody>
-            {data && data.length > 0 ? (
-              data.map((item, idx) => (
+            {paginatedData && paginatedData.length > 0 ? (
+              paginatedData.map((item, idx) => (
                 <tr
                   key={item.id || idx}
                   style={{
@@ -170,42 +218,100 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
         </table>
       </div>
 
-      {/* Pagination Footer */}
-      {data && data.length > 0 && (
+      {/* Enhanced Pagination Footer */}
+      {showPagination && data && data.length > 0 && (
         <div style={{
-          padding: '10px 24px',
+          padding: '12px 24px',
           borderTop: '1px solid #e2e8f0',
           backgroundColor: '#f8fafc',
-          fontSize: '10px',
-          color: '#64748b',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexShrink: 0
         }}>
-          <span style={{ fontWeight: 500 }}>
-            Showing <span style={{ color: '#0f172a', fontWeight: 700 }}>{data.length}</span> results
+          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+            Showing <span style={{ color: '#0f172a', fontWeight: 700 }}>{startIndex + 1}</span> to{' '}
+            <span style={{ color: '#0f172a', fontWeight: 700 }}>{Math.min(endIndex, data.length)}</span> of{' '}
+            <span style={{ color: '#0f172a', fontWeight: 700 }}>{data.length}</span> results
           </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button style={{
-              padding: '4px 10px',
-              border: '1px solid #cbd5e1',
-              borderRadius: '4px',
-              backgroundColor: 'white',
-              fontWeight: 600,
-              color: '#475569',
-              fontSize: '10px',
-              cursor: 'pointer'
-            }}>Previous</button>
-            <button style={{
-              padding: '4px 10px',
-              border: '1px solid #cbd5e1',
-              borderRadius: '4px',
-              backgroundColor: 'white',
-              fontWeight: 600,
-              color: '#475569',
-              fontSize: '10px',
-              cursor: 'pointer'
-            }}>Next</button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Previous Button */}
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                backgroundColor: currentPage === 1 ? '#f1f5f9' : 'white',
+                fontWeight: 600,
+                color: currentPage === 1 ? '#94a3b8' : '#475569',
+                fontSize: '12px',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
+
+            {/* Page Numbers */}
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {getPageNumbers().map((page, idx) => (
+                typeof page === 'number' ? (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      border: currentPage === page ? '1px solid #6366f1' : '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      backgroundColor: currentPage === page ? '#6366f1' : 'white',
+                      fontWeight: 600,
+                      color: currentPage === page ? 'white' : '#475569',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      minWidth: '36px'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ) : (
+                  <span key={idx} style={{ padding: '6px 8px', color: '#94a3b8', fontSize: '12px' }}>
+                    {page}
+                  </span>
+                )
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f1f5f9' : 'white',
+                fontWeight: 600,
+                color: currentPage === totalPages || totalPages === 0 ? '#94a3b8' : '#475569',
+                fontSize: '12px',
+                cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              Next
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
