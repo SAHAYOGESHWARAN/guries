@@ -7205,25 +7205,23 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         />
 
                         {/* Asset Detail Side Panel */}
-                        {
-                            selectedAsset && (
-                                <AssetDetailSidePanel
-                                    asset={selectedAsset}
-                                    isOpen={showSidePanel}
-                                    onClose={() => {
-                                        setShowSidePanel(false);
-                                        setSelectedAsset(null);
-                                    }}
-                                    onEdit={(asset) => {
-                                        setShowSidePanel(false);
-                                        handleEdit({ stopPropagation: () => { } } as any, asset);
-                                    }}
-                                    onNavigate={onNavigate}
-                                />
-                            )
-                        }
+                        {selectedAsset && (
+                            <AssetDetailSidePanel
+                                asset={selectedAsset}
+                                isOpen={showSidePanel}
+                                onClose={() => {
+                                    setShowSidePanel(false);
+                                    setSelectedAsset(null);
+                                }}
+                                onEdit={(asset) => {
+                                    setShowSidePanel(false);
+                                    handleEdit({ stopPropagation: () => { } } as any, asset);
+                                }}
+                                onNavigate={onNavigate}
+                            />
+                        )}
                     </>
                 );
-};
+            };
 
             export default AssetsView;
