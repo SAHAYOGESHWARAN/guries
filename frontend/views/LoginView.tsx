@@ -8,7 +8,7 @@ interface LoginViewProps {
 }
 
 const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
-    const [mode, setMode] = useState<'signin' | 'signup' | 'otp'>('signin');
+    const [mode, setMode] = useState<'signin' | 'otp'>('signin');
     const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
     const [isLoading, setIsLoading] = useState(false);
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -18,13 +18,10 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
     // Form State
     const [formData, setFormData] = useState({
-        name: '',
         email: '',
         password: '',
         phone: '',
-        countryCode: '+1',
-        role: 'user' as UserRole,
-        department: ''
+        countryCode: '+1'
     });
 
     const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -60,16 +57,15 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
     // Create user object from form data
     const createUserFromForm = (): AuthUser => {
-        const userName = mode === 'signup' ? formData.name : formData.email.split('@')[0];
+        const userName = formData.email.split('@')[0];
         return {
             id: Date.now(),
             name: userName || 'User',
             email: formData.email || `${formData.phone}@phone.user`,
-            role: formData.role,
-            // For signup requests, status is 'pending' until admin approves
-            status: mode === 'signup' ? 'pending' : 'active',
+            role: 'user' as UserRole,
+            status: 'active',
             created_at: new Date().toISOString(),
-            department: formData.department || 'Marketing',
+            department: 'Marketing',
             last_login: new Date().toISOString()
         };
     };
@@ -90,34 +86,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setIsLoading(false);
             return;
         }
-        if (mode === 'signup' && !formData.name) {
-            setError('Please enter your name');
-            setIsLoading(false);
-            return;
-        }
 
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Handle signup (registration request) - creates pending account
-        if (mode === 'signup') {
-            // Check if email already exists
-            const existingUsers = db.users.getAll();
-            const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
-            if (existingUser) {
-                setError('An account with this email already exists');
-                setIsLoading(false);
-                return;
-            }
-            // Create pending user in localStorage (admin must approve)
-            const pendingUser = createUserFromForm();
-            db.users.create(pendingUser);
-            setError('');
-            setIsLoading(false);
-            // Show success message instead of logging in
-            alert('Your registration request has been submitted. Please wait for an administrator to review and approve your account.');
-            setMode('signin');
-            return;
-        }
 
         if (authMethod === 'phone') {
             setMode('otp');
@@ -295,23 +265,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                         </p>
                     </div>
 
-                    {/* Tabs */}
-                    {mode !== 'otp' && (
-                        <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-lg mb-6">
-                            <button
-                                onClick={() => setMode('signin')}
-                                className={`py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all duration-200 ${mode === 'signin' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                Sign In
-                            </button>
-                            <button
-                                onClick={() => setMode('signup')}
-                                className={`py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all duration-200 ${mode === 'signup' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                Request Access
-                            </button>
-                        </div>
-                    )}
+
 
                     {/* Form Content */}
                     <div>
@@ -362,30 +316,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                             </div>
                         ) : (
                             <form onSubmit={initiateLogin} className="space-y-4">
-                                {mode === 'signup' && (
-                                    <>
-                                        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4">
-                                            <div className="flex items-start gap-2">
-                                                <svg className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <p className="text-[11px] text-amber-300">Registration requests require Admin approval. Your account will remain pending until an administrator reviews and activates it.</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Full Name</label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value={formData.name}
-                                                onChange={handleInputChange}
-                                                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all placeholder-slate-600"
-                                                placeholder="Jane Doe"
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
 
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
@@ -405,15 +335,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                             placeholder={authMethod === 'email' ? 'name@guires.com' : '555-0123'}
                                             required
                                         />
-                                        {mode !== 'signup' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setAuthMethod(authMethod === 'email' ? 'phone' : 'email')}
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-[10px] font-bold text-slate-500 hover:text-brand-400 uppercase tracking-wider transition-colors"
-                                            >
-                                                {authMethod === 'email' ? 'Phone' : 'Email'}
-                                            </button>
-                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setAuthMethod(authMethod === 'email' ? 'phone' : 'email')}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-[10px] font-bold text-slate-500 hover:text-brand-400 uppercase tracking-wider transition-colors"
+                                        >
+                                            {authMethod === 'email' ? 'Phone' : 'Email'}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -421,7 +349,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-center">
                                             <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Password</label>
-                                            {mode === 'signin' && <a href="#" className="text-[10px] text-brand-400 hover:text-brand-300">Forgot?</a>}
+                                            <a href="#" className="text-[10px] text-brand-400 hover:text-brand-300">Forgot?</a>
                                         </div>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -449,7 +377,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                     {isLoading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                     ) : (
-                                        <span>{mode === 'signup' ? 'Submit Request' : 'Sign In'}</span>
+                                        <span>Sign In</span>
                                     )}
                                 </button>
                             </form>

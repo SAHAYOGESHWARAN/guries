@@ -57,8 +57,11 @@ The Marketing Control Center is a comprehensive enterprise-level marketing manag
 
 2. **Install dependencies**
    ```bash
+   npm run install:all
+   # Or manually:
    npm install
-   cd backend && npm install
+   cd frontend && npm install
+   cd ../backend && npm install
    ```
 
 3. **Set up database**
@@ -104,18 +107,28 @@ The Marketing Control Center is a comprehensive enterprise-level marketing manag
 
 ```
 guires-marketing-control-center/
-├── frontend/
-│   ├── views/          # 60+ page components
-│   ├── components/     # Reusable UI components
-│   ├── hooks/          # Custom React hooks
-│   └── utils/          # Utility functions
-├── backend/
-│   ├── controllers/    # 34+ controller files
-│   ├── routes/         # API route definitions
-│   ├── config/         # Configuration files
-│   └── db/             # Database schema
-└── database/
-    └── schema.sql       # PostgreSQL schema
+├── frontend/               # React frontend application
+│   ├── components/         # Reusable UI components
+│   ├── views/              # 60+ page components
+│   ├── hooks/              # Custom React hooks
+│   ├── utils/              # Utility functions
+│   ├── styles/             # CSS styles
+│   ├── data/               # Mock data
+│   ├── App.tsx             # Main app component
+│   ├── index.tsx           # Entry point
+│   ├── vite.config.ts      # Vite configuration
+│   └── package.json        # Frontend dependencies
+├── backend/                # Express backend API
+│   ├── controllers/        # 34+ controller files
+│   ├── routes/             # API route definitions
+│   ├── middleware/         # Express middleware
+│   ├── config/             # Configuration files
+│   ├── migrations/         # Database migrations
+│   ├── server.ts           # Server entry point
+│   └── package.json        # Backend dependencies
+├── api/                    # Vercel serverless functions
+├── package.json            # Root package.json (workspace)
+└── vercel.json             # Vercel deployment config
 ```
 
 ## Documentation
@@ -174,8 +187,11 @@ Follow the guide in [TESTING_DOCUMENTATION.md](./TESTING_DOCUMENTATION.md)
 ## Development
 
 ### Scripts
-- `npm run dev` - Start development servers
-- `npm run build` - Build for production
+- `npm run dev` - Start both frontend and backend development servers
+- `npm run dev:frontend` - Start frontend only
+- `npm run dev:backend` - Start backend only
+- `npm run build` - Build frontend for production
+- `npm run install:all` - Install all dependencies (root, frontend, backend)
 - `npm run preview` - Preview production build
 
 ### Code Style

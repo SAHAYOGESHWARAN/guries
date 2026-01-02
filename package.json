@@ -8,33 +8,17 @@
   },
   "scripts": {
     "setup": "node setup-env.js",
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "vite",
-    "dev:server": "cd backend && nodemon server.ts",
-    "build": "vite build",
-    "preview": "vite preview",
-    "vercel-build": "vite build"
-  },
-  "dependencies": {
-    "@google/genai": "latest",
-    "@supabase/supabase-js": "^2.89.0",
-    "@upstash/redis": "^1.36.0",
-    "@vercel/kv": "^3.0.0",
-    "better-sqlite3": "^12.5.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "socket.io-client": "^4.8.1"
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "vercel-build": "cd frontend && npm run build"
   },
   "devDependencies": {
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@vercel/node": "^3.0.0",
-    "@vitejs/plugin-react": "^4.0.3",
-    "autoprefixer": "^10.4.14",
-    "concurrently": "^8.2.0",
-    "postcss": "^8.4.27",
-    "tailwindcss": "^3.3.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+    "concurrently": "^8.2.0"
   }
 }
