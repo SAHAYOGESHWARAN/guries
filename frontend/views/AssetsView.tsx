@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import Table from '../components/Table';
 import MarkdownEditor from '../components/MarkdownEditor';
 import CircularScore from '../components/CircularScore';
@@ -69,8 +69,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [viewMode, setViewMode] = useState<'list' | 'upload' | 'edit' | 'mysubmissions' | 'detail' | 'master-categories' | 'master-types'>('list');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [displayMode, setDisplayMode] = useState<'table' | 'grid'>('table'); // List vs Large view toggle
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(15); // Items per page
     const [isRefreshing, setIsRefreshing] = useState(false); // Refresh state
     const { user: authUser, isAdmin } = useAuth(); // Get current user from auth context
     const currentUser = authUser || { id: 1, role: 'user' as const }; // Fallback for safety
@@ -95,6 +93,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [markdownContent, setMarkdownContent] = useState<string>('');
     const [selectedAsset, setSelectedAsset] = useState<AssetLibraryItem | null>(null);
     const [showSidePanel, setShowSidePanel] = useState<boolean>(false);
+
+    // Pagination state for list view
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(25); // Default 25 items per page
 
     // Brands (used for filters/masters)
     const { data: brands = [] } = useData<Brand>('brands');
@@ -227,11 +229,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         });
         return ['All', ...Array.from(types).sort()];
     }, [assets]);
-
-    // Reset page when filters change
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter]);
 
     // Memoize filtered assets for better performance
     const filteredAssets = useMemo(() => {
@@ -377,6 +374,19 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 repoName.includes(query);
         });
     }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter, currentUser.id, services, subServices, tasks, campaigns, projects, repositoryItems]);
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredAssets.length / pageSize);
+    const paginatedAssets = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        return filteredAssets.slice(startIndex, endIndex);
+    }, [filteredAssets, currentPage, pageSize]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -6308,9 +6318,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {!assetsLoading && (
                             <div className="flex-1 min-h-0">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white rounded-xl border border-slate-200 h-full flex flex-col">
-                                        {/* Scrollable Table Container */}
-                                        <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                                    <div className="bg-white rounded-xl border border-slate-200 flex flex-col" style={{ height: 'calc(100vh - 380px)', minHeight: '500px' }}>
+                                        {/* Scrollable Table Container - Full height with proper scrolling */}
+                                        <div className="flex-1 overflow-auto">
                                             <table className="w-full" style={{ minWidth: '1800px' }}>
                                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                                     <tr>
@@ -6332,8 +6342,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                    {filteredAssets.length > 0 ? (
-                                                        filteredAssets.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((asset) => {
+                                                    {paginatedAssets.length > 0 ? (
+                                                        paginatedAssets.map((asset) => {
                                                             const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
                                                             const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
                                                             const taskId = asset.linked_task_id || asset.linked_task;
@@ -6484,12 +6494,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </table>
                                         </div>
                                         {filteredAssets.length > 0 && (
-                                            <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 text-sm text-slate-600 flex justify-between items-center flex-shrink-0">
+                                            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center flex-shrink-0">
                                                 <div className="flex items-center gap-4">
-                                                    <span>
-                                                        Showing <span className="font-bold text-slate-900">{Math.min((currentPage - 1) * pageSize + 1, filteredAssets.length)}</span> to{' '}
-                                                        <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of{' '}
-                                                        <span className="font-bold text-slate-900">{filteredAssets.length}</span> results
+                                                    <span className="text-sm text-slate-600">
+                                                        Showing <span className="font-bold text-slate-900">{((currentPage - 1) * pageSize) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
                                                     </span>
                                                     <select
                                                         value={pageSize}
@@ -6497,10 +6505,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             setPageSize(Number(e.target.value));
                                                             setCurrentPage(1);
                                                         }}
-                                                        className="px-2 py-1 border border-slate-300 rounded text-sm bg-white"
+                                                        className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-1 focus:ring-indigo-500"
                                                     >
                                                         <option value={10}>10 per page</option>
-                                                        <option value={15}>15 per page</option>
                                                         <option value={25}>25 per page</option>
                                                         <option value={50}>50 per page</option>
                                                         <option value={100}>100 per page</option>
@@ -6510,83 +6517,54 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <button
                                                         onClick={() => setCurrentPage(1)}
                                                         disabled={currentPage === 1}
-                                                        className={`px-3 py-1.5 border border-slate-300 rounded bg-white font-medium text-slate-700 text-sm ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
+                                                        className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         First
                                                     </button>
                                                     <button
                                                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                                         disabled={currentPage === 1}
-                                                        className={`px-4 py-1.5 border border-slate-300 rounded bg-white font-medium text-slate-700 text-sm flex items-center gap-1 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
+                                                        className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                                        </svg>
                                                         Previous
                                                     </button>
-
-                                                    {/* Page Numbers */}
-                                                    <div className="flex gap-1">
-                                                        {(() => {
-                                                            const totalPages = Math.ceil(filteredAssets.length / pageSize);
-                                                            const pages: (number | string)[] = [];
-                                                            const maxVisiblePages = 5;
-
-                                                            if (totalPages <= maxVisiblePages) {
-                                                                for (let i = 1; i <= totalPages; i++) pages.push(i);
+                                                    <div className="flex items-center gap-1">
+                                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                            let pageNum;
+                                                            if (totalPages <= 5) {
+                                                                pageNum = i + 1;
+                                                            } else if (currentPage <= 3) {
+                                                                pageNum = i + 1;
+                                                            } else if (currentPage >= totalPages - 2) {
+                                                                pageNum = totalPages - 4 + i;
                                                             } else {
-                                                                if (currentPage <= 3) {
-                                                                    for (let i = 1; i <= 4; i++) pages.push(i);
-                                                                    pages.push('...');
-                                                                    pages.push(totalPages);
-                                                                } else if (currentPage >= totalPages - 2) {
-                                                                    pages.push(1);
-                                                                    pages.push('...');
-                                                                    for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-                                                                } else {
-                                                                    pages.push(1);
-                                                                    pages.push('...');
-                                                                    for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-                                                                    pages.push('...');
-                                                                    pages.push(totalPages);
-                                                                }
+                                                                pageNum = currentPage - 2 + i;
                                                             }
-
-                                                            return pages.map((page, idx) => (
-                                                                typeof page === 'number' ? (
-                                                                    <button
-                                                                        key={idx}
-                                                                        onClick={() => setCurrentPage(page)}
-                                                                        className={`px-3 py-1.5 border rounded text-sm font-medium min-w-[36px] ${currentPage === page
-                                                                            ? 'bg-indigo-600 text-white border-indigo-600'
-                                                                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                                                                            }`}
-                                                                    >
-                                                                        {page}
-                                                                    </button>
-                                                                ) : (
-                                                                    <span key={idx} className="px-2 py-1.5 text-slate-400">
-                                                                        {page}
-                                                                    </span>
-                                                                )
-                                                            ));
-                                                        })()}
+                                                            return (
+                                                                <button
+                                                                    key={pageNum}
+                                                                    onClick={() => setCurrentPage(pageNum)}
+                                                                    className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNum
+                                                                        ? 'bg-indigo-600 text-white'
+                                                                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                                                                        }`}
+                                                                >
+                                                                    {pageNum}
+                                                                </button>
+                                                            );
+                                                        })}
                                                     </div>
-
                                                     <button
-                                                        onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredAssets.length / pageSize), prev + 1))}
-                                                        disabled={currentPage >= Math.ceil(filteredAssets.length / pageSize)}
-                                                        className={`px-4 py-1.5 border border-slate-300 rounded bg-white font-medium text-slate-700 text-sm flex items-center gap-1 ${currentPage >= Math.ceil(filteredAssets.length / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
+                                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                        disabled={currentPage === totalPages}
+                                                        className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Next
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
                                                     </button>
                                                     <button
-                                                        onClick={() => setCurrentPage(Math.ceil(filteredAssets.length / pageSize))}
-                                                        disabled={currentPage >= Math.ceil(filteredAssets.length / pageSize)}
-                                                        className={`px-3 py-1.5 border border-slate-300 rounded bg-white font-medium text-slate-700 text-sm ${currentPage >= Math.ceil(filteredAssets.length / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
+                                                        onClick={() => setCurrentPage(totalPages)}
+                                                        disabled={currentPage === totalPages}
+                                                        className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Last
                                                     </button>
@@ -6595,633 +6573,664 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col h-full">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 flex-1">
-                                            {filteredAssets.length === 0 ? (
-                                                <div className="col-span-full text-center py-12">
-                                                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                        <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                        </svg>
-                                                    </div>
-                                                    <p className="text-slate-500 text-lg font-medium mb-4">
-                                                        No assets yet.
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {filteredAssets.length === 0 ? (
+                                            <div className="col-span-full text-center py-12">
+                                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-slate-500 text-lg font-medium mb-4">
+                                                    No assets yet.
+                                                </p>
+                                                <div className="space-y-4">
+                                                    <p className="text-slate-400 text-sm">
+                                                        Get started by uploading your first asset
                                                     </p>
-                                                    <div className="space-y-4">
-                                                        <p className="text-slate-400 text-sm">
-                                                            Get started by uploading your first asset
-                                                        </p>
 
-                                                        {/* Quick Upload Options */}
-                                                        <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                                    setShowUploadModal(true);
-                                                                }}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                            >
-                                                                🌐 Web Content
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                                    setShowUploadModal(true);
-                                                                }}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                                                            >
-                                                                🔍 SEO Content
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                                    setShowUploadModal(true);
-                                                                }}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                                                            >
-                                                                📱 Social Media
-                                                            </button>
-                                                        </div>
+                                                    {/* Quick Upload Options */}
+                                                    <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            🌐 Web Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                                        >
+                                                            🔍 SEO Content
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                                                setShowUploadModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                                                        >
+                                                            📱 Social Media
+                                                        </button>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                filteredAssets.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((asset) => (
-                                                    <div
-                                                        key={asset.id}
-                                                        onClick={() => handleRowClick(asset)}
-                                                        className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
-                                                    >
-                                                        {/* Asset Preview */}
-                                                        <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                                                            {asset.thumbnail_url ? (
-                                                                <img
-                                                                    src={asset.thumbnail_url}
-                                                                    alt={asset.name}
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-                                                                    <span className="text-4xl text-white">
-                                                                        {getAssetIcon(asset.type)}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Status Badge */}
-                                                            <div className="absolute top-3 left-3">
-                                                                {getStatusBadge(asset.status || 'Draft')}
-                                                            </div>
-
-                                                            {/* Enhanced Actions Overlay */}
-                                                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                                                {(asset.file_url || asset.thumbnail_url) && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            const url = asset.file_url || asset.thumbnail_url;
-                                                                            if (url) {
-                                                                                if (url.startsWith('data:')) {
-                                                                                    const win = window.open();
-                                                                                    if (win) {
-                                                                                        win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
-                                                                                    }
-                                                                                } else {
-                                                                                    window.open(url, '_blank', 'noopener,noreferrer');
-                                                                                }
-                                                                            }
-                                                                        }}
-                                                                        className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
-                                                                        title="View Asset"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                        </svg>
-                                                                    </button>
-                                                                )}
-
-                                                                {/* Update Asset Button - More Prominent */}
-                                                                {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
-                                                                    <button
-                                                                        onClick={(e) => handleEdit(e, asset)}
-                                                                        className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
-                                                                        title="Update Asset"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                        </svg>
-                                                                    </button>
-                                                                )}
-
-                                                                {/* Delete Button - creators or admins */}
-                                                                {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
-                                                                        disabled={deletingId === asset.id}
-                                                                        className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                        title="Delete Asset"
-                                                                    >
-                                                                        {deletingId === asset.id ? (
-                                                                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                            </svg>
-                                                                        ) : (
-                                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                            </svg>
-                                                                        )}
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Quick Update Badge */}
-                                                            {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
-                                                                <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                        </svg>
-                                                                        Update Ready
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Asset Info */}
-                                                        <div className="p-4 space-y-3">
-                                                            {/* Asset Name & ID */}
-                                                            <div className="flex items-start justify-between">
-                                                                <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
-                                                                    {asset.name}
-                                                                </h3>
-                                                                <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-                                                                    ID: {asset.id}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Campaign/Project Name */}
-                                                            {asset.web_title && (
-                                                                <div className="text-sm text-slate-700 font-medium">
-                                                                    {asset.web_title}
-                                                                </div>
-                                                            )}
-
-                                                            {/* Service Linking */}
-                                                            <div className="space-y-1">
-                                                                {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
-                                                                    <div className="text-xs">
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
-                                                                        <div className="text-slate-700 font-medium">
-                                                                            {asset.linked_service_ids.map(serviceId => {
-                                                                                const service = services.find(s => s.id === serviceId);
-                                                                                return service?.service_name;
-                                                                            }).filter(Boolean).join(', ')}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-
-                                                                {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
-                                                                    <div className="text-xs">
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
-                                                                        <div className="text-slate-700 font-medium">
-                                                                            {asset.linked_sub_service_ids.map(ssId => {
-                                                                                const subService = subServices.find(ss => ss.id === ssId);
-                                                                                return subService?.sub_service_name;
-                                                                            }).filter(Boolean).join(', ')}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-
-                                                                {asset.repository && (
-                                                                    <div className="text-xs">
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
-                                                                        <div className="text-slate-700 font-medium">{asset.repository}</div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* QC Panel */}
-                                                            {asset.qc_score && (
-                                                                <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                                    <div className="flex items-center justify-between mb-2">
-                                                                        <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <CircularScore
-                                                                                score={asset.qc_score}
-                                                                                label=""
-                                                                                size="xs"
-                                                                            />
-                                                                            <span className="text-xs font-bold text-slate-700">
-                                                                                {asset.qc_score}/100
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                                                        <div>
-                                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
-                                                                            <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                                                {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {asset.qc_reviewed_at && (
-                                                                            <div>
-                                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
-                                                                                <div className="text-slate-700 font-medium">
-                                                                                    {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
-                                                                                        year: 'numeric',
-                                                                                        month: '2-digit',
-                                                                                        day: '2-digit'
-                                                                                    })}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* Reviewer Info */}
-                                                                    {asset.qc_reviewer_id && (
-                                                                        <div className="mt-2 text-xs">
-                                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
-                                                                            <div className="text-slate-700 font-medium">
-                                                                                {(() => {
-                                                                                    const reviewer = usersMap.get(asset.qc_reviewer_id);
-                                                                                    return reviewer ? reviewer.name : 'Unknown Reviewer';
-                                                                                })()}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-
-                                                            {/* Type and Repository Tags */}
-                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
-                                                                    <span>{getAssetIcon(asset.type)}</span>
-                                                                    {asset.type}
-                                                                </span>
-                                                                {asset.application_type && (
-                                                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
-                                                                        asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
-                                                                            asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
-                                                                                'bg-slate-100 text-slate-700'
-                                                                        }`}>
-                                                                        {asset.application_type === 'web' && '🌐 WEB'}
-                                                                        {asset.application_type === 'seo' && '🔍 SEO'}
-                                                                        {asset.application_type === 'smm' && '📱 SMM'}
-                                                                        {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-
-                                                            {/* AI Scores */}
-                                                            {(asset.seo_score || asset.grammar_score) && (
-                                                                <div className="flex gap-2">
-                                                                    {asset.seo_score && (
-                                                                        <CircularScore
-                                                                            score={asset.seo_score}
-                                                                            label="SEO"
-                                                                            size="xs"
-                                                                        />
-                                                                    )}
-                                                                    {asset.grammar_score && (
-                                                                        <CircularScore
-                                                                            score={asset.grammar_score}
-                                                                            label="Grammar"
-                                                                            size="xs"
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            )}
-
-                                                            {/* Usage Panel */}
-                                                            <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
-                                                                    <div className="flex items-center justify-between mt-1">
-                                                                        {asset.linking_active && (
-                                                                            <span className="text-green-600 font-medium text-xs">🔗 Active</span>
-                                                                        )}
-                                                                    </div>
-                                                                    {asset.date && (
-                                                                        <div className="text-slate-500 text-xs mt-1">
-                                                                            Created: {new Date(asset.date).toLocaleDateString('en-US', {
-                                                                                month: 'short',
-                                                                                day: 'numeric',
-                                                                                year: 'numeric'
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                        {/* Grid View Pagination */}
-                                        {filteredAssets.length > 0 && (
-                                            <div className="mt-6 px-4 py-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-sm text-slate-600">
-                                                        Showing <span className="font-bold text-slate-900">{Math.min((currentPage - 1) * pageSize + 1, filteredAssets.length)}</span> to{' '}
-                                                        <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of{' '}
-                                                        <span className="font-bold text-slate-900">{filteredAssets.length}</span> results
-                                                    </span>
-                                                    <select
-                                                        value={pageSize}
-                                                        onChange={(e) => {
-                                                            setPageSize(Number(e.target.value));
-                                                            setCurrentPage(1);
-                                                        }}
-                                                        className="px-2 py-1 border border-slate-300 rounded text-sm bg-white"
-                                                    >
-                                                        <option value={8}>8 per page</option>
-                                                        <option value={12}>12 per page</option>
-                                                        <option value={16}>16 per page</option>
-                                                        <option value={24}>24 per page</option>
-                                                    </select>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                                        disabled={currentPage === 1}
-                                                        className={`px-4 py-1.5 border border-slate-300 rounded bg-white font-medium text-slate-700 text-sm flex items-center gap-1 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                                        </svg>
-                                                        Previous
-                                                    </button>
-                                                    <span className="px-3 py-1.5 text-sm text-slate-600">
-                                                        Page {currentPage} of {Math.ceil(filteredAssets.length / pageSize)}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredAssets.length / pageSize), prev + 1))}
-                                                        disabled={currentPage >= Math.ceil(filteredAssets.length / pageSize)}
-                                                        className={`px-4 py-1.5 border border-slate-300 rounded bg-white font-medium text-slate-700 text-sm flex items-center gap-1 ${currentPage >= Math.ceil(filteredAssets.length / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
-                                                    >
-                                                        Next
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </button>
                                                 </div>
                                             </div>
+                                        ) : (
+                                            paginatedAssets.map((asset) => (
+                                                <div
+                                                    key={asset.id}
+                                                    onClick={() => handleRowClick(asset)}
+                                                    className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
+                                                >
+                                                    {/* Asset Preview */}
+                                                    <div className="aspect-video bg-slate-100 relative overflow-hidden">
+                                                        {asset.thumbnail_url ? (
+                                                            <img
+                                                                src={asset.thumbnail_url}
+                                                                alt={asset.name}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                                                                <span className="text-4xl text-white">
+                                                                    {getAssetIcon(asset.type)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Status Badge */}
+                                                        <div className="absolute top-3 left-3">
+                                                            {getStatusBadge(asset.status || 'Draft')}
+                                                        </div>
+
+                                                        {/* Enhanced Actions Overlay */}
+                                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                                            {(asset.file_url || asset.thumbnail_url) && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const url = asset.file_url || asset.thumbnail_url;
+                                                                        if (url) {
+                                                                            if (url.startsWith('data:')) {
+                                                                                const win = window.open();
+                                                                                if (win) {
+                                                                                    win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
+                                                                                }
+                                                                            } else {
+                                                                                window.open(url, '_blank', 'noopener,noreferrer');
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
+                                                                    title="View Asset"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
+
+                                                            {/* Update Asset Button - More Prominent */}
+                                                            {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
+                                                                <button
+                                                                    onClick={(e) => handleEdit(e, asset)}
+                                                                    className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
+                                                                    title="Update Asset"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
+
+                                                            {/* Delete Button - creators or admins */}
+                                                            {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
+                                                                    disabled={deletingId === asset.id}
+                                                                    className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                    title="Delete Asset"
+                                                                >
+                                                                    {deletingId === asset.id ? (
+                                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Quick Update Badge */}
+                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
+                                                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                    </svg>
+                                                                    Update Ready
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Asset Info */}
+                                                    <div className="p-4 space-y-3">
+                                                        {/* Asset Name & ID */}
+                                                        <div className="flex items-start justify-between">
+                                                            <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
+                                                                {asset.name}
+                                                            </h3>
+                                                            <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
+                                                                ID: {asset.id}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Campaign/Project Name */}
+                                                        {asset.web_title && (
+                                                            <div className="text-sm text-slate-700 font-medium">
+                                                                {asset.web_title}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Service Linking */}
+                                                        <div className="space-y-1">
+                                                            {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
+                                                                <div className="text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
+                                                                    <div className="text-slate-700 font-medium">
+                                                                        {asset.linked_service_ids.map(serviceId => {
+                                                                            const service = services.find(s => s.id === serviceId);
+                                                                            return service?.service_name;
+                                                                        }).filter(Boolean).join(', ')}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
+                                                                <div className="text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
+                                                                    <div className="text-slate-700 font-medium">
+                                                                        {asset.linked_sub_service_ids.map(ssId => {
+                                                                            const subService = subServices.find(ss => ss.id === ssId);
+                                                                            return subService?.sub_service_name;
+                                                                        }).filter(Boolean).join(', ')}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {asset.repository && (
+                                                                <div className="text-xs">
+                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
+                                                                    <div className="text-slate-700 font-medium">{asset.repository}</div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* QC Panel */}
+                                                        {asset.qc_score && (
+                                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <CircularScore
+                                                                            score={asset.qc_score}
+                                                                            label=""
+                                                                            size="xs"
+                                                                        />
+                                                                        <span className="text-xs font-bold text-slate-700">
+                                                                            {asset.qc_score}/100
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                    <div>
+                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
+                                                                        <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                                            {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {asset.qc_reviewed_at && (
+                                                                        <div>
+                                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
+                                                                            <div className="text-slate-700 font-medium">
+                                                                                {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
+                                                                                    year: 'numeric',
+                                                                                    month: '2-digit',
+                                                                                    day: '2-digit'
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Reviewer Info */}
+                                                                {asset.qc_reviewer_id && (
+                                                                    <div className="mt-2 text-xs">
+                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
+                                                                        <div className="text-slate-700 font-medium">
+                                                                            {(() => {
+                                                                                const reviewer = usersMap.get(asset.qc_reviewer_id);
+                                                                                return reviewer ? reviewer.name : 'Unknown Reviewer';
+                                                                            })()}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Type and Repository Tags */}
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
+                                                                <span>{getAssetIcon(asset.type)}</span>
+                                                                {asset.type}
+                                                            </span>
+                                                            {asset.application_type && (
+                                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
+                                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
+                                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
+                                                                            'bg-slate-100 text-slate-700'
+                                                                    }`}>
+                                                                    {asset.application_type === 'web' && '🌐 WEB'}
+                                                                    {asset.application_type === 'seo' && '🔍 SEO'}
+                                                                    {asset.application_type === 'smm' && '📱 SMM'}
+                                                                    {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* AI Scores */}
+                                                        {(asset.seo_score || asset.grammar_score) && (
+                                                            <div className="flex gap-2">
+                                                                {asset.seo_score && (
+                                                                    <CircularScore
+                                                                        score={asset.seo_score}
+                                                                        label="SEO"
+                                                                        size="xs"
+                                                                    />
+                                                                )}
+                                                                {asset.grammar_score && (
+                                                                    <CircularScore
+                                                                        score={asset.grammar_score}
+                                                                        label="Grammar"
+                                                                        size="xs"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Usage Panel */}
+                                                        <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                                            <div className="text-xs">
+                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
+                                                                <div className="flex items-center justify-between mt-1">
+                                                                    {asset.linking_active && (
+                                                                        <span className="text-green-600 font-medium text-xs">🔗 Active</span>
+                                                                    )}
+                                                                </div>
+                                                                {asset.date && (
+                                                                    <div className="text-slate-500 text-xs mt-1">
+                                                                        Created: {new Date(asset.date).toLocaleDateString('en-US', {
+                                                                            month: 'short',
+                                                                            day: 'numeric',
+                                                                            year: 'numeric'
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
                                         )}
                                     </div>
+                                    {/* Grid View Pagination */}
+                                {filteredAssets.length > 0 && (
+                                    <div className="mt-6 px-4 py-4 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm text-slate-600">
+                                                Showing <span className="font-bold text-slate-900">{((currentPage - 1) * pageSize) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                                            </span>
+                                            <select
+                                                value={pageSize}
+                                                onChange={(e) => {
+                                                    setPageSize(Number(e.target.value));
+                                                    setCurrentPage(1);
+                                                }}
+                                                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-1 focus:ring-indigo-500"
+                                            >
+                                                <option value={10}>10 per page</option>
+                                                <option value={25}>25 per page</option>
+                                                <option value={50}>50 per page</option>
+                                                <option value={100}>100 per page</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setCurrentPage(1)}
+                                                disabled={currentPage === 1}
+                                                className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                First
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                disabled={currentPage === 1}
+                                                className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Previous
+                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                    let pageNum;
+                                                    if (totalPages <= 5) {
+                                                        pageNum = i + 1;
+                                                    } else if (currentPage <= 3) {
+                                                        pageNum = i + 1;
+                                                    } else if (currentPage >= totalPages - 2) {
+                                                        pageNum = totalPages - 4 + i;
+                                                    } else {
+                                                        pageNum = currentPage - 2 + i;
+                                                    }
+                                                    return (
+                                                        <button
+                                                            key={pageNum}
+                                                            onClick={() => setCurrentPage(pageNum)}
+                                                            className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNum
+                                                                ? 'bg-indigo-600 text-white'
+                                                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                                                                }`}
+                                                        >
+                                                            {pageNum}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                disabled={currentPage === totalPages}
+                                                className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Next
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentPage(totalPages)}
+                                                disabled={currentPage === totalPages}
+                                                className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Last
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                                 )}
                             </div>
-                        )
-                        }
-
-                        {/* Enhanced Floating Action Button for Upload & Update */}
-                        {
-                            viewMode === 'list' && (
-                                <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-                                    {/* Update Asset FAB */}
-                                    <div className="relative group">
-                                        <button
-                                            onClick={() => {
-                                                const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-                                                if (recentAsset) {
-                                                    handleEdit({ stopPropagation: () => { } } as any, recentAsset);
-                                                } else {
-                                                    alert('No assets available to update');
-                                                }
-                                            }}
-                                            className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
-                                            title="Quick Update Asset"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                        </button>
-
-                                        {/* Update Action Menu */}
-                                        <div className="absolute bottom-0 right-14 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                            <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[220px]">
-                                                <div className="text-xs font-semibold text-orange-700 px-3 py-2 border-b border-slate-100">
-                                                    Quick Update
-                                                </div>
-
-                                                <button
-                                                    onClick={() => {
-                                                        const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-                                                        if (recentAsset) {
-                                                            handleEdit({ stopPropagation: () => { } } as any, recentAsset);
-                                                        }
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
-                                                >
-                                                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                                                        🔄
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Recent Asset</div>
-                                                        <div className="text-xs text-slate-500">Update latest asset</div>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => {
-                                                        const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
-                                                        if (pendingAssets.length > 0) {
-                                                            handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
-                                                        } else {
-                                                            alert('No assets pending updates');
-                                                        }
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
-                                                >
-                                                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                                                        ⏳
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Pending Updates</div>
-                                                        <div className="text-xs text-slate-500">Drafts & rejected assets</div>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Upload Asset FAB */}
-                                    <div className="relative group">
-                                        <button
-                                            onClick={() => setShowUploadModal(true)}
-                                            className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
-                                            title="Quick Upload"
-                                        >
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                        </button>
-
-                                        {/* Upload Action Menu */}
-                                        <div className="absolute bottom-0 right-16 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                            <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[200px]">
-                                                <div className="text-xs font-semibold text-slate-600 px-3 py-2 border-b border-slate-100">
-                                                    Quick Upload
-                                                </div>
-
-                                                <button
-                                                    onClick={() => {
-                                                        // Open full upload flow with Web selected and locked
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                        setSelectedApplicationType('web');
-                                                        setUploadStep('form-fields');
-                                                        setContentTypeLocked(true);
-                                                        setViewMode('upload');
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-blue-50 rounded-md transition-colors text-sm"
-                                                >
-                                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                        🌐
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Web Content</div>
-                                                        <div className="text-xs text-slate-500">Landing pages, articles</div>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => {
-                                                        // Open full upload flow with SEO selected and locked
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                        setSelectedApplicationType('seo');
-                                                        setUploadStep('form-fields');
-                                                        setContentTypeLocked(true);
-                                                        setViewMode('upload');
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-green-50 rounded-md transition-colors text-sm"
-                                                >
-                                                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                                        🔍
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">SEO Content</div>
-                                                        <div className="text-xs text-slate-500">Optimized content</div>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => {
-                                                        // Open full upload flow with SMM selected and locked
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                        setSelectedApplicationType('smm');
-                                                        setUploadStep('form-fields');
-                                                        setContentTypeLocked(true);
-                                                        setViewMode('upload');
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-purple-50 rounded-md transition-colors text-sm"
-                                                >
-                                                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                                        📱
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">Social Media</div>
-                                                        <div className="text-xs text-slate-500">Posts, stories, videos</div>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        }
-
-                        {/* Upload Asset Modal */}
-                        {/* Asset Category Master Modal */}
-                        <AssetCategoryMasterModal
-                            isOpen={showCategoryModal}
-                            onClose={() => setShowCategoryModal(false)}
-                            onSave={handleSaveCategory}
-                            editingItem={editingCategory}
-                        />
-
-                        <UploadAssetPopup
-                            isOpen={showUploadModal}
-                            initialData={newAsset}
-                            onClose={() => {
-                                setShowUploadModal(false);
-                                // Reset the newAsset state when modal closes
-                                setNewAsset({
-                                    name: '',
-                                    type: 'article',
-                                    repository: 'Content Repository',
-                                    status: 'Draft',
-                                    linked_service_ids: [],
-                                    linked_sub_service_ids: [],
-                                    application_type: undefined,
-                                    smm_platform: undefined,
-                                    seo_score: undefined,
-                                    grammar_score: undefined,
-                                    smm_additional_pages: [],
-                                    web_description: '',
-                                    web_url: '',
-                                    web_h1: '',
-                                    web_h2_1: '',
-                                    web_h2_2: '',
-                                    web_body_content: '',
-                                    web_body_attachment: undefined,
-                                    web_body_attachment_name: '',
-                                    asset_category: ''
-                                });
-                            }}
-                            onSuccess={() => {
-                                // Refresh master tables and asset list after upload
-                                setTimeout(() => {
-                                    refreshAssetCategories?.();
-                                    refreshAssetTypes?.();
-                                    refresh?.();
-                                }, 100);
-                                setShowUploadModal(false);
-                                // Reset the newAsset state after successful upload
-                                setNewAsset({
-                                    name: '',
-                                    type: 'article',
-                                    repository: 'Content Repository',
-                                    status: 'Draft',
-                                    linked_service_ids: [],
-                                    linked_sub_service_ids: [],
-                                    application_type: undefined,
-                                    smm_platform: undefined,
-                                    seo_score: undefined,
-                                    grammar_score: undefined,
-                                    smm_additional_pages: [],
-                                    web_description: '',
-                                    web_url: '',
-                                    web_h1: '',
-                                    web_h2_1: '',
-                                    web_h2_2: '',
-                                    web_body_content: '',
-                                    web_body_attachment: undefined,
-                                    web_body_attachment_name: '',
-                                    asset_category: ''
-                                });
-                            }}
-                        />
-
-                        {/* Asset Detail Side Panel */}
-                        {selectedAsset && (
-                            <AssetDetailSidePanel
-                                asset={selectedAsset}
-                                isOpen={showSidePanel}
-                                onClose={() => {
-                                    setShowSidePanel(false);
-                                    setSelectedAsset(null);
-                                }}
-                                onEdit={(asset) => {
-                                    setShowSidePanel(false);
-                                    handleEdit({ stopPropagation: () => { } } as any, asset);
-                                }}
-                                onNavigate={onNavigate}
-                            />
                         )}
-                    </>
-                );
-            };
+                    </div>
+                )
+            }
 
-            export default AssetsView;
+            {/* Enhanced Floating Action Button for Upload & Update */}
+            {
+                viewMode === 'list' && (
+                    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+                        {/* Update Asset FAB */}
+                        <div className="relative group">
+                            <button
+                                onClick={() => {
+                                    const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                                    if (recentAsset) {
+                                        handleEdit({ stopPropagation: () => { } } as any, recentAsset);
+                                    } else {
+                                        alert('No assets available to update');
+                                    }
+                                }}
+                                className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
+                                title="Quick Update Asset"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+
+                            {/* Update Action Menu */}
+                            <div className="absolute bottom-0 right-14 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[220px]">
+                                    <div className="text-xs font-semibold text-orange-700 px-3 py-2 border-b border-slate-100">
+                                        Quick Update
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                                            if (recentAsset) {
+                                                handleEdit({ stopPropagation: () => { } } as any, recentAsset);
+                                            }
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
+                                    >
+                                        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            🔄
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-slate-900">Recent Asset</div>
+                                            <div className="text-xs text-slate-500">Update latest asset</div>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
+                                            if (pendingAssets.length > 0) {
+                                                handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
+                                            } else {
+                                                alert('No assets pending updates');
+                                            }
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
+                                    >
+                                        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            ⏳
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-slate-900">Pending Updates</div>
+                                            <div className="text-xs text-slate-500">Drafts & rejected assets</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Upload Asset FAB */}
+                        <div className="relative group">
+                            <button
+                                onClick={() => setShowUploadModal(true)}
+                                className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
+                                title="Quick Upload"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+
+                            {/* Upload Action Menu */}
+                            <div className="absolute bottom-0 right-16 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[200px]">
+                                    <div className="text-xs font-semibold text-slate-600 px-3 py-2 border-b border-slate-100">
+                                        Quick Upload
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            // Open full upload flow with Web selected and locked
+                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
+                                            setSelectedApplicationType('web');
+                                            setUploadStep('form-fields');
+                                            setContentTypeLocked(true);
+                                            setViewMode('upload');
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-blue-50 rounded-md transition-colors text-sm"
+                                    >
+                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            🌐
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-slate-900">Web Content</div>
+                                            <div className="text-xs text-slate-500">Landing pages, articles</div>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            // Open full upload flow with SEO selected and locked
+                                            setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
+                                            setSelectedApplicationType('seo');
+                                            setUploadStep('form-fields');
+                                            setContentTypeLocked(true);
+                                            setViewMode('upload');
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-green-50 rounded-md transition-colors text-sm"
+                                    >
+                                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                            🔍
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-slate-900">SEO Content</div>
+                                            <div className="text-xs text-slate-500">Optimized content</div>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            // Open full upload flow with SMM selected and locked
+                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
+                                            setSelectedApplicationType('smm');
+                                            setUploadStep('form-fields');
+                                            setContentTypeLocked(true);
+                                            setViewMode('upload');
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-purple-50 rounded-md transition-colors text-sm"
+                                    >
+                                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            📱
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-slate-900">Social Media</div>
+                                            <div className="text-xs text-slate-500">Posts, stories, videos</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Upload Asset Modal */}
+            {/* Asset Category Master Modal */}
+            <AssetCategoryMasterModal
+                isOpen={showCategoryModal}
+                onClose={() => setShowCategoryModal(false)}
+                onSave={handleSaveCategory}
+                editingItem={editingCategory}
+            />
+
+            <UploadAssetPopup
+                isOpen={showUploadModal}
+                initialData={newAsset}
+                onClose={() => {
+                    setShowUploadModal(false);
+                    // Reset the newAsset state when modal closes
+                    setNewAsset({
+                        name: '',
+                        type: 'article',
+                        repository: 'Content Repository',
+                        status: 'Draft',
+                        linked_service_ids: [],
+                        linked_sub_service_ids: [],
+                        application_type: undefined,
+                        smm_platform: undefined,
+                        seo_score: undefined,
+                        grammar_score: undefined,
+                        smm_additional_pages: [],
+                        web_description: '',
+                        web_url: '',
+                        web_h1: '',
+                        web_h2_1: '',
+                        web_h2_2: '',
+                        web_body_content: '',
+                        web_body_attachment: undefined,
+                        web_body_attachment_name: '',
+                        asset_category: ''
+                    });
+                }}
+                onSuccess={() => {
+                    // Refresh master tables and asset list after upload
+                    setTimeout(() => {
+                        refreshAssetCategories?.();
+                        refreshAssetTypes?.();
+                        refresh?.();
+                    }, 100);
+                    setShowUploadModal(false);
+                    // Reset the newAsset state after successful upload
+                    setNewAsset({
+                        name: '',
+                        type: 'article',
+                        repository: 'Content Repository',
+                        status: 'Draft',
+                        linked_service_ids: [],
+                        linked_sub_service_ids: [],
+                        application_type: undefined,
+                        smm_platform: undefined,
+                        seo_score: undefined,
+                        grammar_score: undefined,
+                        smm_additional_pages: [],
+                        web_description: '',
+                        web_url: '',
+                        web_h1: '',
+                        web_h2_1: '',
+                        web_h2_2: '',
+                        web_body_content: '',
+                        web_body_attachment: undefined,
+                        web_body_attachment_name: '',
+                        asset_category: ''
+                    });
+                }}
+            />
+
+            {/* Asset Detail Side Panel */}
+            {
+                selectedAsset && (
+                    <AssetDetailSidePanel
+                        asset={selectedAsset}
+                        isOpen={showSidePanel}
+                        onClose={() => {
+                            setShowSidePanel(false);
+                            setSelectedAsset(null);
+                        }}
+                        onEdit={(asset) => {
+                            setShowSidePanel(false);
+                            handleEdit({ stopPropagation: () => { } } as any, asset);
+                        }}
+                        onNavigate={onNavigate}
+                    />
+                )
+            }
+        </>
+    );
+};
+
+export default AssetsView;
