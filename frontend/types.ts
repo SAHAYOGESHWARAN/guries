@@ -554,7 +554,7 @@ export interface QcChecklistItemResult {
 export interface AssetLibraryItem {
     id: number;
     name: string;
-    type: string; // Asset Type: article/video/graphic/guide
+    type: string; // Asset Type: Blog Banner, Infographic, Social Post, Reel/Video, Thumbnail, Diagram, Web Graphic, PDF
     asset_category?: string; // e.g., "what science can do", "how to"
     asset_format?: string; // e.g., "image", "video", "pdf"
     content_type?: 'Blog' | 'Service Page' | 'Sub-Service Page' | 'SMM Post' | 'Backlink Asset' | 'Web UI Asset'; // Content classification type
@@ -562,13 +562,18 @@ export interface AssetLibraryItem {
     // Removed usage_status as per requirement 3
     status?: 'Draft' | 'Pending QC Review' | 'QC Approved' | 'QC Rejected' | 'Rework Required' | 'Published' | 'Archived';
 
+    // Workflow Stage (separate from status)
+    workflow_stage?: 'Add' | 'In Progress' | 'Sent to QC' | 'Published' | 'In Rework' | 'Moved to CW' | 'Moved to GD' | 'Moved to WD';
+
+    // QC Status (separate field, independent of Workflow Stage)
+    qc_status?: 'QC Pending' | 'Rework' | 'Approved' | 'Reject' | 'Pass' | 'Fail';
+
     // Workflow fields
     submitted_by?: number;
     submitted_at?: string;
     qc_reviewer_id?: number;
     qc_reviewed_at?: string;
     qc_score?: number; // Quality control score (0-100)
-    qc_status?: 'Pass' | 'Fail' | 'Rework'; // QC result status
     qc_remarks?: string;
     qc_checklist_items?: QcChecklistItemResult[]; // QC checklist with scoring
     rework_count?: number; // Number of times sent for rework
@@ -577,6 +582,7 @@ export interface AssetLibraryItem {
     // AI Scores (mandatory before submission)
     seo_score?: number; // 0-100, AI generated
     grammar_score?: number; // 0-100, AI generated
+    ai_plagiarism_score?: number; // 0-100, AI generated (higher = more original)
 
     date: string;
     linked_task?: number;
@@ -589,10 +595,19 @@ export interface AssetLibraryItem {
     linked_service_id?: number;
     linked_sub_service_id?: number;
     linked_repository_item_id?: number;
-    created_by?: number; // User who created the asset
+
+    // Designer & Workflow Details
+    created_by?: number; // User who created the asset (auto-populated)
     updated_by?: number; // User who last updated the asset
     designed_by?: number; // User who designed the asset
+    published_by?: number; // User who published the asset
+    verified_by?: number; // SEO verifier user
+    published_at?: string; // Timestamp when asset was published
+
+    // Versioning
     version_number?: string; // Version number like "v1.0"
+    version_history?: Array<{ version: string; date: string; action: string; user?: string; user_id?: number }>;
+
     file_url?: string;
     thumbnail_url?: string;
     file_size?: number;
@@ -608,6 +623,11 @@ export interface AssetLibraryItem {
 
     // Keywords (should link with keyword master table)
     keywords?: string[];
+    content_keywords?: string[]; // User-entered content keywords
+    seo_keywords?: string[]; // SEO keywords from Keyword Master (select only)
+
+    // Resource Upload (multi-file)
+    resource_files?: string[]; // JSON array of uploaded resource file URLs
 
     // Usage tracking
     usage_count?: number; // Number of times this asset has been used
@@ -621,6 +641,7 @@ export interface AssetLibraryItem {
     web_h1?: string;
     web_h2_1?: string;
     web_h2_2?: string;
+    web_h3_tags?: string[]; // Array of H3 tags
     web_thumbnail?: string;
     web_body_content?: string;
     web_body_attachment?: string; // base64 or URL for attached file
@@ -644,7 +665,7 @@ export interface AssetLibraryItem {
     // SEO Application Fields
     seo_title?: string;
     seo_target_url?: string;
-    seo_keywords?: string[]; // Target keywords for SEO
+    // seo_keywords is defined above in the Keywords section
     seo_focus_keyword?: string; // Primary focus keyword
     seo_content_type?: string; // Content type (blog-post, landing-page, product-page, etc.)
     seo_meta_description?: string;

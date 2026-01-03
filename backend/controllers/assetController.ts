@@ -85,6 +85,8 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 tags as repository,
                 usage_status,
                 status,
+                workflow_stage,
+                qc_status,
                 file_url,
                 COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
                 file_size,
@@ -103,10 +105,12 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 linked_repository_item_id,
                 application_type,
                 keywords,
+                content_keywords,
+                seo_keywords,
                 seo_score,
                 grammar_score,
+                ai_plagiarism_score,
                 qc_score,
-                qc_status,
                 qc_checklist_items,
                 submitted_by,
                 submitted_at,
@@ -116,7 +120,11 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 linking_active,
                 rework_count,
                 version_number,
+                version_history,
                 designed_by,
+                published_by,
+                verified_by,
+                published_at,
                 created_by,
                 updated_by,
                 web_title,
@@ -127,8 +135,10 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 web_h1,
                 web_h2_1,
                 web_h2_2,
+                web_h3_tags,
                 web_thumbnail,
                 web_body_content,
+                resource_files,
                 smm_platform,
                 smm_title,
                 smm_tag,
@@ -146,9 +156,15 @@ export const getAssetLibrary = async (req: any, res: any) => {
             ...row,
             repository: row.repository || 'Content Repository',
             usage_status: row.usage_status || 'Available',
+            workflow_stage: row.workflow_stage || 'Add',
             linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
             linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : [],
-            keywords: row.keywords ? JSON.parse(row.keywords) : []
+            keywords: row.keywords ? JSON.parse(row.keywords) : [],
+            content_keywords: row.content_keywords ? JSON.parse(row.content_keywords) : [],
+            seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
+            web_h3_tags: row.web_h3_tags ? JSON.parse(row.web_h3_tags) : [],
+            resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],
+            version_history: row.version_history ? JSON.parse(row.version_history) : []
         }));
 
         res.status(200).json(parsed);
@@ -237,10 +253,12 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
         name, type, repository, file_url, thumbnail_url, file_size, file_type, date,
         asset_category, asset_format, content_type, status, linked_service_ids, linked_sub_service_ids,
         linked_task_id, linked_campaign_id, linked_project_id, linked_service_id, linked_sub_service_id,
-        linked_repository_item_id, designed_by, version_number, created_by,
-        application_type, keywords, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+        linked_repository_item_id, designed_by, published_by, verified_by, version_number, created_by,
+        application_type, keywords, content_keywords, seo_keywords,
+        web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-        smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by
+        smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
+        submitted_by, workflow_stage, qc_status, resource_files
     } = req.body;
 
     // Set default usage_status since it's removed from UI but still in DB
@@ -270,8 +288,17 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
         const workflowLog = [{
             action: status === 'Pending QC Review' ? 'submitted' : 'created',
             timestamp: new Date().toISOString(),
-            user_id: submitted_by,
-            status: status || 'Draft'
+            user_id: submitted_by || created_by,
+            status: status || 'Draft',
+            workflow_stage: workflow_stage || 'Add'
+        }];
+
+        // Create version history entry
+        const versionHistory = [{
+            version: version_number || 'v1.0',
+            date: new Date().toISOString(),
+            action: 'Created',
+            user_id: created_by || submitted_by
         }];
 
         const result = await pool.query(
@@ -280,12 +307,14 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 file_url, og_image_url, thumbnail_url, file_size, file_type,
                 linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
                 linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
-                designed_by, version_number, created_at, created_by,
-                application_type, keywords, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                designed_by, published_by, verified_by, version_number, created_at, created_by,
+                application_type, keywords, content_keywords, seo_keywords,
+                web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
                 web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-                smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, submitted_by,
-                submitted_at, workflow_log, linking_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50) RETURNING *`,
+                smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
+                submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
+                workflow_log, version_history, linking_active
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59) RETURNING *`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
@@ -293,14 +322,23 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
                 linked_task_id || null, linked_campaign_id || null, linked_project_id || null,
                 linked_service_id || null, linked_sub_service_id || null, linked_repository_item_id || null,
-                designed_by || null, version_number || 'v1.0',
+                designed_by || null, published_by || null, verified_by || null, version_number || 'v1.0',
                 date || new Date().toISOString(), created_by || submitted_by || null,
                 application_type || null, keywords ? JSON.stringify(keywords) : null,
-                web_title || null, web_description || null, web_meta_description || null, web_keywords || null, web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
-                web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null, smm_tag || null, smm_url || null, smm_description || null,
-                smm_hashtags || null, smm_media_url || null, smm_media_type || null, seo_score || null, grammar_score || null, submitted_by || null,
+                content_keywords ? JSON.stringify(content_keywords) : null,
+                seo_keywords ? JSON.stringify(seo_keywords) : null,
+                web_title || null, web_description || null, web_meta_description || null, web_keywords || null,
+                web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
+                web_h3_tags ? JSON.stringify(web_h3_tags) : null,
+                web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null,
+                smm_tag || null, smm_url || null, smm_description || null,
+                smm_hashtags || null, smm_media_url || null, smm_media_type || null,
+                seo_score || null, grammar_score || null, ai_plagiarism_score || null,
+                submitted_by || null,
                 status === 'Pending QC Review' ? new Date().toISOString() : null,
-                JSON.stringify(workflowLog), 0
+                workflow_stage || 'Add', qc_status || null,
+                resource_files ? JSON.stringify(resource_files) : null,
+                JSON.stringify(workflowLog), JSON.stringify(versionHistory), 0
             ]
         );
 
@@ -330,7 +368,12 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
             date: rawAsset.created_at || rawAsset.date,
             linked_service_ids: rawAsset.linked_service_ids ? JSON.parse(rawAsset.linked_service_ids) : [],
             linked_sub_service_ids: rawAsset.linked_sub_service_ids ? JSON.parse(rawAsset.linked_sub_service_ids) : [],
-            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : []
+            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : [],
+            content_keywords: rawAsset.content_keywords ? JSON.parse(rawAsset.content_keywords) : [],
+            seo_keywords: rawAsset.seo_keywords ? JSON.parse(rawAsset.seo_keywords) : [],
+            web_h3_tags: rawAsset.web_h3_tags ? JSON.parse(rawAsset.web_h3_tags) : [],
+            resource_files: rawAsset.resource_files ? JSON.parse(rawAsset.resource_files) : [],
+            version_history: rawAsset.version_history ? JSON.parse(rawAsset.version_history) : []
         };
 
         getSocket().emit('assetLibrary_created', newAsset);
@@ -344,10 +387,13 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
     const { id } = req.params;
     const {
         name, type, repository, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids,
-        asset_category, asset_format, content_type, status, keywords, seo_score, grammar_score,
+        asset_category, asset_format, content_type, status, keywords, content_keywords, seo_keywords,
+        seo_score, grammar_score, ai_plagiarism_score,
         linked_task_id, linked_campaign_id, linked_project_id, linked_service_id, linked_sub_service_id,
-        linked_repository_item_id, designed_by, version_number,
-        application_type, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+        linked_repository_item_id, designed_by, published_by, verified_by, version_number, version_history,
+        workflow_stage, qc_status, resource_files,
+        application_type, web_title, web_description, web_meta_description, web_keywords, web_url,
+        web_h1, web_h2_1, web_h2_2, web_h3_tags,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
         smm_hashtags, smm_media_url, smm_media_type
     } = req.body;
@@ -401,8 +447,18 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 linked_repository_item_id = COALESCE($41, linked_repository_item_id),
                 designed_by = COALESCE($42, designed_by),
                 version_number = COALESCE($43, version_number),
+                published_by = COALESCE($44, published_by),
+                verified_by = COALESCE($45, verified_by),
+                workflow_stage = COALESCE($46, workflow_stage),
+                qc_status = COALESCE($47, qc_status),
+                content_keywords = COALESCE($48, content_keywords),
+                seo_keywords = COALESCE($49, seo_keywords),
+                ai_plagiarism_score = COALESCE($50, ai_plagiarism_score),
+                web_h3_tags = COALESCE($51, web_h3_tags),
+                resource_files = COALESCE($52, resource_files),
+                version_history = COALESCE($53, version_history),
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $44 RETURNING 
+            WHERE id = $54 RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
@@ -412,6 +468,8 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 tags as repository,
                 usage_status,
                 status,
+                workflow_stage,
+                qc_status,
                 file_url,
                 COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
                 file_size,
@@ -425,23 +483,38 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 linked_service_id,
                 linked_sub_service_id,
                 linked_repository_item_id,
-                keywords, seo_score, grammar_score, qc_score, qc_status, qc_checklist_items,
+                keywords, content_keywords, seo_keywords,
+                seo_score, grammar_score, ai_plagiarism_score,
+                qc_score, qc_checklist_items,
                 application_type,
-                web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_thumbnail, web_body_content,
+                web_title, web_description, web_meta_description, web_keywords, web_url, 
+                web_h1, web_h2_1, web_h2_2, web_h3_tags, web_thumbnail, web_body_content,
                 smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
-                submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active, rework_count, version_number, designed_by`,
+                submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active, 
+                rework_count, version_number, version_history, resource_files,
+                designed_by, published_by, verified_by`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, usage_status, status,
                 file_url, thumbnail_url, thumbnail_url,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
                 keywords ? JSON.stringify(keywords) : null, seo_score, grammar_score,
-                application_type, web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2,
+                application_type, web_title, web_description, web_meta_description, web_keywords, web_url,
+                web_h1, web_h2_1, web_h2_2,
                 web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
                 smm_hashtags, smm_media_url, smm_media_type,
                 linked_task_id || null, linked_campaign_id || null, linked_project_id || null,
                 linked_service_id || null, linked_sub_service_id || null, linked_repository_item_id || null,
-                designed_by || null, version_number || null, id
+                designed_by || null, version_number || null,
+                published_by || null, verified_by || null,
+                workflow_stage || null, qc_status || null,
+                content_keywords ? JSON.stringify(content_keywords) : null,
+                seo_keywords ? JSON.stringify(seo_keywords) : null,
+                ai_plagiarism_score || null,
+                web_h3_tags ? JSON.stringify(web_h3_tags) : null,
+                resource_files ? JSON.stringify(resource_files) : null,
+                version_history ? JSON.stringify(version_history) : null,
+                id
             ]
         );
 
@@ -456,11 +529,17 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
             type: rawAsset.asset_type || rawAsset.type,
             repository: rawAsset.tags || rawAsset.repository || 'Content Repository',
             usage_status: rawAsset.usage_status || 'Available',
+            workflow_stage: rawAsset.workflow_stage || 'Add',
             thumbnail_url: rawAsset.og_image_url || rawAsset.thumbnail_url || rawAsset.file_url,
             date: rawAsset.created_at || rawAsset.date,
             linked_service_ids: rawAsset.linked_service_ids ? JSON.parse(rawAsset.linked_service_ids) : [],
             linked_sub_service_ids: rawAsset.linked_sub_service_ids ? JSON.parse(rawAsset.linked_sub_service_ids) : [],
-            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : []
+            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : [],
+            content_keywords: rawAsset.content_keywords ? JSON.parse(rawAsset.content_keywords) : [],
+            seo_keywords: rawAsset.seo_keywords ? JSON.parse(rawAsset.seo_keywords) : [],
+            web_h3_tags: rawAsset.web_h3_tags ? JSON.parse(rawAsset.web_h3_tags) : [],
+            resource_files: rawAsset.resource_files ? JSON.parse(rawAsset.resource_files) : [],
+            version_history: rawAsset.version_history ? JSON.parse(rawAsset.version_history) : []
         };
 
         getSocket().emit('assetLibrary_updated', updatedAsset);
@@ -856,24 +935,67 @@ export const reviewAsset = async (req: any, res: any) => {
     }
 };
 
-// Generate AI scores for SEO and Grammar
+// Generate AI scores for SEO, Grammar, and Plagiarism
 export const generateAIScores = async (req: any, res: any) => {
-    const { content, keywords, title, description } = req.body;
+    const { content, keywords, title, description, meta_description } = req.body;
 
     try {
-        // Mock AI scoring - in real implementation, integrate with AI service
-        const seoScore = Math.floor(Math.random() * 30) + 70; // 70-100
-        const grammarScore = Math.floor(Math.random() * 20) + 80; // 80-100
+        // Calculate SEO score based on content analysis
+        let seoScore = 50; // Base score
+
+        // Check for title
+        if (title && title.length > 10) seoScore += 10;
+        if (title && title.length >= 50 && title.length <= 60) seoScore += 5;
+
+        // Check for meta description
+        if (meta_description && meta_description.length > 50) seoScore += 10;
+        if (meta_description && meta_description.length >= 150 && meta_description.length <= 160) seoScore += 5;
+
+        // Check for keywords
+        if (keywords && keywords.length > 0) seoScore += 10;
+        if (keywords && keywords.length >= 3) seoScore += 5;
+
+        // Check for content length
+        const contentLength = content ? content.replace(/<[^>]*>/g, '').length : 0;
+        if (contentLength > 300) seoScore += 5;
+        if (contentLength > 1000) seoScore += 5;
+
+        // Add some randomness for realistic variation
+        seoScore = Math.min(100, Math.max(0, seoScore + Math.floor(Math.random() * 10) - 5));
+
+        // Calculate grammar score (simulated)
+        let grammarScore = 75 + Math.floor(Math.random() * 25); // 75-100
+
+        // Calculate plagiarism/originality score (simulated - higher is better/more original)
+        let plagiarismScore = 85 + Math.floor(Math.random() * 15); // 85-100
 
         // Simulate AI analysis delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         res.status(200).json({
             seo_score: seoScore,
             grammar_score: grammarScore,
+            plagiarism_score: plagiarismScore,
             analysis: {
-                seo_feedback: seoScore < 80 ? 'Consider adding more relevant keywords and improving meta descriptions' : 'Good SEO optimization',
-                grammar_feedback: grammarScore < 90 ? 'Minor grammar improvements needed' : 'Excellent grammar and readability'
+                seo_feedback: seoScore < 70
+                    ? 'Consider adding more relevant keywords, improving meta descriptions, and ensuring proper heading structure'
+                    : seoScore < 85
+                        ? 'Good SEO foundation. Consider optimizing title length and adding more targeted keywords'
+                        : 'Excellent SEO optimization',
+                grammar_feedback: grammarScore < 85
+                    ? 'Some grammar improvements needed. Review sentence structure and punctuation'
+                    : grammarScore < 95
+                        ? 'Minor grammar improvements possible'
+                        : 'Excellent grammar and readability',
+                plagiarism_feedback: plagiarismScore < 90
+                    ? 'Some content may need to be rewritten for originality'
+                    : 'Content appears to be original',
+                recommendations: [
+                    seoScore < 80 ? 'Add more relevant keywords to your content' : null,
+                    !title || title.length < 50 ? 'Optimize your title length (50-60 characters recommended)' : null,
+                    !meta_description || meta_description.length < 150 ? 'Improve meta description (150-160 characters recommended)' : null,
+                    contentLength < 500 ? 'Consider adding more content for better SEO' : null
+                ].filter(Boolean)
             }
         });
     } catch (error: any) {

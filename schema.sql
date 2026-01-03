@@ -371,7 +371,7 @@ CREATE TABLE IF NOT EXISTS graphic_assets (
 CREATE TABLE IF NOT EXISTS assets (
 	id SERIAL PRIMARY KEY,
 	asset_name VARCHAR(255) NOT NULL,
-	asset_type VARCHAR(100),
+	asset_type VARCHAR(100), -- Blog Banner, Infographic, Social Post, Reel/Video, Thumbnail, Diagram, Web Graphic, PDF
 	asset_category VARCHAR(100),
 	asset_format VARCHAR(50),
 	content_type VARCHAR(100), -- Blog, Service Page, Sub-Service Page, SMM Post, Backlink Asset, Web UI Asset
@@ -380,30 +380,51 @@ CREATE TABLE IF NOT EXISTS assets (
 	tags TEXT, -- JSON array (repository)
 	status VARCHAR(50) DEFAULT 'Draft', -- Draft, Pending QC Review, QC Approved, QC Rejected, Rework Required, Published
 	usage_status VARCHAR(50) DEFAULT 'Available', -- Available, In Use, Archived
+	
+	-- Workflow Stage (Section 4.9)
+	workflow_stage VARCHAR(50) DEFAULT 'Add', -- Add, In Progress, Sent to QC, Published, In Rework, Moved to CW, Moved to GD, Moved to WD
+	
+	-- QC Status (Section 4.10 - Separate field)
+	qc_status VARCHAR(50), -- QC Pending, Rework, Approved, Reject
+	
 	thumbnail_url VARCHAR(1000),
 	file_size INTEGER,
 	file_type VARCHAR(100),
+	dimensions VARCHAR(100), -- Asset dimensions from Asset Type Master
 	linked_service_ids TEXT, -- JSON array
 	linked_sub_service_ids TEXT, -- JSON array
+	linked_page_ids TEXT, -- JSON array for mapping to specific pages
+	
+	-- Map Assets to Source Work (Section 4.1)
+	linked_task_id INTEGER REFERENCES tasks(id),
+	linked_campaign_id INTEGER REFERENCES campaigns(id),
+	linked_project_id INTEGER REFERENCES projects(id),
+	linked_service_id INTEGER REFERENCES services(id),
+	linked_sub_service_id INTEGER REFERENCES sub_services(id),
+	linked_repository_item_id INTEGER, -- References content repository items
+	
 	-- Workflow fields
 	submitted_by INTEGER REFERENCES users(id),
 	submitted_at TIMESTAMP,
 	qc_reviewer_id INTEGER REFERENCES users(id),
 	qc_reviewed_at TIMESTAMP,
 	qc_score INTEGER, -- 0-100
-	qc_status VARCHAR(50), -- Pass / Fail / Rework
 	qc_checklist_items TEXT, -- JSON array of checklist item results
 	qc_checklist_completion BOOLEAN DEFAULT false,
 	qc_remarks TEXT,
 	rework_count INTEGER DEFAULT 0, -- Number of times sent for rework
-	-- SEO and Grammar AI scores (mandatory before submission)
+	
+	-- AI Scores (Section 4.6 - mandatory before submission)
 	seo_score INTEGER, -- 0-100, AI generated
 	grammar_score INTEGER, -- 0-100, AI generated
+	ai_plagiarism_score INTEGER, -- 0-100, AI generated (higher = more original)
+	
 	-- Content block
 	h1 VARCHAR(500),
 	h2_list TEXT, -- JSON array
 	h3_list TEXT, -- JSON array
 	body_content TEXT,
+	
 	-- SEO meta
 	meta_title VARCHAR(500),
 	meta_description TEXT,
@@ -412,24 +433,33 @@ CREATE TABLE IF NOT EXISTS assets (
 	robots_index VARCHAR(50),
 	robots_follow VARCHAR(50),
 	robots_custom TEXT,
+	
 	-- Social meta
 	og_title VARCHAR(500),
 	og_description TEXT,
 	og_image_url VARCHAR(1000),
+	
 	-- Asset Applications (in order as specified)
 	application_type VARCHAR(50), -- WEB, SEO, SMM
-	-- Service/Sub-Service Linking (keywords should link with keyword master table)
-	keywords TEXT, -- JSON array - should link with keyword master table
-	-- Web Application fields
+	
+	-- Keywords (Section 4.3)
+	keywords TEXT, -- JSON array - combined keywords
+	content_keywords TEXT, -- JSON array - user-entered content keywords
+	seo_keywords TEXT, -- JSON array - SEO keywords from Keyword Master (select only)
+	
+	-- Web Application fields (Section 4.3, 4.4, 4.5)
 	web_title VARCHAR(500),
 	web_description TEXT,
+	web_meta_description VARCHAR(160), -- SEO meta description (max 160 chars)
 	web_keywords TEXT,
 	web_url VARCHAR(1000),
-	web_h1 VARCHAR(500),
-	web_h2_1 VARCHAR(500),
-	web_h2_2 VARCHAR(500),
+	web_h1 VARCHAR(500), -- H1 Tag (Section 4.4)
+	web_h2_1 VARCHAR(500), -- H2 Tag (Section 4.4)
+	web_h2_2 VARCHAR(500), -- H2 Tag #2 (Section 4.4)
+	web_h3_tags TEXT, -- JSON array of H3 tags (Section 4.4)
 	web_thumbnail VARCHAR(1000),
-	web_body_content TEXT,
+	web_body_content TEXT, -- Rich text content (Section 4.5)
+	
 	-- SMM Application fields
 	smm_platform VARCHAR(100),
 	smm_title VARCHAR(500),
@@ -439,23 +469,28 @@ CREATE TABLE IF NOT EXISTS assets (
 	smm_hashtags TEXT,
 	smm_media_url VARCHAR(1000),
 	smm_media_type VARCHAR(50),
+	
+	-- Resource Upload (Section 4.7)
+	resource_files TEXT, -- JSON array of uploaded resource file URLs
+	
 	-- Linking becomes active only after QC approval
 	linking_active BOOLEAN DEFAULT false,
-	-- Map Assets to Source Work fields
-	linked_task_id INTEGER REFERENCES tasks(id),
-	linked_campaign_id INTEGER REFERENCES campaigns(id),
-	linked_project_id INTEGER REFERENCES projects(id),
-	linked_service_id INTEGER REFERENCES services(id),
-	linked_sub_service_id INTEGER REFERENCES sub_services(id),
-	linked_repository_item_id INTEGER, -- References content repository items
-	-- Designer & Workflow fields
-	created_by INTEGER REFERENCES users(id),
-	designed_by INTEGER REFERENCES users(id),
-	-- Versioning
+	
+	-- Designer & Workflow fields (Section 4.8)
+	created_by INTEGER REFERENCES users(id), -- Auto-populated based on logged-in user
+	designed_by INTEGER REFERENCES users(id), -- Dropdown from Admin Console Users
+	published_by INTEGER REFERENCES users(id), -- Dropdown from Admin Console Users
+	verified_by INTEGER REFERENCES users(id), -- SEO verifier from Admin Console Users
+	published_at TIMESTAMP, -- Timestamp when asset was published
+	
+	-- Versioning (Section 4.11)
 	version_number VARCHAR(20) DEFAULT 'v1.0',
+	version_history TEXT, -- JSON array of version history entries
+	
 	-- Workflow log
 	workflow_log TEXT, -- JSON array of workflow events
-	-- Linking
+	
+	-- Timestamps
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW()
 );

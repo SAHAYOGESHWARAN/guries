@@ -65,6 +65,7 @@ const GraphicsPlanView = React.lazy(() => import('./views/GraphicsPlanView'));
 const QcView = React.lazy(() => import('./views/QcView'));
 const AssetQCView = React.lazy(() => import('./views/AssetQCView'));
 const AdminQCAssetReviewView = React.lazy(() => import('./views/AdminQCAssetReviewView'));
+const WebAssetUploadView = React.lazy(() => import('./views/WebAssetUploadView'));
 const TrafficRankingView = React.lazy(() => import('./views/TrafficRankingView'));
 const KpiTrackingView = React.lazy(() => import('./views/KpiTrackingView'));
 const CommunicationHubView = React.lazy(() => import('./views/CommunicationHubView'));
@@ -154,6 +155,8 @@ const App: React.FC = () => {
         return viewState.id ? <AssetDetailView assetId={Number(viewState.id)} onNavigateBack={() => handleNavigate('assets')} /> : <AssetsView onNavigate={handleNavigate} />;
       case 'asset-qc': return <AssetQCView onNavigate={handleNavigate} />;
       case 'admin-qc-review': return <AdminQCAssetReviewView onNavigate={handleNavigate} />;
+      case 'web-asset-upload': return <WebAssetUploadView onNavigate={handleNavigate} />;
+      case 'web-asset-edit': return <WebAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;
