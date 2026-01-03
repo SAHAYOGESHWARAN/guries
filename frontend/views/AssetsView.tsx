@@ -5836,13 +5836,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             {/* List View */}
             {
                 viewMode === 'list' && (
-                    <div className="h-full flex flex-col w-full p-6 overflow-hidden">
-                        <div className="flex justify-between items-start flex-shrink-0 w-full mb-6">
+                    <div className="h-full flex flex-col w-full p-4 overflow-hidden">
+                        <div className="flex justify-between items-center flex-shrink-0 w-full mb-4">
                             <div>
-                                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
-                                <p className="text-slate-600 text-sm mt-1">
-                                    Manage and organize all your marketing assets
-                                </p>
+                                <h1 className="text-xl font-bold text-slate-900 tracking-tight">Assets</h1>
                             </div>
 
                             <div className="flex items-center gap-4">
@@ -6314,7 +6311,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </div>
 
                         {/* Results Summary */}
-                        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                        <div className="flex justify-between items-center mb-2 flex-shrink-0">
                             <p className="text-sm text-slate-600">
                                 {assetsLoading ? (
                                     <span className="flex items-center gap-2">
@@ -6332,10 +6329,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                         {/* Loading State */}
                         {assetsLoading && (
-                            <div className="flex-1 flex items-center justify-center py-16">
+                            <div className="flex-1 flex items-center justify-center py-8">
                                 <div className="text-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                                    <p className="text-slate-500">Loading assets...</p>
+                                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+                                    <p className="text-slate-500 text-sm">Loading assets...</p>
                                 </div>
                             </div>
                         )}
@@ -6344,28 +6341,28 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {!assetsLoading && (
                             <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white rounded-xl border border-slate-200 flex flex-col flex-1 min-h-0 overflow-hidden">
+                                    <div className="bg-white rounded-lg border border-slate-200 flex flex-col flex-1 min-h-0 overflow-hidden">
                                         {/* Scrollable Table Container - Full height with proper scrolling */}
                                         <div className="flex-1 overflow-auto min-h-0">
-                                            <table className="w-full" style={{ minWidth: '1900px' }}>
+                                            <table className="w-full border-collapse" style={{ minWidth: '1600px' }}>
                                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                                     <tr>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '180px' }}>Asset Name</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Type</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Asset Category</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Content Type</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Linked Service</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '130px' }}>Linked Task</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>QC Status</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>QC Score</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Version</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '140px' }}>Designer</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Uploaded At</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Created By</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Updated By</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Usage Count</th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Actions</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '60px' }}>Thumbnail</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '150px' }}>Asset Name</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Asset Type</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Category</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Content Type</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Linked Service</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Linked Task</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>QC Status</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>QC Score</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '70px' }}>Version</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Designer</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Uploaded At</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Created By</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Updated By</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Usage Count</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
@@ -6397,130 +6394,128 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-';
 
                                                             return (
-                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer">
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
                                                                         {asset.thumbnail_url ? (
-                                                                            <img src={asset.thumbnail_url} alt={asset.name} className="w-12 h-12 object-cover rounded-lg border border-slate-200" loading="lazy" />
+                                                                            <img src={asset.thumbnail_url} alt={asset.name} className="w-10 h-10 object-cover rounded border border-slate-200" loading="lazy" />
                                                                         ) : (
-                                                                            <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-lg border border-slate-200">
+                                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded flex items-center justify-center text-sm border border-slate-200">
                                                                                 {getAssetIcon(asset.type)}
                                                                             </div>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <div className="max-w-[160px]">
-                                                                            <div className="font-medium text-slate-900 text-sm truncate" title={asset.name}>
-                                                                                {asset.name.length > 25 ? asset.name.substring(0, 25) + '...' : asset.name}
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <div className="max-w-[140px]">
+                                                                            <div className="font-medium text-slate-900 text-xs truncate" title={asset.name}>
+                                                                                {asset.name.length > 22 ? asset.name.substring(0, 22) + '...' : asset.name}
                                                                             </div>
                                                                             <div className="text-xs text-slate-400 truncate">
-                                                                                {(asset.file_url?.split('/').pop() || `asset-${asset.id}`).substring(0, 18)}
+                                                                                {(asset.file_url?.split('/').pop() || `asset-${asset.id}`).substring(0, 16)}
                                                                             </div>
                                                                         </div>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
                                                                             {asset.type || '-'}
                                                                         </span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="text-sm text-slate-700">{asset.asset_category || '-'}</span>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-xs text-slate-700">{asset.asset_category || '-'}</span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="text-sm text-slate-700">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-xs text-slate-700">
                                                                             {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
                                                                         </span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="text-sm text-slate-700">{service?.service_name || '-'}</span>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-xs text-slate-700">{service?.service_name || '-'}</span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="text-sm text-slate-700 truncate block max-w-[120px]">{task?.name || '-'}</span>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-xs text-slate-700 truncate block max-w-[100px]">{task?.name || '-'}</span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${statusColor}`}>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
                                                                             {statusText}
                                                                         </span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
                                                                         {asset.qc_score !== undefined && asset.qc_score !== null ? (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 ${asset.qc_score >= 80 ? 'border-green-500 bg-green-50 text-green-700' :
-                                                                                    asset.qc_score >= 60 ? 'border-amber-500 bg-amber-50 text-amber-700' :
-                                                                                        'border-red-500 bg-red-50 text-red-700'
-                                                                                    }`}>
-                                                                                    {asset.qc_score}
-                                                                                </div>
+                                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${asset.qc_score >= 80 ? 'border-green-500 bg-green-50 text-green-700' :
+                                                                                asset.qc_score >= 60 ? 'border-amber-500 bg-amber-50 text-amber-700' :
+                                                                                    'border-red-500 bg-red-50 text-red-700'
+                                                                                }`}>
+                                                                                {asset.qc_score}
                                                                             </div>
                                                                         ) : (
-                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                            <span className="text-xs text-slate-400">-</span>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="text-sm text-slate-700">{asset.version_number || 'v1.0'}</span>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-xs text-slate-700">{asset.version_number || 'v1.0'}</span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
                                                                         {designer ? (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                                                     {designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
                                                                                 </div>
-                                                                                <span className="text-sm text-slate-700 truncate max-w-[80px]">{designer.name}</span>
+                                                                                <span className="text-xs text-slate-700 truncate max-w-[70px]">{designer.name}</span>
                                                                             </div>
                                                                         ) : (
-                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                            <span className="text-xs text-slate-400">-</span>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="text-sm text-slate-600">{formattedDate}</span>
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-xs text-slate-600">{formattedDate}</span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
                                                                         {createdByUser ? (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                                                     {createdByUser.name?.charAt(0).toUpperCase() || 'U'}
                                                                                 </div>
-                                                                                <span className="text-sm text-slate-700 truncate max-w-[70px]">{createdByUser.name}</span>
+                                                                                <span className="text-xs text-slate-700 truncate max-w-[60px]">{createdByUser.name}</span>
                                                                             </div>
                                                                         ) : (
-                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                            <span className="text-xs text-slate-400">-</span>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
                                                                         {updatedByUser ? (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                                                     {updatedByUser.name?.charAt(0).toUpperCase() || 'U'}
                                                                                 </div>
-                                                                                <span className="text-sm text-slate-700 truncate max-w-[70px]">{updatedByUser.name}</span>
+                                                                                <span className="text-xs text-slate-700 truncate max-w-[60px]">{updatedByUser.name}</span>
                                                                             </div>
                                                                         ) : (
-                                                                            <span className="text-sm text-slate-400">-</span>
+                                                                            <span className="text-xs text-slate-400">-</span>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
                                                                             {(asset as any).usage_count || 0}
                                                                         </span>
                                                                     </td>
-                                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                                        <div className="flex items-center gap-1">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <div className="flex items-center gap-0.5">
                                                                             <button
                                                                                 onClick={(e) => { e.stopPropagation(); handleRowClick(asset); }}
-                                                                                className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded"
+                                                                                className="p-1 text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded"
                                                                                 title="View QC Details"
                                                                             >
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                                                                 </svg>
                                                                             </button>
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
+                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                                             </button>
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
                                                                                 {deletingId === asset.id ? (
-                                                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                                                                 ) : (
-                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                                                 )}
                                                                             </button>
                                                                         </div>
@@ -6530,12 +6525,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         })
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={16} className="px-6 py-16 text-center">
+                                                            <td colSpan={16} className="px-6 py-12 text-center">
                                                                 <div className="flex flex-col items-center justify-center text-slate-400">
-                                                                    <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <svg className="w-10 h-10 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                                     </svg>
-                                                                    <p className="text-sm font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
+                                                                    <p className="text-xs font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -6544,10 +6539,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </table>
                                         </div>
                                         {filteredAssets.length > 0 && (
-                                            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center flex-shrink-0">
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-sm text-slate-600">
-                                                        Showing <span className="font-bold text-slate-900">{((currentPage - 1) * pageSize) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets
+                                            <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 flex justify-between items-center flex-shrink-0">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-slate-600">
+                                                        Showing <span className="font-bold text-slate-900">{((currentPage - 1) * pageSize) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of <span className="font-bold text-indigo-600">{filteredAssets.length}</span>
                                                     </span>
                                                     <select
                                                         value={pageSize}
@@ -6556,33 +6551,32 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             setPageSize(newSize);
                                                             setCurrentPage(1);
                                                         }}
-                                                        className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-1 focus:ring-indigo-500"
+                                                        className="px-2 py-1 border border-slate-300 rounded text-xs bg-white focus:ring-1 focus:ring-indigo-500"
                                                     >
-                                                        <option value={10}>10 per page</option>
+                                                        <option value={15}>15 per page</option>
                                                         <option value={25}>25 per page</option>
                                                         <option value={50}>50 per page</option>
                                                         <option value={100}>100 per page</option>
                                                         <option value={250}>250 per page</option>
-                                                        <option value={500}>500 per page</option>
-                                                        <option value={filteredAssets.length}>Show All ({filteredAssets.length})</option>
+                                                        <option value={filteredAssets.length}>All ({filteredAssets.length})</option>
                                                     </select>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1">
                                                     <button
                                                         onClick={() => setCurrentPage(1)}
                                                         disabled={currentPage === 1}
-                                                        className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         First
                                                     </button>
                                                     <button
                                                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                                         disabled={currentPage === 1}
-                                                        className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
-                                                        Previous
+                                                        Prev
                                                     </button>
-                                                    <div className="flex items-center gap-1">
+                                                    <div className="flex items-center gap-0.5">
                                                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                                             let pageNum;
                                                             if (totalPages <= 5) {
@@ -6598,7 +6592,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 <button
                                                                     key={pageNum}
                                                                     onClick={() => setCurrentPage(pageNum)}
-                                                                    className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNum
+                                                                    className={`w-7 h-7 rounded text-xs font-medium transition-colors ${currentPage === pageNum
                                                                         ? 'bg-indigo-600 text-white'
                                                                         : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                                                                         }`}
@@ -6611,14 +6605,14 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <button
                                                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                                         disabled={currentPage === totalPages}
-                                                        className="px-4 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Next
                                                     </button>
                                                     <button
                                                         onClick={() => setCurrentPage(totalPages)}
                                                         disabled={currentPage === totalPages}
-                                                        className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 font-medium text-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Last
                                                     </button>
@@ -6627,7 +6621,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-auto flex-1">
                                         {filteredAssets.length === 0 ? (
                                             <div className="col-span-full text-center py-12">
                                                 <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
