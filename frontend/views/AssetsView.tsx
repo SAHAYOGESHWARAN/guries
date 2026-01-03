@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+﻿import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import Table from '../components/Table';
 import MarkdownEditor from '../components/MarkdownEditor';
 import CircularScore from '../components/CircularScore';
@@ -97,7 +97,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Pagination state for list view
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25); // Default 25 items per page
-    const [showFilters, setShowFilters] = useState(true); // Collapsible filters state
+    const [showFilters, setShowFilters] = useState(false); // Collapsed by default for more table space
 
     // Brands (used for filters/masters)
     const { data: brands = [] } = useData<Brand>('brands');
@@ -161,7 +161,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const [newAsset, setNewAsset] = useState<Partial<AssetLibraryItem>>({
         // Asset Submission Fields (In Order)
-        application_type: 'web', // 1. Asset Application – WEB, SEO, SMM (default to Web)
+        application_type: 'web', // 1. Asset Application â€“ WEB, SEO, SMM (default to Web)
         // Service/Sub-Service Linking will be handled by selectedServiceId/selectedSubServiceIds
 
         name: '', // 4. Title
@@ -825,16 +825,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const getAssetIcon = useCallback((type: string) => {
         const icons: Record<string, string> = {
-            'Image': '🖼️',
-            'Video': '🎥',
-            'Document': '📄',
-            'Archive': '📦',
-            'Blog Banner': '📝',
-            'Reel': '🎬',
-            'Infographic': '📊',
-            'PDF': '📑'
+            'Image': 'ðŸ–¼ï¸',
+            'Video': 'ðŸŽ¥',
+            'Document': 'ðŸ“„',
+            'Archive': 'ðŸ“¦',
+            'Blog Banner': 'ðŸ“',
+            'Reel': 'ðŸŽ¬',
+            'Infographic': 'ðŸ“Š',
+            'PDF': 'ðŸ“‘'
         };
-        return icons[type] || '📁';
+        return icons[type] || 'ðŸ“';
     }, []);
 
     // Get asset type badge color
@@ -1304,7 +1304,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         {/* Body Content - Left Side */}
                                         <div className="lg:col-span-2">
                                             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                <span className="text-lg">📝</span>
+                                                <span className="text-lg">ðŸ“</span>
                                                 Body content
                                             </label>
                                             <textarea
@@ -1708,9 +1708,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         <label className="block text-sm font-medium text-slate-700 mb-1">Content Type</label>
                         {newAsset.application_type ? (
                             <div className="px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-700 font-medium">
-                                {newAsset.application_type === 'web' && '🌐 WEB'}
-                                {newAsset.application_type === 'seo' && '🔍 SEO'}
-                                {newAsset.application_type === 'smm' && '📱 SMM'}
+                                {newAsset.application_type === 'web' && 'ðŸŒ WEB'}
+                                {newAsset.application_type === 'seo' && 'ðŸ” SEO'}
+                                {newAsset.application_type === 'smm' && 'ðŸ“± SMM'}
                                 <span className="text-slate-500 ml-2">(Content type is now static)</span>
                             </div>
                         ) : (
@@ -2313,7 +2313,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             </div>
                                                             <div>
                                                                 <span className="text-slate-600">Status:</span>
-                                                                <div className="font-medium text-green-600">✓ Ready to upload</div>
+                                                                <div className="font-medium text-green-600">âœ“ Ready to upload</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2379,9 +2379,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 {newAsset.application_type ? (
                                                     <div className="flex items-center gap-2">
                                                         <div className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-sm bg-slate-100 text-slate-700 font-medium">
-                                                            {newAsset.application_type === 'web' && '🌐 WEB'}
-                                                            {newAsset.application_type === 'seo' && '🔍 SEO'}
-                                                            {newAsset.application_type === 'smm' && '📱 SMM'}
+                                                            {newAsset.application_type === 'web' && 'ðŸŒ WEB'}
+                                                            {newAsset.application_type === 'seo' && 'ðŸ” SEO'}
+                                                            {newAsset.application_type === 'smm' && 'ðŸ“± SMM'}
                                                             <span className="text-slate-500 ml-2">(Content type is now static)</span>
                                                         </div>
                                                     </div>
@@ -2393,9 +2393,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer font-medium"
                                                     >
                                                         <option value="">Select application type...</option>
-                                                        <option value="web">🌐 WEB</option>
-                                                        <option value="seo">🔍 SEO</option>
-                                                        <option value="smm">📱 SMM</option>
+                                                        <option value="web">ðŸŒ WEB</option>
+                                                        <option value="seo">ðŸ” SEO</option>
+                                                        <option value="smm">ðŸ“± SMM</option>
                                                     </select>
                                                 )}
                                             </div>
@@ -2427,11 +2427,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
                                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white cursor-pointer"
                                                 >
-                                                    <option value="article">📄 Article</option>
-                                                    <option value="video">🎥 Video</option>
-                                                    <option value="graphic">🎨 Graphic</option>
-                                                    <option value="guide">📚 Guide</option>
-                                                    <option value="listicle">📝 Listicle</option>
+                                                    <option value="article">ðŸ“„ Article</option>
+                                                    <option value="video">ðŸŽ¥ Video</option>
+                                                    <option value="graphic">ðŸŽ¨ Graphic</option>
+                                                    <option value="guide">ðŸ“š Guide</option>
+                                                    <option value="listicle">ðŸ“ Listicle</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -2450,9 +2450,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-bold text-purple-900">
-                                                {newAsset.application_type === 'web' && '🌐 Web Application Fields'}
-                                                {newAsset.application_type === 'seo' && '🔍 SEO Application Fields'}
-                                                {newAsset.application_type === 'smm' && '📱 SMM Application Fields'}
+                                                {newAsset.application_type === 'web' && 'ðŸŒ Web Application Fields'}
+                                                {newAsset.application_type === 'seo' && 'ðŸ” SEO Application Fields'}
+                                                {newAsset.application_type === 'smm' && 'ðŸ“± SMM Application Fields'}
                                             </h3>
                                             <p className="text-xs text-purple-600">Configure fields specific to your selected application type</p>
                                         </div>
@@ -2533,7 +2533,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {/* Body Content - Left Side */}
                                                     <div className="lg:col-span-2">
                                                         <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                            <span className="text-lg">📝</span>
+                                                            <span className="text-lg">ðŸ“</span>
                                                             Body Content
                                                         </label>
                                                         <textarea
@@ -2587,7 +2587,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             {/* Upload Web Assets Section - below Body Content */}
                                             <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
                                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                    <span className="text-lg">📤</span>
+                                                    <span className="text-lg">ðŸ“¤</span>
                                                     Upload Web Assets
                                                 </label>
                                                 <div className="space-y-4">
@@ -2662,7 +2662,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             {/* Asset Classification - below Upload Web Assets */}
                                             <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
                                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
-                                                    <span className="text-lg">🏷️</span>
+                                                    <span className="text-lg">ðŸ·ï¸</span>
                                                     Asset Classification
                                                 </label>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2705,7 +2705,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             ))}
                                                         </select>
                                                         {allActiveAssetCategories.length === 0 && (
-                                                            <p className="text-xs text-amber-600 mt-1">⚠️ Add categories in Asset Category Master</p>
+                                                            <p className="text-xs text-amber-600 mt-1">âš ï¸ Add categories in Asset Category Master</p>
                                                         )}
                                                     </div>
 
@@ -2720,7 +2720,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             })}
                                                         </select>
                                                         {allActiveAssetTypes.length === 0 && (
-                                                            <p className="text-xs text-amber-600 mt-1">⚠️ Add types in Asset Type Master</p>
+                                                            <p className="text-xs text-amber-600 mt-1">âš ï¸ Add types in Asset Type Master</p>
                                                         )}
                                                     </div>
 
@@ -2877,7 +2877,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {/* Body Content - Left Side */}
                                                     <div className="lg:col-span-2">
                                                         <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                                                            <span className="text-lg">📝</span>
+                                                            <span className="text-lg">ðŸ“</span>
                                                             SEO Content Body
                                                         </label>
                                                         <textarea
@@ -2930,7 +2930,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             {/* SEO Asset Classification Section */}
                                             <div className="bg-green-50 rounded-xl border border-green-200 p-6 mt-6">
                                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
-                                                    <span className="text-lg">🏷️</span>
+                                                    <span className="text-lg">ðŸ·ï¸</span>
                                                     Asset Classification
                                                 </label>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3000,7 +3000,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </div>
                                                 <div>
 
-                                                    <h4 className="text-lg font-bold text-purple-900">📱 SMM Application Fields</h4>
+                                                    <h4 className="text-lg font-bold text-purple-900">ðŸ“± SMM Application Fields</h4>
                                                     <p className="text-sm text-purple-600">Configure your social media content</p>
                                                 </div>
                                             </div>
@@ -3008,16 +3008,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             {/* Platform Selector - Enhanced */}
                                             <div>
                                                 <label className="block text-sm font-bold text-slate-700 mb-3">
-                                                    🌐 Social Media Platform
+                                                    ðŸŒ Social Media Platform
                                                     <span className="text-red-500 ml-1">*</span>
                                                 </label>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                                                     {[
-                                                        { value: 'facebook', label: 'Facebook', icon: '📘', color: 'from-blue-600 to-blue-700', description: 'Share with friends and family' },
-                                                        { value: 'instagram', label: 'Instagram', icon: '📷', color: 'from-pink-500 to-purple-600', description: 'Visual storytelling platform' },
-                                                        { value: 'twitter', label: 'Twitter/X', icon: '🐦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
-                                                        { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
-                                                        { value: 'youtube', label: 'YouTube', icon: '🎥', color: 'from-red-600 to-red-700', description: 'Video content platform' }
+                                                        { value: 'facebook', label: 'Facebook', icon: 'ðŸ“˜', color: 'from-blue-600 to-blue-700', description: 'Share with friends and family' },
+                                                        { value: 'instagram', label: 'Instagram', icon: 'ðŸ“·', color: 'from-pink-500 to-purple-600', description: 'Visual storytelling platform' },
+                                                        { value: 'twitter', label: 'Twitter/X', icon: 'ðŸ¦', color: 'from-sky-400 to-blue-500', description: 'Real-time conversations' },
+                                                        { value: 'linkedin', label: 'LinkedIn', icon: 'ðŸ’¼', color: 'from-blue-700 to-blue-800', description: 'Professional networking' },
+                                                        { value: 'youtube', label: 'YouTube', icon: 'ðŸŽ¥', color: 'from-red-600 to-red-700', description: 'Video content platform' }
                                                         /* TikTok, Pinterest, Snapchat, WhatsApp removed per SMM spec - only core platforms */
                                                     ].map((platform) => (
                                                         <button
@@ -3053,11 +3053,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white cursor-pointer font-medium"
                                                     >
                                                         <option value="">Select platform...</option>
-                                                        <option value="facebook">📘 Facebook</option>
-                                                        <option value="instagram">📷 Instagram</option>
-                                                        <option value="twitter">🐦 Twitter/X</option>
-                                                        <option value="linkedin">💼 LinkedIn</option>
-                                                        <option value="youtube">🎥 YouTube</option>
+                                                        <option value="facebook">ðŸ“˜ Facebook</option>
+                                                        <option value="instagram">ðŸ“· Instagram</option>
+                                                        <option value="twitter">ðŸ¦ Twitter/X</option>
+                                                        <option value="linkedin">ðŸ’¼ LinkedIn</option>
+                                                        <option value="youtube">ðŸŽ¥ YouTube</option>
                                                         {/* TikTok and other platforms removed per SMM spec */}
                                                     </select>
                                                 </div>
@@ -3068,15 +3068,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div className="space-y-6 bg-white rounded-xl p-6 border-2 border-slate-200 shadow-sm">
                                                     <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
                                                         <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg">
-                                                            {newAsset.smm_platform === 'facebook' && '📘'}
-                                                            {newAsset.smm_platform === 'instagram' && '📷'}
-                                                            {newAsset.smm_platform === 'twitter' && '�'}
-                                                            {newAsset.smm_platform === 'linkedin' && '💼'}
-                                                            {newAsset.smm_platform === 'youtube' && '🎥'}
-                                                            {newAsset.smm_platform === 'pinterest' && '📌'}
-                                                            {newAsset.smm_platform === 'snapchat' && '👻'}
-                                                            {newAsset.smm_platform === 'whatsapp' && '💬'}
-                                                            {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && '🌐'}
+                                                            {newAsset.smm_platform === 'facebook' && 'ðŸ“˜'}
+                                                            {newAsset.smm_platform === 'instagram' && 'ðŸ“·'}
+                                                            {newAsset.smm_platform === 'twitter' && 'ï¿½'}
+                                                            {newAsset.smm_platform === 'linkedin' && 'ðŸ’¼'}
+                                                            {newAsset.smm_platform === 'youtube' && 'ðŸŽ¥'}
+                                                            {newAsset.smm_platform === 'pinterest' && 'ðŸ“Œ'}
+                                                            {newAsset.smm_platform === 'snapchat' && 'ðŸ‘»'}
+                                                            {newAsset.smm_platform === 'whatsapp' && 'ðŸ’¬'}
+                                                            {!['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'pinterest', 'snapchat', 'whatsapp'].includes(newAsset.smm_platform) && 'ðŸŒ'}
                                                         </div>
                                                         <div>
                                                             <h5 className="text-lg font-bold text-slate-800 capitalize">
@@ -3100,7 +3100,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                                         <div>
                                                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                                📝 Post Caption/Description
+                                                                ðŸ“ Post Caption/Description
                                                                 <span className="text-red-500 ml-1">*</span>
                                                             </label>
                                                             <textarea
@@ -3139,7 +3139,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                                         <div>
                                                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                                🏷️ Hashtags & Tags
+                                                                ðŸ·ï¸ Hashtags & Tags
                                                             </label>
                                                             <input
                                                                 type="text"
@@ -3156,18 +3156,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 })()}
                                                             />
                                                             <div className="mt-2 text-xs text-slate-500">
-                                                                {newAsset.smm_platform === 'twitter' && '💡 Use 1-2 relevant hashtags for better engagement'}
-                                                                {newAsset.smm_platform === 'instagram' && '💡 Use 5-10 hashtags for optimal reach'}
-                                                                {newAsset.smm_platform === 'linkedin' && '💡 Use 3-5 professional hashtags'}
-                                                                {newAsset.smm_platform === 'youtube' && '💡 Use hashtags in description for discoverability'}
-                                                                {!['twitter', 'instagram', 'linkedin', 'youtube'].includes(newAsset.smm_platform) && '💡 Use relevant hashtags for your platform'}
+                                                                {newAsset.smm_platform === 'twitter' && 'ðŸ’¡ Use 1-2 relevant hashtags for better engagement'}
+                                                                {newAsset.smm_platform === 'instagram' && 'ðŸ’¡ Use 5-10 hashtags for optimal reach'}
+                                                                {newAsset.smm_platform === 'linkedin' && 'ðŸ’¡ Use 3-5 professional hashtags'}
+                                                                {newAsset.smm_platform === 'youtube' && 'ðŸ’¡ Use hashtags in description for discoverability'}
+                                                                {!['twitter', 'instagram', 'linkedin', 'youtube'].includes(newAsset.smm_platform) && 'ðŸ’¡ Use relevant hashtags for your platform'}
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div>
                                                         <label className="block text-sm font-bold text-slate-700 mb-3">
-                                                            🎬 Content Type
+                                                            ðŸŽ¬ Content Type
                                                             <span className="text-red-500 ml-1">*</span>
                                                         </label>
                                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -3176,50 +3176,50 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     switch (platform) {
                                                                         case 'instagram':
                                                                             return [
-                                                                                { value: 'image', label: 'Photo', icon: '📸' },
-                                                                                { value: 'video', label: 'Video', icon: '🎥' },
-                                                                                { value: 'story', label: 'Story', icon: '📱' },
-                                                                                { value: 'reel', label: 'Reel', icon: '🎬' }
+                                                                                { value: 'image', label: 'Photo', icon: 'ðŸ“¸' },
+                                                                                { value: 'video', label: 'Video', icon: 'ðŸŽ¥' },
+                                                                                { value: 'story', label: 'Story', icon: 'ðŸ“±' },
+                                                                                { value: 'reel', label: 'Reel', icon: 'ðŸŽ¬' }
                                                                             ];
                                                                         case 'facebook':
                                                                             return [
-                                                                                { value: 'image', label: 'Photo', icon: '📸' },
-                                                                                { value: 'video', label: 'Video', icon: '🎥' },
-                                                                                { value: 'story', label: 'Story', icon: '📱' },
-                                                                                { value: 'live', label: 'Live', icon: '�' }
+                                                                                { value: 'image', label: 'Photo', icon: 'ðŸ“¸' },
+                                                                                { value: 'video', label: 'Video', icon: 'ðŸŽ¥' },
+                                                                                { value: 'story', label: 'Story', icon: 'ðŸ“±' },
+                                                                                { value: 'live', label: 'Live', icon: 'ï¿½' }
                                                                             ];
                                                                         case 'twitter':
                                                                             return [
-                                                                                { value: 'text', label: 'Tweet', icon: '💬' },
-                                                                                { value: 'image', label: 'Photo', icon: '📸' },
-                                                                                { value: 'video', label: 'Video', icon: '🎥' },
-                                                                                { value: 'gif', label: 'GIF', icon: '🎭' }
+                                                                                { value: 'text', label: 'Tweet', icon: 'ðŸ’¬' },
+                                                                                { value: 'image', label: 'Photo', icon: 'ðŸ“¸' },
+                                                                                { value: 'video', label: 'Video', icon: 'ðŸŽ¥' },
+                                                                                { value: 'gif', label: 'GIF', icon: 'ðŸŽ­' }
                                                                             ];
                                                                         case 'linkedin':
                                                                             return [
-                                                                                { value: 'text', label: 'Post', icon: '📝' },
-                                                                                { value: 'image', label: 'Image', icon: '📸' },
-                                                                                { value: 'video', label: 'Video', icon: '🎥' },
-                                                                                { value: 'document', label: 'Document', icon: '📄' },
-                                                                                { value: 'article', label: 'Article', icon: '📰' }
+                                                                                { value: 'text', label: 'Post', icon: 'ðŸ“' },
+                                                                                { value: 'image', label: 'Image', icon: 'ðŸ“¸' },
+                                                                                { value: 'video', label: 'Video', icon: 'ðŸŽ¥' },
+                                                                                { value: 'document', label: 'Document', icon: 'ðŸ“„' },
+                                                                                { value: 'article', label: 'Article', icon: 'ðŸ“°' }
                                                                             ];
                                                                         case 'youtube':
                                                                             return [
-                                                                                { value: 'video', label: 'Video', icon: '🎥' },
-                                                                                { value: 'short', label: 'Short', icon: '📱' },
-                                                                                { value: 'live', label: 'Live Stream', icon: '🔴' }
+                                                                                { value: 'video', label: 'Video', icon: 'ðŸŽ¥' },
+                                                                                { value: 'short', label: 'Short', icon: 'ðŸ“±' },
+                                                                                { value: 'live', label: 'Live Stream', icon: 'ðŸ”´' }
                                                                             ];
                                                                         /* TikTok removed per SMM spec */
                                                                         case 'pinterest':
                                                                             return [
-                                                                                { value: 'image', label: 'Pin', icon: '📌' },
-                                                                                { value: 'video', label: 'Video Pin', icon: '🎥' }
+                                                                                { value: 'image', label: 'Pin', icon: 'ðŸ“Œ' },
+                                                                                { value: 'video', label: 'Video Pin', icon: 'ðŸŽ¥' }
                                                                             ];
                                                                         default:
                                                                             return [
-                                                                                { value: 'image', label: 'Image', icon: '📸' },
-                                                                                { value: 'video', label: 'Video', icon: '🎥' },
-                                                                                { value: 'text', label: 'Text', icon: '📝' }
+                                                                                { value: 'image', label: 'Image', icon: 'ðŸ“¸' },
+                                                                                { value: 'video', label: 'Video', icon: 'ðŸŽ¥' },
+                                                                                { value: 'text', label: 'Text', icon: 'ðŸ“' }
                                                                             ];
                                                                     }
                                                                 };
@@ -3248,7 +3248,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {/* SMM Asset Classification - below upload & preview */}
                                                     <div className="bg-purple-50/50 rounded-xl border border-purple-200 p-6">
                                                         <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
-                                                            <span className="text-lg">🏷️</span>
+                                                            <span className="text-lg">ðŸ·ï¸</span>
                                                             Asset Classification
                                                         </label>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3290,7 +3290,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     ))}
                                                                 </select>
                                                                 {allActiveAssetCategories.length === 0 && (
-                                                                    <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Category Master</p>
+                                                                    <p className="text-xs text-amber-600 mt-1">âš ï¸ Add in Asset Category Master</p>
                                                                 )}
                                                             </div>
 
@@ -3305,7 +3305,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     })}
                                                                 </select>
                                                                 {allActiveAssetTypes.length === 0 && (
-                                                                    <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Type Master</p>
+                                                                    <p className="text-xs text-amber-600 mt-1">âš ï¸ Add in Asset Type Master</p>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -3314,7 +3314,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {/* Media Upload Section */}
                                                     <div>
                                                         <label className="block text-sm font-bold text-slate-700 mb-3">
-                                                            🎨 Media Upload
+                                                            ðŸŽ¨ Media Upload
                                                             {(newAsset.smm_media_type === 'image' || newAsset.smm_media_type === 'video') && (
                                                                 <span className="text-red-500 ml-1">*</span>
                                                             )}
@@ -3368,10 +3368,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                                     Drop your {newAsset.smm_media_type || 'media'} here or click to browse
                                                                                 </p>
                                                                                 <p className="text-sm text-slate-500">
-                                                                                    {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB • Videos up to 60s'}
-                                                                                    {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB • Videos up to 2:20'}
-                                                                                    {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB • Videos up to 10min'}
-                                                                                    {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB • Videos up to 240min'}
+                                                                                    {newAsset.smm_platform === 'instagram' && 'JPG, PNG up to 10MB â€¢ Videos up to 60s'}
+                                                                                    {newAsset.smm_platform === 'twitter' && 'JPG, PNG, GIF up to 5MB â€¢ Videos up to 2:20'}
+                                                                                    {newAsset.smm_platform === 'linkedin' && 'JPG, PNG up to 20MB â€¢ Videos up to 10min'}
+                                                                                    {newAsset.smm_platform === 'facebook' && 'JPG, PNG up to 25MB â€¢ Videos up to 240min'}
                                                                                     {newAsset.smm_platform === 'youtube' && 'Videos up to 15min (or longer with verification)'}
                                                                                     {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && 'JPG, PNG, MP4, GIF up to 50MB'}
                                                                                 </p>
@@ -3439,7 +3439,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                                             </div>
                                                                                             <div>
                                                                                                 <p className="font-semibold text-sm text-slate-900">{newAsset.name || 'Your Page'}</p>
-                                                                                                <p className="text-xs text-slate-500">Just now · Public</p>
+                                                                                                <p className="text-xs text-slate-500">Just now Â· Public</p>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
@@ -3466,7 +3466,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                                         <div className="flex-1">
                                                                                             <div className="flex items-center gap-2 mb-1">
                                                                                                 <p className="font-bold text-sm">{newAsset.name || 'Your Account'}</p>
-                                                                                                <span className="text-slate-500 text-sm">· 2m</span>
+                                                                                                <span className="text-slate-500 text-sm">Â· 2m</span>
                                                                                             </div>
                                                                                             {newAsset.smm_description && <p className="text-sm text-slate-900 whitespace-pre-wrap">{newAsset.smm_description}</p>}
                                                                                             {newAsset.smm_hashtags && <p className="text-sm text-blue-500 mt-2">{newAsset.smm_hashtags}</p>}
@@ -3488,7 +3488,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                                         <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold">{(newAsset.name || 'Y').charAt(0)}</div>
                                                                                         <div className="flex-1">
                                                                                             <p className="font-bold text-sm">{newAsset.name || 'Your Company'}</p>
-                                                                                            <p className="text-xs text-slate-500">1,234 followers · 1m</p>
+                                                                                            <p className="text-xs text-slate-500">1,234 followers Â· 1m</p>
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="p-4">
@@ -3517,7 +3517,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                         <div>
                                                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                                📅 Schedule Post (Optional)
+                                                                ðŸ“… Schedule Post (Optional)
                                                             </label>
                                                             <input
                                                                 type="datetime-local"
@@ -3528,7 +3528,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                                         <div>
                                                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                                🎯 Target Audience (Optional)
+                                                                ðŸŽ¯ Target Audience (Optional)
                                                             </label>
                                                             <select className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
                                                                 <option value="">All Followers</option>
@@ -3544,7 +3544,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {(newAsset.smm_platform === 'facebook' || newAsset.smm_platform === 'instagram' || newAsset.smm_platform === 'linkedin') && (
                                                         <div>
                                                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                                                🔗 Call-to-Action (Optional)
+                                                                ðŸ”— Call-to-Action (Optional)
                                                             </label>
                                                             <div className="grid grid-cols-2 gap-3">
                                                                 {[
@@ -3604,7 +3604,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {/* Platform-specific Tips */}
                                                     <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
                                                         <div className="flex items-start gap-3">
-                                                            <div className="text-yellow-600 mt-0.5">💡</div>
+                                                            <div className="text-yellow-600 mt-0.5">ðŸ’¡</div>
                                                             <div>
                                                                 <h6 className="font-bold text-yellow-800 mb-2">
                                                                     {newAsset.smm_platform?.charAt(0).toUpperCase() + newAsset.smm_platform?.slice(1)} Best Practices
@@ -3612,50 +3612,50 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 <ul className="text-sm text-yellow-700 space-y-1">
                                                                     {newAsset.smm_platform === 'instagram' && (
                                                                         <>
-                                                                            <li>• Use high-quality, visually appealing images</li>
-                                                                            <li>• Post consistently at optimal times (11 AM - 1 PM)</li>
-                                                                            <li>• Use 5-10 relevant hashtags for better reach</li>
-                                                                            <li>• Include a clear call-to-action in your caption</li>
+                                                                            <li>â€¢ Use high-quality, visually appealing images</li>
+                                                                            <li>â€¢ Post consistently at optimal times (11 AM - 1 PM)</li>
+                                                                            <li>â€¢ Use 5-10 relevant hashtags for better reach</li>
+                                                                            <li>â€¢ Include a clear call-to-action in your caption</li>
                                                                         </>
                                                                     )}
                                                                     {newAsset.smm_platform === 'twitter' && (
                                                                         <>
-                                                                            <li>• Keep tweets concise and engaging</li>
-                                                                            <li>• Use 1-2 hashtags maximum</li>
-                                                                            <li>• Tweet during peak hours (9 AM - 3 PM)</li>
-                                                                            <li>• Include visuals to increase engagement by 150%</li>
+                                                                            <li>â€¢ Keep tweets concise and engaging</li>
+                                                                            <li>â€¢ Use 1-2 hashtags maximum</li>
+                                                                            <li>â€¢ Tweet during peak hours (9 AM - 3 PM)</li>
+                                                                            <li>â€¢ Include visuals to increase engagement by 150%</li>
                                                                         </>
                                                                     )}
                                                                     {newAsset.smm_platform === 'linkedin' && (
                                                                         <>
-                                                                            <li>• Share professional insights and industry news</li>
-                                                                            <li>• Post during business hours (8 AM - 6 PM)</li>
-                                                                            <li>• Use 3-5 professional hashtags</li>
-                                                                            <li>• Engage with comments to boost visibility</li>
+                                                                            <li>â€¢ Share professional insights and industry news</li>
+                                                                            <li>â€¢ Post during business hours (8 AM - 6 PM)</li>
+                                                                            <li>â€¢ Use 3-5 professional hashtags</li>
+                                                                            <li>â€¢ Engage with comments to boost visibility</li>
                                                                         </>
                                                                     )}
                                                                     {newAsset.smm_platform === 'facebook' && (
                                                                         <>
-                                                                            <li>• Share engaging, community-focused content</li>
-                                                                            <li>• Post when your audience is most active</li>
-                                                                            <li>• Use Facebook-native video for better reach</li>
-                                                                            <li>• Encourage comments and shares</li>
+                                                                            <li>â€¢ Share engaging, community-focused content</li>
+                                                                            <li>â€¢ Post when your audience is most active</li>
+                                                                            <li>â€¢ Use Facebook-native video for better reach</li>
+                                                                            <li>â€¢ Encourage comments and shares</li>
                                                                         </>
                                                                     )}
                                                                     {newAsset.smm_platform === 'youtube' && (
                                                                         <>
-                                                                            <li>• Create compelling thumbnails and titles</li>
-                                                                            <li>• Upload consistently (2-3 times per week)</li>
-                                                                            <li>• Use relevant keywords in description</li>
-                                                                            <li>• Engage with comments within first hour</li>
+                                                                            <li>â€¢ Create compelling thumbnails and titles</li>
+                                                                            <li>â€¢ Upload consistently (2-3 times per week)</li>
+                                                                            <li>â€¢ Use relevant keywords in description</li>
+                                                                            <li>â€¢ Engage with comments within first hour</li>
                                                                         </>
                                                                     )}
                                                                     {!['instagram', 'twitter', 'linkedin', 'facebook', 'youtube'].includes(newAsset.smm_platform) && (
                                                                         <>
-                                                                            <li>• Know your platform's optimal posting times</li>
-                                                                            <li>• Use platform-appropriate content formats</li>
-                                                                            <li>• Engage with your community regularly</li>
-                                                                            <li>• Monitor analytics to improve performance</li>
+                                                                            <li>â€¢ Know your platform's optimal posting times</li>
+                                                                            <li>â€¢ Use platform-appropriate content formats</li>
+                                                                            <li>â€¢ Engage with your community regularly</li>
+                                                                            <li>â€¢ Monitor analytics to improve performance</li>
                                                                         </>
                                                                     )}
                                                                 </ul>
@@ -3892,7 +3892,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         </div>
                                                         <div className="flex items-center gap-1 text-xs text-slate-500">
                                                             <span>Just now</span>
-                                                            <span>·</span>
+                                                            <span>Â·</span>
                                                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
                                                             </svg>
@@ -3924,13 +3924,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div className="flex items-center justify-between text-[13px] text-slate-600">
                                                     <div className="flex items-center gap-1">
                                                         <div className="flex -space-x-1">
-                                                            <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">👍</span></div>
-                                                            <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">❤️</span></div>
-                                                            <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">😊</span></div>
+                                                            <div className="w-[18px] h-[18px] rounded-full bg-blue-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">ðŸ‘</span></div>
+                                                            <div className="w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">â¤ï¸</span></div>
+                                                            <div className="w-[18px] h-[18px] rounded-full bg-yellow-400 flex items-center justify-center border-2 border-white"><span className="text-white text-[10px]">ðŸ˜Š</span></div>
                                                         </div>
                                                         <span className="ml-1">1.2K</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2"><span>89 comments</span><span>·</span><span>24 shares</span></div>
+                                                    <div className="flex items-center gap-2"><span>89 comments</span><span>Â·</span><span>24 shares</span></div>
                                                 </div>
                                             </div>
                                             <div className="border-t border-slate-200 px-2 py-1">
@@ -3964,9 +3964,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <p className="font-bold text-sm">{displayData.name || 'Your Account'}</p>
-                                                        <span className="text-blue-500">✓</span>
+                                                        <span className="text-blue-500">âœ“</span>
                                                         <span className="text-slate-500 text-sm font-normal">@{displayData.name?.toLowerCase().replace(/\s+/g, '') || 'account'}</span>
-                                                        <span className="text-slate-500 text-sm">· 2m</span>
+                                                        <span className="text-slate-500 text-sm">Â· 2m</span>
                                                     </div>
 
                                                     {/* Tweet Text */}
@@ -3993,19 +3993,19 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     {/* Engagement */}
                                                     <div className="flex justify-between mt-3 text-slate-500 text-sm">
                                                         <button className="flex items-center gap-2 hover:text-blue-500">
-                                                            <span>💬</span> 24
+                                                            <span>ðŸ’¬</span> 24
                                                         </button>
                                                         <button className="flex items-center gap-2 hover:text-green-500">
-                                                            <span>🔁</span> 12
+                                                            <span>ðŸ”</span> 12
                                                         </button>
                                                         <button className="flex items-center gap-2 hover:text-red-500">
-                                                            <span>❤️</span> 156
+                                                            <span>â¤ï¸</span> 156
                                                         </button>
                                                         <button className="flex items-center gap-2 hover:text-blue-500">
-                                                            <span>📊</span> 2.1K
+                                                            <span>ðŸ“Š</span> 2.1K
                                                         </button>
                                                         <button className="flex items-center gap-2 hover:text-blue-500">
-                                                            <span>↗️</span>
+                                                            <span>â†—ï¸</span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -4023,10 +4023,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 <div className="flex-1">
                                                     <p className="font-bold text-sm">{displayData.name || 'Your Company'}</p>
                                                     <p className="text-xs text-slate-500">1,234 followers</p>
-                                                    <p className="text-xs text-slate-500">1m · 🌐</p>
+                                                    <p className="text-xs text-slate-500">1m Â· ðŸŒ</p>
                                                 </div>
                                                 <button className="text-slate-500 hover:bg-slate-100 p-2 rounded">
-                                                    <span>⋯</span>
+                                                    <span>â‹¯</span>
                                                 </button>
                                             </div>
 
@@ -4054,21 +4054,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             {/* Engagement Bar */}
                                             <div className="p-4 border-t border-slate-200">
                                                 <div className="flex justify-between text-xs text-slate-600 mb-3">
-                                                    <span>👍 💡 ❤️ 89</span>
-                                                    <span>12 comments · 5 reposts</span>
+                                                    <span>ðŸ‘ ðŸ’¡ â¤ï¸ 89</span>
+                                                    <span>12 comments Â· 5 reposts</span>
                                                 </div>
                                                 <div className="flex justify-around border-t border-slate-200 pt-3">
                                                     <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                        <span className="text-lg">👍</span> Like
+                                                        <span className="text-lg">ðŸ‘</span> Like
                                                     </button>
                                                     <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                        <span className="text-lg">💬</span> Comment
+                                                        <span className="text-lg">ðŸ’¬</span> Comment
                                                     </button>
                                                     <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                        <span className="text-lg">🔁</span> Repost
+                                                        <span className="text-lg">ðŸ”</span> Repost
                                                     </button>
                                                     <button className="flex flex-col items-center gap-1 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded text-xs">
-                                                        <span className="text-lg">↗️</span> Send
+                                                        <span className="text-lg">â†—ï¸</span> Send
                                                     </button>
                                                 </div>
                                             </div>
@@ -4192,17 +4192,17 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 <div className="space-y-2">
                                     {getStatusBadge(item.status || 'Draft')}
                                     {item.status === 'Pending QC Review' && (
-                                        <div className="text-xs text-purple-600 font-medium">⏳ Under Review</div>
+                                        <div className="text-xs text-purple-600 font-medium">â³ Under Review</div>
                                     )}
                                     {item.status === 'QC Approved' && (
-                                        <div className="text-xs text-green-600 font-medium">✅ Approved</div>
+                                        <div className="text-xs text-green-600 font-medium">âœ… Approved</div>
                                     )}
                                     {item.status === 'QC Rejected' && (
-                                        <div className="text-xs text-red-600 font-medium">❌ Needs Rework</div>
+                                        <div className="text-xs text-red-600 font-medium">âŒ Needs Rework</div>
                                     )}
                                     {item.rework_count && item.rework_count > 0 && (
                                         <div className="text-xs text-orange-600 font-medium">
-                                            🔄 Rework: {item.rework_count}
+                                            ðŸ”„ Rework: {item.rework_count}
                                         </div>
                                     )}
                                 </div>
@@ -4475,9 +4475,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                             <div className="flex items-center gap-4 text-sm text-slate-600">
                                                 <span>ai-trends-banner.jpg</span>
-                                                <span>•</span>
+                                                <span>â€¢</span>
                                                 <span>Asset ID: {selectedAsset.id}</span>
-                                                <span>•</span>
+                                                <span>â€¢</span>
                                                 <span>{selectedAsset.date ? new Date(selectedAsset.date).toLocaleDateString('en-US', {
                                                     year: 'numeric',
                                                     month: 'long',
@@ -4584,7 +4584,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         <div className="text-sm font-medium text-slate-700">{selectedAsset.name}</div>
                                                         <div className="text-xs text-slate-500 mt-1">
                                                             {selectedAsset.file_size ? `${(selectedAsset.file_size / (1024 * 1024)).toFixed(1)} MB` : '2.4 MB'}
-                                                            {selectedAsset.file_type && ` • ${selectedAsset.file_type.toUpperCase()}`}
+                                                            {selectedAsset.file_type && ` â€¢ ${selectedAsset.file_type.toUpperCase()}`}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -5131,7 +5131,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 onClick={() => onNavigate?.('tasks', selectedAsset.linked_task || 1)}
                                                                 className="text-blue-600 hover:text-blue-700 text-xs font-medium"
                                                             >
-                                                                View →
+                                                                View â†’
                                                             </button>
                                                         </div>
                                                     </div>
@@ -5150,7 +5150,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 onClick={() => onNavigate?.('campaigns', 1)}
                                                                 className="text-purple-600 hover:text-purple-700 text-xs font-medium"
                                                             >
-                                                                View →
+                                                                View â†’
                                                             </button>
                                                         </div>
                                                     </div>
@@ -5169,7 +5169,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 onClick={() => onNavigate?.('projects', 1)}
                                                                 className="text-green-600 hover:text-green-700 text-xs font-medium"
                                                             >
-                                                                View →
+                                                                View â†’
                                                             </button>
                                                         </div>
                                                     </div>
@@ -5193,7 +5193,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 onClick={() => onNavigate?.('services', selectedAsset.linked_service_ids?.[0] || 1)}
                                                                 className="text-indigo-600 hover:text-indigo-700 text-xs font-medium"
                                                             >
-                                                                View →
+                                                                View â†’
                                                             </button>
                                                         </div>
                                                     </div>
@@ -5501,7 +5501,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <div className="flex items-center justify-between p-4 bg-gradient-to-r from-sky-50 to-sky-100 rounded-lg border border-sky-200">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
-                                                                <span className="text-white text-xs font-bold">𝕏</span>
+                                                                <span className="text-white text-xs font-bold">ð•</span>
                                                             </div>
                                                             <div>
                                                                 <div className="text-sm font-semibold text-slate-900">Twitter</div>
@@ -5836,1279 +5836,224 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             {/* List View */}
             {
                 viewMode === 'list' && (
-                    <div className="h-full flex flex-col w-full p-4 overflow-hidden">
-                        <div className="flex justify-between items-center flex-shrink-0 w-full mb-4">
-                            <div>
-                                <h1 className="text-xl font-bold text-slate-900 tracking-tight">Assets</h1>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                {/* Refresh Button */}
-                                <button
-                                    onClick={async () => {
-                                        setIsRefreshing(true);
-                                        try {
-                                            await refresh?.();
-                                            // Show success feedback briefly
-                                            setTimeout(() => {
+                    <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50">
+                        {/* Fixed Header Bar */}
+                        <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-3">
+                            <div className="flex justify-between items-center">
+                                <h1 className="text-lg font-bold text-slate-900">Assets</h1>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={async () => {
+                                            setIsRefreshing(true);
+                                            try {
+                                                await refresh?.();
+                                                setTimeout(() => setIsRefreshing(false), 800);
+                                            } catch (error) {
+                                                console.error('Refresh failed:', error);
                                                 setIsRefreshing(false);
-                                            }, 800);
-                                        } catch (error) {
-                                            console.error('Refresh failed:', error);
-                                            setIsRefreshing(false);
-                                        }
-                                    }}
-                                    disabled={isRefreshing}
-                                    className={`bg-green-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-green-700 hover:shadow-lg transition-all flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : ''
-                                        }`}
-                                    title="Refresh Assets Data"
-                                >
-                                    {isRefreshing ? (
-                                        <>
-                                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Refreshing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                            Refresh
-                                        </>
-                                    )}
-                                </button>
-
-                                {/* Enhanced Upload Button with Content Type Selection */}
-                                <div className="relative group">
-                                    <button
-                                        onClick={() => setShowUploadModal(true)}
-                                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+                                            }
+                                        }}
+                                        disabled={isRefreshing}
+                                        className={`bg-green-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-green-700 flex items-center gap-1 ${isRefreshing ? 'opacity-75' : ''}`}
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Upload Asset
-                                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                        {isRefreshing ? (
+                                            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        ) : (
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                        )}
+                                        Refresh
                                     </button>
-
-                                    {/* Quick Content Type Dropdown */}
-                                    <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                        <div className="p-4">
-                                            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                </svg>
-                                                Quick Upload by Content Type
-                                            </h3>
-
-                                            <div className="space-y-2">
-                                                {/* WEB Content */}
-                                                <button
-                                                    onClick={() => {
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                        setShowUploadModal(true);
-                                                    }}
-                                                    className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all group/item"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s1.343-9 3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold text-slate-900 text-sm">🌐 Web Content</div>
-                                                            <div className="text-xs text-slate-600">Landing pages, web articles, blog posts</div>
-                                                        </div>
-                                                        <svg className="w-4 h-4 text-slate-400 group-hover/item:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </div>
-                                                </button>
-
-                                                {/* SEO Content */}
-                                                <button
-                                                    onClick={() => {
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                        setShowUploadModal(true);
-                                                    }}
-                                                    className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-green-300 hover:bg-green-50 transition-all group/item"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold text-slate-900 text-sm">🔍 SEO Content</div>
-                                                            <div className="text-xs text-slate-600">Search optimized content, meta descriptions</div>
-                                                        </div>
-                                                        <svg className="w-4 h-4 text-slate-400 group-hover/item:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </div>
-                                                </button>
-
-                                                {/* SMM Content */}
-                                                <button
-                                                    onClick={() => {
-                                                        setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                        setShowUploadModal(true);
-                                                    }}
-                                                    className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 transition-all group/item"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold text-slate-900 text-sm">📱 Social Media</div>
-                                                            <div className="text-xs text-slate-600">Posts, stories, videos for social platforms</div>
-                                                        </div>
-                                                        <svg className="w-4 h-4 text-slate-400 group-hover/item:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </div>
-                                                </button>
-
-                                                {/* General Upload */}
-                                                <div className="border-t border-slate-200 pt-2 mt-3">
-                                                    <button
-                                                        onClick={() => {
-                                                            setNewAsset(prev => ({ ...prev, application_type: undefined }));
-                                                            setShowUploadModal(true);
-                                                        }}
-                                                        className="w-full p-3 text-left rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all group/item"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 bg-gradient-to-r from-slate-500 to-slate-600 rounded-lg flex items-center justify-center">
-                                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                                </svg>
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className="font-semibold text-slate-900 text-sm">📁 General Upload</div>
-                                                                <div className="text-xs text-slate-600">Choose content type during upload</div>
-                                                            </div>
-                                                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                            </svg>
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* View Mode Toggle */}
-                                <div className="bg-slate-100 p-1 rounded-lg flex">
-                                    <button
-                                        onClick={() => setDisplayMode('table')}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${displayMode === 'table'
-                                            ? 'bg-white text-slate-900 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                            }`}
-                                        title="List View"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                                        </svg>
-                                        List
+                                    <button onClick={() => setShowUploadModal(true)} className="bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-indigo-700 flex items-center gap-1">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        Upload
                                     </button>
-                                    <button
-                                        onClick={() => setDisplayMode('grid')}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${displayMode === 'grid'
-                                            ? 'bg-white text-slate-900 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                            }`}
-                                        title="Large View"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                        </svg>
-                                        Large
-                                    </button>
-                                </div>
-
-                                {/* QC Review Button - Navigate to AssetQCView */}
-                                <button
-                                    onClick={() => onNavigate?.('asset-qc')}
-                                    className="bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-purple-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                    </svg>
-                                    QC Review
-                                </button>
-
-                                {/* My Submissions Button */}
-                                <button
-                                    onClick={() => setViewMode('mysubmissions')}
-                                    className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                    My Submissions
-                                </button>
-
-
-                            </div>
-                        </div>
-
-                        <div className="relative mb-4">
-                            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            <input
-                                type="text"
-                                placeholder="Search by title, file name, or tag..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 transition-all text-sm"
-                            />
-                        </div>
-
-                        <div className="mb-4 space-y-4 flex-shrink-0">
-                            {/* Enhanced Filters - Collapsible */}
-                            <div className="bg-white rounded-lg border border-slate-200">
-                                <button
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                        </svg>
-                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Filters</span>
-                                        {(assetTypeFilter !== 'All' || assetCategoryFilter !== 'All' || contentTypeFilter !== 'All' ||
-                                            campaignTypeFilter !== 'All' || linkedServiceFilter !== 'All' || linkedSubServiceFilter !== 'All' ||
-                                            projectFilter !== 'All' || linkedTaskFilter !== 'All' || linkedRepositoryFilter !== 'All' ||
-                                            createdByFilter !== 'All' || dateRangeFilter !== 'All' || usageStatusFilter !== 'All') && (
-                                                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
-                                                    Active
-                                                </span>
-                                            )}
+                                    <div className="bg-slate-100 p-0.5 rounded flex">
+                                        <button onClick={() => setDisplayMode('table')} className={`px-2 py-1 rounded text-xs font-medium ${displayMode === 'table' ? 'bg-white shadow-sm' : 'text-slate-600'}`}>List</button>
+                                        <button onClick={() => setDisplayMode('grid')} className={`px-2 py-1 rounded text-xs font-medium ${displayMode === 'grid' ? 'bg-white shadow-sm' : 'text-slate-600'}`}>Grid</button>
                                     </div>
-                                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-
-                                {showFilters && (
-                                    <div className="px-4 pb-4 border-t border-slate-100">
-                                        {/* First Row of Filters */}
-                                        <div className="grid grid-cols-4 gap-4 mb-4 mt-4">
-                                            {/* Asset Type Filter - from Asset Type Master */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Type</label>
-                                                <select
-                                                    value={assetTypeFilter}
-                                                    onChange={(e) => setAssetTypeFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Types</option>
-                                                    {allActiveAssetTypes.map(type => {
-                                                        const typeName = (type as any).asset_type_name || (type as any).asset_type || '';
-                                                        return (
-                                                            <option key={type.id} value={typeName}>{typeName}</option>
-                                                        );
-                                                    })}
-                                                </select>
-                                            </div>
-
-                                            {/* Asset Category Filter - from Asset Category Master */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Asset Category</label>
-                                                <select
-                                                    value={assetCategoryFilter}
-                                                    onChange={(e) => setAssetCategoryFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Categories</option>
-                                                    {allActiveAssetCategories.map(category => (
-                                                        <option key={category.id} value={category.category_name}>{category.category_name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Content Type Filter */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Content Type</label>
-                                                <select
-                                                    value={contentTypeFilter}
-                                                    onChange={(e) => setContentTypeFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Content Types</option>
-                                                    <option value="Blog">Blog</option>
-                                                    <option value="Service Page">Service Page</option>
-                                                    <option value="Sub-Service Page">Sub-Service Page</option>
-                                                    <option value="SMM Post">SMM Post</option>
-                                                    <option value="Backlink Asset">Backlink Asset</option>
-                                                    <option value="Web UI Asset">Web UI Asset</option>
-                                                </select>
-                                            </div>
-
-                                            {/* Campaign Type Filter - from Campaigns */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Campaign Type</label>
-                                                <select
-                                                    value={campaignTypeFilter}
-                                                    onChange={(e) => setCampaignTypeFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Campaigns</option>
-                                                    {campaigns.map(campaign => (
-                                                        <option key={campaign.id} value={campaign.id.toString()}>{campaign.campaign_name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Linked Service Filter - from Service Master */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Service</label>
-                                                <select
-                                                    value={linkedServiceFilter}
-                                                    onChange={(e) => {
-                                                        setLinkedServiceFilter(e.target.value);
-                                                        setLinkedSubServiceFilter('All'); // Reset sub-service when service changes
-                                                    }}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Services</option>
-                                                    {services.map(service => (
-                                                        <option key={service.id} value={service.id.toString()}>{service.service_name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Second Row of Filters */}
-                                        <div className="grid grid-cols-4 gap-4 mb-4">
-                                            {/* Linked Sub-Service Filter - mapped to selected service */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Sub-Service</label>
-                                                <select
-                                                    value={linkedSubServiceFilter}
-                                                    onChange={(e) => setLinkedSubServiceFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Sub-services</option>
-                                                    {filteredSubServicesForFilter.map(subService => (
-                                                        <option key={subService.id} value={subService.id.toString()}>{subService.sub_service_name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Project Filter - from Projects */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Project</label>
-                                                <select
-                                                    value={projectFilter}
-                                                    onChange={(e) => setProjectFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Projects</option>
-                                                    {projects.map(project => (
-                                                        <option key={project.id} value={project.id.toString()}>{project.project_name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Linked Task Filter - from Tasks */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Linked Task</label>
-                                                <select
-                                                    value={linkedTaskFilter}
-                                                    onChange={(e) => setLinkedTaskFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Tasks</option>
-                                                    {tasks.map(task => (
-                                                        <option key={task.id} value={task.id.toString()}>{task.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Linked Repository Item Filter - from Content Repository */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Repository Item</label>
-                                                <select
-                                                    value={linkedRepositoryFilter}
-                                                    onChange={(e) => setLinkedRepositoryFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Repository Items</option>
-                                                    {repositoryItems.map(item => (
-                                                        <option key={item.id} value={item.id.toString()}>{item.content_title_clean}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Created By Filter - from Users */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Created By</label>
-                                                <select
-                                                    value={createdByFilter}
-                                                    onChange={(e) => setCreatedByFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Users</option>
-                                                    {users.map(user => (
-                                                        <option key={user.id} value={user.id.toString()}>{user.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Date Range Filter - date picker */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Date Range</label>
-                                                <select
-                                                    value={dateRangeFilter}
-                                                    onChange={(e) => setDateRangeFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Time</option>
-                                                    <option value="today">Today</option>
-                                                    <option value="week">This Week</option>
-                                                    <option value="month">This Month</option>
-                                                    <option value="quarter">This Quarter</option>
-                                                    <option value="year">This Year</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Third Row - Usage Status */}
-                                        <div className="grid grid-cols-4 gap-4">
-                                            {/* Usage Status Filter - Used, Unused, Archived */}
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Usage Status</label>
-                                                <select
-                                                    value={usageStatusFilter}
-                                                    onChange={(e) => setUsageStatusFilter(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                                >
-                                                    <option value="All">All Statuses</option>
-                                                    <option value="Used">Used</option>
-                                                    <option value="Unused">Unused</option>
-                                                    <option value="Archived">Archived</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Results Summary */}
-                        <div className="flex justify-between items-center mb-2 flex-shrink-0">
-                            <p className="text-sm text-slate-600">
-                                {assetsLoading ? (
-                                    <span className="flex items-center gap-2">
-                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Loading assets...
-                                    </span>
-                                ) : (
-                                    <>Showing <span className="font-bold text-indigo-600">{filteredAssets.length}</span> assets</>
-                                )}
-                            </p>
-                        </div>
-
-                        {/* Loading State */}
-                        {assetsLoading && (
-                            <div className="flex-1 flex items-center justify-center py-8">
-                                <div className="text-center">
-                                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto mb-3"></div>
-                                    <p className="text-slate-500 text-sm">Loading assets...</p>
+                                    <button onClick={() => onNavigate?.('asset-qc')} className="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-purple-700">QC</button>
+                                    <button onClick={() => setViewMode('mysubmissions')} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700">My Submissions</button>
                                 </div>
                             </div>
-                        )}
+                            {/* Search */}
+                            <div className="mt-2 flex gap-2">
+                                <div className="relative flex-1">
+                                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    <input type="text" placeholder="Search assets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded text-xs focus:ring-1 focus:ring-indigo-500" />
+                                </div>
+                                <button onClick={() => setShowFilters(!showFilters)} className={`px-3 py-1.5 border rounded text-xs font-medium flex items-center gap-1 ${showFilters ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'border-slate-200 text-slate-600'}`}>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                                    Filters
+                                </button>
+                            </div>
+                            {/* Collapsible Filters */}
+                            {showFilters && (
+                                <div className="mt-2 grid grid-cols-6 gap-2">
+                                    <select value={assetTypeFilter} onChange={(e) => setAssetTypeFilter(e.target.value)} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                        <option value="All">All Types</option>
+                                        {allActiveAssetTypes.map(type => <option key={type.id} value={(type as any).asset_type_name || ''}>{(type as any).asset_type_name || ''}</option>)}
+                                    </select>
+                                    <select value={assetCategoryFilter} onChange={(e) => setAssetCategoryFilter(e.target.value)} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                        <option value="All">All Categories</option>
+                                        {allActiveAssetCategories.map(cat => <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>)}
+                                    </select>
+                                    <select value={contentTypeFilter} onChange={(e) => setContentTypeFilter(e.target.value)} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                        <option value="All">All Content</option>
+                                        <option value="Blog">Blog</option>
+                                        <option value="Service Page">Service Page</option>
+                                        <option value="SMM Post">SMM Post</option>
+                                    </select>
+                                    <select value={linkedServiceFilter} onChange={(e) => { setLinkedServiceFilter(e.target.value); setLinkedSubServiceFilter('All'); }} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                        <option value="All">All Services</option>
+                                        {services.map(s => <option key={s.id} value={s.id.toString()}>{s.service_name}</option>)}
+                                    </select>
+                                    <select value={dateRangeFilter} onChange={(e) => setDateRangeFilter(e.target.value)} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                        <option value="All">All Time</option>
+                                        <option value="today">Today</option>
+                                        <option value="week">This Week</option>
+                                        <option value="month">This Month</option>
+                                    </select>
+                                    <select value={usageStatusFilter} onChange={(e) => setUsageStatusFilter(e.target.value)} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                        <option value="All">All Status</option>
+                                        <option value="Used">Used</option>
+                                        <option value="Unused">Unused</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
 
-                        {/* Display Content Based on View Mode */}
-                        {!assetsLoading && (
-                            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                                {displayMode === 'table' ? (
-                                    <div className="bg-white rounded-lg border border-slate-200 flex flex-col flex-1 min-h-0 overflow-hidden">
-                                        {/* Scrollable Table Container - Full height with proper scrolling */}
-                                        <div className="flex-1 overflow-auto min-h-0">
-                                            <table className="w-full border-collapse" style={{ minWidth: '1600px' }}>
-                                                <thead className="bg-slate-50 sticky top-0 z-10">
-                                                    <tr>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '60px' }}>Thumbnail</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '150px' }}>Asset Name</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Asset Type</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Category</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Content Type</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Linked Service</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '110px' }}>Linked Task</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>QC Status</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>QC Score</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '70px' }}>Version</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Designer</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Uploaded At</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Created By</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '100px' }}>Updated By</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '90px' }}>Usage Count</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {paginatedAssets.length > 0 ? (
-                                                        paginatedAssets.map((asset) => {
-                                                            const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
-                                                            const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
-                                                            const taskId = asset.linked_task_id || asset.linked_task;
-                                                            const task = taskId ? tasks.find(t => t.id === taskId) : null;
-                                                            // Use memoized map for O(1) lookup instead of O(n) find
-                                                            const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
-                                                            const designer = designerId ? usersMap.get(designerId) : undefined;
-                                                            const createdByUser = asset.created_by ? usersMap.get(asset.created_by) : undefined;
-                                                            const updatedByUser = asset.updated_by ? usersMap.get(asset.updated_by) : undefined;
-                                                            const status = asset.status || 'Draft';
-                                                            let statusColor = 'bg-slate-100 text-slate-700';
-                                                            let statusText: string = status;
-                                                            if (status === 'QC Approved' || status === 'Published') {
-                                                                statusColor = 'bg-green-100 text-green-700';
-                                                                statusText = 'Pass';
-                                                            } else if (status === 'Pending QC Review') {
-                                                                statusColor = 'bg-amber-100 text-amber-700';
-                                                                statusText = 'Pending';
-                                                            } else if (status === 'QC Rejected' || status === 'Rework Required') {
-                                                                statusColor = 'bg-red-100 text-red-700';
-                                                                statusText = 'Fail';
-                                                            }
-                                                            const date = asset.date || asset.created_at;
-                                                            const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-';
+                        {/* Scrollable Table Area */}
+                        <div className="flex-1 overflow-hidden">
+                            {assetsLoading ? (
+                                <div className="h-full flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                </div>
+                            ) : displayMode === 'table' ? (
+                                <div className="h-full flex flex-col">
+                                    <div className="flex-1 overflow-auto">
+                                        <table className="w-full border-collapse" style={{ minWidth: '1400px' }}>
+                                            <thead className="bg-slate-100 sticky top-0 z-10">
+                                                <tr>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Thumb</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Name</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Type</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Category</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Content</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Service</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Task</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">QC</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Score</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Designer</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Date</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 whitespace-nowrap">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white">
+                                                {paginatedAssets.length > 0 ? paginatedAssets.map((asset) => {
+                                                    const service = asset.linked_service_id ? services.find(s => s.id === asset.linked_service_id) : null;
+                                                    const task = asset.linked_task_id ? tasks.find(t => t.id === asset.linked_task_id) : null;
+                                                    const designer = (asset.designed_by || asset.created_by) ? usersMap.get(asset.designed_by || asset.created_by) : undefined;
+                                                    const status = asset.status || 'Draft';
+                                                    let statusColor = 'bg-slate-100 text-slate-700';
+                                                    if (status === 'QC Approved' || status === 'Published') statusColor = 'bg-green-100 text-green-700';
+                                                    else if (status === 'Pending QC Review') statusColor = 'bg-amber-100 text-amber-700';
+                                                    else if (status === 'QC Rejected') statusColor = 'bg-red-100 text-red-700';
+                                                    const date = asset.created_at ? new Date(asset.created_at).toLocaleDateString() : '-';
 
-                                                            return (
-                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer border-b border-slate-100">
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        {asset.thumbnail_url ? (
-                                                                            <img src={asset.thumbnail_url} alt={asset.name} className="w-10 h-10 object-cover rounded border border-slate-200" loading="lazy" />
-                                                                        ) : (
-                                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded flex items-center justify-center text-sm border border-slate-200">
-                                                                                {getAssetIcon(asset.type)}
-                                                                            </div>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <div className="max-w-[140px]">
-                                                                            <div className="font-medium text-slate-900 text-xs truncate" title={asset.name}>
-                                                                                {asset.name.length > 22 ? asset.name.substring(0, 22) + '...' : asset.name}
-                                                                            </div>
-                                                                            <div className="text-xs text-slate-400 truncate">
-                                                                                {(asset.file_url?.split('/').pop() || `asset-${asset.id}`).substring(0, 16)}
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getAssetTypeBadgeColor(asset.type)}`}>
-                                                                            {asset.type || '-'}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="text-xs text-slate-700">{asset.asset_category || '-'}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="text-xs text-slate-700">
-                                                                            {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="text-xs text-slate-700">{service?.service_name || '-'}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="text-xs text-slate-700 truncate block max-w-[100px]">{task?.name || '-'}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
-                                                                            {statusText}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        {asset.qc_score !== undefined && asset.qc_score !== null ? (
-                                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${asset.qc_score >= 80 ? 'border-green-500 bg-green-50 text-green-700' :
-                                                                                asset.qc_score >= 60 ? 'border-amber-500 bg-amber-50 text-amber-700' :
-                                                                                    'border-red-500 bg-red-50 text-red-700'
-                                                                                }`}>
-                                                                                {asset.qc_score}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-xs text-slate-400">-</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="text-xs text-slate-700">{asset.version_number || 'v1.0'}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        {designer ? (
-                                                                            <div className="flex items-center gap-1">
-                                                                                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                                                    {designer.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-                                                                                </div>
-                                                                                <span className="text-xs text-slate-700 truncate max-w-[70px]">{designer.name}</span>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-xs text-slate-400">-</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="text-xs text-slate-600">{formattedDate}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        {createdByUser ? (
-                                                                            <div className="flex items-center gap-1">
-                                                                                <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                                                    {createdByUser.name?.charAt(0).toUpperCase() || 'U'}
-                                                                                </div>
-                                                                                <span className="text-xs text-slate-700 truncate max-w-[60px]">{createdByUser.name}</span>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-xs text-slate-400">-</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        {updatedByUser ? (
-                                                                            <div className="flex items-center gap-1">
-                                                                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                                                    {updatedByUser.name?.charAt(0).toUpperCase() || 'U'}
-                                                                                </div>
-                                                                                <span className="text-xs text-slate-700 truncate max-w-[60px]">{updatedByUser.name}</span>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-xs text-slate-400">-</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
-                                                                            {(asset as any).usage_count || 0}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                                        <div className="flex items-center gap-0.5">
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleRowClick(asset); }}
-                                                                                className="p-1 text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded"
-                                                                                title="View QC Details"
-                                                                            >
-                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                                                                </svg>
-                                                                            </button>
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
-                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                                            </button>
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
-                                                                                {deletingId === asset.id ? (
-                                                                                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                                                ) : (
-                                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                                                )}
-                                                                            </button>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <tr>
-                                                            <td colSpan={16} className="px-6 py-12 text-center">
-                                                                <div className="flex flex-col items-center justify-center text-slate-400">
-                                                                    <svg className="w-10 h-10 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                    </svg>
-                                                                    <p className="text-xs font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
+                                                    return (
+                                                        <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+                                                            <td className="px-3 py-2">
+                                                                {asset.thumbnail_url ? (
+                                                                    <img src={asset.thumbnail_url} alt="" className="w-8 h-8 object-cover rounded" />
+                                                                ) : (
+                                                                    <div className="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-xs">{getAssetIcon(asset.type)}</div>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2"><span className="text-xs font-medium text-slate-900 truncate block max-w-[150px]" title={asset.name}>{asset.name}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600">{asset.type || '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600">{asset.asset_category || '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600">{asset.application_type || '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600 truncate block max-w-[100px]">{service?.service_name || '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600 truncate block max-w-[100px]">{task?.name || '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${statusColor}`}>{status === 'QC Approved' ? 'Pass' : status === 'QC Rejected' ? 'Fail' : status === 'Pending QC Review' ? 'Pending' : 'Draft'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600">{asset.qc_score ?? '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-600 truncate block max-w-[80px]">{designer?.name || '-'}</span></td>
+                                                            <td className="px-3 py-2"><span className="text-xs text-slate-500">{date}</span></td>
+                                                            <td className="px-3 py-2">
+                                                                <div className="flex gap-1">
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-blue-500 hover:bg-blue-50 rounded"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} className="p-1 text-red-500 hover:bg-red-50 rounded"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                                                                 </div>
                                                             </td>
                                                         </tr>
+                                                    );
+                                                }) : (
+                                                    <tr><td colSpan={12} className="px-6 py-12 text-center text-slate-400 text-sm">No assets found</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {/* Pagination */}
+                                    {filteredAssets.length > 0 && (
+                                        <div className="flex-shrink-0 px-4 py-2 bg-white border-t border-slate-200 flex justify-between items-center">
+                                            <span className="text-xs text-slate-600">Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, filteredAssets.length)} of {filteredAssets.length}</span>
+                                            <div className="flex items-center gap-1">
+                                                <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} className="px-2 py-1 border border-slate-200 rounded text-xs">
+                                                    <option value={25}>25</option>
+                                                    <option value={50}>50</option>
+                                                    <option value={100}>100</option>
+                                                </select>
+                                                <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 border border-slate-200 rounded text-xs disabled:opacity-50">First</button>
+                                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1 border border-slate-200 rounded text-xs disabled:opacity-50">Prev</button>
+                                                <span className="px-2 text-xs">{currentPage} / {totalPages}</span>
+                                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-2 py-1 border border-slate-200 rounded text-xs disabled:opacity-50">Next</button>
+                                                <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 border border-slate-200 rounded text-xs disabled:opacity-50">Last</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* Grid View */
+                                <div className="h-full overflow-auto p-4">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                        {paginatedAssets.length > 0 ? paginatedAssets.map((asset) => (
+                                            <div key={asset.id} onClick={() => handleRowClick(asset)} className="bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md cursor-pointer overflow-hidden">
+                                                <div className="aspect-video bg-slate-100 relative">
+                                                    {asset.thumbnail_url ? (
+                                                        <img src={asset.thumbnail_url} alt={asset.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 text-2xl">{getAssetIcon(asset.type)}</div>
                                                     )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        {filteredAssets.length > 0 && (
-                                            <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 flex justify-between items-center flex-shrink-0">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-xs text-slate-600">
-                                                        Showing <span className="font-bold text-slate-900">{((currentPage - 1) * pageSize) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, filteredAssets.length)}</span> of <span className="font-bold text-indigo-600">{filteredAssets.length}</span>
+                                                    <span className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-xs font-medium ${asset.status === 'QC Approved' ? 'bg-green-100 text-green-700' : asset.status === 'QC Rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
+                                                        {asset.status === 'QC Approved' ? 'Pass' : asset.status === 'QC Rejected' ? 'Fail' : 'Draft'}
                                                     </span>
-                                                    <select
-                                                        value={pageSize}
-                                                        onChange={(e) => {
-                                                            const newSize = Number(e.target.value);
-                                                            setPageSize(newSize);
-                                                            setCurrentPage(1);
-                                                        }}
-                                                        className="px-2 py-1 border border-slate-300 rounded text-xs bg-white focus:ring-1 focus:ring-indigo-500"
-                                                    >
-                                                        <option value={15}>15 per page</option>
-                                                        <option value={25}>25 per page</option>
-                                                        <option value={50}>50 per page</option>
-                                                        <option value={100}>100 per page</option>
-                                                        <option value={250}>250 per page</option>
-                                                        <option value={filteredAssets.length}>All ({filteredAssets.length})</option>
-                                                    </select>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => setCurrentPage(1)}
-                                                        disabled={currentPage === 1}
-                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        First
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                                        disabled={currentPage === 1}
-                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        Prev
-                                                    </button>
-                                                    <div className="flex items-center gap-0.5">
-                                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                                            let pageNum;
-                                                            if (totalPages <= 5) {
-                                                                pageNum = i + 1;
-                                                            } else if (currentPage <= 3) {
-                                                                pageNum = i + 1;
-                                                            } else if (currentPage >= totalPages - 2) {
-                                                                pageNum = totalPages - 4 + i;
-                                                            } else {
-                                                                pageNum = currentPage - 2 + i;
-                                                            }
-                                                            return (
-                                                                <button
-                                                                    key={pageNum}
-                                                                    onClick={() => setCurrentPage(pageNum)}
-                                                                    className={`w-7 h-7 rounded text-xs font-medium transition-colors ${currentPage === pageNum
-                                                                        ? 'bg-indigo-600 text-white'
-                                                                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-                                                                        }`}
-                                                                >
-                                                                    {pageNum}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    <button
-                                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                                        disabled={currentPage === totalPages}
-                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        Next
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setCurrentPage(totalPages)}
-                                                        disabled={currentPage === totalPages}
-                                                        className="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        Last
-                                                    </button>
+                                                <div className="p-3">
+                                                    <h3 className="text-sm font-medium text-slate-900 truncate">{asset.name}</h3>
+                                                    <p className="text-xs text-slate-500 mt-1">{asset.type || 'Unknown'} â€¢ {asset.asset_category || 'Uncategorized'}</p>
                                                 </div>
                                             </div>
+                                        )) : (
+                                            <div className="col-span-full text-center py-12 text-slate-400">No assets found</div>
                                         )}
                                     </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-auto flex-1">
-                                        {filteredAssets.length === 0 ? (
-                                            <div className="col-span-full text-center py-12">
-                                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-slate-500 text-lg font-medium mb-4">
-                                                    No assets yet.
-                                                </p>
-                                                <div className="space-y-4">
-                                                    <p className="text-slate-400 text-sm">
-                                                        Get started by uploading your first asset
-                                                    </p>
-
-                                                    {/* Quick Upload Options */}
-                                                    <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                                                setShowUploadModal(true);
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                        >
-                                                            🌐 Web Content
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                                                setShowUploadModal(true);
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                                                        >
-                                                            🔍 SEO Content
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                                                setShowUploadModal(true);
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                                                        >
-                                                            📱 Social Media
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            paginatedAssets.map((asset) => (
-                                                <div
-                                                    key={asset.id}
-                                                    onClick={() => handleRowClick(asset)}
-                                                    className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
-                                                >
-                                                    {/* Asset Preview */}
-                                                    <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                                                        {asset.thumbnail_url ? (
-                                                            <img
-                                                                src={asset.thumbnail_url}
-                                                                alt={asset.name}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-                                                                <span className="text-4xl text-white">
-                                                                    {getAssetIcon(asset.type)}
-                                                                </span>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Status Badge */}
-                                                        <div className="absolute top-3 left-3">
-                                                            {getStatusBadge(asset.status || 'Draft')}
-                                                        </div>
-
-                                                        {/* Enhanced Actions Overlay */}
-                                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                                            {(asset.file_url || asset.thumbnail_url) && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const url = asset.file_url || asset.thumbnail_url;
-                                                                        if (url) {
-                                                                            if (url.startsWith('data:')) {
-                                                                                const win = window.open();
-                                                                                if (win) {
-                                                                                    win.document.write(`<img src="${url}" style="max-width:100%; height:auto;" />`);
-                                                                                }
-                                                                            } else {
-                                                                                window.open(url, '_blank', 'noopener,noreferrer');
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                    className="p-2 bg-white/90 backdrop-blur-sm text-blue-600 hover:bg-white rounded-lg shadow-sm transition-all"
-                                                                    title="View Asset"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
-
-                                                            {/* Update Asset Button - More Prominent */}
-                                                            {(asset.status === 'Draft' || asset.status === 'QC Rejected' || asset.submitted_by === currentUser.id) && (
-                                                                <button
-                                                                    onClick={(e) => handleEdit(e, asset)}
-                                                                    className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 rounded-lg shadow-md hover:shadow-lg transition-all"
-                                                                    title="Update Asset"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
-
-                                                            {/* Delete Button - creators or admins */}
-                                                            {(asset.submitted_by === currentUser.id || currentUser.role === 'admin') && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }}
-                                                                    disabled={deletingId === asset.id}
-                                                                    className={`p-2 bg-white/90 text-red-600 hover:bg-red-50 rounded-lg shadow-sm transition-all ${deletingId === asset.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                    title="Delete Asset"
-                                                                >
-                                                                    {deletingId === asset.id ? (
-                                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                        </svg>
-                                                                    )}
-                                                                </button>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Quick Update Badge */}
-                                                        {(asset.status === 'Draft' || asset.status === 'QC Rejected') && (
-                                                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
-                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                                    </svg>
-                                                                    Update Ready
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Asset Info */}
-                                                    <div className="p-4 space-y-3">
-                                                        {/* Asset Name & ID */}
-                                                        <div className="flex items-start justify-between">
-                                                            <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 flex-1">
-                                                                {asset.name}
-                                                            </h3>
-                                                            <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-                                                                ID: {asset.id}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Campaign/Project Name */}
-                                                        {asset.web_title && (
-                                                            <div className="text-sm text-slate-700 font-medium">
-                                                                {asset.web_title}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Service Linking */}
-                                                        <div className="space-y-1">
-                                                            {asset.linked_service_ids && asset.linked_service_ids.length > 0 && (
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Service</span>
-                                                                    <div className="text-slate-700 font-medium">
-                                                                        {asset.linked_service_ids.map(serviceId => {
-                                                                            const service = services.find(s => s.id === serviceId);
-                                                                            return service?.service_name;
-                                                                        }).filter(Boolean).join(', ')}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {asset.linked_sub_service_ids && asset.linked_sub_service_ids.length > 0 && (
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Sub-Service</span>
-                                                                    <div className="text-slate-700 font-medium">
-                                                                        {asset.linked_sub_service_ids.map(ssId => {
-                                                                            const subService = subServices.find(ss => ss.id === ssId);
-                                                                            return subService?.sub_service_name;
-                                                                        }).filter(Boolean).join(', ')}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {asset.repository && (
-                                                                <div className="text-xs">
-                                                                    <span className="text-slate-500 uppercase tracking-wide font-medium">Linked Repository</span>
-                                                                    <div className="text-slate-700 font-medium">{asset.repository}</div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* QC Panel */}
-                                                        {asset.qc_score && (
-                                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                                <div className="flex items-center justify-between mb-2">
-                                                                    <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">QC Panel</span>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <CircularScore
-                                                                            score={asset.qc_score}
-                                                                            label=""
-                                                                            size="xs"
-                                                                        />
-                                                                        <span className="text-xs font-bold text-slate-700">
-                                                                            {asset.qc_score}/100
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                                                    <div>
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Status</span>
-                                                                        <div className={`font-medium ${asset.qc_score >= 80 ? 'text-green-600' : asset.qc_score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                                            {asset.qc_score >= 80 ? '✓ Pass' : asset.qc_score >= 60 ? '⚠ Review' : '✗ Fail'}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {asset.qc_reviewed_at && (
-                                                                        <div>
-                                                                            <span className="text-slate-500 uppercase tracking-wide font-medium">QC Date</span>
-                                                                            <div className="text-slate-700 font-medium">
-                                                                                {new Date(asset.qc_reviewed_at).toLocaleDateString('en-US', {
-                                                                                    year: 'numeric',
-                                                                                    month: '2-digit',
-                                                                                    day: '2-digit'
-                                                                                })}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Reviewer Info */}
-                                                                {asset.qc_reviewer_id && (
-                                                                    <div className="mt-2 text-xs">
-                                                                        <span className="text-slate-500 uppercase tracking-wide font-medium">Reviewer</span>
-                                                                        <div className="text-slate-700 font-medium">
-                                                                            {(() => {
-                                                                                const reviewer = usersMap.get(asset.qc_reviewer_id);
-                                                                                return reviewer ? reviewer.name : 'Unknown Reviewer';
-                                                                            })()}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Type and Repository Tags */}
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-indigo-700 bg-indigo-100">
-                                                                <span>{getAssetIcon(asset.type)}</span>
-                                                                {asset.type}
-                                                            </span>
-                                                            {asset.application_type && (
-                                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.application_type === 'web' ? 'bg-blue-100 text-blue-700' :
-                                                                    asset.application_type === 'seo' ? 'bg-green-100 text-green-700' :
-                                                                        asset.application_type === 'smm' ? 'bg-purple-100 text-purple-700' :
-                                                                            'bg-slate-100 text-slate-700'
-                                                                    }`}>
-                                                                    {asset.application_type === 'web' && '🌐 WEB'}
-                                                                    {asset.application_type === 'seo' && '🔍 SEO'}
-                                                                    {asset.application_type === 'smm' && '📱 SMM'}
-                                                                    {!['web', 'seo', 'smm'].includes(asset.application_type) && asset.application_type.toUpperCase()}
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        {/* AI Scores */}
-                                                        {(asset.seo_score || asset.grammar_score) && (
-                                                            <div className="flex gap-2">
-                                                                {asset.seo_score && (
-                                                                    <CircularScore
-                                                                        score={asset.seo_score}
-                                                                        label="SEO"
-                                                                        size="xs"
-                                                                    />
-                                                                )}
-                                                                {asset.grammar_score && (
-                                                                    <CircularScore
-                                                                        score={asset.grammar_score}
-                                                                        label="Grammar"
-                                                                        size="xs"
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Usage Panel */}
-                                                        <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                            <div className="text-xs">
-                                                                <span className="text-slate-500 uppercase tracking-wide font-medium">Linking Panel</span>
-                                                                <div className="flex items-center justify-between mt-1">
-                                                                    {asset.linking_active && (
-                                                                        <span className="text-green-600 font-medium text-xs">🔗 Active</span>
-                                                                    )}
-                                                                </div>
-                                                                {asset.date && (
-                                                                    <div className="text-slate-500 text-xs mt-1">
-                                                                        Created: {new Date(asset.date).toLocaleDateString('en-US', {
-                                                                            month: 'short',
-                                                                            day: 'numeric',
-                                                                            year: 'numeric'
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )
-            }
-
-            {/* Enhanced Floating Action Button for Upload & Update */}
-            {
-                viewMode === 'list' && (
-                    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-                        {/* Update Asset FAB */}
-                        <div className="relative group">
-                            <button
-                                onClick={() => {
-                                    const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-                                    if (recentAsset) {
-                                        handleEdit({ stopPropagation: () => { } } as any, recentAsset);
-                                    } else {
-                                        alert('No assets available to update');
-                                    }
-                                }}
-                                className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
-                                title="Quick Update Asset"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </button>
-
-                            {/* Update Action Menu */}
-                            <div className="absolute bottom-0 right-14 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[220px]">
-                                    <div className="text-xs font-semibold text-orange-700 px-3 py-2 border-b border-slate-100">
-                                        Quick Update
-                                    </div>
-
-                                    <button
-                                        onClick={() => {
-                                            const recentAsset = assets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-                                            if (recentAsset) {
-                                                handleEdit({ stopPropagation: () => { } } as any, recentAsset);
-                                            }
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
-                                    >
-                                        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                                            🔄
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-slate-900">Recent Asset</div>
-                                            <div className="text-xs text-slate-500">Update latest asset</div>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            const pendingAssets = assets.filter(a => a.status === 'Draft' || a.status === 'QC Rejected');
-                                            if (pendingAssets.length > 0) {
-                                                handleEdit({ stopPropagation: () => { } } as any, pendingAssets[0]);
-                                            } else {
-                                                alert('No assets pending updates');
-                                            }
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-orange-50 rounded-md transition-colors text-sm"
-                                    >
-                                        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                                            ⏳
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-slate-900">Pending Updates</div>
-                                            <div className="text-xs text-slate-500">Drafts & rejected assets</div>
-                                        </div>
-                                    </button>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Upload Asset FAB */}
-                        <div className="relative group">
-                            <button
-                                onClick={() => setShowUploadModal(true)}
-                                className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group-hover:scale-110"
-                                title="Quick Upload"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-
-                            {/* Upload Action Menu */}
-                            <div className="absolute bottom-0 right-16 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 min-w-[200px]">
-                                    <div className="text-xs font-semibold text-slate-600 px-3 py-2 border-b border-slate-100">
-                                        Quick Upload
-                                    </div>
-
-                                    <button
-                                        onClick={() => {
-                                            // Open full upload flow with Web selected and locked
-                                            setNewAsset(prev => ({ ...prev, application_type: 'web' }));
-                                            setSelectedApplicationType('web');
-                                            setUploadStep('form-fields');
-                                            setContentTypeLocked(true);
-                                            setViewMode('upload');
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-blue-50 rounded-md transition-colors text-sm"
-                                    >
-                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                            🌐
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-slate-900">Web Content</div>
-                                            <div className="text-xs text-slate-500">Landing pages, articles</div>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            // Open full upload flow with SEO selected and locked
-                                            setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                            setSelectedApplicationType('seo');
-                                            setUploadStep('form-fields');
-                                            setContentTypeLocked(true);
-                                            setViewMode('upload');
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-green-50 rounded-md transition-colors text-sm"
-                                    >
-                                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                            🔍
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-slate-900">SEO Content</div>
-                                            <div className="text-xs text-slate-500">Optimized content</div>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            // Open full upload flow with SMM selected and locked
-                                            setNewAsset(prev => ({ ...prev, application_type: 'smm' }));
-                                            setSelectedApplicationType('smm');
-                                            setUploadStep('form-fields');
-                                            setContentTypeLocked(true);
-                                            setViewMode('upload');
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-purple-50 rounded-md transition-colors text-sm"
-                                    >
-                                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                            📱
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-slate-900">Social Media</div>
-                                            <div className="text-xs text-slate-500">Posts, stories, videos</div>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 )
             }
 
-            {/* Upload Asset Modal */}
+            {/* Upload FAB */}
+            {viewMode === 'list' && (
+                <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 flex items-center justify-center"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                </button>
+            )}
+
             {/* Asset Category Master Modal */}
             <AssetCategoryMasterModal
                 isOpen={showCategoryModal}
@@ -7122,7 +6067,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 initialData={newAsset}
                 onClose={() => {
                     setShowUploadModal(false);
-                    // Reset the newAsset state when modal closes
                     setNewAsset({
                         name: '',
                         type: 'article',
@@ -7147,14 +6091,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     });
                 }}
                 onSuccess={() => {
-                    // Refresh master tables and asset list after upload
                     setTimeout(() => {
                         refreshAssetCategories?.();
                         refreshAssetTypes?.();
                         refresh?.();
                     }, 100);
                     setShowUploadModal(false);
-                    // Reset the newAsset state after successful upload
                     setNewAsset({
                         name: '',
                         type: 'article',
@@ -7181,23 +6123,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             />
 
             {/* Asset Detail Side Panel */}
-            {
-                selectedAsset && (
-                    <AssetDetailSidePanel
-                        asset={selectedAsset}
-                        isOpen={showSidePanel}
-                        onClose={() => {
-                            setShowSidePanel(false);
-                            setSelectedAsset(null);
-                        }}
-                        onEdit={(asset) => {
-                            setShowSidePanel(false);
-                            handleEdit({ stopPropagation: () => { } } as any, asset);
-                        }}
-                        onNavigate={onNavigate}
-                    />
-                )
-            }
+            {selectedAsset && (
+                <AssetDetailSidePanel
+                    asset={selectedAsset}
+                    isOpen={showSidePanel}
+                    onClose={() => {
+                        setShowSidePanel(false);
+                        setSelectedAsset(null);
+                    }}
+                    onEdit={(asset) => {
+                        setShowSidePanel(false);
+                        handleEdit({ stopPropagation: () => { } } as any, asset);
+                    }}
+                    onNavigate={onNavigate}
+                />
+            )}
         </>
     );
 };
