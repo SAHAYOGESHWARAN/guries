@@ -5836,7 +5836,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             {/* List View */}
             {
                 viewMode === 'list' && (
-                    <div className="h-full flex flex-col w-full p-6">
+                    <div className="h-full flex flex-col w-full p-6 overflow-hidden">
                         <div className="flex justify-between items-start flex-shrink-0 w-full mb-6">
                             <div>
                                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Assets</h1>
@@ -6342,11 +6342,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                         {/* Display Content Based on View Mode */}
                         {!assetsLoading && (
-                            <div className="flex-1 min-h-0 flex flex-col">
+                            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white rounded-xl border border-slate-200 flex flex-col flex-1" style={{ height: 'calc(100vh - 320px)', minHeight: '600px', maxHeight: 'calc(100vh - 280px)' }}>
+                                    <div className="bg-white rounded-xl border border-slate-200 flex flex-col flex-1 min-h-0 overflow-hidden">
                                         {/* Scrollable Table Container - Full height with proper scrolling */}
-                                        <div className="flex-1 overflow-auto">
+                                        <div className="flex-1 overflow-auto min-h-0">
                                             <table className="w-full" style={{ minWidth: '1900px' }}>
                                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                                     <tr>
