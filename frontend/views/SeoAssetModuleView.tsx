@@ -916,11 +916,12 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Only for Blog Posting</span>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Content Editor</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">SEO Content Body</label>
                                 <textarea value={blogContent} onChange={(e) => setBlogContent(e.target.value)}
                                     placeholder="Enter your blog content here. Supports headings, formatting, links, and paragraphs..."
-                                    rows={12}
-                                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-y" />
+                                    rows={24}
+                                    style={{ minHeight: '400px' }}
+                                    className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-y leading-relaxed" />
                                 <p className="text-xs text-slate-400 mt-2">Rich text editor for blog content with support for headings, formatting, links, and paragraphs</p>
                             </div>
                         </div>
