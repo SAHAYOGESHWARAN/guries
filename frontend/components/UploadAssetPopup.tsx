@@ -278,214 +278,419 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Web Application Fields - Blue Card */}
+                        {/* Web Application Fields - Follows Document Section Order */}
                         {asset.application_type === 'web' && (
-                            <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
-                                <div className="flex items-center justify-between mb-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                            </svg>
+                            <div className="space-y-4">
+                                {/* Header */}
+                                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-blue-700">Upload Assets → Web</h3>
+                                                <p className="text-xs text-blue-600">Follow the sections in order below</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-sm font-bold text-blue-700">🌐 Web Content Fields</h3>
-                                            <p className="text-xs text-blue-600">Configure your web content details</p>
-                                        </div>
+                                        <button onClick={() => setAsset(prev => ({ ...prev, application_type: undefined }))} className="text-xs text-blue-600 hover:text-blue-800 underline">Change Type</button>
                                     </div>
-                                    <button
-                                        onClick={() => setAsset(prev => ({ ...prev, application_type: undefined }))}
-                                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                                    >
-                                        Change Type
-                                    </button>
                                 </div>
 
-                                {/* Title & Meta Description */}
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div>
+                                {/* SECTION 1: Map Assets to Source Work (4.1) */}
+                                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">1</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Map Assets to Source Work</h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Repository</label>
+                                            <select value={linkedRepositoryItemId || ''} onChange={e => setLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Repository...</option>
+                                                {repositoryItems.map(repo => (<option key={repo.id} value={repo.id}>{repo.content_title_clean || `Repository #${repo.id}`}</option>))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
+                                            <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Task...</option>
+                                                {tasks.map(task => (<option key={task.id} value={task.id}>{task.name || `Task #${task.id}`}</option>))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SECTION 2: Asset Classification (4.2) - NO Repository field */}
+                                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-indigo-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">2</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Asset Classification</h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="flex items-center gap-1 text-xs font-medium text-slate-600 mb-1">
+                                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                                                Asset Name *
+                                            </label>
+                                            <input type="text" value={asset.name || ''} onChange={e => setAsset({ ...asset, name: e.target.value })} placeholder="Enter asset name..." className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="flex items-center gap-1 text-xs font-medium text-slate-600 mb-1">
+                                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                                                Asset Type *
+                                            </label>
+                                            <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Type...</option>
+                                                <option value="Blog Banner">Blog Banner</option>
+                                                <option value="Infographic">Infographic</option>
+                                                <option value="Social Post">Social Post</option>
+                                                <option value="Reel / Video">Reel / Video</option>
+                                                <option value="Thumbnail">Thumbnail</option>
+                                                <option value="Diagram">Diagram</option>
+                                                <option value="Web Graphic">Web Graphic</option>
+                                                <option value="PDF">PDF</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SECTION 3: Content Details (4.3, 4.4, 4.5) */}
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-violet-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">3</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Content Details</h4>
+                                        <span className="text-xs text-slate-500">Title, Meta Description, Keywords, Headings & Body</span>
+                                    </div>
+
+                                    {/* Title & Meta Description */}
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
+                                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                                Title *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={asset.web_title || ''}
+                                                onChange={e => setAsset({ ...asset, web_title: e.target.value, name: e.target.value })}
+                                                placeholder="Enter web page title..."
+                                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
+                                                <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
+                                                Meta Description
+                                            </label>
+                                            <textarea
+                                                value={asset.web_description || ''}
+                                                onChange={e => setAsset({ ...asset, web_description: e.target.value })}
+                                                placeholder="SEO meta description [150-160 characters]..."
+                                                rows={3}
+                                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                            />
+                                            <p className="text-[10px] text-slate-400 text-right mt-0.5">{(asset.web_description || '').length}/160 characters</p>
+                                        </div>
+                                    </div>
+
+                                    {/* URL */}
+                                    <div className="mb-4">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                            Title *
+                                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                            URL
                                         </label>
                                         <input
                                             type="text"
-                                            value={asset.web_title || ''}
-                                            onChange={e => setAsset({ ...asset, web_title: e.target.value, name: e.target.value })}
-                                            placeholder="Enter web page title..."
+                                            value={asset.web_url || ''}
+                                            onChange={e => setAsset({ ...asset, web_url: e.target.value })}
+                                            placeholder="https://example.com/page"
                                             className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
-                                    <div>
+
+                                    {/* Keywords */}
+                                    <div className="mb-4">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                            <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
-                                            Meta Description
+                                            <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+                                            </svg>
+                                            Keywords
                                         </label>
-                                        <textarea
-                                            value={asset.web_description || ''}
-                                            onChange={e => setAsset({ ...asset, web_description: e.target.value })}
-                                            placeholder="SEO meta description [150-160 characters]..."
-                                            rows={3}
-                                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                        <input
+                                            type="text"
+                                            value={keywordsInput}
+                                            onChange={e => setKeywordsInput(e.target.value)}
+                                            placeholder="keyword1, keyword2, keyword3..."
+                                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
-                                        <p className="text-[10px] text-slate-400 text-right mt-0.5">{(asset.web_description || '').length}/160 characters</p>
                                     </div>
-                                </div>
 
-                                {/* URL */}
-                                <div className="mb-4">
-                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                        </svg>
-                                        URL
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={asset.web_url || ''}
-                                        onChange={e => setAsset({ ...asset, web_url: e.target.value })}
-                                        placeholder="https://example.com/page"
-                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                {/* Keywords */}
-                                <div className="mb-4">
-                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                        <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-                                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-                                        </svg>
-                                        Keywords
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={keywordsInput}
-                                        onChange={e => setKeywordsInput(e.target.value)}
-                                        placeholder="keyword1, keyword2, keyword3..."
-                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                {/* Heading Structure */}
-                                <div className="mb-4">
-                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-3">
-                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-                                        </svg>
-                                        Heading Structure
-                                    </label>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-[11px] text-slate-600 mb-1">H1 Tag</label>
-                                            <input
-                                                type="text"
-                                                value={asset.web_h1 || ''}
-                                                onChange={e => setAsset({ ...asset, web_h1: e.target.value })}
-                                                placeholder="Main heading (H1)..."
-                                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
+                                    {/* Heading Structure */}
+                                    <div className="mb-4">
+                                        <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-3">
+                                            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                                            </svg>
+                                            Heading Structure
+                                        </label>
+                                        <div className="space-y-3">
                                             <div>
-                                                <label className="block text-[11px] text-slate-600 mb-1">H2 Tag (First)</label>
+                                                <label className="block text-[11px] text-slate-600 mb-1">H1 Tag</label>
                                                 <input
                                                     type="text"
-                                                    value={asset.web_h2_1 || ''}
-                                                    onChange={e => setAsset({ ...asset, web_h2_1: e.target.value })}
-                                                    placeholder="First H2 subheading..."
+                                                    value={asset.web_h1 || ''}
+                                                    onChange={e => setAsset({ ...asset, web_h1: e.target.value })}
+                                                    placeholder="Main heading (H1)..."
                                                     className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm"
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-[11px] text-slate-600 mb-1">H2 Tag (Second)</label>
-                                                <input
-                                                    type="text"
-                                                    value={asset.web_h2_2 || ''}
-                                                    onChange={e => setAsset({ ...asset, web_h2_2: e.target.value })}
-                                                    placeholder="Second H2 subheading..."
-                                                    className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm"
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[11px] text-slate-600 mb-1">H2 Tag (First)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={asset.web_h2_1 || ''}
+                                                        onChange={e => setAsset({ ...asset, web_h2_1: e.target.value })}
+                                                        placeholder="First H2 subheading..."
+                                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[11px] text-slate-600 mb-1">H2 Tag (Second)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={asset.web_h2_2 || ''}
+                                                        onChange={e => setAsset({ ...asset, web_h2_2: e.target.value })}
+                                                        placeholder="Second H2 subheading..."
+                                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Body Content with AI Analysis Side Panel (4.5, 4.6) */}
+                                    <div className="bg-white rounded-xl p-4 border border-slate-200">
+                                        <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-2">
+                                            <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
+                                            Body Content (Rich Text Editor)
+                                        </label>
+                                        <div className="flex gap-4">
+                                            <div className="flex-1">
+                                                <textarea
+                                                    value={asset.web_body_content || ''}
+                                                    onChange={e => setAsset({ ...asset, web_body_content: e.target.value })}
+                                                    placeholder="Paste your full article or body copy here for AI analysis. Supports: Bold, Italic, Underline, Font size, Font style, Paragraph styles, Lists (bullet & numbered)..."
+                                                    rows={12}
+                                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-y min-h-[200px]"
                                                 />
+                                                <button
+                                                    onClick={analyzeContent}
+                                                    disabled={isAnalyzing}
+                                                    className="mt-3 px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                                                >
+                                                    {isAnalyzing ? (
+                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                        </svg>
+                                                    ) : (
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                        </svg>
+                                                    )}
+                                                    Analyze with AI
+                                                </button>
+                                            </div>
+
+                                            {/* AI Analysis Side Panel (4.6) */}
+                                            <div className="w-32 bg-gradient-to-b from-blue-50 to-white rounded-xl p-3 border border-blue-100">
+                                                <p className="text-[10px] font-bold text-blue-700 mb-3 text-center">AI ANALYSIS</p>
+                                                <div className="space-y-3">
+                                                    <div className="text-center">
+                                                        <div className="relative w-12 h-12 mx-auto">
+                                                            <svg className="w-12 h-12 transform -rotate-90">
+                                                                <circle cx="24" cy="24" r="20" stroke="#e2e8f0" strokeWidth="3" fill="none" />
+                                                                <circle cx="24" cy="24" r="20" stroke="#3b82f6" strokeWidth="3" fill="none" strokeDasharray={`${(asset.seo_score || 0) * 1.26} 126`} strokeLinecap="round" />
+                                                            </svg>
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">{asset.seo_score || 0}%</span>
+                                                        </div>
+                                                        <p className="text-[9px] text-slate-500 mt-1">SEO Score</p>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="relative w-12 h-12 mx-auto">
+                                                            <svg className="w-12 h-12 transform -rotate-90">
+                                                                <circle cx="24" cy="24" r="20" stroke="#e2e8f0" strokeWidth="3" fill="none" />
+                                                                <circle cx="24" cy="24" r="20" stroke="#22c55e" strokeWidth="3" fill="none" strokeDasharray={`${(asset.grammar_score || 0) * 1.26} 126`} strokeLinecap="round" />
+                                                            </svg>
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">{asset.grammar_score || 0}%</span>
+                                                        </div>
+                                                        <p className="text-[9px] text-slate-500 mt-1">Grammar Score</p>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="relative w-12 h-12 mx-auto">
+                                                            <svg className="w-12 h-12 transform -rotate-90">
+                                                                <circle cx="24" cy="24" r="20" stroke="#e2e8f0" strokeWidth="3" fill="none" />
+                                                                <circle cx="24" cy="24" r="20" stroke="#8b5cf6" strokeWidth="3" fill="none" strokeDasharray="0 126" strokeLinecap="round" />
+                                                            </svg>
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">0%</span>
+                                                        </div>
+                                                        <p className="text-[9px] text-slate-500 mt-1">AI/Plagiarism</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Body Content with Scores */}
+                                {/* SECTION 4: Resource Upload (4.7) */}
                                 <div className="bg-white rounded-xl p-4 border border-slate-200">
-                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-2">
-                                        <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
-                                        Body content
-                                    </label>
-                                    <div className="flex gap-4">
-                                        <div className="flex-1">
-                                            <textarea
-                                                value={asset.web_body_content || ''}
-                                                onChange={e => setAsset({ ...asset, web_body_content: e.target.value })}
-                                                placeholder="Paste your full article or body copy here for AI analysis..."
-                                                rows={5}
-                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none"
-                                            />
-                                            <button
-                                                onClick={analyzeContent}
-                                                disabled={isAnalyzing}
-                                                className="mt-3 px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-                                            >
-                                                {isAnalyzing ? (
-                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-amber-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">4</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Resource Upload</h4>
+                                        <span className="text-xs text-slate-500">Multi-file upload supported</span>
+                                    </div>
+                                    <div
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-xl p-6 text-center cursor-pointer transition-all hover:bg-blue-50/30 bg-blue-50/20"
+                                    >
+                                        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,video/*,.pdf,.doc,.docx" multiple onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
+                                        {previewUrl ? (
+                                            <div className="space-y-2">
+                                                <img src={previewUrl} alt="Preview" className="max-h-24 mx-auto rounded-lg shadow-md" />
+                                                <p className="text-xs text-slate-600">Click to add more files</p>
+                                                {selectedFile && <p className="text-[10px] text-slate-500">{selectedFile.name}</p>}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                     </svg>
-                                                ) : (
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                    </svg>
-                                                )}
-                                                Analyze
+                                                </div>
+                                                <p className="text-sm font-semibold text-slate-700 mb-1">Upload Resources</p>
+                                                <p className="text-xs text-slate-500">Images, Documents, PDFs, and other supporting files</p>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* SECTION 5: Designer & Workflow (4.8, 4.9, 4.10) */}
+                                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">5</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Designer & Workflow</h4>
+                                    </div>
+
+                                    {/* User Assignments (4.8) */}
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Created By [Auto]</label>
+                                            <input type="text" value={user?.name || 'Current User'} disabled className="w-full h-9 px-3 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-600" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Designed By</label>
+                                            <select value={designedBy || ''} onChange={e => setDesignedBy(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select designer...</option>
+                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Published By</label>
+                                            <select className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select publisher...</option>
+                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Verified By (SEO)</label>
+                                            <select className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select SEO verifier...</option>
+                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Workflow Stage (4.9) & QC Status (4.10) - SEPARATE fields */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Workflow Stage</label>
+                                            <select value={workflowStage} onChange={e => setWorkflowStage(e.target.value)} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
+                                                <option value="In Progress">In Progress</option>
+                                                <option value="Sent to QC">Sent to QC</option>
+                                                <option value="Published">Published</option>
+                                                <option value="In Rework">In Rework</option>
+                                                <option value="Moved to CW">Moved to CW</option>
+                                                <option value="Moved to GD">Moved to GD</option>
+                                                <option value="Moved to WD">Moved to WD</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">QC Status (Separate)</label>
+                                            <select className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Not applicable</option>
+                                                <option value="QC Pending">QC Pending</option>
+                                                <option value="Rework">Rework</option>
+                                                <option value="Approved">Approved</option>
+                                                <option value="Rejected">Rejected</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Cross-Team Visibility Banner */}
+                                    {(workflowStage === 'Moved to CW' || workflowStage === 'Moved to GD' || workflowStage === 'Moved to WD') && (
+                                        <div className={`mt-3 p-2 rounded-lg text-xs font-medium text-center ${workflowStage === 'Moved to CW' ? 'bg-blue-100 text-blue-700' : workflowStage === 'Moved to GD' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                            {workflowStage === 'Moved to CW' && '📝 CW is working on this asset'}
+                                            {workflowStage === 'Moved to GD' && '🎨 GD is working on this asset'}
+                                            {workflowStage === 'Moved to WD' && '🌐 WD is working on this asset'}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* SECTION 6: Versioning (4.11) */}
+                                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-slate-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">6</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Versioning</h4>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Version [Auto]</label>
+                                            <div className="h-9 px-4 bg-slate-100 rounded-lg flex items-center text-sm font-medium text-slate-700 w-16">v1.0</div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 bg-white">
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                View History
+                                            </button>
+                                            <button className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 bg-white">
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Rollback
                                             </button>
                                         </div>
-
-                                        {/* Score Circles */}
-                                        <div className="w-28 flex flex-col items-center justify-center gap-3">
-                                            <div className="text-center">
-                                                <div className="relative w-14 h-14 mx-auto">
-                                                    <svg className="w-14 h-14 transform -rotate-90">
-                                                        <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="3" fill="none" />
-                                                        <circle
-                                                            cx="28" cy="28" r="24"
-                                                            stroke="#3b82f6"
-                                                            strokeWidth="3"
-                                                            fill="none"
-                                                            strokeDasharray={`${(asset.seo_score || 0) * 1.51} 151`}
-                                                            strokeLinecap="round"
-                                                        />
-                                                    </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700">
-                                                        {asset.seo_score || 0}%
-                                                    </span>
-                                                </div>
-                                                <p className="text-[10px] text-slate-500 mt-1">SEO SCORE</p>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="relative w-14 h-14 mx-auto">
-                                                    <svg className="w-14 h-14 transform -rotate-90">
-                                                        <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="3" fill="none" />
-                                                        <circle
-                                                            cx="28" cy="28" r="24"
-                                                            stroke="#3b82f6"
-                                                            strokeWidth="3"
-                                                            fill="none"
-                                                            strokeDasharray={`${(asset.grammar_score || 0) * 1.51} 151`}
-                                                            strokeLinecap="round"
-                                                        />
-                                                    </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700">
-                                                        {asset.grammar_score || 0}%
-                                                    </span>
-                                                </div>
-                                                <p className="text-[10px] text-slate-500 mt-1">GRAMMAR SCORE</p>
-                                            </div>
-                                        </div>
                                     </div>
+                                    <p className="text-[10px] text-slate-400 mt-2">Each update creates a new version. Previous versions can be retrieved for reference or rollback.</p>
                                 </div>
                             </div>
                         )}
@@ -1005,8 +1210,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Resource Upload - Shows for all content types when one is selected */}
-                        {asset.application_type && (
+                        {/* Resource Upload - Shows for SEO and SMM only (Web has its own section) */}
+                        {asset.application_type && asset.application_type !== 'web' && (
                             <div>
                                 <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2">
                                     <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -1016,10 +1221,9 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 </label>
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${asset.application_type === 'web' ? 'border-blue-200 hover:border-blue-400 hover:bg-blue-50/30 bg-blue-50/20' :
-                                        asset.application_type === 'seo' ? 'border-green-200 hover:border-green-400 hover:bg-green-50/30 bg-green-50/20' :
-                                            asset.application_type === 'smm' ? 'border-purple-200 hover:border-purple-400 hover:bg-purple-50/30 bg-purple-50/20' :
-                                                'border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 bg-slate-50'
+                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${asset.application_type === 'seo' ? 'border-green-200 hover:border-green-400 hover:bg-green-50/30 bg-green-50/20' :
+                                        asset.application_type === 'smm' ? 'border-purple-200 hover:border-purple-400 hover:bg-purple-50/30 bg-purple-50/20' :
+                                            'border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 bg-slate-50'
                                         }`}
                                 >
                                     <input
@@ -1039,25 +1243,22 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         </div>
                                     ) : (
                                         <>
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${asset.application_type === 'web' ? 'bg-blue-500' :
-                                                asset.application_type === 'seo' ? 'bg-green-500' :
-                                                    asset.application_type === 'smm' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
-                                                        'bg-blue-500'
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${asset.application_type === 'seo' ? 'bg-green-500' :
+                                                asset.application_type === 'smm' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                                                    'bg-blue-500'
                                                 }`}>
                                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
                                             </div>
                                             <p className="text-sm font-semibold text-slate-700 mb-1">
-                                                {asset.application_type === 'web' ? 'Upload Web Assets' :
-                                                    asset.application_type === 'seo' ? 'Upload SEO Content Files' :
-                                                        asset.application_type === 'smm' ? 'Upload Social Media Assets' :
-                                                            'Upload Assets'}
+                                                {asset.application_type === 'seo' ? 'Upload SEO Content Files' :
+                                                    asset.application_type === 'smm' ? 'Upload Social Media Assets' :
+                                                        'Upload Assets'}
                                             </p>
-                                            <p className="text-xs text-slate-500">Drag & drop source files, or <span className={`hover:underline ${asset.application_type === 'web' ? 'text-blue-600' :
-                                                asset.application_type === 'seo' ? 'text-green-600' :
-                                                    asset.application_type === 'smm' ? 'text-purple-600' :
-                                                        'text-blue-600'
+                                            <p className="text-xs text-slate-500">Drag & drop source files, or <span className={`hover:underline ${asset.application_type === 'seo' ? 'text-green-600' :
+                                                asset.application_type === 'smm' ? 'text-purple-600' :
+                                                    'text-blue-600'
                                                 }`}>browse local files</span></p>
                                         </>
                                     )}
@@ -1065,8 +1266,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Asset Classification - Yellow Card - Only show when content type is selected */}
-                        {asset.application_type && (
+                        {/* Asset Classification - Yellow Card - Only show for SEO and SMM (Web has its own section) */}
+                        {asset.application_type && asset.application_type !== 'web' && (
                             <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
                                 <div className="flex items-center gap-2 mb-4">
                                     <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -1135,8 +1336,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Map Asset to Source Work - Only show when content type is selected */}
-                        {asset.application_type && (
+                        {/* Map Asset to Source Work - Only show for SEO and SMM (Web has its own section) */}
+                        {asset.application_type && asset.application_type !== 'web' && (
                             <div className="bg-white rounded-xl p-5 border border-slate-200">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -1222,8 +1423,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                         )}
 
 
-                        {/* Designer & Workflow - Purple Card - Only show when content type is selected */}
-                        {asset.application_type && (
+                        {/* Designer & Workflow - Purple Card - Only show for SEO and SMM (Web has its own section) */}
+                        {asset.application_type && asset.application_type !== 'web' && (
                             <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-9 h-9 bg-purple-500 rounded-xl flex items-center justify-center">
@@ -1275,8 +1476,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Versioning - Only show when content type is selected */}
-                        {asset.application_type && (
+                        {/* Versioning - Only show for SEO and SMM (Web has its own section) */}
+                        {asset.application_type && asset.application_type !== 'web' && (
                             <div className="bg-white rounded-xl p-5 border border-slate-200">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center">
