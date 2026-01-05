@@ -122,6 +122,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
     const [resourceFiles, setResourceFiles] = useState<Array<{ name: string; url: string }>>([]);
 
     // ========== SECTION 10: Designer & Workflow ==========
+    const [assignedTeamMembers, setAssignedTeamMembers] = useState<number[]>([]);
     const [verifiedBy, setVerifiedBy] = useState<number | null>(null);
 
     // ========== SECTION 11: Versioning ==========
@@ -346,6 +347,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                 seo_domains: selectedDomains,
                 blog_content: blogContent,
                 resource_files: resourceFiles.map(f => f.url),
+                assigned_team_members: assignedTeamMembers,
                 created_by: currentUser.id,
                 verified_by: verifiedBy,
                 status: 'Draft'
@@ -411,6 +413,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                 seo_domains: selectedDomains,
                 blog_content: blogContent,
                 resource_files: resourceFiles.map(f => f.url),
+                assigned_team_members: assignedTeamMembers,
                 created_by: currentUser.id,
                 verified_by: verifiedBy,
                 status: 'Pending QC Review'
@@ -970,22 +973,47 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                             <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">10</div>
                             <h3 className="text-base font-bold text-slate-800">Designer & Workflow</h3>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Created By (Auto) */}
+                        <div className="space-y-4">
+                            {/* Assign Team Members - Multi-select */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Created By (Auto)</label>
-                                <input type="text" value={currentUser.name} disabled
-                                    className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm cursor-not-allowed" />
-                                <p className="text-xs text-slate-400 mt-1">Auto-populated from logged-in user</p>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Assign Team Members</label>
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 max-h-32 overflow-y-auto">
+                                    {users.length === 0 ? (
+                                        <p className="text-sm text-slate-400 text-center py-2">No users available</p>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {users.map(u => (
+                                                <button key={u.id} type="button"
+                                                    onClick={() => setAssignedTeamMembers(prev => prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id])}
+                                                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${assignedTeamMembers.includes(u.id)
+                                                        ? 'bg-amber-500 text-white'
+                                                        : 'bg-white border border-slate-200 text-slate-600 hover:border-amber-300'
+                                                        }`}>
+                                                    {u.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Select multiple team members to assign</p>
                             </div>
-                            {/* Verified By (SEO) */}
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Verified By (SEO)</label>
-                                <select value={verifiedBy || ''} onChange={(e) => setVerifiedBy(e.target.value ? Number(e.target.value) : null)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400">
-                                    <option value="">Select SEO Verifier...</option>
-                                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                </select>
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Created By (Auto) */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-2">Created By (Auto)</label>
+                                    <input type="text" value={currentUser.name} disabled
+                                        className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm cursor-not-allowed" />
+                                    <p className="text-xs text-slate-400 mt-1">Auto-populated from logged-in user</p>
+                                </div>
+                                {/* Verified By (SEO) */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-2">Verified By (SEO)</label>
+                                    <select value={verifiedBy || ''} onChange={(e) => setVerifiedBy(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400">
+                                        <option value="">Select SEO Verifier...</option>
+                                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>

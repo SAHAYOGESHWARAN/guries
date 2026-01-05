@@ -1143,18 +1143,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     <p className="text-slate-600 text-sm">Web content, articles, and general website assets</p>
                 </div>
 
-                {/* SEO Application */}
+                {/* SEO Application - Navigate to SEO Asset Module */}
                 <div
-                    onClick={() => handleApplicationTypeSelect('seo')}
+                    onClick={() => onNavigate?.('seo-asset-module')}
                     className="bg-white rounded-xl border-2 border-slate-200 hover:border-green-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
                 >
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200">
                         <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">SEO</h3>
-                    <p className="text-slate-600 text-sm">SEO-optimized content and search engine assets</p>
+                    <p className="text-slate-600 text-sm">SEO Asset Module with 12-step workflow</p>
                 </div>
 
                 {/* SMM Application */}
