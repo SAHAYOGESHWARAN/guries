@@ -1200,3 +1200,97 @@ export interface AssetUsageData {
     backlink_submissions: AssetBacklinkUsage[];
     engagement_metrics: AssetEngagementMetrics;
 }
+
+
+// --- SEO Asset Module Types (12-Step Workflow) ---
+export interface SeoAssetDomain {
+    id?: number;
+    seo_asset_id?: number;
+    domain_name: string;
+    domain_type?: string;
+    url_posted?: string;
+    seo_self_qc_status: 'Pass' | 'Fail' | 'Waiting';
+    qa_status: 'Pending' | 'Approved' | 'Rejected';
+    display_status: 'Approved' | 'Rejected' | 'Pending';
+    backlink_source_id?: number;
+    domain_authority?: number;
+    spam_score?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface SeoAsset {
+    id: number;
+    name: string;
+    application_type: 'seo';
+
+    // Step 1: Asset ID Selection
+    linked_asset_id?: number;
+
+    // Step 2: Map Assets to Source Work
+    linked_task_id?: number;
+    linked_campaign_id?: number;
+    linked_project_id?: number;
+    linked_service_id?: number;
+    linked_sub_service_id?: number;
+    linked_repository_item_id?: number;
+
+    // Step 3: Asset Classification
+    asset_type?: string;
+    sector_id?: string;
+    industry_id?: string;
+
+    // Step 4: SEO Metadata & Anchor Text
+    seo_title?: string;
+    seo_meta_title?: string;
+    seo_description?: string;
+    service_url?: string;
+    blog_url?: string;
+    anchor_text?: string;
+
+    // Step 5: Keywords
+    primary_keyword_id?: number;
+    lsi_keywords?: number[];
+
+    // Step 6: Domain Type & Domains
+    domain_type?: string;
+    seo_domains?: SeoAssetDomain[];
+
+    // Step 8: Blog Content (conditional)
+    blog_content?: string;
+
+    // Step 9: Resource Files
+    resource_files?: string[];
+
+    // Step 10: Designer & Workflow
+    assigned_team_members?: number[];
+    created_by?: number;
+    verified_by?: number;
+
+    // Step 11: Versioning
+    version_number?: string;
+    version_history?: Array<{
+        version: string;
+        date: string;
+        action: string;
+        user_id?: number;
+        qc_remarks?: string;
+    }>;
+
+    // Workflow & Status
+    status?: 'Draft' | 'Pending QC Review' | 'QC Approved' | 'QC Rejected' | 'Published';
+    workflow_stage?: 'Add' | 'In Progress' | 'Sent to QC' | 'Published' | 'In Rework';
+    qc_status?: 'QC Pending' | 'Pass' | 'Fail' | 'Rework';
+    qc_score?: number;
+    qc_remarks?: string;
+    qc_reviewer_id?: number;
+    qc_reviewed_at?: string;
+    rework_count?: number;
+    linking_active?: boolean;
+
+    // Timestamps
+    submitted_by?: number;
+    submitted_at?: string;
+    created_at?: string;
+    updated_at?: string;
+}

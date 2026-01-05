@@ -55,6 +55,7 @@ import assetFormatRoutes from './assetFormatRoutes';
 import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
 import assetTypeMasterRoutes from './assetTypeMasterRoutes';
 import * as assetUsageController from '../controllers/assetUsageController';
+import * as seoAssetController from '../controllers/seoAssetController';
 
 const router = Router();
 
@@ -151,6 +152,33 @@ router.delete('/assetLibrary/:id/qc-delete', assetController.deleteAssetInQC);
 
 // Get QC reviews for an asset (for side panel display)
 router.get('/assetLibrary/:id/qc-reviews', assetController.getAssetQCReviews);
+
+// --- SEO Asset Module (12-Step Workflow) ---
+// SEO Asset Master Data Endpoints (must come before parameterized routes)
+router.get('/seo-assets/master/existing-assets', seoAssetController.getExistingAssetIds);
+router.get('/seo-assets/master/sectors', seoAssetController.getSectors);
+router.get('/seo-assets/master/industries', seoAssetController.getIndustries);
+router.get('/seo-assets/master/domain-types', seoAssetController.getDomainTypes);
+router.get('/seo-assets/master/backlink-domains', seoAssetController.getBacklinkDomains);
+router.get('/seo-assets/master/asset-types', seoAssetController.getSeoAssetTypes);
+
+// CRUD Operations
+router.get('/seo-assets', seoAssetController.getSeoAssets);
+router.get('/seo-assets/:id', seoAssetController.getSeoAssetById);
+router.post('/seo-assets', seoAssetController.createSeoAsset);
+router.put('/seo-assets/:id', seoAssetController.updateSeoAsset);
+router.delete('/seo-assets/:id', seoAssetController.deleteSeoAsset);
+
+// SEO Asset Workflow
+router.post('/seo-assets/:id/submit-qc', seoAssetController.submitSeoAssetForQC);
+router.post('/seo-assets/:id/qc-review', seoAssetController.reviewSeoAsset);
+router.get('/seo-assets/:id/version-history', seoAssetController.getSeoAssetVersionHistory);
+
+// SEO Asset Domain Management (Step 6 & 7)
+router.get('/seo-assets/:assetId/domains', seoAssetController.getSeoAssetDomains);
+router.post('/seo-assets/:assetId/domains', seoAssetController.addSeoAssetDomain);
+router.put('/seo-assets/:assetId/domains/:domainId', seoAssetController.updateSeoAssetDomain);
+router.delete('/seo-assets/:assetId/domains/:domainId', seoAssetController.deleteSeoAssetDomain);
 
 // --- Asset Usage Tracking ---
 // Get all usage data for an asset
