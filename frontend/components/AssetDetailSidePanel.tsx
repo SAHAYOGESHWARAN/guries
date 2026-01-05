@@ -1508,11 +1508,18 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
-                                            {/* Default Checklist Preview */}
+                                            {/* Default Checklist Preview - Application Type Specific */}
                                             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                                                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">QC Checklist Items (Pending Review)</h4>
+                                                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                                    QC Checklist Items ({asset.application_type?.toUpperCase() || 'WEB'} - Pending Review)
+                                                </h4>
                                                 <div className="space-y-2">
-                                                    {['Brand Compliance', 'Technical Specs Met', 'Legal / Regulatory Check', 'Tone of Voice'].map((item) => (
+                                                    {(asset.application_type === 'seo'
+                                                        ? ['SEO Title Optimization', 'Meta Description Quality', 'Keyword Density Check', 'H1/H2 Structure', 'Internal/External Links', 'Content Readability']
+                                                        : asset.application_type === 'smm'
+                                                            ? ['Platform Guidelines Compliance', 'Visual Quality & Dimensions', 'Caption & Hashtag Quality', 'Brand Voice Consistency', 'CTA Effectiveness', 'Engagement Potential']
+                                                            : ['Brand Compliance', 'Technical Specs Met', 'Content Quality', 'SEO Optimization', 'Legal / Regulatory Check', 'Tone of Voice']
+                                                    ).map((item) => (
                                                         <div key={item} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
                                                             <div className="flex items-center gap-3">
                                                                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-slate-200 text-slate-500">

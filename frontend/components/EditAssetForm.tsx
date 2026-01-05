@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
-import type { AssetLibraryItem, Service, SubServiceItem, Task, Campaign, Project, ContentRepositoryItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, Task, Campaign, Project, ContentRepositoryItem, AssetCategoryMasterItem, AssetTypeMasterItem } from '../types';
 
 interface EditAssetFormProps {
     asset: Partial<AssetLibraryItem>;
@@ -16,6 +16,11 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
     const { data: campaigns = [] } = useData<Campaign>('campaigns');
     const { data: projects = [] } = useData<Project>('projects');
     const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
+    const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
+    const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
+
+    // Determine application type from asset
+    const applicationType = asset.application_type || 'web';
 
     const [formData, setFormData] = useState<Partial<AssetLibraryItem>>({
         ...asset,
@@ -329,6 +334,267 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
                         <p className="text-xs text-gray-500 mt-2">Status updates automatically based on workflow</p>
                     </div>
                 </section>
+
+                {/* Application Type Indicator */}
+                <section className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${applicationType === 'web' ? 'bg-blue-500' :
+                                applicationType === 'seo' ? 'bg-green-500' :
+                                    'bg-purple-500'
+                            }`}>
+                            <span className="text-white text-lg">
+                                {applicationType === 'web' ? '🌐' : applicationType === 'seo' ? '🔍' : '📱'}
+                            </span>
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-indigo-800">
+                                {applicationType === 'web' ? 'Web Application Asset' :
+                                    applicationType === 'seo' ? 'SEO Application Asset' :
+                                        'SMM Application Asset'}
+                            </p>
+                            <p className="text-xs text-indigo-600">Only {applicationType.toUpperCase()}-related fields are editable</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Web Application Fields */}
+                {applicationType === 'web' && (
+                    <section className="bg-white rounded-xl border border-blue-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">🌐</span>
+                            Web Application Fields
+                        </h2>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Web Title</label>
+                                <input
+                                    type="text"
+                                    value={formData.web_title || ''}
+                                    onChange={e => setFormData({ ...formData, web_title: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Web Description</label>
+                                <textarea
+                                    value={formData.web_description || ''}
+                                    onChange={e => setFormData({ ...formData, web_description: e.target.value })}
+                                    rows={3}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Web URL</label>
+                                <input
+                                    type="url"
+                                    value={formData.web_url || ''}
+                                    onChange={e => setFormData({ ...formData, web_url: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">H1</label>
+                                <input
+                                    type="text"
+                                    value={formData.web_h1 || ''}
+                                    onChange={e => setFormData({ ...formData, web_h1: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">H2 (First)</label>
+                                <input
+                                    type="text"
+                                    value={formData.web_h2_1 || ''}
+                                    onChange={e => setFormData({ ...formData, web_h2_1: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">H2 (Second)</label>
+                                <input
+                                    type="text"
+                                    value={formData.web_h2_2 || ''}
+                                    onChange={e => setFormData({ ...formData, web_h2_2: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Body Content</label>
+                                <textarea
+                                    value={formData.web_body_content || ''}
+                                    onChange={e => setFormData({ ...formData, web_body_content: e.target.value })}
+                                    rows={6}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* SEO Application Fields */}
+                {applicationType === 'seo' && (
+                    <section className="bg-white rounded-xl border border-green-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">🔍</span>
+                            SEO Application Fields
+                        </h2>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Title</label>
+                                <input
+                                    type="text"
+                                    value={formData.seo_title || ''}
+                                    onChange={e => setFormData({ ...formData, seo_title: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Target URL</label>
+                                <input
+                                    type="url"
+                                    value={formData.seo_target_url || ''}
+                                    onChange={e => setFormData({ ...formData, seo_target_url: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Focus Keyword</label>
+                                <input
+                                    type="text"
+                                    value={formData.seo_focus_keyword || ''}
+                                    onChange={e => setFormData({ ...formData, seo_focus_keyword: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                                <textarea
+                                    value={formData.seo_meta_description || ''}
+                                    onChange={e => setFormData({ ...formData, seo_meta_description: e.target.value })}
+                                    rows={3}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">H1</label>
+                                <input
+                                    type="text"
+                                    value={formData.seo_h1 || ''}
+                                    onChange={e => setFormData({ ...formData, seo_h1: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">H2</label>
+                                <input
+                                    type="text"
+                                    value={formData.seo_h2_1 || ''}
+                                    onChange={e => setFormData({ ...formData, seo_h2_1: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Content Body</label>
+                                <textarea
+                                    value={formData.seo_content_body || ''}
+                                    onChange={e => setFormData({ ...formData, seo_content_body: e.target.value })}
+                                    rows={6}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* SMM Application Fields */}
+                {applicationType === 'smm' && (
+                    <section className="bg-white rounded-xl border border-purple-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">📱</span>
+                            SMM Application Fields
+                        </h2>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+                                <select
+                                    value={formData.smm_platform || ''}
+                                    onChange={e => setFormData({ ...formData, smm_platform: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm bg-white"
+                                >
+                                    <option value="">Select platform</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="twitter">Twitter/X</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="pinterest">Pinterest</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Post Type</label>
+                                <select
+                                    value={formData.smm_post_type || ''}
+                                    onChange={e => setFormData({ ...formData, smm_post_type: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm bg-white"
+                                >
+                                    <option value="">Select type</option>
+                                    <option value="Post">Post</option>
+                                    <option value="Story">Story</option>
+                                    <option value="Reel">Reel</option>
+                                    <option value="Video">Video</option>
+                                    <option value="Carousel">Carousel</option>
+                                </select>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    value={formData.smm_title || ''}
+                                    onChange={e => setFormData({ ...formData, smm_title: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Description / Caption</label>
+                                <textarea
+                                    value={formData.smm_description || ''}
+                                    onChange={e => setFormData({ ...formData, smm_description: e.target.value })}
+                                    rows={4}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+                                <input
+                                    type="url"
+                                    value={formData.smm_url || ''}
+                                    onChange={e => setFormData({ ...formData, smm_url: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Tag</label>
+                                <input
+                                    type="text"
+                                    value={formData.smm_tag || ''}
+                                    onChange={e => setFormData({ ...formData, smm_tag: e.target.value })}
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Hashtags</label>
+                                <input
+                                    type="text"
+                                    value={formData.smm_hashtags || ''}
+                                    onChange={e => setFormData({ ...formData, smm_hashtags: e.target.value })}
+                                    placeholder="#hashtag1 #hashtag2"
+                                    className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm"
+                                />
+                            </div>
+                        </div>
+                    </section>
+                )}
             </main>
         </div>
     );

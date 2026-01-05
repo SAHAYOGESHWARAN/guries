@@ -36,14 +36,41 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
     const [showSidePanel, setShowSidePanel] = useState(false);
     const [qcScore, setQcScore] = useState<number>(0);
     const [qcRemarks, setQcRemarks] = useState('');
-    const [checklistItems, setChecklistItems] = useState<{ [key: string]: boolean }>({
-        'Brand Compliance': false,
-        'Technical Specs Met': false,
-        'Legal / Regulatory Check': false,
-        'Tone of Voice': false,
-        'Content Quality': false,
-        'SEO Optimization': false
-    });
+
+    // Application-type specific QC checklists
+    const getChecklistForApplicationType = (appType: string | undefined): { [key: string]: boolean } => {
+        switch (appType) {
+            case 'seo':
+                return {
+                    'SEO Title Optimization': false,
+                    'Meta Description Quality': false,
+                    'Keyword Density Check': false,
+                    'H1/H2 Structure': false,
+                    'Internal/External Links': false,
+                    'Content Readability': false
+                };
+            case 'smm':
+                return {
+                    'Platform Guidelines Compliance': false,
+                    'Visual Quality & Dimensions': false,
+                    'Caption & Hashtag Quality': false,
+                    'Brand Voice Consistency': false,
+                    'CTA Effectiveness': false,
+                    'Engagement Potential': false
+                };
+            default: // web
+                return {
+                    'Brand Compliance': false,
+                    'Technical Specs Met': false,
+                    'Content Quality': false,
+                    'SEO Optimization': false,
+                    'Legal / Regulatory Check': false,
+                    'Tone of Voice': false
+                };
+        }
+    };
+
+    const [checklistItems, setChecklistItems] = useState<{ [key: string]: boolean }>(getChecklistForApplicationType('web'));
 
     // Data hooks
     const { data: assetsForQC = [], loading: dataLoading, refresh: refreshAssets } = useData<AssetLibraryItem>('assetLibrary');
@@ -171,14 +198,8 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
         setSelectedAsset(asset);
         setQcScore(asset.qc_score || 0);
         setQcRemarks(asset.qc_remarks || '');
-        setChecklistItems({
-            'Brand Compliance': false,
-            'Technical Specs Met': false,
-            'Legal / Regulatory Check': false,
-            'Tone of Voice': false,
-            'Content Quality': false,
-            'SEO Optimization': false
-        });
+        // Set application-type specific checklist
+        setChecklistItems(getChecklistForApplicationType(asset.application_type));
     };
 
     const handleQCSubmit = async (decision: 'approved' | 'rejected' | 'rework') => {
@@ -542,8 +563,8 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                 key={tab.key}
                                 onClick={() => setViewMode(tab.key)}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === tab.key
-                                        ? 'bg-red-600 text-white'
-                                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                                     }`}
                             >
                                 {tab.label} ({statusCounts[tab.key]})

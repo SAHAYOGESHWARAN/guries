@@ -66,6 +66,8 @@ const QcView = React.lazy(() => import('./views/QcView'));
 const AssetQCView = React.lazy(() => import('./views/AssetQCView'));
 const AdminQCAssetReviewView = React.lazy(() => import('./views/AdminQCAssetReviewView'));
 const WebAssetUploadView = React.lazy(() => import('./views/WebAssetUploadView'));
+const SeoAssetUploadView = React.lazy(() => import('./views/SeoAssetUploadView'));
+const SmmAssetUploadView = React.lazy(() => import('./views/SmmAssetUploadView'));
 const TrafficRankingView = React.lazy(() => import('./views/TrafficRankingView'));
 const KpiTrackingView = React.lazy(() => import('./views/KpiTrackingView'));
 const CommunicationHubView = React.lazy(() => import('./views/CommunicationHubView'));
@@ -157,6 +159,10 @@ const App: React.FC = () => {
       case 'admin-qc-review': return <AdminQCAssetReviewView onNavigate={handleNavigate} />;
       case 'web-asset-upload': return <WebAssetUploadView onNavigate={handleNavigate} />;
       case 'web-asset-edit': return <WebAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
+      case 'seo-asset-upload': return <SeoAssetUploadView onNavigate={handleNavigate} />;
+      case 'seo-asset-edit': return <SeoAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
+      case 'smm-asset-upload': return <SmmAssetUploadView onNavigate={handleNavigate} />;
+      case 'smm-asset-edit': return <SmmAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
 
       // COMMUNICATION & KNOWLEDGE
       case 'communication-hub': return <CommunicationHubView />;
