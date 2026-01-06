@@ -68,6 +68,7 @@ const AdminQCAssetReviewView = React.lazy(() => import('./views/AdminQCAssetRevi
 const WebAssetUploadView = React.lazy(() => import('./views/WebAssetUploadView'));
 const SeoAssetUploadView = React.lazy(() => import('./views/SeoAssetUploadView'));
 const SeoAssetModuleView = React.lazy(() => import('./views/SeoAssetModuleView'));
+const SeoAssetsListView = React.lazy(() => import('./views/SeoAssetsListView'));
 const SmmAssetUploadView = React.lazy(() => import('./views/SmmAssetUploadView'));
 const TrafficRankingView = React.lazy(() => import('./views/TrafficRankingView'));
 const KpiTrackingView = React.lazy(() => import('./views/KpiTrackingView'));
@@ -164,6 +165,8 @@ const App: React.FC = () => {
       case 'seo-asset-edit': return <SeoAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
       case 'seo-asset-module': return <SeoAssetModuleView onNavigate={handleNavigate} />;
       case 'seo-asset-module-edit': return <SeoAssetModuleView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
+      case 'seo-assets': return <SeoAssetsListView onNavigate={handleNavigate} />;
+      case 'seo-asset-view': return <SeoAssetsListView onNavigate={handleNavigate} />;
       case 'smm-asset-upload': return <SmmAssetUploadView onNavigate={handleNavigate} />;
       case 'smm-asset-edit': return <SmmAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
 

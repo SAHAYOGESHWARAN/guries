@@ -1,7 +1,16 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
-import type { AssetLibraryItem, Service, SubServiceItem, AssetCategoryMasterItem, AssetTypeMasterItem, Task, Campaign, Project, ContentRepositoryItem, User } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, AssetCategoryMasterItem, AssetTypeMasterItem, Task, Campaign, Project, ContentRepositoryItem, User, Keyword, BacklinkSource } from '../types';
+
+// Domain Details Popup for SEO Step 7
+interface DomainDetail {
+    id: number;
+    domain_name: string;
+    url_posted: string;
+    seo_self_qc_status: 'Pass' | 'Fail' | 'Waiting' | '';
+    qa_status: 'Approved' | 'Rejected' | 'Pending' | '';
+}
 
 interface UploadAssetPopupProps {
     isOpen: boolean;
@@ -47,6 +56,9 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
 
+    // Web Keywords from Keyword Master
+    const [webSelectedKeywords, setWebSelectedKeywords] = useState<string[]>([]);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: services = [] } = useData<Service>('services');
@@ -59,7 +71,50 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
     const { data: projects = [] } = useData<Project>('projects');
     const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
     const { data: users = [] } = useData<User>('users');
+    const { data: existingAssets = [] } = useData<AssetLibraryItem>('assetLibrary');
     const { create: createAsset, update: updateAsset } = useData<AssetLibraryItem>('assetLibrary');
+
+    // SEO-specific data hooks
+    const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
+    const { data: backlinksMaster = [] } = useData<BacklinkSource>('backlinks');
+
+    // State for SEO Asset ID selection
+    const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
+    const [isAssetIdLocked, setIsAssetIdLocked] = useState(false);
+
+    // SEO Step 4: Metadata fields
+    const [seoTitle, setSeoTitle] = useState('');
+    const [seoMetaTitle, setSeoMetaTitle] = useState('');
+    const [seoDescription, setSeoDescription] = useState('');
+    const [seoServiceUrl, setSeoServiceUrl] = useState('');
+    const [seoBlogUrl, setSeoBlogUrl] = useState('');
+    const [seoAnchorText, setSeoAnchorText] = useState('');
+
+    // SEO Step 5: Keywords
+    const [seoPrimaryKeyword, setSeoPrimaryKeyword] = useState<string>('');
+    const [seoLsiKeywords, setSeoLsiKeywords] = useState<string[]>([]);
+
+    // SEO Step 6: Domain Type & Domains
+    const [seoDomainType, setSeoDomainType] = useState('');
+    const [seoAddedDomains, setSeoAddedDomains] = useState<DomainDetail[]>([]);
+
+    // SEO Step 7: Domain Details Popup
+    const [isDomainPopupOpen, setIsDomainPopupOpen] = useState(false);
+    const [editingDomainIndex, setEditingDomainIndex] = useState<number | null>(null);
+    const [domainPopupData, setDomainPopupData] = useState<DomainDetail>({
+        id: 0,
+        domain_name: '',
+        url_posted: '',
+        seo_self_qc_status: '',
+        qa_status: ''
+    });
+
+    // SEO Step 10: Team assignment
+    const [seoAssignedTeamMembers, setSeoAssignedTeamMembers] = useState<number[]>([]);
+    const [seoVerifiedBy, setSeoVerifiedBy] = useState<number | null>(null);
+
+    // SEO Step 11: Versioning
+    const [seoVersion, setSeoVersion] = useState('1.0');
 
     const filteredSubServices = useMemo(() =>
         linkedServiceId ? subServices.filter(s => Number(s.parent_service_id) === Number(linkedServiceId)) : [],
@@ -77,7 +132,10 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
             setLinkedServiceId(initialData.linked_service_id || null);
             setLinkedSubServiceId(initialData.linked_sub_service_id || null);
             setLinkedRepositoryItemId(initialData.linked_repository_item_id || null);
-            if (initialData.keywords) setKeywordsInput(initialData.keywords.join(', '));
+            if (initialData.keywords) {
+                setKeywordsInput(initialData.keywords.join(', '));
+                setWebSelectedKeywords(initialData.keywords);
+            }
             // Set preview URL if there's an existing thumbnail
             if (initialData.thumbnail_url || initialData.file_url) {
                 setPreviewUrl(initialData.thumbnail_url || initialData.file_url || '');
@@ -112,8 +170,11 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
             setDesignedBy(null);
             setWorkflowStage('Draft');
             setKeywordsInput('');
+            setWebSelectedKeywords([]);
             setSelectedFile(null);
             setPreviewUrl('');
+            setSelectedAssetId(null);
+            setIsAssetIdLocked(false);
         }
     }, [initialData, isOpen]);
 
@@ -170,7 +231,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
 
         setIsSaving(true);
         try {
-            const keywords = keywordsInput.split(',').map(k => k.trim()).filter(Boolean);
+            // Use webSelectedKeywords for web, or parse keywordsInput for backward compatibility
+            const keywords = asset.application_type === 'web' ? webSelectedKeywords : keywordsInput.split(',').map(k => k.trim()).filter(Boolean);
             const data = {
                 ...asset,
                 name: asset.web_title || asset.name,
@@ -325,37 +387,38 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     </div>
                                 </div>
 
-                                {/* SECTION 2: Asset Classification (4.2) - NO Repository field */}
+                                {/* SECTION 2: Asset Classification (4.2) - From Master Database */}
                                 <div className="bg-white rounded-xl p-4 border border-slate-200">
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="w-6 h-6 bg-indigo-500 rounded-lg flex items-center justify-center">
                                             <span className="text-white text-xs font-bold">2</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-slate-700">Asset Classification</h4>
+                                        <span className="text-[10px] text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded">From Master Database</span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="flex items-center gap-1 text-xs font-medium text-slate-600 mb-1">
                                                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                                                Asset Name *
+                                                Asset Category * <span className="text-[10px] text-slate-400">(Master)</span>
                                             </label>
-                                            <input type="text" value={asset.name || ''} onChange={e => setAsset({ ...asset, name: e.target.value })} placeholder="Enter asset name..." className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+                                            <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Category...</option>
+                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => (
+                                                    <option key={cat.id} value={cat.category_name || cat.name}>{cat.category_name || cat.name}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="flex items-center gap-1 text-xs font-medium text-slate-600 mb-1">
                                                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                                                Asset Type *
+                                                Asset Type * <span className="text-[10px] text-slate-400">(Master)</span>
                                             </label>
                                             <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Type...</option>
-                                                <option value="Blog Banner">Blog Banner</option>
-                                                <option value="Infographic">Infographic</option>
-                                                <option value="Social Post">Social Post</option>
-                                                <option value="Reel / Video">Reel / Video</option>
-                                                <option value="Thumbnail">Thumbnail</option>
-                                                <option value="Diagram">Diagram</option>
-                                                <option value="Web Graphic">Web Graphic</option>
-                                                <option value="PDF">PDF</option>
+                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => (
+                                                    <option key={type.id} value={type.asset_type_name || type.name}>{type.asset_type_name || type.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
@@ -419,21 +482,42 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         />
                                     </div>
 
-                                    {/* Keywords */}
+                                    {/* Keywords - From Keyword Master */}
                                     <div className="mb-4">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
                                             <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                                                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
                                             </svg>
                                             Keywords
+                                            <span className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded ml-1">From Keyword Master</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            value={keywordsInput}
-                                            onChange={e => setKeywordsInput(e.target.value)}
-                                            placeholder="keyword1, keyword2, keyword3..."
+                                        <select
+                                            onChange={e => {
+                                                if (e.target.value && !webSelectedKeywords.includes(e.target.value)) {
+                                                    setWebSelectedKeywords([...webSelectedKeywords, e.target.value]);
+                                                }
+                                                e.target.value = '';
+                                            }}
                                             className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
+                                        >
+                                            <option value="">Select keyword from master...</option>
+                                            {keywordsMaster.filter(k => (k.status === 'active' || !k.status) && !webSelectedKeywords.includes(k.keyword)).map(kw => (
+                                                <option key={kw.id} value={kw.keyword}>{kw.keyword} {kw.search_volume ? `(Vol: ${kw.search_volume})` : ''}</option>
+                                            ))}
+                                        </select>
+                                        {webSelectedKeywords.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                {webSelectedKeywords.map((kw, idx) => (
+                                                    <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                                        {kw}
+                                                        <button onClick={() => setWebSelectedKeywords(webSelectedKeywords.filter((_, i) => i !== idx))} className="hover:text-blue-900 ml-0.5">
+                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] text-slate-400 mt-1">Select keywords from Keyword Master table</p>
                                     </div>
 
                                     {/* Heading Structure */}
@@ -695,183 +779,397 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* SEO Content Fields - Green Card */}
+                        {/* SEO Content Fields - Complete 12-Step Workflow */}
                         {asset.application_type === 'seo' && (
-                            <div className="bg-green-50 rounded-xl p-5 border border-green-100">
-                                <div className="flex items-center justify-between mb-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                            </svg>
+                            <div className="space-y-4">
+                                {/* Header */}
+                                <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-green-700">🔍 Upload Assets → SEO</h3>
+                                                <p className="text-xs text-green-600">Complete 12-step workflow - Follow sections in order</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setAsset(prev => ({ ...prev, application_type: undefined }))} className="text-xs text-green-600 hover:text-green-800 underline">Change Type</button>
+                                    </div>
+                                </div>
+
+                                {/* STEP 1: Asset ID Selection - MANDATORY */}
+                                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">1</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-indigo-700">Asset ID Selection</h4>
+                                        <span className="text-xs text-red-500 font-medium">* Required</span>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                                            Asset ID <span className="text-red-500">*</span>
+                                            <span className="text-slate-400 ml-1">(Select from existing assets)</span>
+                                        </label>
+                                        <select
+                                            value={selectedAssetId || ''}
+                                            onChange={e => {
+                                                const id = e.target.value ? Number(e.target.value) : null;
+                                                setSelectedAssetId(id);
+                                                if (id) {
+                                                    setIsAssetIdLocked(true);
+                                                    // Pre-fill data from selected asset
+                                                    const selectedAsset = existingAssets.find(a => a.id === id);
+                                                    if (selectedAsset) {
+                                                        setAsset(prev => ({
+                                                            ...prev,
+                                                            name: selectedAsset.name || '',
+                                                            type: selectedAsset.type || '',
+                                                            asset_category: selectedAsset.asset_category || '',
+                                                            content_type: selectedAsset.content_type || '',
+                                                        }));
+                                                        setLinkedTaskId(selectedAsset.linked_task_id || null);
+                                                        setLinkedCampaignId(selectedAsset.linked_campaign_id || null);
+                                                        setLinkedProjectId(selectedAsset.linked_project_id || null);
+                                                        setLinkedServiceId(selectedAsset.linked_service_id || null);
+                                                        setLinkedSubServiceId(selectedAsset.linked_sub_service_id || null);
+                                                        setLinkedRepositoryItemId(selectedAsset.linked_repository_item_id || null);
+                                                    }
+                                                }
+                                            }}
+                                            disabled={isAssetIdLocked}
+                                            className={`w-full h-10 px-3 border rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 border-slate-300 text-slate-600 cursor-not-allowed' : 'bg-white border-indigo-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'}`}
+                                        >
+                                            <option value="">-- Select Asset ID --</option>
+                                            {existingAssets.map(a => (
+                                                <option key={a.id} value={a.id}>
+                                                    {String(a.id).padStart(4, '0')} - {a.name || 'Untitled Asset'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {isAssetIdLocked && (
+                                            <div className="flex items-center justify-between mt-2">
+                                                <p className="text-xs text-green-600 flex items-center gap-1">
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    Asset ID locked. All sections are now enabled.
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsAssetIdLocked(false);
+                                                        setSelectedAssetId(null);
+                                                    }}
+                                                    className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                                                >
+                                                    Change Selection
+                                                </button>
+                                            </div>
+                                        )}
+                                        {!selectedAssetId && (
+                                            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                Please select an Asset ID to enable all sections below
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* STEP 2: Map Assets to Source Work */}
+                                <div className={`bg-blue-50 rounded-xl p-4 border border-blue-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-blue-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">2</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-blue-700">Map Assets to Source Work</h4>
+                                        {!selectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
+                                    </div>
+                                    <p className="text-xs text-blue-600 mb-3">Link the selected Asset ID to its originating work/source</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
+                                            <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select Task</option>
+                                                {tasks.map(t => <option key={t.id} value={t.id}>{t.title || t.name}</option>)}
+                                            </select>
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-bold text-green-700">🔍 SEO Content Fields</h3>
-                                            <p className="text-xs text-green-600">Search engine optimized content</p>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Campaign</label>
+                                            <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select Campaign</option>
+                                                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name || c.campaign_name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Project</label>
+                                            <select value={linkedProjectId || ''} onChange={e => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select Project</option>
+                                                {projects.map(p => <option key={p.id} value={p.id}>{p.name || p.project_name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Service</label>
+                                            <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select Service</option>
+                                                {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Sub-Service</label>
+                                            <select value={linkedSubServiceId || ''} onChange={e => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId || !linkedServiceId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">{linkedServiceId ? 'Select Sub-Service' : 'Select Service first'}</option>
+                                                {filteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Repository Item</label>
+                                            <select value={linkedRepositoryItemId || ''} onChange={e => setLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select Repository</option>
+                                                {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.title || r.content_title_clean}</option>)}
+                                            </select>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => setAsset(prev => ({ ...prev, application_type: undefined }))}
-                                        className="text-xs text-green-600 hover:text-green-800 underline"
-                                    >
-                                        Change Type
-                                    </button>
                                 </div>
 
-                                {/* SEO Title & Meta Description */}
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                            SEO Title *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={asset.web_title || ''}
-                                            onChange={e => setAsset({ ...asset, web_title: e.target.value, name: e.target.value })}
-                                            placeholder="Enter SEO optimized title..."
-                                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        />
-                                        <p className="text-[10px] text-slate-400 text-right mt-0.5">{(asset.web_title || '').length}/60 characters</p>
+                                {/* STEP 3: Asset Classification - From Master Database */}
+                                <div className={`bg-amber-50 rounded-xl p-4 border border-amber-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">3</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-amber-700">Asset Classification</h4>
+                                        <span className="text-[10px] text-amber-600 bg-amber-100 px-2 py-0.5 rounded">From Master Database</span>
+                                        {!selectedAssetId && <span className="text-xs text-slate-400 ml-auto">(Select Asset ID first)</span>}
                                     </div>
-                                    <div>
-                                        <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                            Meta Description *
-                                        </label>
-                                        <textarea
-                                            value={asset.web_description || ''}
-                                            onChange={e => setAsset({ ...asset, web_description: e.target.value })}
-                                            placeholder="SEO meta description [150-160 characters]..."
-                                            rows={3}
-                                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
-                                        />
-                                        <p className="text-[10px] text-slate-400 text-right mt-0.5">{(asset.web_description || '').length}/160 characters</p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Asset Type * <span className="text-[10px] text-slate-400">(Master)</span></label>
+                                            <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select type...</option>
+                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => <option key={type.id} value={type.asset_type_name || type.name}>{type.asset_type_name || type.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Sector * <span className="text-[10px] text-slate-400">(Master)</span></label>
+                                            <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select sector...</option>
+                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => <option key={cat.id} value={cat.category_name || cat.name}>{cat.category_name || cat.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Industry * <span className="text-[10px] text-slate-400">(Master)</span></label>
+                                            <select value={asset.content_type || ''} onChange={e => setAsset({ ...asset, content_type: e.target.value })} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">Select industry...</option>
+                                                {contentTypes.map((ct: any) => <option key={ct.id} value={ct.name}>{ct.name}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Target URL */}
-                                <div className="mb-4">
-                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                        </svg>
-                                        Target URL
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={asset.web_url || ''}
-                                        onChange={e => setAsset({ ...asset, web_url: e.target.value })}
-                                        placeholder="https://example.com/target-page"
-                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                    />
-                                </div>
-
-                                {/* Primary & Secondary Keywords */}
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                            Primary Keywords *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={keywordsInput}
-                                            onChange={e => setKeywordsInput(e.target.value)}
-                                            placeholder="main keyword, secondary keyword..."
-                                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        />
+                                {/* STEP 4: SEO Metadata Fields & Anchor Text */}
+                                <div className={`bg-green-50 rounded-xl p-4 border border-green-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-green-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">4</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-green-700">SEO Metadata Fields & Anchor Text</h4>
+                                        {!selectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
                                     </div>
-                                    <div>
-                                        <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-                                            <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
-                                            LSI Keywords
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={asset.web_h2_1 || ''}
-                                            onChange={e => setAsset({ ...asset, web_h2_1: e.target.value })}
-                                            placeholder="related terms, synonyms..."
-                                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        />
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Title *</label>
+                                                <input type="text" value={seoTitle} onChange={e => setSeoTitle(e.target.value)} disabled={!selectedAssetId} placeholder="Enter title..." className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100" />
+                                            </div>
+                                            <div>
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Meta Title *</label>
+                                                <input type="text" value={seoMetaTitle} onChange={e => setSeoMetaTitle(e.target.value)} disabled={!selectedAssetId} placeholder="Enter meta title..." className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Description *</label>
+                                            <textarea value={seoDescription} onChange={e => setSeoDescription(e.target.value)} disabled={!selectedAssetId} rows={3} placeholder="Enter SEO description..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm resize-none disabled:bg-slate-100" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 mb-1">Service URL <span className="text-slate-400">(Optional)</span></label>
+                                                <input type="url" value={seoServiceUrl} onChange={e => setSeoServiceUrl(e.target.value)} disabled={!selectedAssetId} placeholder="https://example.com/service" className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 mb-1">Blog URL <span className="text-slate-400">(Optional)</span></label>
+                                                <input type="url" value={seoBlogUrl} onChange={e => setSeoBlogUrl(e.target.value)} disabled={!selectedAssetId} placeholder="https://example.com/blog" className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Anchor Text *</label>
+                                            <input type="text" value={seoAnchorText} onChange={e => setSeoAnchorText(e.target.value)} disabled={!selectedAssetId} placeholder="Enter anchor text for links..." className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100" />
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* SEO Content Body */}
-                                <div className="bg-white rounded-xl p-4 border border-slate-200">
-                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-2">
-                                        <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
-                                        SEO Content Body
-                                    </label>
-                                    <div className="flex gap-4">
-                                        <div className="flex-1">
-                                            <textarea
-                                                value={asset.web_body_content || ''}
-                                                onChange={e => setAsset({ ...asset, web_body_content: e.target.value })}
-                                                placeholder="Paste your SEO optimized content here for analysis..."
-                                                rows={5}
-                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none"
-                                            />
-                                            <button
-                                                onClick={analyzeContent}
-                                                disabled={isAnalyzing}
-                                                className="mt-3 px-5 py-2 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
-                                            >
-                                                {isAnalyzing ? (
-                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                                    </svg>
-                                                ) : (
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                                    </svg>
-                                                )}
-                                                Analyze SEO
+                                {/* STEP 5: Keywords - From Keyword Master */}
+                                <div className={`bg-violet-50 rounded-xl p-4 border border-violet-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-violet-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">5</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-violet-700">Keywords</h4>
+                                        <span className="text-[10px] text-violet-600 bg-violet-100 px-2 py-0.5 rounded">From Keyword Master</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Primary Keyword *</label>
+                                            <select value={seoPrimaryKeyword} onChange={e => setSeoPrimaryKeyword(e.target.value)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100">
+                                                <option value="">Select from Keyword Master...</option>
+                                                {keywordsMaster.filter(k => k.status === 'active' || !k.status).map(kw => (<option key={kw.id} value={kw.keyword}>{kw.keyword} {kw.search_volume ? `(Vol: ${kw.search_volume})` : ''}</option>))}
+                                            </select>
+                                            <p className="text-[10px] text-slate-400 mt-1">No manual entry - select from master only</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-700 mb-1">LSI Keywords <span className="text-slate-400">(Optional)</span></label>
+                                            <select onChange={e => { if (e.target.value && !seoLsiKeywords.includes(e.target.value)) { setSeoLsiKeywords([...seoLsiKeywords, e.target.value]); } e.target.value = ''; }} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100">
+                                                <option value="">Add LSI keyword...</option>
+                                                {keywordsMaster.filter(k => (k.status === 'active' || !k.status) && !seoLsiKeywords.includes(k.keyword)).map(kw => (<option key={kw.id} value={kw.keyword}>{kw.keyword}</option>))}
+                                            </select>
+                                            {seoLsiKeywords.length > 0 && (<div className="flex flex-wrap gap-1 mt-2">{seoLsiKeywords.map((kw, idx) => (<span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-xs">{kw}<button onClick={() => setSeoLsiKeywords(seoLsiKeywords.filter((_, i) => i !== idx))} className="hover:text-violet-900">×</button></span>))}</div>)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* STEP 6: Domain Type & Domain Addition */}
+                                <div className={`bg-blue-50 rounded-xl p-4 border border-blue-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-blue-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">6</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-blue-700">Domain Type & Domain Addition</h4>
+                                        <span className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded">From Backlink Master</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 mb-1">Domain Type</label>
+                                                <select value={seoDomainType} onChange={e => setSeoDomainType(e.target.value)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100">
+                                                    <option value="">Select domain type...</option>
+                                                    <option value="guest_post">Guest Post</option>
+                                                    <option value="profile_link">Profile Link</option>
+                                                    <option value="directory">Directory</option>
+                                                    <option value="forum">Forum</option>
+                                                    <option value="web_2.0">Web 2.0</option>
+                                                </select>
+                                            </div>
+                                            <div className="flex items-end">
+                                                <button onClick={() => { setDomainPopupData({ id: Date.now(), domain_name: '', url_posted: '', seo_self_qc_status: '', qa_status: '' }); setEditingDomainIndex(null); setIsDomainPopupOpen(true); }} disabled={!selectedAssetId} className="h-9 px-4 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Add Domain
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {seoAddedDomains.length > 0 && (<div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">{seoAddedDomains.map((domain, idx) => (<div key={domain.id} className="p-3 flex items-center justify-between hover:bg-slate-50 cursor-pointer" onClick={() => { setDomainPopupData(domain); setEditingDomainIndex(idx); setIsDomainPopupOpen(true); }}><div><p className="text-sm font-medium text-slate-700">{domain.domain_name || 'Unnamed'}</p><p className="text-xs text-slate-500">{domain.url_posted || 'No URL'}</p></div><div className="flex items-center gap-2"><span className={`px-2 py-0.5 rounded text-xs font-medium ${domain.qa_status === 'Approved' ? 'bg-green-100 text-green-700' : domain.qa_status === 'Rejected' ? 'bg-red-100 text-red-700' : domain.qa_status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{domain.qa_status || 'Not Set'}</span><button onClick={(e) => { e.stopPropagation(); setSeoAddedDomains(seoAddedDomains.filter((_, i) => i !== idx)); }} className="text-slate-400 hover:text-red-500"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div></div>))}</div>)}
+                                    </div>
+                                </div>
+
+                                {/* STEP 7: Domain Details Popup */}
+                                {isDomainPopupOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"><div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-5"><div className="flex items-center justify-between mb-4"><h3 className="text-sm font-bold text-slate-800">Domain Details (Step 7)</h3><button onClick={() => setIsDomainPopupOpen(false)} className="text-slate-400 hover:text-slate-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div><div className="space-y-3"><div><label className="block text-xs font-medium text-slate-600 mb-1">Domain Name <span className="text-[10px] text-slate-400">(From Backlink Master)</span></label><select value={domainPopupData.domain_name} onChange={e => setDomainPopupData({ ...domainPopupData, domain_name: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm"><option value="">Select domain...</option>{backlinksMaster.filter(b => b.status === 'active' || b.status === 'trusted').map(bl => (<option key={bl.id} value={bl.domain}>{bl.domain} (DA: {bl.da_score})</option>))}</select></div><div><label className="block text-xs font-medium text-slate-600 mb-1">URL Posted</label><input type="url" value={domainPopupData.url_posted} onChange={e => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })} placeholder="https://..." className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm" /></div><div className="grid grid-cols-2 gap-3"><div><label className="block text-xs font-medium text-slate-600 mb-1">SEO Self QC Status</label><select value={domainPopupData.seo_self_qc_status} onChange={e => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value as any })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm"><option value="">Select...</option><option value="Pass">Pass</option><option value="Fail">Fail</option><option value="Waiting">Waiting</option></select></div><div><label className="block text-xs font-medium text-slate-600 mb-1">QA Status</label><select value={domainPopupData.qa_status} onChange={e => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value as any })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm"><option value="">Select...</option><option value="Approved">Approved (Pass)</option><option value="Rejected">Rejected (Fail)</option><option value="Pending">Pending (Waiting)</option></select></div></div>{domainPopupData.qa_status && (<div className={`p-2 rounded-lg text-xs font-medium text-center ${domainPopupData.qa_status === 'Approved' ? 'bg-green-100 text-green-700' : domainPopupData.qa_status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>Display Status: {domainPopupData.qa_status}</div>)}</div><div className="flex justify-end gap-2 mt-4"><button onClick={() => setIsDomainPopupOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button><button onClick={() => { if (editingDomainIndex !== null) { const updated = [...seoAddedDomains]; updated[editingDomainIndex] = domainPopupData; setSeoAddedDomains(updated); } else { setSeoAddedDomains([...seoAddedDomains, domainPopupData]); } setIsDomainPopupOpen(false); }} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">{editingDomainIndex !== null ? 'Update' : 'Add'} Domain</button></div></div></div>)}
+
+                                {/* STEP 8: Blog Posting Content Editor - Only if Asset Type = Blog */}
+                                {asset.type?.toLowerCase().includes('blog') && (<div className={`bg-orange-50 rounded-xl p-4 border border-orange-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex items-center gap-2 mb-3"><div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-orange-500' : 'bg-slate-400'}`}><span className="text-white text-xs font-bold">8</span></div><h4 className="text-sm font-bold text-orange-700">Blog Content Editor</h4><span className="text-[10px] text-orange-600 bg-orange-100 px-2 py-0.5 rounded">Asset Type: Blog</span></div><div className="bg-white rounded-lg border border-slate-200 p-3"><div className="flex gap-1 mb-2 pb-2 border-b border-slate-100"><button className="p-1.5 hover:bg-slate-100 rounded text-slate-600"><strong>B</strong></button><button className="p-1.5 hover:bg-slate-100 rounded text-slate-600"><em>I</em></button><button className="p-1.5 hover:bg-slate-100 rounded text-slate-600"><u>U</u></button><span className="w-px bg-slate-200 mx-1"></span><button className="p-1.5 hover:bg-slate-100 rounded text-slate-600 text-xs">H1</button><button className="p-1.5 hover:bg-slate-100 rounded text-slate-600 text-xs">H2</button></div><textarea value={asset.web_body_content || ''} onChange={e => setAsset({ ...asset, web_body_content: e.target.value })} disabled={!selectedAssetId} rows={8} placeholder="Write your blog content here..." className="w-full px-3 py-2 bg-slate-50 border-0 rounded-lg text-sm resize-y min-h-[150px] focus:ring-0 disabled:bg-slate-100" /></div></div>)}
+
+                                {/* STEP 9: Resource File Upload */}
+                                <div className={`bg-white rounded-xl p-4 border border-slate-200 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">9</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Resource File Upload</h4>
+                                        <span className="text-[10px] text-slate-500">Multi-file supported</span>
+                                    </div>
+                                    <div onClick={() => selectedAssetId && fileInputRef.current?.click()} className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${selectedAssetId ? 'border-green-200 hover:border-green-400 cursor-pointer hover:bg-green-50/30 bg-green-50/20' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}>
+                                        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,video/*,.pdf,.doc,.docx" multiple onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
+                                        {previewUrl ? (<div className="space-y-2"><img src={previewUrl} alt="Preview" className="max-h-24 mx-auto rounded-lg shadow-md" /><p className="text-xs text-slate-600">Click to add more files</p>{selectedFile && <p className="text-[10px] text-slate-500">{selectedFile.name}</p>}</div>) : (<><div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2"><svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg></div><p className="text-sm font-semibold text-slate-700 mb-1">Upload Resource Files</p><p className="text-xs text-slate-500">Files linked to Asset ID and Asset Type</p></>)}
+                                    </div>
+                                </div>
+
+                                {/* STEP 10: Designer & Workflow */}
+                                <div className={`bg-purple-50 rounded-xl p-4 border border-purple-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-purple-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">10</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-purple-700">Designer & Workflow</h4>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Assign Team Members</label>
+                                            <select onChange={e => { if (e.target.value && !seoAssignedTeamMembers.includes(Number(e.target.value))) { setSeoAssignedTeamMembers([...seoAssignedTeamMembers, Number(e.target.value)]); } e.target.value = ''; }} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100">
+                                                <option value="">Add team member...</option>
+                                                {users.filter(u => !seoAssignedTeamMembers.includes(u.id)).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                            {seoAssignedTeamMembers.length > 0 && (<div className="flex flex-wrap gap-1 mt-2">{seoAssignedTeamMembers.map(id => { const u = users.find(user => user.id === id); return u ? (<span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">{u.name}<button onClick={() => setSeoAssignedTeamMembers(seoAssignedTeamMembers.filter(i => i !== id))} className="hover:text-purple-900">×</button></span>) : null; })}</div>)}
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Created By [Auto]</label>
+                                            <input type="text" value={user?.name || 'Current User'} disabled className="w-full h-9 px-3 bg-slate-100 border border-slate-200 rounded-lg text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Verified By (SEO)</label>
+                                            <select value={seoVerifiedBy || ''} onChange={e => setSeoVerifiedBy(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100">
+                                                <option value="">Select verifier...</option>
+                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* STEP 11: Versioning */}
+                                <div className={`bg-white rounded-xl p-4 border border-slate-200 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-slate-500' : 'bg-slate-400'}`}>
+                                            <span className="text-white text-xs font-bold">11</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Versioning</h4>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Version [Auto-Increment]</label>
+                                            <div className="h-9 px-4 bg-slate-100 rounded-lg flex items-center text-sm font-medium text-slate-700 w-16">v{seoVersion}</div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 bg-white">
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                View History
                                             </button>
                                         </div>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-2">New version created on every re-submit after rejection. Previous versions are read-only.</p>
+                                </div>
 
-                                        {/* SEO Score Circles */}
-                                        <div className="w-28 flex flex-col items-center justify-center gap-3">
-                                            <div className="text-center">
-                                                <div className="relative w-14 h-14 mx-auto">
-                                                    <svg className="w-14 h-14 transform -rotate-90">
-                                                        <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="3" fill="none" />
-                                                        <circle
-                                                            cx="28" cy="28" r="24"
-                                                            stroke="#22c55e"
-                                                            strokeWidth="3"
-                                                            fill="none"
-                                                            strokeDasharray={`${(asset.seo_score || 0) * 1.51} 151`}
-                                                            strokeLinecap="round"
-                                                        />
-                                                    </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700">
-                                                        {asset.seo_score || 0}%
-                                                    </span>
-                                                </div>
-                                                <p className="text-[10px] text-slate-500 mt-1">SEO SCORE</p>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="relative w-14 h-14 mx-auto">
-                                                    <svg className="w-14 h-14 transform -rotate-90">
-                                                        <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="3" fill="none" />
-                                                        <circle
-                                                            cx="28" cy="28" r="24"
-                                                            stroke="#22c55e"
-                                                            strokeWidth="3"
-                                                            fill="none"
-                                                            strokeDasharray={`${(asset.grammar_score || 0) * 1.51} 151`}
-                                                            strokeLinecap="round"
-                                                        />
-                                                    </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700">
-                                                        {asset.grammar_score || 0}%
-                                                    </span>
-                                                </div>
-                                                <p className="text-[10px] text-slate-500 mt-1">READABILITY</p>
-                                            </div>
+                                {/* STEP 12: Actions - Save, Submit, Discard (shown in footer) */}
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center bg-slate-600`}>
+                                            <span className="text-white text-xs font-bold">12</span>
                                         </div>
+                                        <h4 className="text-sm font-bold text-slate-700">Actions</h4>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-3">Use the buttons below to save, submit, or discard your work.</p>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleSave(false)} disabled={isSaving || !selectedAssetId} className="flex-1 h-10 px-4 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 disabled:opacity-50 flex items-center justify-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                                            Save (Draft)
+                                        </button>
+                                        <button onClick={() => handleSave(true)} disabled={isSaving || !selectedAssetId} className="flex-1 h-10 px-4 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            Submit for QC
+                                        </button>
+                                        <button onClick={onClose} className="h-10 px-4 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 flex items-center justify-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            Discard
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1210,8 +1508,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Resource Upload - Shows for SEO and SMM only (Web has its own section) */}
-                        {asset.application_type && asset.application_type !== 'web' && (
+                        {/* Resource Upload - Shows for SMM only (Web and SEO have their own sections) */}
+                        {asset.application_type === 'smm' && (
                             <div>
                                 <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2">
                                     <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -1221,10 +1519,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 </label>
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${asset.application_type === 'seo' ? 'border-green-200 hover:border-green-400 hover:bg-green-50/30 bg-green-50/20' :
-                                        asset.application_type === 'smm' ? 'border-purple-200 hover:border-purple-400 hover:bg-purple-50/30 bg-purple-50/20' :
-                                            'border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 bg-slate-50'
-                                        }`}
+                                    className="border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer border-purple-200 hover:border-purple-400 hover:bg-purple-50/30 bg-purple-50/20"
                                 >
                                     <input
                                         ref={fileInputRef}
@@ -1243,31 +1538,21 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         </div>
                                     ) : (
                                         <>
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${asset.application_type === 'seo' ? 'bg-green-500' :
-                                                asset.application_type === 'smm' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
-                                                    'bg-blue-500'
-                                                }`}>
+                                            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 bg-gradient-to-r from-purple-500 to-pink-500">
                                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
                                             </div>
-                                            <p className="text-sm font-semibold text-slate-700 mb-1">
-                                                {asset.application_type === 'seo' ? 'Upload SEO Content Files' :
-                                                    asset.application_type === 'smm' ? 'Upload Social Media Assets' :
-                                                        'Upload Assets'}
-                                            </p>
-                                            <p className="text-xs text-slate-500">Drag & drop source files, or <span className={`hover:underline ${asset.application_type === 'seo' ? 'text-green-600' :
-                                                asset.application_type === 'smm' ? 'text-purple-600' :
-                                                    'text-blue-600'
-                                                }`}>browse local files</span></p>
+                                            <p className="text-sm font-semibold text-slate-700 mb-1">Upload Social Media Assets</p>
+                                            <p className="text-xs text-slate-500">Drag & drop source files, or <span className="text-purple-600 hover:underline">browse local files</span></p>
                                         </>
                                     )}
                                 </div>
                             </div>
                         )}
 
-                        {/* Asset Classification - Yellow Card - Only show for SEO and SMM (Web has its own section) */}
-                        {asset.application_type && asset.application_type !== 'web' && (
+                        {/* Asset Classification - Yellow Card - Only show for SMM (Web and SEO have their own sections) */}
+                        {asset.application_type === 'smm' && (
                             <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
                                 <div className="flex items-center gap-2 mb-4">
                                     <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -1336,8 +1621,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Map Asset to Source Work - Only show for SEO and SMM (Web has its own section) */}
-                        {asset.application_type && asset.application_type !== 'web' && (
+                        {/* Map Asset to Source Work - Only show for SMM (Web and SEO have their own sections) */}
+                        {asset.application_type === 'smm' && (
                             <div className="bg-white rounded-xl p-5 border border-slate-200">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -1423,8 +1708,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                         )}
 
 
-                        {/* Designer & Workflow - Purple Card - Only show for SEO and SMM (Web has its own section) */}
-                        {asset.application_type && asset.application_type !== 'web' && (
+                        {/* Designer & Workflow - Purple Card - Only show for SMM (Web and SEO have their own sections) */}
+                        {asset.application_type === 'smm' && (
                             <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-9 h-9 bg-purple-500 rounded-xl flex items-center justify-center">
@@ -1476,8 +1761,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </div>
                         )}
 
-                        {/* Versioning - Only show for SEO and SMM (Web has its own section) */}
-                        {asset.application_type && asset.application_type !== 'web' && (
+                        {/* Versioning - Only show for SMM (Web and SEO have their own sections) */}
+                        {asset.application_type === 'smm' && (
                             <div className="bg-white rounded-xl p-5 border border-slate-200">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center">

@@ -3,7 +3,7 @@ import Tooltip from './Tooltip';
 
 export interface Column<T = any> {
   header: string;
-  accessor: keyof T | ((item: T) => React.ReactNode);
+  accessor: keyof T | ((item: T, index?: number) => React.ReactNode);
   className?: string;
   tooltip?: string;
   minWidth?: string;
@@ -39,10 +39,10 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
     }
   }, [data?.length, totalPages, currentPage]);
 
-  const renderCell = (item: any, column: Column<any>) => {
+  const renderCell = (item: any, column: Column<any>, rowIndex: number) => {
     if (!item) return '';
     if (typeof column.accessor === 'function') {
-      return column.accessor(item);
+      return column.accessor(item, rowIndex);
     }
     const value = item[column.accessor];
     return typeof value === 'string' || typeof value === 'number' ? value : '';
@@ -197,7 +197,7 @@ function Table({ columns, data = [], title, actionButton, emptyMessage, rowClass
                         minWidth: getMinWidth(col.header, col.minWidth)
                       }}
                     >
-                      {renderCell(item, col)}
+                      {renderCell(item, col, startIndex + idx)}
                     </td>
                   ))}
                 </tr>

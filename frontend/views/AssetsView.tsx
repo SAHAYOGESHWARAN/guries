@@ -836,6 +836,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Memoize columns for better performance - Updated to match screenshot
     const columns = useMemo(() => [
         {
+            header: 'ID',
+            accessor: (item: AssetLibraryItem, index?: number) => (
+                <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-mono font-medium">
+                    {String((index ?? 0) + 1).padStart(4, '0')}
+                </span>
+            ),
+            className: 'w-16'
+        },
+        {
             header: 'THUMBNAIL',
             accessor: (item: AssetLibraryItem) => (
                 <div className="flex items-center justify-center">
@@ -1143,9 +1152,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     <p className="text-slate-600 text-sm">Web content, articles, and general website assets</p>
                 </div>
 
-                {/* SEO Application - Navigate to SEO Asset Module */}
+                {/* SEO Application - Opens Popup like Web */}
                 <div
-                    onClick={() => onNavigate?.('seo-asset-module')}
+                    onClick={() => handleApplicationTypeSelect('seo')}
                     className="bg-white rounded-xl border-2 border-slate-200 hover:border-green-500 cursor-pointer transition-all p-6 text-center group hover:shadow-lg"
                 >
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200">
@@ -1154,7 +1163,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         </svg>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">SEO</h3>
-                    <p className="text-slate-600 text-sm">SEO Asset Module with 12-step workflow</p>
+                    <p className="text-slate-600 text-sm">SEO content with optimized workflow</p>
                 </div>
 
                 {/* SMM Application */}
@@ -1592,11 +1601,56 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category <span className="text-purple-600">(from Master)</span></label>
                                         <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                                             <option value="">Select category...</option>
                                             {allActiveAssetCategories.map(cat => (
                                                 <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type <span className="text-purple-600">(from Master)</span></label>
+                                        <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="">Select type...</option>
+                                            {allActiveAssetTypes.map(t => {
+                                                const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
+                                                return <option key={t.id} value={typeName}>{typeName}</option>;
+                                            })}
+                                        </select>
+                                    </div>
+
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-medium text-slate-600 mb-2">Keywords <span className="text-purple-600">(from Keyword Master)</span></label>
+                                        {selectedKeywords.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                {selectedKeywords.map((kw: string, idx: number) => (
+                                                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                                                        {kw}
+                                                        <button type="button" onClick={() => {
+                                                            const newKws = selectedKeywords.filter((_: string, i: number) => i !== idx);
+                                                            setSelectedKeywords(newKws);
+                                                            setNewAsset({ ...newAsset, keywords: newKws });
+                                                        }} className="w-4 h-4 hover:bg-purple-200 rounded-full">×</button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <select
+                                            value=""
+                                            onChange={(e) => {
+                                                if (e.target.value && !selectedKeywords.includes(e.target.value)) {
+                                                    const newKws = [...selectedKeywords, e.target.value];
+                                                    setSelectedKeywords(newKws);
+                                                    setNewAsset({ ...newAsset, keywords: newKws });
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                                        >
+                                            <option value="">Choose keyword from master...</option>
+                                            {keywords.filter((kw: any) => !selectedKeywords.includes(kw.keyword)).map((kw: any) => (
+                                                <option key={kw.id} value={kw.keyword}>{kw.keyword} ({kw.keyword_type || 'General'})</option>
                                             ))}
                                         </select>
                                     </div>
@@ -1741,7 +1795,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category</label>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Category <span className="text-blue-600">(from Master)</span></label>
                                     <select value={newAsset.asset_category || ''} onChange={(e) => setNewAsset({ ...newAsset, asset_category: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                                         <option value="">Select category...</option>
                                         {allActiveAssetCategories.map(cat => (
@@ -1751,13 +1805,47 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type</label>
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Asset Type <span className="text-blue-600">(from Master)</span></label>
                                     <select value={newAsset.type || ''} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                                         <option value="">Select type...</option>
                                         {filteredAssetTypes.map(t => {
                                             const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
                                             return <option key={t.id} value={typeName}>{typeName}</option>;
                                         })}
+                                    </select>
+                                </div>
+
+                                <div className="col-span-2">
+                                    <label className="block text-xs font-medium text-slate-600 mb-2">Keywords <span className="text-blue-600">(from Keyword Master)</span></label>
+                                    {selectedKeywords.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {selectedKeywords.map((kw: string, idx: number) => (
+                                                <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                                    {kw}
+                                                    <button type="button" onClick={() => {
+                                                        const newKws = selectedKeywords.filter((_: string, i: number) => i !== idx);
+                                                        setSelectedKeywords(newKws);
+                                                        setNewAsset({ ...newAsset, keywords: newKws });
+                                                    }} className="w-4 h-4 hover:bg-blue-200 rounded-full">×</button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <select
+                                        value=""
+                                        onChange={(e) => {
+                                            if (e.target.value && !selectedKeywords.includes(e.target.value)) {
+                                                const newKws = [...selectedKeywords, e.target.value];
+                                                setSelectedKeywords(newKws);
+                                                setNewAsset({ ...newAsset, keywords: newKws });
+                                            }
+                                        }}
+                                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                                    >
+                                        <option value="">Choose keyword from master...</option>
+                                        {keywords.filter((kw: any) => !selectedKeywords.includes(kw.keyword)).map((kw: any) => (
+                                            <option key={kw.id} value={kw.keyword}>{kw.keyword} ({kw.keyword_type || 'General'})</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -2706,7 +2794,40 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         )}
                                                     </div>
 
-                                                    {/* Asset Format removed for WEB assets per requirements */}
+                                                    {/* Keywords (from Keyword Master) */}
+                                                    <div className="col-span-2">
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Keywords <span className="text-violet-600">(from Keyword Master)</span></label>
+                                                        {selectedKeywords.length > 0 && (
+                                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                                {selectedKeywords.map((kw: string, idx: number) => (
+                                                                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-violet-100 text-violet-800 rounded-full text-xs">
+                                                                        {kw}
+                                                                        <button type="button" onClick={() => {
+                                                                            const newKws = selectedKeywords.filter((_: string, i: number) => i !== idx);
+                                                                            setSelectedKeywords(newKws);
+                                                                            setNewAsset({ ...newAsset, keywords: newKws });
+                                                                        }} className="w-4 h-4 hover:bg-violet-200 rounded-full">×</button>
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        <select
+                                                            value=""
+                                                            onChange={(e) => {
+                                                                if (e.target.value && !selectedKeywords.includes(e.target.value)) {
+                                                                    const newKws = [...selectedKeywords, e.target.value];
+                                                                    setSelectedKeywords(newKws);
+                                                                    setNewAsset({ ...newAsset, keywords: newKws });
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                        >
+                                                            <option value="">Choose keyword from master...</option>
+                                                            {keywords.filter((kw: any) => !selectedKeywords.includes(kw.keyword)).map((kw: any) => (
+                                                                <option key={kw.id} value={kw.keyword}>{kw.keyword} ({kw.keyword_type || 'General'})</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2964,6 +3085,41 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 const typeName = (t as any).asset_type_name || (t as any).asset_type || '';
                                                                 return <option key={t.id} value={typeName}>{typeName}</option>;
                                                             })}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Keywords (from Keyword Master) */}
+                                                    <div className="col-span-2">
+                                                        <label className="block text-xs font-medium text-slate-600 mb-2">Keywords <span className="text-green-600">(from Keyword Master)</span></label>
+                                                        {selectedKeywords.length > 0 && (
+                                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                                {selectedKeywords.map((kw: string, idx: number) => (
+                                                                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                                                        {kw}
+                                                                        <button type="button" onClick={() => {
+                                                                            const newKws = selectedKeywords.filter((_: string, i: number) => i !== idx);
+                                                                            setSelectedKeywords(newKws);
+                                                                            setNewAsset({ ...newAsset, keywords: newKws });
+                                                                        }} className="w-4 h-4 hover:bg-green-200 rounded-full">×</button>
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        <select
+                                                            value=""
+                                                            onChange={(e) => {
+                                                                if (e.target.value && !selectedKeywords.includes(e.target.value)) {
+                                                                    const newKws = [...selectedKeywords, e.target.value];
+                                                                    setSelectedKeywords(newKws);
+                                                                    setNewAsset({ ...newAsset, keywords: newKws });
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                        >
+                                                            <option value="">Choose keyword from master...</option>
+                                                            {keywords.filter((kw: any) => !selectedKeywords.includes(kw.keyword)).map((kw: any) => (
+                                                                <option key={kw.id} value={kw.keyword}>{kw.keyword} ({kw.keyword_type || 'General'})</option>
+                                                            ))}
                                                         </select>
                                                     </div>
                                                 </div>
@@ -3289,6 +3445,41 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 {allActiveAssetTypes.length === 0 && (
                                                                     <p className="text-xs text-amber-600 mt-1">⚠️ Add in Asset Type Master</p>
                                                                 )}
+                                                            </div>
+
+                                                            {/* Keywords (from Keyword Master) */}
+                                                            <div className="col-span-2">
+                                                                <label className="block text-xs font-medium text-slate-600 mb-2">Keywords <span className="text-purple-600">(from Keyword Master)</span></label>
+                                                                {selectedKeywords.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                                        {selectedKeywords.map((kw: string, idx: number) => (
+                                                                            <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                                                                                {kw}
+                                                                                <button type="button" onClick={() => {
+                                                                                    const newKws = selectedKeywords.filter((_: string, i: number) => i !== idx);
+                                                                                    setSelectedKeywords(newKws);
+                                                                                    setNewAsset({ ...newAsset, keywords: newKws });
+                                                                                }} className="w-4 h-4 hover:bg-purple-200 rounded-full">×</button>
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                <select
+                                                                    value=""
+                                                                    onChange={(e) => {
+                                                                        if (e.target.value && !selectedKeywords.includes(e.target.value)) {
+                                                                            const newKws = [...selectedKeywords, e.target.value];
+                                                                            setSelectedKeywords(newKws);
+                                                                            setNewAsset({ ...newAsset, keywords: newKws });
+                                                                        }
+                                                                    }}
+                                                                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                                                                >
+                                                                    <option value="">Choose keyword from master...</option>
+                                                                    {keywords.filter((kw: any) => !selectedKeywords.includes(kw.keyword)).map((kw: any) => (
+                                                                        <option key={kw.id} value={kw.keyword}>{kw.keyword} ({kw.keyword_type || 'General'})</option>
+                                                                    ))}
+                                                                </select>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -5932,7 +6123,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="font-semibold text-slate-900 text-sm">🔍 SEO Content</div>
-                                                            <div className="text-xs text-slate-600">Search optimized content, meta descriptions</div>
+                                                            <div className="text-xs text-slate-600">12-step SEO workflow</div>
                                                         </div>
                                                         <svg className="w-4 h-4 text-slate-400 group-hover/item:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -6307,6 +6498,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <table className="w-full" style={{ minWidth: '1800px' }}>
                                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                                     <tr>
+                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '60px' }}>ID</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '80px' }}>Thumbnail</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '180px' }}>Asset Name</th>
                                                         <th className="px-4 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide border-b-2 border-slate-200 bg-slate-50 whitespace-nowrap" style={{ minWidth: '120px' }}>Asset Type</th>
@@ -6326,7 +6518,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {filteredAssets.length > 0 ? (
-                                                        filteredAssets.map((asset) => {
+                                                        filteredAssets.map((asset, index) => {
                                                             const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
                                                             const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
                                                             const taskId = asset.linked_task_id || asset.linked_task;
@@ -6354,6 +6546,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                                             return (
                                                                 <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-slate-50 cursor-pointer">
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                        <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-mono font-medium">
+                                                                            {String(index + 1).padStart(4, '0')}
+                                                                        </span>
+                                                                    </td>
                                                                     <td className="px-4 py-4 whitespace-nowrap">
                                                                         {asset.thumbnail_url ? (
                                                                             <img src={asset.thumbnail_url} alt={asset.name} className="w-12 h-12 object-cover rounded-lg border border-slate-200" loading="lazy" />
@@ -6897,12 +7094,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                     <button
                                         onClick={() => {
-                                            // Open full upload flow with SEO selected and locked
                                             setNewAsset(prev => ({ ...prev, application_type: 'seo' }));
-                                            setSelectedApplicationType('seo');
-                                            setUploadStep('form-fields');
-                                            setContentTypeLocked(true);
-                                            setViewMode('upload');
+                                            setShowUploadModal(true);
                                         }}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-green-50 rounded-md transition-colors text-sm"
                                     >
@@ -6911,7 +7104,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
                                         <div>
                                             <div className="font-medium text-slate-900">SEO Content</div>
-                                            <div className="text-xs text-slate-500">Optimized content</div>
+                                            <div className="text-xs text-slate-500">12-step SEO workflow</div>
                                         </div>
                                     </button>
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
-import type { AssetLibraryItem, Service, SubServiceItem, AssetCategory, Task, Campaign, Project, ContentRepositoryItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, AssetCategory, Task, Campaign, Project, ContentRepositoryItem, AssetCategoryMasterItem, AssetTypeMasterItem, Keyword } from '../types';
 
 interface AssetFormImprovedProps {
     asset?: Partial<AssetLibraryItem>;
@@ -23,6 +23,9 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
     const { data: campaigns = [] } = useData<Campaign>('campaigns');
     const { data: projects = [] } = useData<Project>('projects');
     const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
+    const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
+    const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
+    const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
 
     const [formData, setFormData] = useState<Partial<AssetLibraryItem>>(asset || {
         name: '',
@@ -38,6 +41,7 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
         grammar_score: undefined
     });
 
+    const [selectedKeywords, setSelectedKeywords] = useState<string[]>(asset?.keywords || []);
     const [linkedTaskId, setLinkedTaskId] = useState<number | null>(asset?.linked_task_id || null);
     const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(asset?.linked_campaign_id || null);
     const [linkedProjectId, setLinkedProjectId] = useState<number | null>(asset?.linked_project_id || null);
@@ -53,6 +57,27 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
         linkedServiceId ? subServices.filter(s => Number(s.parent_service_id) === Number(linkedServiceId)) : [],
         [subServices, linkedServiceId]
     );
+
+    // Filter active keywords from master
+    const activeKeywords = useMemo(() =>
+        keywordsMaster.filter(k => k.status === 'active' || !k.status),
+        [keywordsMaster]
+    );
+
+    // Handle keyword selection
+    const handleKeywordSelect = (keyword: string) => {
+        if (!selectedKeywords.includes(keyword)) {
+            const newKeywords = [...selectedKeywords, keyword];
+            setSelectedKeywords(newKeywords);
+            setFormData(prev => ({ ...prev, keywords: newKeywords }));
+        }
+    };
+
+    const handleKeywordRemove = (keyword: string) => {
+        const newKeywords = selectedKeywords.filter(k => k !== keyword);
+        setSelectedKeywords(newKeywords);
+        setFormData(prev => ({ ...prev, keywords: newKeywords }));
+    };
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -99,6 +124,7 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
             linked_sub_service_id: linkedSubServiceId,
             linked_repository_item_id: linkedRepositoryItemId,
             mapped_to: mappedToString || formData.mapped_to,
+            keywords: selectedKeywords,
             status: submitForQC ? 'Pending QC Review' : (formData.status || 'Draft'),
             submitted_by: submitForQC ? 1 : undefined,
             submitted_at: submitForQC ? new Date().toISOString() : undefined,
@@ -256,6 +282,92 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
                                 <option value="image">Image</option>
                                 <option value="video">Video</option>
                                 <option value="document">Document</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Asset Classification - Linked to Master Tables */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-slate-900">Asset Classification</h3>
+                            <p className="text-sm text-slate-500">Link to master tables</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                        {/* Asset Category */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Asset Category
+                                <span className="ml-2 text-xs text-violet-600">(from Category Master)</span>
+                            </label>
+                            <select
+                                value={formData.asset_category || ''}
+                                onChange={e => setFormData({ ...formData, asset_category: e.target.value })}
+                                className="w-full h-11 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500"
+                            >
+                                <option value="">Select Category</option>
+                                {assetCategories.filter(c => c.status === 'active').map(cat => (
+                                    <option key={cat.id} value={cat.category_name}>
+                                        {cat.category_name} ({cat.brand})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Asset Type from Master */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Asset Type
+                                <span className="ml-2 text-xs text-violet-600">(from Type Master)</span>
+                            </label>
+                            <select
+                                value={formData.type || ''}
+                                onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                className="w-full h-11 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500"
+                            >
+                                <option value="">Select Type</option>
+                                {assetTypes.filter(t => t.status === 'active').map(type => (
+                                    <option key={type.id} value={type.asset_type_name}>
+                                        {type.asset_type_name} {type.dimensions ? `(${type.dimensions})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Keywords */}
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Keywords
+                                <span className="ml-2 text-xs text-violet-600">(from Keyword Master)</span>
+                            </label>
+                            {selectedKeywords.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {selectedKeywords.map((kw, idx) => (
+                                        <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-violet-100 text-violet-800 rounded-full text-sm">
+                                            {kw}
+                                            <button type="button" onClick={() => handleKeywordRemove(kw)} className="w-4 h-4 hover:bg-violet-200 rounded-full">×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            <select
+                                value=""
+                                onChange={e => e.target.value && handleKeywordSelect(e.target.value)}
+                                className="w-full h-11 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500"
+                            >
+                                <option value="">Choose keyword from master...</option>
+                                {activeKeywords.filter(kw => !selectedKeywords.includes(kw.keyword)).map(kw => (
+                                    <option key={kw.id} value={kw.keyword}>
+                                        {kw.keyword} ({kw.keyword_type || 'General'}) - Vol: {kw.search_volume?.toLocaleString() || 0}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>

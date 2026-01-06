@@ -27,6 +27,7 @@ export const getSeoAssets = async (req: Request, res: Response) => {
 
         const parsed = result.rows.map((row: any) => ({
             ...row,
+            asset_id: `SEO-${String(row.id).padStart(4, '0')}`, // Auto-generated SEO Asset ID
             keywords: row.keywords ? JSON.parse(row.keywords) : [],
             seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
             resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],
@@ -67,6 +68,7 @@ export const getSeoAssetById = async (req: Request, res: Response) => {
         const row = result.rows[0];
         const parsed = {
             ...row,
+            asset_id: `SEO-${String(row.id).padStart(4, '0')}`, // Auto-generated SEO Asset ID
             keywords: row.keywords ? JSON.parse(row.keywords) : [],
             seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
             resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],

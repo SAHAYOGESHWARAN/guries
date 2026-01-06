@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useData } from '../hooks/useData';
-import type { AssetLibraryItem, Service, SubServiceItem, Task, Campaign, Project, ContentRepositoryItem, AssetCategoryMasterItem, AssetTypeMasterItem } from '../types';
+import type { AssetLibraryItem, Service, SubServiceItem, Task, Campaign, Project, ContentRepositoryItem, AssetCategoryMasterItem, AssetTypeMasterItem, Keyword } from '../types';
 
 interface EditAssetFormProps {
     asset: Partial<AssetLibraryItem>;
@@ -18,6 +18,7 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
     const { data: repositoryItems = [] } = useData<ContentRepositoryItem>('content');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
+    const { data: keywordsMaster = [] } = useData<Keyword>('keywords');
 
     // Determine application type from asset
     const applicationType = asset.application_type || 'web';
@@ -27,7 +28,13 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
         name: asset.name || '',
         type: asset.type || 'article',
         status: asset.status || 'Draft',
+        asset_category: asset.asset_category || '',
+        keywords: asset.keywords || [],
+        seo_keywords: asset.seo_keywords || [],
     });
+
+    const [selectedKeywords, setSelectedKeywords] = useState<string[]>(asset.keywords || []);
+    const [keywordInput, setKeywordInput] = useState('');
 
     const [linkedTaskId, setLinkedTaskId] = useState<number | null>(asset.linked_task_id || null);
     const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(asset.linked_campaign_id || null);
@@ -44,6 +51,28 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
         linkedServiceId ? subServices.filter(s => Number(s.parent_service_id) === Number(linkedServiceId)) : [],
         [subServices, linkedServiceId]
     );
+
+    // Filter active keywords from master
+    const activeKeywords = useMemo(() =>
+        keywordsMaster.filter(k => k.status === 'active' || !k.status),
+        [keywordsMaster]
+    );
+
+    // Handle keyword selection from master
+    const handleKeywordSelect = (keyword: string) => {
+        if (!selectedKeywords.includes(keyword)) {
+            const newKeywords = [...selectedKeywords, keyword];
+            setSelectedKeywords(newKeywords);
+            setFormData(prev => ({ ...prev, keywords: newKeywords }));
+        }
+    };
+
+    // Handle keyword removal
+    const handleKeywordRemove = (keyword: string) => {
+        const newKeywords = selectedKeywords.filter(k => k !== keyword);
+        setSelectedKeywords(newKeywords);
+        setFormData(prev => ({ ...prev, keywords: newKeywords }));
+    };
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -91,6 +120,7 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
             linked_sub_service_id: linkedSubServiceId,
             linked_repository_item_id: linkedRepositoryItemId,
             mapped_to: mappedToString || formData.mapped_to,
+            keywords: selectedKeywords,
             status: submitForQC ? 'Pending QC Review' : (formData.status || 'Draft'),
         }, submitForQC);
     };
@@ -228,6 +258,116 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
                     </div>
                 </section>
 
+                {/* Asset Classification - Linked to Master Tables */}
+                <section className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </span>
+                        Asset Classification
+                    </h2>
+                    <div className="grid grid-cols-2 gap-6">
+                        {/* Asset Category - Linked to Asset Category Master */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Asset Category
+                                <span className="ml-2 text-xs text-violet-600 font-normal">(from Category Master)</span>
+                            </label>
+                            <select
+                                value={formData.asset_category || ''}
+                                onChange={e => setFormData({ ...formData, asset_category: e.target.value })}
+                                className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                            >
+                                <option value="">Select Category</option>
+                                {assetCategories
+                                    .filter(cat => cat.status === 'active')
+                                    .map(cat => (
+                                        <option key={cat.id} value={cat.category_name}>
+                                            {cat.category_name} ({cat.brand})
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+
+                        {/* Asset Type - Linked to Asset Type Master */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Asset Type
+                                <span className="ml-2 text-xs text-violet-600 font-normal">(from Type Master)</span>
+                            </label>
+                            <select
+                                value={formData.type || ''}
+                                onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                            >
+                                <option value="">Select Type</option>
+                                {assetTypes
+                                    .filter(type => type.status === 'active')
+                                    .map(type => (
+                                        <option key={type.id} value={type.asset_type_name}>
+                                            {type.asset_type_name} {type.dimensions ? `(${type.dimensions})` : ''}
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+
+                        {/* Keywords - Linked to Keyword Master */}
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Keywords
+                                <span className="ml-2 text-xs text-violet-600 font-normal">(from Keyword Master)</span>
+                            </label>
+
+                            {/* Selected Keywords Tags */}
+                            {selectedKeywords.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {selectedKeywords.map((kw, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="inline-flex items-center gap-1 px-3 py-1 bg-violet-100 text-violet-800 rounded-full text-sm"
+                                        >
+                                            {kw}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleKeywordRemove(kw)}
+                                                className="w-4 h-4 flex items-center justify-center hover:bg-violet-200 rounded-full"
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Keyword Dropdown */}
+                            <select
+                                value=""
+                                onChange={e => {
+                                    if (e.target.value) {
+                                        handleKeywordSelect(e.target.value);
+                                    }
+                                }}
+                                className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                            >
+                                <option value="">Choose keyword from master...</option>
+                                {activeKeywords
+                                    .filter(kw => !selectedKeywords.includes(kw.keyword))
+                                    .map(kw => (
+                                        <option key={kw.id} value={kw.keyword}>
+                                            {kw.keyword} ({kw.keyword_type || 'General'}) - Vol: {kw.search_volume?.toLocaleString() || 0}
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                            <p className="text-xs text-gray-500 mt-2">Select keywords from the Keyword Master table</p>
+                        </div>
+                    </div>
+                </section>
+
                 {/* Link to Source Work */}
                 <section className="bg-white rounded-xl border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -339,8 +479,8 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
                 <section className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${applicationType === 'web' ? 'bg-blue-500' :
-                                applicationType === 'seo' ? 'bg-green-500' :
-                                    'bg-purple-500'
+                            applicationType === 'seo' ? 'bg-green-500' :
+                                'bg-purple-500'
                             }`}>
                             <span className="text-white text-lg">
                                 {applicationType === 'web' ? '🌐' : applicationType === 'seo' ? '🔍' : '📱'}
