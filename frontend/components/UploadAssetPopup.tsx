@@ -1218,31 +1218,6 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     </div>
                                     <p className="text-[10px] text-slate-400 mt-2">New version created on every re-submit after rejection. Previous versions are read-only.</p>
                                 </div>
-
-                                {/* STEP 12: Actions - Save, Submit, Discard (shown in footer) */}
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center bg-slate-600`}>
-                                            <span className="text-white text-xs font-bold">12</span>
-                                        </div>
-                                        <h4 className="text-sm font-bold text-slate-700">Actions</h4>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mb-3">Use the buttons below to save, submit, or discard your work.</p>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleSave(false)} disabled={isSaving || !selectedAssetId} className="flex-1 h-10 px-4 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 disabled:opacity-50 flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-                                            Save (Draft)
-                                        </button>
-                                        <button onClick={() => handleSave(true)} disabled={isSaving || !selectedAssetId} className="flex-1 h-10 px-4 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            Submit for QC
-                                        </button>
-                                        <button onClick={onClose} className="h-10 px-4 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            Discard
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
                         )}
 
@@ -1708,7 +1683,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                     </div>
                 </div>
 
-                {/* Footer Actions - Different for SMM vs Web/SEO */}
+                {/* Footer Actions - Different for each application type */}
                 <div className="flex items-center justify-center gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
                     {asset.application_type === 'smm' ? (
                         /* SMM Footer Actions */
@@ -1750,29 +1725,32 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 Submit for QC
                             </button>
                         </>
-                    ) : (
-                        /* Web/SEO Footer Actions */
+                    ) : asset.application_type === 'seo' ? (
+                        /* SEO Footer Actions */
                         <>
                             <button
                                 onClick={onClose}
-                                className="h-10 px-6 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => handleSave(true)}
-                                disabled={isSaving}
-                                className="h-10 px-5 text-sm font-medium bg-amber-100 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-200 disabled:opacity-50 flex items-center gap-2"
+                                className="h-10 px-5 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 flex items-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
-                                Send to QC Stage 2
+                                Discard
                             </button>
                             <button
                                 onClick={() => handleSave(false)}
-                                disabled={isSaving}
-                                className="h-10 px-5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                                disabled={isSaving || !selectedAssetId}
+                                className="h-10 px-5 text-sm font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                                Save Draft
+                            </button>
+                            <button
+                                onClick={() => handleSave(true)}
+                                disabled={isSaving || !selectedAssetId}
+                                className="h-10 px-5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
                             >
                                 {isSaving ? (
                                     <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1781,10 +1759,47 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     </svg>
                                 ) : (
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 )}
-                                Save to Asset Library
+                                Submit for QC
+                            </button>
+                        </>
+                    ) : (
+                        /* Web Footer Actions */
+                        <>
+                            <button
+                                onClick={onClose}
+                                className="h-10 px-6 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleSave(false)}
+                                disabled={isSaving}
+                                className="h-10 px-5 text-sm font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                                Save Draft
+                            </button>
+                            <button
+                                onClick={() => handleSave(true)}
+                                disabled={isSaving}
+                                className="h-10 px-5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isSaving ? (
+                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                )}
+                                Submit for QC
                             </button>
                         </>
                     )}
