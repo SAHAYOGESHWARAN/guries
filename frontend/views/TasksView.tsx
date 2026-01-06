@@ -9,10 +9,10 @@ const TasksView: React.FC = () => {
     const { data: tasks, create: createTask } = useData<Task>('tasks');
     const { data: users } = useData<User>('users');
     const { data: campaigns } = useData<Campaign>('campaigns');
-    
+
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
-    
+
     // Form State
     const [newTask, setNewTask] = useState<Partial<Task>>({
         name: '',
@@ -24,7 +24,10 @@ const TasksView: React.FC = () => {
         priority: 'Medium'
     });
 
-    const filteredTasks = tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredTasks = tasks.filter(t => {
+        const taskName = t.name || (t as any).task_name || '';
+        return taskName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     const handleCreate = async () => {
         if (!newTask.campaign_id) {
@@ -33,6 +36,7 @@ const TasksView: React.FC = () => {
         }
         await createTask({
             ...newTask,
+            task_name: newTask.name, // Send as task_name for backend compatibility
             sub_campaign: 'General',
             progress_stage: 'Not Started'
         } as any);
@@ -45,15 +49,15 @@ const TasksView: React.FC = () => {
     };
 
     const columns = [
-        { header: 'Task', accessor: 'name' as keyof Task, className: 'font-bold text-slate-800 text-sm' },
-        { 
-            header: 'Campaign', 
+        { header: 'Task', accessor: (item: Task) => (item as any).name || (item as any).task_name || '-', className: 'font-bold text-slate-800 text-sm' },
+        {
+            header: 'Campaign',
             accessor: (item: Task) => (
                 <span className="text-xs text-slate-600">{campaigns.find(c => c.id === item.campaign_id)?.campaign_name || '-'}</span>
-            ) 
+            )
         },
-        { 
-            header: 'Assignee', 
+        {
+            header: 'Assignee',
             accessor: (item: Task) => {
                 const u = users.find(user => user.id === item.primary_owner_id);
                 return u ? (
@@ -65,14 +69,13 @@ const TasksView: React.FC = () => {
             }
         },
         { header: 'Due Date', accessor: 'due_date' as keyof Task, className: 'text-xs text-slate-500' },
-        { 
-            header: 'Priority', 
+        {
+            header: 'Priority',
             accessor: (item: Task) => (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    item.priority === 'High' ? 'bg-red-50 text-red-700' :
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${item.priority === 'High' ? 'bg-red-50 text-red-700' :
                     item.priority === 'Medium' ? 'bg-orange-50 text-orange-700' :
-                    'bg-blue-50 text-blue-700'
-                }`}>
+                        'bg-blue-50 text-blue-700'
+                    }`}>
                     {item.priority}
                 </span>
             )
@@ -98,27 +101,27 @@ const TasksView: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                    
+
                     <div className="flex-1 overflow-y-auto p-6 bg-slate-50 w-full">
                         <div className="w-full bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
                             <div className="space-y-3">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1">Task Name</label>
-                                    <input 
-                                        type="text" 
-                                        value={newTask.name} 
-                                        onChange={(e) => setNewTask({...newTask, name: e.target.value})} 
-                                        className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" 
-                                        placeholder="e.g. Write Q3 Blog Post" 
+                                    <input
+                                        type="text"
+                                        value={newTask.name}
+                                        onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
+                                        className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                        placeholder="e.g. Write Q3 Blog Post"
                                     />
                                 </div>
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 mb-1">Campaign</label>
-                                        <select 
-                                            value={newTask.campaign_id} 
-                                            onChange={(e) => setNewTask({...newTask, campaign_id: parseInt(e.target.value)})} 
+                                        <select
+                                            value={newTask.campaign_id}
+                                            onChange={(e) => setNewTask({ ...newTask, campaign_id: parseInt(e.target.value) })}
                                             className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm"
                                         >
                                             <option value={0}>Select Campaign...</option>
@@ -127,9 +130,9 @@ const TasksView: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 mb-1">Task Type</label>
-                                        <select 
-                                            value={newTask.task_type} 
-                                            onChange={(e) => setNewTask({...newTask, task_type: e.target.value})} 
+                                        <select
+                                            value={newTask.task_type}
+                                            onChange={(e) => setNewTask({ ...newTask, task_type: e.target.value })}
                                             className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm"
                                         >
                                             <option value="general">General</option>
@@ -144,9 +147,9 @@ const TasksView: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 mb-1">Assignee</label>
-                                        <select 
-                                            value={newTask.primary_owner_id} 
-                                            onChange={(e) => setNewTask({...newTask, primary_owner_id: parseInt(e.target.value)})} 
+                                        <select
+                                            value={newTask.primary_owner_id}
+                                            onChange={(e) => setNewTask({ ...newTask, primary_owner_id: parseInt(e.target.value) })}
                                             className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm"
                                         >
                                             <option value={0}>Unassigned</option>
@@ -155,9 +158,9 @@ const TasksView: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 mb-1">Priority</label>
-                                        <select 
-                                            value={newTask.priority} 
-                                            onChange={(e) => setNewTask({...newTask, priority: e.target.value as any})} 
+                                        <select
+                                            value={newTask.priority}
+                                            onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as any })}
                                             className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm"
                                         >
                                             <option>Low</option>
@@ -169,11 +172,11 @@ const TasksView: React.FC = () => {
 
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1">Due Date</label>
-                                    <input 
-                                        type="date" 
-                                        value={newTask.due_date} 
-                                        onChange={(e) => setNewTask({...newTask, due_date: e.target.value})} 
-                                        className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" 
+                                    <input
+                                        type="date"
+                                        value={newTask.due_date}
+                                        onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                                        className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                     />
                                 </div>
                             </div>
@@ -207,12 +210,12 @@ const TasksView: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                    <input 
-                        type="search" 
-                        className="block w-full p-2 pl-9 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" 
-                        placeholder="Search tasks..." 
-                        value={searchQuery} 
-                        onChange={(e) => setSearchQuery(e.target.value)} 
+                    <input
+                        type="search"
+                        className="block w-full p-2 pl-9 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
+                        placeholder="Search tasks..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
             </div>
