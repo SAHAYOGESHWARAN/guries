@@ -964,6 +964,13 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                                     onClick={() => {
                                                         setIsAssetIdLocked(false);
                                                         setSelectedAssetId(null);
+                                                        // Reset linked fields for manual entry
+                                                        setLinkedTaskId(null);
+                                                        setLinkedCampaignId(null);
+                                                        setLinkedProjectId(null);
+                                                        setLinkedServiceId(null);
+                                                        setLinkedSubServiceId(null);
+                                                        setLinkedRepositoryItemId(null);
                                                     }}
                                                     className="text-xs text-indigo-600 hover:text-indigo-800 underline"
                                                 >
@@ -1334,6 +1341,13 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                                     onClick={() => {
                                                         setIsSmmAssetIdLocked(false);
                                                         setSmmSelectedAssetId(null);
+                                                        // Reset linked fields for manual entry
+                                                        setSmmLinkedTaskId(null);
+                                                        setSmmLinkedCampaignId(null);
+                                                        setSmmLinkedProjectId(null);
+                                                        setSmmLinkedServiceId(null);
+                                                        setSmmLinkedSubServiceId(null);
+                                                        setSmmLinkedRepositoryItemId(null);
                                                     }}
                                                     className="text-xs text-indigo-600 hover:text-indigo-800 underline"
                                                 >

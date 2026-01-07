@@ -470,6 +470,23 @@ CREATE TABLE IF NOT EXISTS assets (
 	smm_media_url VARCHAR(1000),
 	smm_media_type VARCHAR(50),
 	
+	-- SEO Application fields (12-step workflow)
+	seo_title VARCHAR(500),
+	seo_meta_title VARCHAR(500),
+	seo_description TEXT,
+	seo_service_url VARCHAR(1000),
+	seo_blog_url VARCHAR(1000),
+	seo_anchor_text TEXT,
+	seo_primary_keyword_id INTEGER REFERENCES keywords(id),
+	seo_lsi_keywords TEXT, -- JSON array of keyword IDs from Keyword Master
+	seo_domain_type VARCHAR(100),
+	seo_domains TEXT, -- JSON array of domain objects
+	seo_blog_content TEXT,
+	seo_sector_id INTEGER,
+	seo_industry_id INTEGER,
+	assigned_team_members TEXT, -- JSON array of user IDs
+	updated_by INTEGER REFERENCES users(id),
+	
 	-- Resource Upload (Section 4.7)
 	resource_files TEXT, -- JSON array of uploaded resource file URLs
 	

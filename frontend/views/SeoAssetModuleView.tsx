@@ -173,84 +173,148 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
 
     // Load existing asset if editing
     useEffect(() => {
-        if (editAssetId && existingAssets.length > 0) {
-            const existing = existingAssets.find(a => a.id === editAssetId);
-            if (existing) {
-                setSelectedAssetId(existing.id);
-                setIsAssetIdLocked(true);
-                setLinkedProjectId(existing.linked_project_id || null);
-                setLinkedCampaignId(existing.linked_campaign_id || null);
-                setLinkedServiceId(existing.linked_service_id || null);
-                setLinkedSubServiceId(existing.linked_sub_service_id || null);
-                setLinkedTaskId(existing.linked_task_id || null);
-                setLinkedRepositoryId(existing.linked_repository_item_id || null);
-                setAssetType(existing.type || '');
-                setSeoTitle((existing as any).seo_title || existing.name || '');
-                setMetaTitle((existing as any).seo_meta_title || '');
-                setDescription((existing as any).seo_description || '');
-                setServiceUrl((existing as any).seo_service_url || '');
-                setBlogUrl((existing as any).seo_blog_url || '');
-                setAnchorText((existing as any).seo_anchor_text || '');
-                setBlogContent((existing as any).seo_blog_content || '');
-                setVersionNumber(existing.version_number || 'v1.0');
-                setVersionHistory(existing.version_history || []);
-                setSectionsEnabled({
-                    mapSource: true,
-                    classification: true,
-                    seoMetadata: true,
-                    keywords: true,
-                    domains: true,
-                    blogContent: true,
-                    resourceUpload: true,
-                    workflow: true,
-                    versioning: true,
-                    actions: true
-                });
-            }
+        if (editAssetId) {
+            // Fetch SEO asset data directly from the SEO assets endpoint
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            fetch(`${apiUrl}/seo-assets/${editAssetId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && !data.error) {
+                        setSelectedAssetId(data.linked_asset_id || data.id);
+                        setIsAssetIdLocked(true);
+                        setLinkedProjectId(data.linked_project_id || null);
+                        setLinkedCampaignId(data.linked_campaign_id || null);
+                        setLinkedServiceId(data.linked_service_id || null);
+                        setLinkedSubServiceId(data.linked_sub_service_id || null);
+                        setLinkedTaskId(data.linked_task_id || null);
+                        setLinkedRepositoryId(data.linked_repository_item_id || null);
+                        setAssetType(data.asset_type || data.type || '');
+                        setSeoTitle(data.seo_title || data.name || '');
+                        setMetaTitle(data.seo_meta_title || '');
+                        setDescription(data.seo_description || '');
+                        setServiceUrl(data.seo_service_url || data.service_url || '');
+                        setBlogUrl(data.seo_blog_url || data.blog_url || '');
+                        setAnchorText(data.seo_anchor_text || data.anchor_text || '');
+                        setBlogContent(data.seo_blog_content || data.blog_content || '');
+                        setVersionNumber(data.version_number || 'v1.0');
+                        setVersionHistory(data.version_history || []);
+
+                        // Load domain-related fields
+                        setDomainType(data.seo_domain_type || data.domain_type || '');
+                        setSelectedDomains(data.seo_domains || []);
+
+                        // Load keyword fields
+                        setPrimaryKeywordId(data.seo_primary_keyword_id || data.primary_keyword_id || null);
+                        setLsiKeywords(data.seo_lsi_keywords || data.lsi_keywords || []);
+
+                        // Load classification fields
+                        setSector(data.seo_sector_id || data.sector_id || '');
+                        setIndustry(data.seo_industry_id || data.industry_id || '');
+
+                        // Load resource files
+                        const files = data.resource_files || [];
+                        setResourceFiles(Array.isArray(files)
+                            ? files.map((url: string) => ({ name: url.split('/').pop() || 'file', url }))
+                            : []);
+
+                        // Load workflow fields
+                        setAssignedTeamMembers(data.assigned_team_members || []);
+                        setVerifiedBy(data.verified_by || null);
+
+                        setSectionsEnabled({
+                            mapSource: true,
+                            classification: true,
+                            seoMetadata: true,
+                            keywords: true,
+                            domains: true,
+                            blogContent: true,
+                            resourceUpload: true,
+                            workflow: true,
+                            versioning: true,
+                            actions: true
+                        });
+                    }
+                })
+                .catch(err => console.error('Error loading SEO asset:', err));
         }
-    }, [editAssetId, existingAssets]);
+    }, [editAssetId]);
 
     // Handle Asset ID Selection
     const handleAssetIdSelect = (assetId: number) => {
         if (assetId) {
             setSelectedAssetId(assetId);
             setIsAssetIdLocked(true);
+
+            // Pre-fill linked data from selected asset
+            const selectedAsset = existingAssets.find(a => a.id === assetId);
+            if (selectedAsset) {
+                setLinkedTaskId(selectedAsset.linked_task_id || null);
+                setLinkedCampaignId(selectedAsset.linked_campaign_id || null);
+                setLinkedProjectId(selectedAsset.linked_project_id || null);
+                setLinkedServiceId(selectedAsset.linked_service_id || null);
+                setLinkedSubServiceId(selectedAsset.linked_sub_service_id || null);
+                setLinkedRepositoryId(selectedAsset.linked_repository_item_id || null);
+                setAssetType(selectedAsset.type || '');
+                setSeoTitle(selectedAsset.name || '');
+            }
         }
     };
 
+    // Handle Change Selection - Reset linked fields for manual entry
+    const handleChangeSelection = () => {
+        setIsAssetIdLocked(false);
+        setSelectedAssetId(null);
+        // Reset linked fields to allow manual entry
+        setLinkedTaskId(null);
+        setLinkedCampaignId(null);
+        setLinkedProjectId(null);
+        setLinkedServiceId(null);
+        setLinkedSubServiceId(null);
+        setLinkedRepositoryId(null);
+    };
+
     // Calculate Approval Status automatically based on QC statuses
-    const calculateApprovalStatus = (seoQcStatus: string, qaStatus: string): string => {
-        if (seoQcStatus === 'Pass' && qaStatus === 'Approved') return 'Approved';
-        if (seoQcStatus === 'Fail' || qaStatus === 'Rejected') return 'Rejected';
+    const calculateApprovalStatus = (selfQcStatus: string, qaStatus: string): string => {
+        if (selfQcStatus === 'Approved' && qaStatus === 'Pass') return 'Approved';
+        if (selfQcStatus === 'Rejected' || qaStatus === 'Fail') return 'Rejected';
         return 'Pending';
     };
 
-    // Handle Add Domain button click
-    const handleAddDomain = () => {
-        setEditingDomainIndex(null);
-        setDomainPopupData({
-            domain_name: '',
+    // State for Add Domain dropdown
+    const [showAddDomainDropdown, setShowAddDomainDropdown] = useState(false);
+
+    // Handle Add Domain - Just add domain name from Backlink Master
+    const handleAddDomainFromDropdown = (domainName: string) => {
+        if (!domainName) return;
+
+        // Check if domain already added
+        if (selectedDomains.some(d => d.domain_name === domainName)) {
+            alert('This domain is already added');
+            return;
+        }
+
+        const newDomain: DomainDetails = {
+            domain_name: domainName,
             url_posted: '',
-            seo_self_qc_status: 'Waiting',
-            qa_status: 'Pending',
+            seo_self_qc_status: 'Pending', // Default to Pending
+            qa_status: '', // Empty - to be filled by verifier
             approval_status: 'Pending'
-        });
-        setShowDomainPopup(true);
+        };
+
+        setSelectedDomains([...selectedDomains, newDomain]);
+        setShowAddDomainDropdown(false);
     };
 
-    // Handle Domain Click (edit)
+    // Handle Domain Click - Open popup to edit URL and Self QC Status
     const handleDomainClick = (index: number) => {
         setEditingDomainIndex(index);
         setDomainPopupData({ ...selectedDomains[index] });
         setShowDomainPopup(true);
     };
 
-    // Handle Domain Popup Save
+    // Handle Domain Popup Save - Update URL Posted and Self QC Status
     const handleSaveDomainDetails = () => {
-        if (!domainPopupData.domain_name) {
-            alert('Please select a domain from Backlink Master');
-            return;
-        }
+        if (editingDomainIndex === null) return;
 
         const approvalStatus = calculateApprovalStatus(
             domainPopupData.seo_self_qc_status,
@@ -258,14 +322,9 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
         );
 
         const updatedDomain = { ...domainPopupData, approval_status: approvalStatus };
-
-        if (editingDomainIndex !== null) {
-            const updated = [...selectedDomains];
-            updated[editingDomainIndex] = updatedDomain;
-            setSelectedDomains(updated);
-        } else {
-            setSelectedDomains([...selectedDomains, updatedDomain]);
-        }
+        const updated = [...selectedDomains];
+        updated[editingDomainIndex] = updatedDomain;
+        setSelectedDomains(updated);
 
         setShowDomainPopup(false);
         setEditingDomainIndex(null);
@@ -505,11 +564,12 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">1</div>
                             <h3 className="text-base font-bold text-slate-800">Asset ID Selection</h3>
+                            <span className="text-xs text-rose-500 font-medium">* Required</span>
                         </div>
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                                 Asset ID *
+                                <span className="text-xs text-slate-400">(Select from existing assets)</span>
                             </label>
                             <select
                                 value={selectedAssetId || ''}
@@ -521,36 +581,46 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 <option value="">Select Asset ID...</option>
                                 {existingAssets.map(asset => (
                                     <option key={asset.id} value={asset.id}>
-                                        {asset.id} - {asset.name} ({asset.type || 'N/A'})
+                                        {String(asset.id).padStart(4, '0')} - {asset.name}
                                     </option>
                                 ))}
                             </select>
                             {errors.assetId && <p className="text-xs text-rose-500 mt-1">{errors.assetId}</p>}
                             {isAssetIdLocked && (
-                                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                    Asset ID is locked (read-only after selection)
-                                </p>
+                                <div className="flex items-center justify-between mt-2">
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Asset ID locked. All sections are now enabled.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleChangeSelection}
+                                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                    >
+                                        Change Selection
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>
 
                     {/* ========== SECTION 2: Map Asset to Source Work ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.mapSource ? disabledSectionClass : ''}`}>
-                        <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-3 mb-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">2</div>
-                            <h3 className="text-base font-bold text-slate-800">Map Asset to Source Work</h3>
+                            <h3 className="text-base font-bold text-slate-800">Map Assets to Source Work</h3>
                         </div>
+                        <p className="text-sm text-blue-600 mb-4 ml-11">Link the selected Asset ID to its originating work/source</p>
                         <div className="grid grid-cols-2 gap-4">
-                            {/* Linked Project */}
+                            {/* Linked Task */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Project</label>
-                                <select value={linkedProjectId || ''} onChange={(e) => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)}
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Task</label>
+                                <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                    <option value="">Select Project...</option>
-                                    {projects.map(p => <option key={p.id} value={p.id}>{p.project_name}</option>)}
+                                    <option value="">Select Task</option>
+                                    {tasks.map(task => <option key={task.id} value={task.id}>{(task as any).task_name || task.name}</option>)}
                                 </select>
                             </div>
                             {/* Linked Campaign */}
@@ -558,8 +628,17 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Linked Campaign</label>
                                 <select value={linkedCampaignId || ''} onChange={(e) => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                    <option value="">Select Campaign...</option>
+                                    <option value="">Select Campaign</option>
                                     {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name}</option>)}
+                                </select>
+                            </div>
+                            {/* Linked Project */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Project</label>
+                                <select value={linkedProjectId || ''} onChange={(e) => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                                    <option value="">Select Project</option>
+                                    {projects.map(p => <option key={p.id} value={p.id}>{p.project_name}</option>)}
                                 </select>
                             </div>
                             {/* Linked Service */}
@@ -567,7 +646,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Linked Service</label>
                                 <select value={linkedServiceId || ''} onChange={(e) => setLinkedServiceId(e.target.value ? Number(e.target.value) : null)}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                    <option value="">Select Service...</option>
+                                    <option value="">Select Service</option>
                                     {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
                                 </select>
                             </div>
@@ -575,20 +654,12 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Linked Sub-Service</label>
                                 <select value={linkedSubServiceId || ''} onChange={(e) => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                    <option value="">Select Sub-Service...</option>
+                                    disabled={!linkedServiceId}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                    <option value="">{linkedServiceId ? 'Select Sub-Service' : 'Select Service first'}</option>
                                     {subServices.filter(ss => !linkedServiceId || ss.parent_service_id === linkedServiceId).map(ss => (
                                         <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>
                                     ))}
-                                </select>
-                            </div>
-                            {/* Linked Task */}
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Task</label>
-                                <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                    <option value="">Select Task...</option>
-                                    {tasks.map(task => <option key={task.id} value={task.id}>{task.name}</option>)}
                                 </select>
                             </div>
                             {/* Linked Repository Item */}
@@ -596,7 +667,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Linked Repository Item</label>
                                 <select value={linkedRepositoryId || ''} onChange={(e) => setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null)}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                    <option value="">Select Repository Item...</option>
+                                    <option value="">Select Repository</option>
                                     {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.content_title_clean || `Item #${r.id}`}</option>)}
                                 </select>
                             </div>
@@ -729,27 +800,45 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 </select>
                                 {errors.primaryKeyword && <p className="text-xs text-rose-500 mt-1">{errors.primaryKeyword}</p>}
                             </div>
-                            {/* LSI Keywords */}
+                            {/* LSI Keywords - Dropdown from Keyword Master */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">LSI Keywords</label>
-                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 max-h-32 overflow-y-auto">
-                                    {keywords.length === 0 ? (
-                                        <p className="text-sm text-slate-400 text-center py-2">No keywords available in master</p>
-                                    ) : (
-                                        <div className="flex flex-wrap gap-2">
-                                            {keywords.filter(kw => kw.id !== primaryKeywordId).map(kw => (
-                                                <button key={kw.id} type="button"
-                                                    onClick={() => setLsiKeywords(prev => prev.includes(kw.id) ? prev.filter(id => id !== kw.id) : [...prev, kw.id])}
-                                                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${lsiKeywords.includes(kw.id)
-                                                        ? 'bg-orange-500 text-white'
-                                                        : 'bg-white border border-slate-200 text-slate-600 hover:border-orange-300'
-                                                        }`}>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    LSI Keywords <span className="text-slate-400 text-xs">(Optional)</span>
+                                </label>
+                                {/* Selected LSI Keywords Display */}
+                                {lsiKeywords.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {lsiKeywords.map(kwId => {
+                                            const kw = keywords.find(k => k.id === kwId);
+                                            return kw ? (
+                                                <span key={kwId} className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
                                                     {kw.keyword}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                                    <button type="button" onClick={() => setLsiKeywords(prev => prev.filter(id => id !== kwId))}
+                                                        className="w-4 h-4 flex items-center justify-center hover:bg-orange-200 rounded-full">×</button>
+                                                </span>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                )}
+                                {/* Dropdown to add LSI Keywords */}
+                                <select
+                                    value=""
+                                    onChange={(e) => {
+                                        const kwId = Number(e.target.value);
+                                        if (kwId && !lsiKeywords.includes(kwId)) {
+                                            setLsiKeywords(prev => [...prev, kwId]);
+                                        }
+                                    }}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
+                                >
+                                    <option value="">Add LSI keyword...</option>
+                                    {keywords
+                                        .filter(kw => kw.id !== primaryKeywordId && !lsiKeywords.includes(kw.id))
+                                        .map(kw => (
+                                            <option key={kw.id} value={kw.id}>{kw.keyword}</option>
+                                        ))
+                                    }
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -760,6 +849,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
                             <h3 className="text-base font-bold text-slate-800">Domain Type & Domain Addition</h3>
+                            <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded">From Backlink Master</span>
                         </div>
                         <div className="space-y-4">
                             {/* Domain Type */}
@@ -767,42 +857,86 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
                                 <select value={domainType} onChange={(e) => setDomainType(e.target.value)}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400">
-                                    <option value="">Select Domain Type from Backlink Master...</option>
+                                    <option value="">Select Domain Type...</option>
                                     {domainTypes.map((dt: string) => <option key={dt} value={dt}>{dt}</option>)}
                                 </select>
                             </div>
-                            {/* Add Domain Button & List */}
+
+                            {/* Add Domain Section */}
                             <div>
                                 <div className="flex items-center justify-between mb-3">
                                     <label className="block text-sm font-medium text-slate-600">Domains</label>
-                                    <button type="button" onClick={handleAddDomain}
-                                        className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all flex items-center gap-1">
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Domain
-                                    </button>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAddDomainDropdown(!showAddDomainDropdown)}
+                                            className="w-8 h-8 flex items-center justify-center bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+
+                                        {/* Add Domain Dropdown */}
+                                        {showAddDomainDropdown && (
+                                            <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto">
+                                                <div className="p-2 border-b border-slate-100">
+                                                    <p className="text-xs text-slate-500 font-medium">Select from Backlink Master</p>
+                                                </div>
+                                                {backlinkDomains.filter(b => !selectedDomains.some(d => d.domain_name === b.name)).length === 0 ? (
+                                                    <p className="p-3 text-sm text-slate-400 text-center">No domains available</p>
+                                                ) : (
+                                                    backlinkDomains
+                                                        .filter(b => !selectedDomains.some(d => d.domain_name === b.name))
+                                                        .map(b => (
+                                                            <button
+                                                                key={b.id}
+                                                                onClick={() => handleAddDomainFromDropdown(b.name)}
+                                                                className="w-full px-3 py-2 text-left text-sm hover:bg-pink-50 flex items-center justify-between"
+                                                            >
+                                                                <span className="font-medium text-slate-700">{b.name}</span>
+                                                                <span className="text-xs text-slate-400">DA: {b.da}</span>
+                                                            </button>
+                                                        ))
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {/* Domain List */}
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[80px]">
                                     {selectedDomains.length === 0 ? (
-                                        <p className="text-sm text-slate-400 text-center py-3">No domains added. Click "+ Add Domain" to add from Backlink Master.</p>
+                                        <p className="text-sm text-slate-400 text-center py-3">No domains added. Click "+" to add from Backlink Master.</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {selectedDomains.map((domain, idx) => (
                                                 <div key={idx}
                                                     className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-pink-300 transition-all">
                                                     <div className="flex-1 cursor-pointer" onClick={() => handleDomainClick(idx)}>
-                                                        <p className="text-sm font-medium text-slate-800">{domain.domain_name}</p>
-                                                        <p className="text-xs text-slate-500">{domain.url_posted || 'Click to add URL'}</p>
+                                                        <p className="text-sm font-medium text-pink-600 hover:text-pink-700">{domain.domain_name}</p>
+                                                        <p className="text-xs text-slate-500">
+                                                            {domain.url_posted ? domain.url_posted : 'Click to add URL Posted'}
+                                                        </p>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${domain.approval_status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                                            domain.approval_status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
+                                                        {/* Self QC Status Badge */}
+                                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${domain.seo_self_qc_status === 'Approved' ? 'bg-green-100 text-green-700' :
+                                                            domain.seo_self_qc_status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
                                                                 'bg-amber-100 text-amber-700'
                                                             }`}>
-                                                            {domain.approval_status}
+                                                            {domain.seo_self_qc_status || 'Pending'}
                                                         </span>
-                                                        <button onClick={() => handleDeleteDomain(idx)} className="p-1 hover:bg-slate-100 rounded">
+                                                        {/* QA Status Badge (if set) */}
+                                                        {domain.qa_status && (
+                                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${domain.qa_status === 'Pass' ? 'bg-blue-100 text-blue-700' :
+                                                                domain.qa_status === 'Fail' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-slate-100 text-slate-600'
+                                                                }`}>
+                                                                QA: {domain.qa_status}
+                                                            </span>
+                                                        )}
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteDomain(idx); }} className="p-1 hover:bg-slate-100 rounded">
                                                             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                             </svg>
@@ -818,13 +952,13 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 7: Domain Details Popup (Modal) ========== */}
-                    {showDomainPopup && (
+                    {showDomainPopup && editingDomainIndex !== null && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                             <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 bg-gradient-to-br from-pink-500 to-rose-500 rounded flex items-center justify-center text-white text-xs font-bold">7</div>
-                                        <h3 className="text-base font-bold text-slate-800">Domain Details (Mandatory)</h3>
+                                        <h3 className="text-base font-bold text-slate-800">Domain Details (Step 7)</h3>
                                     </div>
                                     <button onClick={() => setShowDomainPopup(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
                                         <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -833,51 +967,61 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                     </button>
                                 </div>
                                 <div className="space-y-4">
-                                    {/* Domain Name */}
+                                    {/* Domain Name - Read Only */}
                                     <div>
-                                        <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                            <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>Domain Name *
+                                        <label className="text-sm font-medium text-slate-600 mb-2 flex items-center gap-2">
+                                            Domain Name
+                                            <span className="text-xs text-slate-400">(From Backlink Master)</span>
                                         </label>
-                                        {editingDomainIndex !== null ? (
-                                            <input type="text" value={domainPopupData.domain_name} disabled
-                                                className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm cursor-not-allowed" />
-                                        ) : (
-                                            <select value={domainPopupData.domain_name}
-                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, domain_name: e.target.value })}
-                                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400">
-                                                <option value="">Select from Backlink Master...</option>
-                                                {backlinkDomains.filter(b => !selectedDomains.some(d => d.domain_name === b.name))
-                                                    .map(b => <option key={b.id} value={b.name}>{b.name} (DA: {b.da})</option>)}
-                                            </select>
-                                        )}
+                                        <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700 font-medium">
+                                            {domainPopupData.domain_name}
+                                        </div>
                                     </div>
+
                                     {/* URL Posted */}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-600 mb-2">URL Posted</label>
-                                        <input type="url" value={domainPopupData.url_posted}
+                                        <input
+                                            type="url"
+                                            value={domainPopupData.url_posted}
                                             onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
-                                            placeholder="https://example.com/posted-url"
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400" />
+                                            placeholder="https://..."
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400"
+                                        />
                                     </div>
-                                    {/* SEO Self QC Status */}
+
+                                    {/* SEO Self QC Status - User can update */}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-600 mb-2">SEO Self QC Status</label>
-                                        <select value={domainPopupData.seo_self_qc_status}
+                                        <select
+                                            value={domainPopupData.seo_self_qc_status}
                                             onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400">
-                                            {QC_STATUS_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400"
+                                        >
+                                            <option value="Pending">Pending</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Rejected">Rejected</option>
                                         </select>
                                     </div>
-                                    {/* QA Status */}
+
+                                    {/* QA Status - Only for Verifier */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">QA Status</label>
-                                        <select value={domainPopupData.qa_status}
+                                        <label className="block text-sm font-medium text-slate-600 mb-2">
+                                            QA Status
+                                            <span className="text-xs text-slate-400 ml-2">(Verifier Only)</span>
+                                        </label>
+                                        <select
+                                            value={domainPopupData.qa_status}
                                             onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400">
-                                            {QA_STATUS_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400"
+                                        >
+                                            <option value="">Select...</option>
+                                            <option value="Pass">Pass</option>
+                                            <option value="Fail">Fail</option>
                                         </select>
                                     </div>
-                                    {/* Approval Status (Auto) */}
+
+                                    {/* Approval Status (Auto-calculated) */}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-600 mb-2">Approval Status (Auto)</label>
                                         <div className={`w-full h-10 px-3 flex items-center rounded-xl text-sm font-medium ${calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Approved'
@@ -888,7 +1032,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                             }`}>
                                             {calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status)}
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-1">Auto-calculated based on QC statuses</p>
+                                        <p className="text-xs text-slate-400 mt-1">Auto-calculated: Approved when Self QC = Approved AND QA = Pass</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-3 mt-6">
@@ -897,9 +1041,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                         Cancel
                                     </button>
                                     <button onClick={handleSaveDomainDetails}
-                                        disabled={!domainPopupData.domain_name}
-                                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 transition-all">
-                                        Save Domain
+                                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl hover:from-pink-600 hover:to-rose-600 transition-all">
+                                        Update Domain
                                     </button>
                                 </div>
                             </div>

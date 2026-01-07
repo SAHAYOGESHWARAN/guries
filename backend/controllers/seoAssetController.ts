@@ -30,6 +30,8 @@ export const getSeoAssets = async (req: Request, res: Response) => {
             asset_id: `SEO-${String(row.id).padStart(4, '0')}`, // Auto-generated SEO Asset ID
             keywords: row.keywords ? JSON.parse(row.keywords) : [],
             seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
+            seo_lsi_keywords: row.seo_lsi_keywords ? JSON.parse(row.seo_lsi_keywords) : [],
+            lsi_keywords: row.seo_lsi_keywords ? JSON.parse(row.seo_lsi_keywords) : [], // Alias for frontend
             resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],
             version_history: row.version_history ? JSON.parse(row.version_history) : [],
             seo_domains: row.seo_domains ? JSON.parse(row.seo_domains) : [],
@@ -71,6 +73,8 @@ export const getSeoAssetById = async (req: Request, res: Response) => {
             asset_id: `SEO-${String(row.id).padStart(4, '0')}`, // Auto-generated SEO Asset ID
             keywords: row.keywords ? JSON.parse(row.keywords) : [],
             seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
+            seo_lsi_keywords: row.seo_lsi_keywords ? JSON.parse(row.seo_lsi_keywords) : [],
+            lsi_keywords: row.seo_lsi_keywords ? JSON.parse(row.seo_lsi_keywords) : [], // Alias for frontend
             resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],
             version_history: row.version_history ? JSON.parse(row.version_history) : [],
             seo_domains: row.seo_domains ? JSON.parse(row.seo_domains) : [],

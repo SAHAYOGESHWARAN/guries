@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
-import type { User, Service, Task } from '../types';
+import type { User, Service, Task, Campaign, Project } from '../types';
 
 interface SeoAssetsListViewProps {
     onNavigate?: (view: string, id?: number) => void;
@@ -9,49 +9,39 @@ interface SeoAssetsListViewProps {
 
 interface SeoAssetItem {
     id: number;
-    asset_id?: string; // Auto-generated SEO Asset ID from backend (e.g., SEO-0001)
-    thumbnail_url?: string;
+    asset_id?: string;
     name: string;
+    seo_title?: string;
     asset_type?: string;
-    asset_category?: string;
-    content_type?: string;
     linked_service_id?: number;
     linked_task_id?: number;
+    linked_campaign_id?: number;
+    linked_project_id?: number;
     qc_status?: string;
-    version_number?: string;
-    designed_by?: number;
-    created_at?: string;
-    created_by?: number;
-    updated_by?: number;
-    updated_at?: string;
-    usage_count?: number;
     status?: string;
     workflow_stage?: string;
+    version_number?: string;
+    created_at?: string;
+    updated_at?: string;
+    created_by?: number;
+    seo_domains?: any[];
 }
 
-// QC Status badge colors
-const getQcStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; label: string }> = {
-        'QC Pending': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'QC Pending' },
-        'Pass': { bg: 'bg-green-100', text: 'text-green-700', label: 'Approved' },
-        'Approved': { bg: 'bg-green-100', text: 'text-green-700', label: 'Approved' },
-        'Fail': { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejected' },
-        'Rejected': { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejected' },
-        'Rework': { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Rework' },
-        'Waiting': { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Pending' },
-    };
-    const config = statusMap[status] || { bg: 'bg-slate-100', text: 'text-slate-600', label: status || 'N/A' };
-    return (
-        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-            {config.label}
-        </span>
-    );
-};
-
-// Generate SEO Asset ID (use backend value if available, otherwise generate)
-const generateSeoAssetId = (id: number, assetId?: string): string => {
-    return assetId || `SEO-${String(id).padStart(4, '0')}`;
-};
+// Column definitions
+const ALL_COLUMNS = [
+    { key: 'select', label: '', width: '40px', sortable: false },
+    { key: 'name', label: 'Task', width: 'auto', sortable: true },
+    { key: 'id', label: 'ID', width: '60px', sortable: true },
+    { key: 'asset_type', label: 'Type', width: '80px', sortable: true },
+    { key: 'workflow_stage', label: 'Section', width: '100px', sortable: true },
+    { key: 'linked_project_id', label: 'Projects', width: '120px', sortable: true },
+    { key: 'qc_status', label: 'Tags', width: '80px', sortable: true },
+    { key: 'created_at', label: 'Start', width: '100px', sortable: true },
+    { key: 'updated_at', label: 'Due', width: '100px', sortable: true },
+    { key: 'status', label: 'Custom Fields', width: '120px', sortable: true },
+    { key: 'created_by', label: 'Assigned', width: '80px', sortable: true },
+    { key: 'actions', label: '', width: '60px', sortable: false },
+];
 
 const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => {
     const { user } = useAuth();
@@ -61,15 +51,21 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
     const { data: users = [] } = useData<User>('users');
     const { data: services = [] } = useData<Service>('services');
     const { data: tasks = [] } = useData<Task>('tasks');
+    const { data: campaigns = [] } = useData<Campaign>('campaigns');
+    const { data: projects = [] } = useData<Project>('projects');
 
     // State
     const [seoAssets, setSeoAssets] = useState<SeoAssetItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
-    const [filterType, setFilterType] = useState('all');
+    const [entriesPerPage, setEntriesPerPage] = useState(15);
+    const [currentPage, setCurrentPage] = useState(1);
     const [sortBy, setSortBy] = useState('created_at');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [selectedRows, setSelectedRows] = useState<number[]>([]);
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(c => c.key));
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const columnMenuRef = useRef<HTMLDivElement>(null);
 
     // Fetch SEO Assets
     useEffect(() => {
@@ -80,14 +76,6 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                 if (response.ok) {
                     const data = await response.json();
                     setSeoAssets(data);
-                } else {
-                    // Fallback to asset library with SEO filter
-                    const fallbackResponse = await fetch(`${apiUrl}/assetLibrary`);
-                    if (fallbackResponse.ok) {
-                        const allAssets = await fallbackResponse.json();
-                        const seoOnly = allAssets.filter((a: any) => a.application_type === 'seo');
-                        setSeoAssets(seoOnly);
-                    }
                 }
             } catch (error) {
                 console.error('Error fetching SEO assets:', error);
@@ -98,87 +86,62 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
         fetchSeoAssets();
     }, [apiUrl]);
 
-    // Get user name by ID
+    // Close column menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (columnMenuRef.current && !columnMenuRef.current.contains(e.target as Node)) {
+                setShowColumnMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Helper functions
     const getUserName = (userId?: number): string => {
         if (!userId) return '-';
         const foundUser = users.find(u => u.id === userId);
         return foundUser?.name || '-';
     };
 
-    // Get service name by ID
-    const getServiceName = (serviceId?: number): string => {
-        if (!serviceId) return '-';
-        const foundService = services.find(s => s.id === serviceId);
-        return foundService?.service_name || '-';
+    const getProjectName = (projectId?: number): string => {
+        if (!projectId) return '-';
+        const found = projects.find(p => p.id === projectId);
+        return found?.project_name || '-';
     };
 
-    // Get task name by ID
-    const getTaskName = (taskId?: number): string => {
-        if (!taskId) return '-';
-        const foundTask = tasks.find(t => t.id === taskId);
-        return foundTask?.name || '-';
-    };
-
-    // Format date
     const formatDate = (dateStr?: string): string => {
         if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     };
 
-    // Filter and sort assets
+    // Filter and sort
     const filteredAssets = seoAssets
         .filter(asset => {
-            const matchesSearch = !searchQuery ||
-                asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                asset.asset_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                generateSeoAssetId(asset.id, asset.asset_id).toLowerCase().includes(searchQuery.toLowerCase()) ||
-                asset.asset_type?.toLowerCase().includes(searchQuery.toLowerCase());
-
-            const matchesStatus = filterStatus === 'all' || asset.qc_status === filterStatus;
-            const matchesType = filterType === 'all' || asset.asset_type === filterType;
-
-            return matchesSearch && matchesStatus && matchesType;
+            if (!searchQuery) return true;
+            const q = searchQuery.toLowerCase();
+            return (
+                asset.name?.toLowerCase().includes(q) ||
+                asset.seo_title?.toLowerCase().includes(q) ||
+                asset.asset_type?.toLowerCase().includes(q) ||
+                String(asset.id).includes(q)
+            );
         })
         .sort((a, b) => {
             let aVal: any = a[sortBy as keyof SeoAssetItem];
             let bVal: any = b[sortBy as keyof SeoAssetItem];
-
             if (sortBy === 'created_at' || sortBy === 'updated_at') {
                 aVal = aVal ? new Date(aVal).getTime() : 0;
                 bVal = bVal ? new Date(bVal).getTime() : 0;
             }
-
-            if (sortOrder === 'asc') {
-                return aVal > bVal ? 1 : -1;
-            }
+            if (sortOrder === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
 
-    // Get unique asset types for filter
-    const assetTypes = [...new Set(seoAssets.map(a => a.asset_type).filter(Boolean))];
-
-    // Handle delete
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this SEO asset?')) return;
-
-        try {
-            const response = await fetch(`${apiUrl}/seo-assets/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                setSeoAssets(seoAssets.filter(a => a.id !== id));
-            } else {
-                alert('Failed to delete asset');
-            }
-        } catch (error) {
-            console.error('Delete error:', error);
-            alert('Failed to delete asset');
-        }
-    };
+    // Pagination
+    const totalPages = Math.ceil(filteredAssets.length / entriesPerPage);
+    const startIndex = (currentPage - 1) * entriesPerPage;
+    const paginatedAssets = filteredAssets.slice(startIndex, startIndex + entriesPerPage);
 
     // Handle sort
     const handleSort = (column: string) => {
@@ -186,265 +149,356 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
             setSortBy(column);
-            setSortOrder('desc');
+            setSortOrder('asc');
         }
     };
 
-    // Sort indicator
-    const SortIndicator = ({ column }: { column: string }) => {
-        if (sortBy !== column) return null;
-        return (
-            <svg className={`w-4 h-4 ml-1 inline ${sortOrder === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
-        );
+    // Handle row selection
+    const toggleRowSelection = (id: number) => {
+        setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+    };
+
+    const toggleAllRows = () => {
+        if (selectedRows.length === paginatedAssets.length) {
+            setSelectedRows([]);
+        } else {
+            setSelectedRows(paginatedAssets.map(a => a.id));
+        }
+    };
+
+    // Export functions
+    const copyToClipboard = () => {
+        const headers = ALL_COLUMNS.filter(c => visibleColumns.includes(c.key) && c.key !== 'select' && c.key !== 'actions').map(c => c.label);
+        const rows = filteredAssets.map(asset => [
+            asset.name || asset.seo_title || '-',
+            asset.id,
+            asset.asset_type || '-',
+            asset.workflow_stage || '-',
+            getProjectName(asset.linked_project_id),
+            asset.qc_status || '-',
+            formatDate(asset.created_at),
+            formatDate(asset.updated_at),
+            asset.status || '-',
+            getUserName(asset.created_by)
+        ]);
+        const text = [headers.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard!');
+    };
+
+    const exportCSV = () => {
+        const headers = ['Task', 'ID', 'Type', 'Section', 'Projects', 'Tags', 'Start', 'Due', 'Custom Fields', 'Assigned'];
+        const rows = filteredAssets.map(asset => [
+            `"${asset.name || asset.seo_title || '-'}"`,
+            asset.id,
+            asset.asset_type || '-',
+            asset.workflow_stage || '-',
+            getProjectName(asset.linked_project_id),
+            asset.qc_status || '-',
+            formatDate(asset.created_at),
+            formatDate(asset.updated_at),
+            asset.status || '-',
+            getUserName(asset.created_by)
+        ]);
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'seo-assets.csv';
+        a.click();
+    };
+
+    const printTable = () => {
+        window.print();
+    };
+
+    // Toggle column visibility
+    const toggleColumn = (key: string) => {
+        setVisibleColumns(prev => prev.includes(key) ? prev.filter(c => c !== key) : [...prev, key]);
+    };
+
+    // Get status badge
+    const getStatusBadge = (status: string) => {
+        const colors: Record<string, string> = {
+            'Pass': 'bg-green-100 text-green-700',
+            'Approved': 'bg-green-100 text-green-700',
+            'QC Pending': 'bg-yellow-100 text-yellow-700',
+            'Pending': 'bg-yellow-100 text-yellow-700',
+            'Fail': 'bg-red-100 text-red-700',
+            'Rejected': 'bg-red-100 text-red-700',
+            'Rework': 'bg-orange-100 text-orange-700',
+        };
+        return colors[status] || 'bg-slate-100 text-slate-600';
     };
 
     return (
-        <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-green-50/30 to-emerald-50/40">
+        <div className="h-full flex flex-col bg-white">
             {/* Header */}
-            <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800">SEO Assets</h1>
-                            <p className="text-sm text-slate-500">{filteredAssets.length} assets found</p>
-                        </div>
-                    </div>
+            <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-xl font-semibold text-slate-800">SEO Assets</h1>
                     <button
                         onClick={() => onNavigate?.('seo-asset-upload')}
-                        className="px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium text-sm hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25 transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
-                        Upload New SEO Asset
+                        Add New
                     </button>
                 </div>
 
-                {/* Filters */}
-                <div className="flex items-center gap-4 mt-4">
-                    <div className="flex-1 relative">
-                        <svg className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                {/* Toolbar */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <span>Showing {startIndex + 1} to {Math.min(startIndex + entriesPerPage, filteredAssets.length)} of {filteredAssets.length} entries</span>
+                        <span className="mx-2">Show</span>
+                        <select
+                            value={entriesPerPage}
+                            onChange={(e) => { setEntriesPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                            className="border border-slate-300 rounded px-2 py-1 text-sm"
+                        >
+                            <option value={10}>10</option>
+                            <option value={15}>15</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>All</option>
+                        </select>
+                        <span>entries</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-600">Search:</span>
                         <input
                             type="text"
-                            placeholder="Search by name, ID, or type..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all"
+                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                            className="border border-slate-300 rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    >
-                        <option value="all">All QC Status</option>
-                        <option value="QC Pending">QC Pending</option>
-                        <option value="Pass">Approved</option>
-                        <option value="Fail">Rejected</option>
-                        <option value="Rework">Rework</option>
-                    </select>
-                    <select
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                        className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    >
-                        <option value="all">All Asset Types</option>
-                        {assetTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
-                    </select>
+
+                    <div className="flex items-center gap-1">
+                        <button onClick={copyToClipboard} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">Copy</button>
+                        <button onClick={exportCSV} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">CSV</button>
+                        <button onClick={exportCSV} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">Excel</button>
+                        <button onClick={printTable} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">Print</button>
+                        <div className="relative" ref={columnMenuRef}>
+                            <button
+                                onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-1"
+                            >
+                                Column visibility
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showColumnMenu && (
+                                <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded shadow-lg z-20 py-1 min-w-[150px]">
+                                    {ALL_COLUMNS.filter(c => c.key !== 'select' && c.key !== 'actions').map(col => (
+                                        <label key={col.key} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 cursor-pointer text-sm">
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleColumns.includes(col.key)}
+                                                onChange={() => toggleColumn(col.key)}
+                                                className="rounded"
+                                            />
+                                            {col.label}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Table */}
-            <div className="flex-1 overflow-auto p-6">
-                <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
-                    {loading ? (
-                        <div className="flex items-center justify-center py-20">
-                            <div className="animate-spin w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full"></div>
-                        </div>
-                    ) : filteredAssets.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-                            <svg className="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <p className="text-lg font-medium">No SEO assets found</p>
-                            <p className="text-sm">Create your first SEO asset to get started</p>
-                            <button
-                                onClick={() => onNavigate?.('seo-asset-upload')}
-                                className="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
-                            >
-                                Upload New Asset
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-slate-50 border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                            <button onClick={() => handleSort('id')} className="flex items-center hover:text-slate-800">
-                                                ID <SortIndicator column="id" />
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Thumbnail</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                            <button onClick={() => handleSort('name')} className="flex items-center hover:text-slate-800">
-                                                Asset Name <SortIndicator column="name" />
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Asset Type</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Asset Category</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Content Type</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Linked Service</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Linked Task</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">QC Status</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Version</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Designer</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                            <button onClick={() => handleSort('created_at')} className="flex items-center hover:text-slate-800">
-                                                Uploaded At <SortIndicator column="created_at" />
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Created By</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Updated By</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                            <button onClick={() => handleSort('usage_count')} className="flex items-center hover:text-slate-800">
-                                                Usage <SortIndicator column="usage_count" />
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {filteredAssets.map((asset) => (
-                                        <tr key={asset.id} className="hover:bg-slate-50/50 transition-colors">
-                                            {/* ID */}
-                                            <td className="px-4 py-3">
-                                                <span className="font-mono text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                                                    {generateSeoAssetId(asset.id, asset.asset_id)}
+            <div className="flex-1 overflow-auto">
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                    </div>
+                ) : (
+                    <table className="w-full text-sm">
+                        <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                            <tr>
+                                {visibleColumns.includes('select') && (
+                                    <th className="px-3 py-2 text-left w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRows.length === paginatedAssets.length && paginatedAssets.length > 0}
+                                            onChange={toggleAllRows}
+                                            className="rounded"
+                                        />
+                                    </th>
+                                )}
+                                {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key) && c.key !== 'select').map(col => (
+                                    <th
+                                        key={col.key}
+                                        className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                                        onClick={() => col.sortable && handleSort(col.key)}
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            {col.label}
+                                            {col.sortable && (
+                                                <span className="text-slate-400">
+                                                    {sortBy === col.key ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedAssets.length === 0 ? (
+                                <tr>
+                                    <td colSpan={visibleColumns.length} className="px-3 py-8 text-center text-slate-500">
+                                        No SEO assets found
+                                    </td>
+                                </tr>
+                            ) : (
+                                paginatedAssets.map((asset) => (
+                                    <tr key={asset.id} className="hover:bg-slate-50">
+                                        {visibleColumns.includes('select') && (
+                                            <td className="px-3 py-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRows.includes(asset.id)}
+                                                    onChange={() => toggleRowSelection(asset.id)}
+                                                    className="rounded"
+                                                />
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('name') && (
+                                            <td className="px-3 py-2">
+                                                <a
+                                                    href="#"
+                                                    onClick={(e) => { e.preventDefault(); onNavigate?.('seo-asset-edit', asset.id); }}
+                                                    className="text-blue-600 hover:underline font-medium"
+                                                >
+                                                    {asset.name || asset.seo_title || 'Untitled'}
+                                                </a>
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('id') && (
+                                            <td className="px-3 py-2 text-slate-600">{asset.id}</td>
+                                        )}
+                                        {visibleColumns.includes('asset_type') && (
+                                            <td className="px-3 py-2">
+                                                {asset.asset_type && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-xs">
+                                                        {asset.asset_type}
+                                                    </span>
+                                                )}
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('workflow_stage') && (
+                                            <td className="px-3 py-2 text-slate-600">{asset.workflow_stage || '-'}</td>
+                                        )}
+                                        {visibleColumns.includes('linked_project_id') && (
+                                            <td className="px-3 py-2 text-slate-600">{getProjectName(asset.linked_project_id)}</td>
+                                        )}
+                                        {visibleColumns.includes('qc_status') && (
+                                            <td className="px-3 py-2">
+                                                {asset.qc_status && (
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(asset.qc_status)}`}>
+                                                        {asset.qc_status}
+                                                    </span>
+                                                )}
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('created_at') && (
+                                            <td className="px-3 py-2 text-slate-600">{formatDate(asset.created_at)}</td>
+                                        )}
+                                        {visibleColumns.includes('updated_at') && (
+                                            <td className="px-3 py-2 text-slate-600">{formatDate(asset.updated_at)}</td>
+                                        )}
+                                        {visibleColumns.includes('status') && (
+                                            <td className="px-3 py-2 text-slate-600">{asset.status || '-'}</td>
+                                        )}
+                                        {visibleColumns.includes('created_by') && (
+                                            <td className="px-3 py-2">
+                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-600 text-xs font-medium">
+                                                    {getUserName(asset.created_by)?.charAt(0) || '?'}
                                                 </span>
                                             </td>
-                                            {/* Thumbnail */}
-                                            <td className="px-4 py-3">
-                                                <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                                    {asset.thumbnail_url ? (
-                                                        <img src={asset.thumbnail_url} alt={asset.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            {/* Asset Name */}
-                                            <td className="px-4 py-3">
-                                                <p className="font-medium text-slate-800 text-sm max-w-[200px] truncate" title={asset.name}>
-                                                    {asset.name || '-'}
-                                                </p>
-                                            </td>
-                                            {/* Asset Type */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{asset.asset_type || '-'}</span>
-                                            </td>
-                                            {/* Asset Category */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{asset.asset_category || '-'}</span>
-                                            </td>
-                                            {/* Content Type */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{asset.content_type || '-'}</span>
-                                            </td>
-                                            {/* Linked Service */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{getServiceName(asset.linked_service_id)}</span>
-                                            </td>
-                                            {/* Linked Task */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600 max-w-[150px] truncate block" title={getTaskName(asset.linked_task_id)}>
-                                                    {getTaskName(asset.linked_task_id)}
-                                                </span>
-                                            </td>
-                                            {/* QC Status */}
-                                            <td className="px-4 py-3">
-                                                {getQcStatusBadge(asset.qc_status || '')}
-                                            </td>
-                                            {/* Version */}
-                                            <td className="px-4 py-3">
-                                                <span className="font-mono text-sm text-slate-600">{asset.version_number || 'v1.0'}</span>
-                                            </td>
-                                            {/* Designer */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{getUserName(asset.designed_by)}</span>
-                                            </td>
-                                            {/* Uploaded At */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-500">{formatDate(asset.created_at)}</span>
-                                            </td>
-                                            {/* Created By */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{getUserName(asset.created_by)}</span>
-                                            </td>
-                                            {/* Updated By */}
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm text-slate-600">{getUserName(asset.updated_by)}</span>
-                                            </td>
-                                            {/* Usage Count */}
-                                            <td className="px-4 py-3">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 rounded-full text-sm font-medium text-slate-700">
-                                                    {asset.usage_count || 0}
-                                                </span>
-                                            </td>
-                                            {/* Actions */}
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center justify-center gap-1">
+                                        )}
+                                        {visibleColumns.includes('actions') && (
+                                            <td className="px-3 py-2">
+                                                <div className="flex items-center gap-1">
                                                     <button
                                                         onClick={() => onNavigate?.('seo-asset-edit', asset.id)}
-                                                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        className="p-1 text-slate-400 hover:text-blue-600"
                                                         title="Edit"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                         </svg>
                                                     </button>
-                                                    <button
-                                                        onClick={() => onNavigate?.('seo-asset-view', asset.id)}
-                                                        className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                        title="View"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(asset.id)}
-                                                        className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Delete"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
                                                 </div>
                                             </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                        )}
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex-shrink-0 border-t border-slate-200 px-6 py-3 flex items-center justify-between">
+                    <div className="text-sm text-slate-600">
+                        Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                        >
+                            First
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                        >
+                            Previous
+                        </button>
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
+                            if (page > totalPages || page < 1) return null;
+                            return (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`px-3 py-1 border rounded text-sm ${currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 hover:bg-slate-50'}`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        })}
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                        >
+                            Next
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                        >
+                            Last
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

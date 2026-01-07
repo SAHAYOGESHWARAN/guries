@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import MarkdownEditor from '../components/MarkdownEditor';
 import type {
     Task, Campaign, Project, Service, SubServiceItem,
-    ContentRepositoryItem, User, Keyword, BacklinkSource,
+    ContentRepositoryItem, User, Keyword,
     AssetTypeMasterItem, AssetCategoryMasterItem, AssetLibraryItem
 } from '../types';
 
@@ -51,8 +51,26 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: existingAssets = [] } = useData<AssetLibraryItem>('assetLibrary');
-    const { data: backlinks = [] } = useData<BacklinkSource>('backlinks');
     const { data: industrySectors = [] } = useData<any>('industry-sectors');
+
+    // SEO Asset specific master data (fetched from dedicated endpoints)
+    const [backlinkDomains, setBacklinkDomains] = useState<Array<{ id: number; name: string; url: string; da: number }>>([]);
+    const [seoAssetDomainTypes, setSeoAssetDomainTypes] = useState<string[]>([]);
+
+    // Fetch SEO Asset master data on mount
+    useEffect(() => {
+        // Fetch backlink domains from SEO-specific endpoint
+        fetch(`${apiUrl}/seo-assets/master/backlink-domains`)
+            .then(res => res.json())
+            .then(data => setBacklinkDomains(data || []))
+            .catch(() => setBacklinkDomains([]));
+
+        // Fetch domain types from SEO-specific endpoint
+        fetch(`${apiUrl}/seo-assets/master/domain-types`)
+            .then(res => res.json())
+            .then(data => setSeoAssetDomainTypes(data || []))
+            .catch(() => setSeoAssetDomainTypes([]));
+    }, [apiUrl]);
 
     // ========== STEP 1: Asset ID Selection ==========
     const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
@@ -154,11 +172,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         [industrySectors]
     );
 
-    // Domain types from backlinks master
-    const domainTypes = useMemo(() =>
-        [...new Set(backlinks.map(b => b.domain_type || b.type).filter(Boolean))],
-        [backlinks]
-    );
+    // Domain types from SEO Asset master endpoint
+    const domainTypes = seoAssetDomainTypes;
 
     // Check if Blog Posting type (for conditional content editor)
     const isBlogPosting = assetType.toLowerCase().includes('blog');
@@ -192,10 +207,71 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         }
     };
 
+    // Handle Change Selection - Reset linked fields for manual entry
+    const handleChangeSelection = () => {
+        setIsAssetIdLocked(false);
+        setSelectedAssetId(null);
+        // Reset linked fields to allow manual entry
+        setLinkedTaskId(null);
+        setLinkedCampaignId(null);
+        setLinkedProjectId(null);
+        setLinkedServiceId(null);
+        setLinkedSubServiceId(null);
+        setLinkedRepositoryId(null);
+    };
+
+    // Load existing SEO asset if editing
+    useEffect(() => {
+        if (editAssetId) {
+            // Fetch the SEO asset data
+            fetch(`${apiUrl}/seo-assets/${editAssetId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && !data.error) {
+                        setSelectedAssetId(data.linked_asset_id || data.id);
+                        setIsAssetIdLocked(true);
+                        setLinkedTaskId(data.linked_task_id || null);
+                        setLinkedCampaignId(data.linked_campaign_id || null);
+                        setLinkedProjectId(data.linked_project_id || null);
+                        setLinkedServiceId(data.linked_service_id || null);
+                        setLinkedSubServiceId(data.linked_sub_service_id || null);
+                        setLinkedRepositoryId(data.linked_repository_item_id || null);
+                        setAssetType(data.asset_type || data.type || '');
+                        setSeoTitle(data.seo_title || data.name || '');
+                        setMetaTitle(data.seo_meta_title || '');
+                        setDescription(data.seo_description || '');
+                        setServiceUrl(data.seo_service_url || data.service_url || '');
+                        setBlogUrl(data.seo_blog_url || data.blog_url || '');
+                        setAnchorText(data.seo_anchor_text || data.anchor_text || '');
+                        setBlogContent(data.seo_blog_content || data.blog_content || '');
+                        setVersionNumber(data.version_number || 'v1.0');
+                        setVersionHistory(data.version_history || []);
+
+                        // Load domain-related fields
+                        setDomainType(data.seo_domain_type || data.domain_type || '');
+                        setSelectedDomains(data.seo_domains || []);
+
+                        // Load keyword fields
+                        setPrimaryKeywordId(data.seo_primary_keyword_id || data.primary_keyword_id || null);
+                        setLsiKeywordIds(data.seo_lsi_keywords || data.lsi_keywords || []);
+
+                        // Load classification fields
+                        setSector(data.seo_sector_id || data.sector_id || '');
+                        setIndustry(data.seo_industry_id || data.industry_id || '');
+
+                        // Load workflow fields
+                        setAssignedTeamMembers(data.assigned_team_members || []);
+                        setVerifiedBy(data.verified_by || null);
+                    }
+                })
+                .catch(err => console.error('Error loading SEO asset:', err));
+        }
+    }, [editAssetId, apiUrl]);
+
     // Calculate Approval Status automatically based on QC statuses
-    const calculateApprovalStatus = (seoQcStatus: string, qaStatus: string): string => {
-        if (seoQcStatus === 'Pass' && qaStatus === 'Approved') return 'Approved';
-        if (seoQcStatus === 'Fail' || qaStatus === 'Rejected') return 'Rejected';
+    const calculateApprovalStatus = (selfQcStatus: string, qaStatus: string): string => {
+        if (selfQcStatus === 'Approved' && qaStatus === 'Pass') return 'Approved';
+        if (selfQcStatus === 'Rejected' || qaStatus === 'Fail') return 'Rejected';
         return 'Pending';
     };
 
@@ -213,8 +289,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         const newDomain: DomainDetails = {
             domain_name: domainName,
             url_posted: '',
-            seo_self_qc_status: 'Waiting',
-            qa_status: 'Pending',
+            seo_self_qc_status: 'Pending',
+            qa_status: '',
             approval_status: 'Pending'
         };
 
@@ -223,14 +299,14 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         setShowDomainDropdown(false);
     };
 
-    // Click on domain to edit URL Posted
+    // Click on domain to edit URL Posted and Self QC Status
     const handleDomainClick = (index: number) => {
         setEditingDomainIndex(index);
         setDomainPopupData({ ...selectedDomains[index] });
         setShowDomainPopup(true);
     };
 
-    // Save URL Posted for domain
+    // Save URL Posted and Self QC Status for domain
     const handleSaveDomainDetails = () => {
         if (editingDomainIndex === null) return;
 
@@ -464,12 +540,12 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">1</div>
                             <h3 className="text-base font-bold text-slate-800">Asset ID Selection</h3>
-                            <span className="text-xs text-rose-500 font-medium">* Mandatory</span>
+                            <span className="text-xs text-rose-500 font-medium">* Required</span>
                         </div>
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                                Asset ID (Dropdown - Single Select)
+                                Asset ID *
+                                <span className="text-xs text-slate-400">(Select from existing assets)</span>
                             </label>
                             <select
                                 value={selectedAssetId || ''}
@@ -480,37 +556,45 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 <option value="">Select Asset ID...</option>
                                 {existingAssets.map(asset => (
                                     <option key={asset.id} value={asset.id}>
-                                        {String(asset.id).padStart(4, '0')} - {asset.name} ({asset.type || 'N/A'})
+                                        {String(asset.id).padStart(4, '0')} - {asset.name}
                                     </option>
                                 ))}
                             </select>
                             {errors.assetId && <p className="text-xs text-rose-500 mt-1">{errors.assetId}</p>}
                             {isAssetIdLocked && (
-                                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                    Asset ID is locked (read-only after selection)
-                                </p>
+                                <div className="flex items-center justify-between mt-2">
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Asset ID locked. All sections are now enabled.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleChangeSelection}
+                                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                    >
+                                        Change Selection
+                                    </button>
+                                </div>
                             )}
-                            <p className="text-xs text-slate-400 mt-1">Only Asset IDs already created in the system are displayed. No manual typing allowed.</p>
                         </div>
                     </div>
 
                     {/* ========== STEP 2: Map Asset to Source Work ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
-                        <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-3 mb-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">2</div>
-                            <h3 className="text-base font-bold text-slate-800">Map Asset to Source Work</h3>
+                            <h3 className="text-base font-bold text-slate-800">Map Assets to Source Work</h3>
                         </div>
-                        <p className="text-xs text-slate-500 mb-4">Link the selected Asset ID to its originating work/source</p>
+                        <p className="text-sm text-blue-600 mb-4 ml-11">Link the selected Asset ID to its originating work/source</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Linked Task</label>
                                 <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
                                     <option value="">Select Task...</option>
-                                    {tasks.map(task => <option key={task.id} value={task.id}>{task.name}</option>)}
+                                    {tasks.map(task => <option key={task.id} value={task.id}>{(task as any).task_name || task.name}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -580,7 +664,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 <select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)} disabled={!sectionsEnabled}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
                                     <option value="">Select category...</option>
-                                    {assetCategories.filter(cat => cat.is_active !== false).map(category => (
+                                    {assetCategories.filter(cat => (cat as any).is_active !== false && (cat as any).status !== 'inactive').map(category => (
                                         <option key={category.id} value={category.category_name}>{category.category_name}</option>
                                     ))}
                                 </select>
@@ -698,44 +782,46 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 {errors.primaryKeyword && <p className="text-xs text-rose-500 mt-1">{errors.primaryKeyword}</p>}
                             </div>
 
-                            {/* LSI Keywords - Multi-select from Keyword Master */}
-                            <div className="relative">
+                            {/* LSI Keywords - Dropdown from Keyword Master */}
+                            <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">
                                     LSI Keywords <span className="text-slate-400 text-xs">(Optional)</span>
                                 </label>
-                                <div className="relative">
-                                    <button onClick={() => setShowLsiDropdown(!showLsiDropdown)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-left flex items-center justify-between disabled:opacity-50">
-                                        <span className="text-slate-500">{lsiKeywordIds.length > 0 ? `${lsiKeywordIds.length} keywords selected` : 'Add LSI keyword...'}</span>
-                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                {showLsiDropdown && sectionsEnabled && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                                        {keywords.filter(kw => kw.id !== primaryKeywordId).map(kw => (
-                                            <button key={kw.id} onClick={() => toggleLsiKeyword(kw.id)}
-                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-purple-50 flex items-center gap-2 ${lsiKeywordIds.includes(kw.id) ? 'bg-purple-50' : ''}`}>
-                                                <input type="checkbox" checked={lsiKeywordIds.includes(kw.id)} readOnly className="w-4 h-4 text-purple-500 rounded" />
-                                                <span>{kw.keyword}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                                {/* Selected LSI Keywords Display */}
                                 {lsiKeywordIds.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
+                                    <div className="flex flex-wrap gap-2 mb-2">
                                         {lsiKeywordIds.map(id => {
                                             const kw = keywords.find(k => k.id === id);
                                             return kw ? (
-                                                <span key={id} className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                                <span key={id} className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
                                                     {kw.keyword}
-                                                    <button onClick={() => toggleLsiKeyword(id)} className="hover:text-rose-500">×</button>
+                                                    <button type="button" onClick={() => toggleLsiKeyword(id)}
+                                                        className="w-4 h-4 flex items-center justify-center hover:bg-purple-200 rounded-full">×</button>
                                                 </span>
                                             ) : null;
                                         })}
                                     </div>
                                 )}
+                                {/* Dropdown to add LSI Keywords */}
+                                <select
+                                    value=""
+                                    onChange={(e) => {
+                                        const kwId = Number(e.target.value);
+                                        if (kwId && !lsiKeywordIds.includes(kwId)) {
+                                            toggleLsiKeyword(kwId);
+                                        }
+                                    }}
+                                    disabled={!sectionsEnabled}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50"
+                                >
+                                    <option value="">Add LSI keyword...</option>
+                                    {keywords
+                                        .filter(kw => kw.id !== primaryKeywordId && !lsiKeywordIds.includes(kw.id))
+                                        .map(kw => (
+                                            <option key={kw.id} value={kw.id}>{kw.keyword}</option>
+                                        ))
+                                    }
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -779,21 +865,16 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                             <div className="p-2 border-b border-slate-100">
                                                 <p className="text-xs text-slate-500 font-medium">Select from Backlink Master</p>
                                             </div>
-                                            {backlinks.length > 0 ? backlinks.map(bl => {
-                                                const domainName = bl.domain || bl.source_name;
-                                                const isAlreadyAdded = selectedDomains.some(d => d.domain_name === domainName);
-                                                return (
-                                                    <button
-                                                        key={bl.id}
-                                                        onClick={() => handleAddDomainFromDropdown(domainName)}
-                                                        disabled={isAlreadyAdded}
-                                                        className={`w-full px-3 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center justify-between border-b border-slate-50 last:border-0 ${isAlreadyAdded ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}`}
-                                                    >
-                                                        <span className="font-medium text-slate-700">{domainName}</span>
-                                                        <span className="text-xs text-slate-400">DA: {bl.da || bl.domain_authority || 'N/A'}</span>
-                                                    </button>
-                                                );
-                                            }) : (
+                                            {backlinkDomains.length > 0 ? backlinkDomains.filter(b => !selectedDomains.some(d => d.domain_name === b.name)).map(b => (
+                                                <button
+                                                    key={b.id}
+                                                    onClick={() => handleAddDomainFromDropdown(b.name)}
+                                                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center justify-between border-b border-slate-50 last:border-0"
+                                                >
+                                                    <span className="font-medium text-slate-700">{b.name}</span>
+                                                    <span className="text-xs text-slate-400">DA: {b.da || 'N/A'}</span>
+                                                </button>
+                                            )) : (
                                                 <p className="px-3 py-4 text-sm text-slate-400 text-center">No domains in Backlink Master</p>
                                             )}
                                         </div>
@@ -876,50 +957,75 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 <div className="p-6 space-y-4">
                                     {/* Domain Name - Display Only */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">Domain Name</label>
-                                        <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        <label className="text-sm font-medium text-slate-600 mb-2 flex items-center gap-2">
+                                            Domain Name
+                                            <span className="text-xs text-slate-400">(From Backlink Master)</span>
+                                        </label>
+                                        <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700 font-medium">
                                             {domainPopupData.domain_name}
                                         </div>
                                     </div>
 
                                     {/* URL Posted - User Input */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">URL Posted *</label>
+                                        <label className="block text-sm font-medium text-slate-600 mb-2">URL Posted</label>
                                         <input
                                             type="url"
                                             value={domainPopupData.url_posted}
                                             onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
-                                            placeholder="https://example.com/your-posted-url"
+                                            placeholder="https://..."
                                             className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                                         />
-                                        <p className="text-xs text-slate-400 mt-1">Enter the URL where your content was posted</p>
                                     </div>
 
-                                    {/* SEO Self QC Status */}
+                                    {/* SEO Self QC Status - User can update */}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-600 mb-2">SEO Self QC Status</label>
-                                        <select value={domainPopupData.seo_self_qc_status} onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                            {QC_STATUS_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
+                                        <select
+                                            value={domainPopupData.seo_self_qc_status}
+                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                        >
+                                            <option value="Pending">Pending</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Rejected">Rejected</option>
                                         </select>
                                     </div>
 
-                                    {/* QA Status */}
+                                    {/* QA Status - Only for Verifier */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">QA Status</label>
-                                        <select value={domainPopupData.qa_status} onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-                                            {QA_STATUS_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
+                                        <label className="block text-sm font-medium text-slate-600 mb-2">
+                                            QA Status
+                                            <span className="text-xs text-slate-400 ml-2">(Verifier Only)</span>
+                                        </label>
+                                        <select
+                                            value={domainPopupData.qa_status}
+                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                        >
+                                            <option value="">Select...</option>
+                                            <option value="Pass">Pass</option>
+                                            <option value="Fail">Fail</option>
                                         </select>
+                                    </div>
+
+                                    {/* Approval Status (Auto-calculated) */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-600 mb-2">Approval Status (Auto)</label>
+                                        <div className={`w-full h-10 px-3 flex items-center rounded-xl text-sm font-medium ${calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Approved'
+                                            ? 'bg-green-100 text-green-700'
+                                            : calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Rejected'
+                                                ? 'bg-rose-100 text-rose-700'
+                                                : 'bg-amber-100 text-amber-700'
+                                            }`}>
+                                            {calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status)}
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-1">Auto-calculated: Approved when Self QC = Approved AND QA = Pass</p>
                                     </div>
                                 </div>
                                 <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
                                     <button onClick={() => setShowDomainPopup(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
-                                    <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600">Save</button>
+                                    <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600">Update Domain</button>
                                 </div>
                             </div>
                         </div>
