@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
-import type { AssetLibraryItem, Task, ContentRepositoryItem, User, Keyword } from '../types';
+import type { AssetLibraryItem, Task, ContentRepositoryItem, User, Keyword, Campaign, Project, Service, SubServiceItem } from '../types';
 
 interface WebAssetUploadViewProps {
     onNavigate?: (view: string, id?: number) => void;
@@ -37,6 +37,10 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     const { data: repositoryItems = [], loading: repoLoading } = useData<ContentRepositoryItem>('content');
     const { data: users = [] } = useData<User>('users');
     const { data: keywords = [] } = useData<Keyword>('keywords');
+    const { data: campaigns = [], loading: campaignsLoading } = useData<Campaign>('campaigns');
+    const { data: projects = [], loading: projectsLoading } = useData<Project>('projects');
+    const { data: services = [], loading: servicesLoading } = useData<Service>('services');
+    const { data: subServices = [], loading: subServicesLoading } = useData<SubServiceItem>('subServices');
     const { data: assets = [], create: createAsset, update: updateAsset, refresh } = useData<AssetLibraryItem>('assetLibrary');
 
     // Form state
@@ -49,7 +53,12 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     // Section 4.1: Map Assets to Source Work
     const [linkedRepositoryId, setLinkedRepositoryId] = useState<number | null>(null);
     const [linkedTaskId, setLinkedTaskId] = useState<number | null>(null);
+    const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(null);
+    const [linkedProjectId, setLinkedProjectId] = useState<number | null>(null);
+    const [linkedServiceId, setLinkedServiceId] = useState<number | null>(null);
+    const [linkedSubServiceId, setLinkedSubServiceId] = useState<number | null>(null);
     const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+    const [filteredSubServices, setFilteredSubServices] = useState<SubServiceItem[]>([]);
 
     // Section 4.3: Keywords
     const [contentKeywords, setContentKeywords] = useState<string[]>([]);
@@ -98,6 +107,16 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
         }
     }, [linkedRepositoryId, tasks]);
 
+    // Filter sub-services based on selected service
+    useEffect(() => {
+        if (linkedServiceId) {
+            const related = subServices.filter(ss => ss.parent_service_id === linkedServiceId);
+            setFilteredSubServices(related);
+        } else {
+            setFilteredSubServices(subServices);
+        }
+    }, [linkedServiceId, subServices]);
+
     // Load existing asset if editing
     useEffect(() => {
         if (editAssetId && assets.length > 0) {
@@ -106,6 +125,10 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                 setFormData(existing);
                 setLinkedRepositoryId(existing.linked_repository_item_id || null);
                 setLinkedTaskId(existing.linked_task_id || null);
+                setLinkedCampaignId(existing.linked_campaign_id || null);
+                setLinkedProjectId(existing.linked_project_id || null);
+                setLinkedServiceId(existing.linked_service_id || null);
+                setLinkedSubServiceId(existing.linked_sub_service_id || null);
                 setContentKeywords(existing.content_keywords || []);
                 setSeoKeywords(existing.seo_keywords || []);
                 setWorkflowStage(existing.workflow_stage || 'In Progress');
@@ -264,6 +287,8 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
             const assetData: Partial<AssetLibraryItem> = {
                 ...formData, name: formData.web_title || formData.name || 'Untitled Asset', application_type: 'web',
                 linked_repository_item_id: linkedRepositoryId, linked_task_id: linkedTaskId,
+                linked_campaign_id: linkedCampaignId, linked_project_id: linkedProjectId,
+                linked_service_id: linkedServiceId, linked_sub_service_id: linkedSubServiceId,
                 keywords: [...contentKeywords, ...seoKeywords], content_keywords: contentKeywords, seo_keywords: seoKeywords,
                 web_h3_tags: h3Tags.filter(t => t.trim()), designed_by: designedBy, published_by: publishedBy, verified_by: verifiedBy,
                 created_by: currentUser?.id, workflow_stage: finalWorkflowStage, status: finalStatus, qc_status: finalQcStatus,
@@ -346,9 +371,45 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                         <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-400/30">1</div>
-                                <div><h3 className="text-sm font-bold text-slate-800">Map Assets to Source Work</h3><p className="text-xs text-slate-500">Link to repository and task</p></div>
+                                <div><h3 className="text-sm font-bold text-slate-800">Map Assets to Source Work</h3><p className="text-xs text-slate-500">Link to campaigns, projects, services, tasks and repository</p></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
+                                {/* Row 1: Campaign & Project */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Campaign</label>
+                                    <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={campaignsLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                                        <option value="">Select Campaign...</option>
+                                        {campaigns.map(campaign => (<option key={campaign.id} value={campaign.id}>{campaign.campaign_name}</option>))}
+                                    </select>
+                                    {campaignsLoading && <p className="text-xs text-slate-400 mt-1">Loading campaigns...</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Project</label>
+                                    <select value={linkedProjectId || ''} onChange={e => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={projectsLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                                        <option value="">Select Project...</option>
+                                        {projects.map(project => (<option key={project.id} value={project.id}>{project.project_name}</option>))}
+                                    </select>
+                                    {projectsLoading && <p className="text-xs text-slate-400 mt-1">Loading projects...</p>}
+                                </div>
+                                {/* Row 2: Service & Sub-Service */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Service</label>
+                                    <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={servicesLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                                        <option value="">Select Service...</option>
+                                        {services.map(service => (<option key={service.id} value={service.id}>{service.service_name}</option>))}
+                                    </select>
+                                    {servicesLoading && <p className="text-xs text-slate-400 mt-1">Loading services...</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Sub-Service</label>
+                                    <select value={linkedSubServiceId || ''} onChange={e => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={subServicesLoading || !linkedServiceId} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                        <option value="">Select Sub-Service...</option>
+                                        {filteredSubServices.map(subService => (<option key={subService.id} value={subService.id}>{subService.sub_service_name}</option>))}
+                                    </select>
+                                    {!linkedServiceId && <p className="text-xs text-slate-400 mt-1">Select a service first</p>}
+                                    {subServicesLoading && linkedServiceId && <p className="text-xs text-slate-400 mt-1">Loading sub-services...</p>}
+                                </div>
+                                {/* Row 3: Repository & Task */}
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Repository</label>
                                     <select value={linkedRepositoryId || ''} onChange={e => { setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null); setLinkedTaskId(null); }} disabled={repoLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">

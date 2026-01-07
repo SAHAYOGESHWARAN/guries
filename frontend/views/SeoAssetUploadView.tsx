@@ -68,6 +68,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
     // ========== STEP 3: Asset Classification ==========
     const [assetType, setAssetType] = useState('');
+    const [assetCategory, setAssetCategory] = useState('');
     const [sector, setSector] = useState('');
     const [industry, setIndustry] = useState('');
 
@@ -89,8 +90,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     // ========== STEP 6: Domain Type & Domain Addition ==========
     const [domainType, setDomainType] = useState('');
     const [selectedDomains, setSelectedDomains] = useState<DomainDetails[]>([]);
+    const [showDomainDropdown, setShowDomainDropdown] = useState(false);
+    const [selectedDomainToAdd, setSelectedDomainToAdd] = useState('');
 
-    // ========== STEP 7: Domain Details Popup ==========
+    // ========== STEP 7: Domain Details Popup (URL Posted) ==========
     const [showDomainPopup, setShowDomainPopup] = useState(false);
     const [editingDomainIndex, setEditingDomainIndex] = useState<number | null>(null);
     const [domainPopupData, setDomainPopupData] = useState<DomainDetails>({
@@ -197,29 +200,39 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     };
 
     // ========== Domain Handlers ==========
-    const handleAddDomain = () => {
-        setEditingDomainIndex(null);
-        setDomainPopupData({
-            domain_name: '',
+    // Add domain from dropdown selection
+    const handleAddDomainFromDropdown = (domainName: string) => {
+        if (!domainName) return;
+
+        // Check if domain already added
+        if (selectedDomains.some(d => d.domain_name === domainName)) {
+            alert('This domain is already added');
+            return;
+        }
+
+        const newDomain: DomainDetails = {
+            domain_name: domainName,
             url_posted: '',
             seo_self_qc_status: 'Waiting',
             qa_status: 'Pending',
             approval_status: 'Pending'
-        });
-        setShowDomainPopup(true);
+        };
+
+        setSelectedDomains([...selectedDomains, newDomain]);
+        setSelectedDomainToAdd('');
+        setShowDomainDropdown(false);
     };
 
+    // Click on domain to edit URL Posted
     const handleDomainClick = (index: number) => {
         setEditingDomainIndex(index);
         setDomainPopupData({ ...selectedDomains[index] });
         setShowDomainPopup(true);
     };
 
+    // Save URL Posted for domain
     const handleSaveDomainDetails = () => {
-        if (!domainPopupData.domain_name) {
-            alert('Please select a domain from Backlink Master');
-            return;
-        }
+        if (editingDomainIndex === null) return;
 
         const approvalStatus = calculateApprovalStatus(
             domainPopupData.seo_self_qc_status,
@@ -227,14 +240,9 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         );
 
         const updatedDomain = { ...domainPopupData, approval_status: approvalStatus };
-
-        if (editingDomainIndex !== null) {
-            const updated = [...selectedDomains];
-            updated[editingDomainIndex] = updatedDomain;
-            setSelectedDomains(updated);
-        } else {
-            setSelectedDomains([...selectedDomains, updatedDomain]);
-        }
+        const updated = [...selectedDomains];
+        updated[editingDomainIndex] = updatedDomain;
+        setSelectedDomains(updated);
 
         setShowDomainPopup(false);
         setEditingDomainIndex(null);
@@ -318,6 +326,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
             linked_sub_service_id: linkedSubServiceId,
             linked_repository_item_id: linkedRepositoryId,
             asset_type: assetType,
+            asset_category: assetCategory,
             type: assetType,
             sector_id: sector,
             industry_id: industry,
@@ -553,34 +562,44 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">3</div>
                             <h3 className="text-base font-bold text-slate-800">Asset Classification</h3>
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">From Master Database</span>
                         </div>
-                        <p className="text-xs text-slate-500 mb-4">All fields fetched from Master Database - No hardcoding allowed</p>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Asset Type</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Asset Type * <span className="text-slate-400 text-xs">(Master)</span></label>
                                 <select value={assetType} onChange={(e) => setAssetType(e.target.value)} disabled={!sectionsEnabled}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
-                                    <option value="">Select Asset Type...</option>
+                                    <option value="">Select type...</option>
                                     {activeAssetTypes.map(type => (
                                         <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Sector</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Asset Category * <span className="text-slate-400 text-xs">(Master)</span></label>
+                                <select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)} disabled={!sectionsEnabled}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
+                                    <option value="">Select category...</option>
+                                    {assetCategories.filter(cat => cat.is_active !== false).map(category => (
+                                        <option key={category.id} value={category.category_name}>{category.category_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Sector * <span className="text-slate-400 text-xs">(Master)</span></label>
                                 <select value={sector} onChange={(e) => setSector(e.target.value)} disabled={!sectionsEnabled}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
-                                    <option value="">Select Sector...</option>
+                                    <option value="">Select sector...</option>
                                     {sectors.map((s: string, idx: number) => (
                                         <option key={idx} value={s}>{s}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Industry</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Industry * <span className="text-slate-400 text-xs">(Master)</span></label>
                                 <select value={industry} onChange={(e) => setIndustry(e.target.value)} disabled={!sectionsEnabled}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
-                                    <option value="">Select Industry...</option>
+                                    <option value="">Select industry...</option>
                                     {industries.map((ind: string, idx: number) => (
                                         <option key={idx} value={ind}>{ind}</option>
                                     ))}
@@ -653,63 +672,41 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     {/* ========== STEP 5: Keywords ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">5</div>
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">5</div>
                             <h3 className="text-base font-bold text-slate-800">Keywords</h3>
+                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">From Keyword Master</span>
                         </div>
-                        <p className="text-xs text-slate-500 mb-4">Keywords must integrate with Keyword Master - Manual free-text entry not allowed</p>
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Primary Keyword - Integrated Dropdown/Search */}
+                        <div className="grid grid-cols-2 gap-6">
+                            {/* Primary Keyword - From Keyword Master */}
                             <div className="relative">
                                 <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
                                     <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                                    Primary Keyword * (Integrated Dropdown/Search)
+                                    Primary Keyword *
                                 </label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={keywordSearch}
-                                        onChange={(e) => { setKeywordSearch(e.target.value); setShowKeywordDropdown(true); }}
-                                        onFocus={() => setShowKeywordDropdown(true)}
-                                        disabled={!sectionsEnabled}
-                                        placeholder="Search keywords..."
-                                        className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 disabled:opacity-50 ${errors.primaryKeyword ? 'border-rose-500' : 'border-slate-200'}`}
-                                    />
-                                    {primaryKeywordId && (
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                                {keywords.find(k => k.id === primaryKeywordId)?.keyword}
-                                            </span>
-                                            <button onClick={() => { setPrimaryKeywordId(null); setKeywordSearch(''); }} className="text-slate-400 hover:text-rose-500">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                                {showKeywordDropdown && sectionsEnabled && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                                        {filteredKeywords.length > 0 ? filteredKeywords.map(kw => (
-                                            <button key={kw.id} onClick={() => { setPrimaryKeywordId(kw.id); setKeywordSearch(''); setShowKeywordDropdown(false); }}
-                                                className="w-full px-3 py-2 text-left text-sm hover:bg-amber-50 flex items-center justify-between">
-                                                <span>{kw.keyword}</span>
-                                                {kw.search_volume && <span className="text-xs text-slate-400">Vol: {kw.search_volume}</span>}
-                                            </button>
-                                        )) : (
-                                            <p className="px-3 py-2 text-sm text-slate-400">No keywords found</p>
-                                        )}
-                                    </div>
-                                )}
+                                <select
+                                    value={primaryKeywordId || ''}
+                                    onChange={(e) => setPrimaryKeywordId(e.target.value ? Number(e.target.value) : null)}
+                                    disabled={!sectionsEnabled}
+                                    className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50 ${errors.primaryKeyword ? 'border-rose-500' : 'border-slate-200'}`}
+                                >
+                                    <option value="">Select from Keyword Master...</option>
+                                    {keywords.map(kw => (
+                                        <option key={kw.id} value={kw.id}>{kw.keyword}</option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-slate-400 mt-1">No manual entry - select from master only</p>
                                 {errors.primaryKeyword && <p className="text-xs text-rose-500 mt-1">{errors.primaryKeyword}</p>}
                             </div>
 
-                            {/* LSI Keywords - Multi-select */}
+                            {/* LSI Keywords - Multi-select from Keyword Master */}
                             <div className="relative">
-                                <label className="block text-sm font-medium text-slate-600 mb-2">LSI Keywords (Multi-select - Optional)</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    LSI Keywords <span className="text-slate-400 text-xs">(Optional)</span>
+                                </label>
                                 <div className="relative">
                                     <button onClick={() => setShowLsiDropdown(!showLsiDropdown)} disabled={!sectionsEnabled}
                                         className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-left flex items-center justify-between disabled:opacity-50">
-                                        <span className="text-slate-500">{lsiKeywordIds.length > 0 ? `${lsiKeywordIds.length} selected` : 'Select LSI Keywords...'}</span>
+                                        <span className="text-slate-500">{lsiKeywordIds.length > 0 ? `${lsiKeywordIds.length} keywords selected` : 'Add LSI keyword...'}</span>
                                         <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
@@ -717,10 +714,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 </div>
                                 {showLsiDropdown && sectionsEnabled && (
                                     <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                                        {keywords.slice(0, 30).map(kw => (
+                                        {keywords.filter(kw => kw.id !== primaryKeywordId).map(kw => (
                                             <button key={kw.id} onClick={() => toggleLsiKeyword(kw.id)}
-                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-amber-50 flex items-center gap-2 ${lsiKeywordIds.includes(kw.id) ? 'bg-amber-50' : ''}`}>
-                                                <input type="checkbox" checked={lsiKeywordIds.includes(kw.id)} readOnly className="w-4 h-4 text-amber-500 rounded" />
+                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-purple-50 flex items-center gap-2 ${lsiKeywordIds.includes(kw.id) ? 'bg-purple-50' : ''}`}>
+                                                <input type="checkbox" checked={lsiKeywordIds.includes(kw.id)} readOnly className="w-4 h-4 text-purple-500 rounded" />
                                                 <span>{kw.keyword}</span>
                                             </button>
                                         ))}
@@ -731,7 +728,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {lsiKeywordIds.map(id => {
                                             const kw = keywords.find(k => k.id === id);
                                             return kw ? (
-                                                <span key={id} className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                                                <span key={id} className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                                                     {kw.keyword}
                                                     <button onClick={() => toggleLsiKeyword(id)} className="hover:text-rose-500">×</button>
                                                 </span>
@@ -747,89 +744,127 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     {/* ========== STEP 6: Domain Type & Domain Addition ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
                             <h3 className="text-base font-bold text-slate-800">Domain Type & Domain Addition</h3>
+                            <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded">From Backlink Master</span>
                         </div>
                         <div className="space-y-4">
-                            {/* 6.1 Domain Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type (from Backlink Master)</label>
-                                <select value={domainType} onChange={(e) => setDomainType(e.target.value)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 disabled:opacity-50">
-                                    <option value="">Select Domain Type...</option>
-                                    {domainTypes.map((dt: string, idx: number) => (
-                                        <option key={idx} value={dt}>{dt}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* 6.2 Domain Addition */}
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-slate-600">Added Domains (from Backlink Master)</label>
-                                    <button onClick={handleAddDomain} disabled={!sectionsEnabled}
-                                        className="flex items-center gap-1 px-3 py-1.5 bg-cyan-500 text-white rounded-lg text-xs font-medium hover:bg-cyan-600 disabled:opacity-50">
+                            {/* Domain Type & Add Domain - Same Row */}
+                            <div className="flex items-end gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
+                                    <select value={domainType} onChange={(e) => setDomainType(e.target.value)} disabled={!sectionsEnabled}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select Domain Type...</option>
+                                        {domainTypes.map((dt: string, idx: number) => (
+                                            <option key={idx} value={dt}>{dt}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowDomainDropdown(!showDomainDropdown)}
+                                        disabled={!sectionsEnabled}
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-50 transition-all"
+                                    >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                         </svg>
                                         Add Domain
                                     </button>
-                                </div>
-                                <p className="text-xs text-slate-400 mb-3">Multiple domains allowed per SEO Asset. Click on a domain to edit details.</p>
 
-                                {/* Domain List */}
-                                {selectedDomains.length > 0 ? (
+                                    {/* Domain Selection Dropdown */}
+                                    {showDomainDropdown && sectionsEnabled && (
+                                        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto">
+                                            <div className="p-2 border-b border-slate-100">
+                                                <p className="text-xs text-slate-500 font-medium">Select from Backlink Master</p>
+                                            </div>
+                                            {backlinks.length > 0 ? backlinks.map(bl => {
+                                                const domainName = bl.domain || bl.source_name;
+                                                const isAlreadyAdded = selectedDomains.some(d => d.domain_name === domainName);
+                                                return (
+                                                    <button
+                                                        key={bl.id}
+                                                        onClick={() => handleAddDomainFromDropdown(domainName)}
+                                                        disabled={isAlreadyAdded}
+                                                        className={`w-full px-3 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center justify-between border-b border-slate-50 last:border-0 ${isAlreadyAdded ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}`}
+                                                    >
+                                                        <span className="font-medium text-slate-700">{domainName}</span>
+                                                        <span className="text-xs text-slate-400">DA: {bl.da || bl.domain_authority || 'N/A'}</span>
+                                                    </button>
+                                                );
+                                            }) : (
+                                                <p className="px-3 py-4 text-sm text-slate-400 text-center">No domains in Backlink Master</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Added Domains List */}
+                            {selectedDomains.length > 0 && (
+                                <div className="mt-4">
+                                    <p className="text-xs text-slate-500 mb-2">Click on a domain to enter URL Posted</p>
                                     <div className="space-y-2">
                                         {selectedDomains.map((domain, idx) => (
                                             <div key={idx} onClick={() => handleDomainClick(idx)}
-                                                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:border-cyan-400 hover:bg-cyan-50/50 transition-all">
+                                                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                                                         </svg>
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium text-slate-700">{domain.domain_name}</p>
-                                                        <p className="text-xs text-slate-400">{domain.url_posted || 'No URL posted'}</p>
+                                                        <p className="text-xs text-slate-400">{domain.url_posted || 'Click to add URL Posted'}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadgeColor(domain.approval_status || 'Pending')}`}>
-                                                        {domain.approval_status || 'Pending'}
-                                                    </span>
+                                                    {domain.url_posted && (
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadgeColor(domain.approval_status || 'Pending')}`}>
+                                                            {domain.approval_status || 'Pending'}
+                                                        </span>
+                                                    )}
                                                     <button onClick={(e) => { e.stopPropagation(); handleDeleteDomain(idx); }}
                                                         className="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                         </svg>
                                                     </button>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                ) : (
-                                    <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                        <svg className="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                        </svg>
-                                        <p className="text-sm text-slate-400">No domains added yet</p>
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
+
+                            {/* Empty State */}
+                            {selectedDomains.length === 0 && (
+                                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 mt-4">
+                                    <svg className="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                    </svg>
+                                    <p className="text-sm text-slate-400">No domains added yet. Click "Add Domain" to select from Backlink Master.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
 
-                    {/* ========== STEP 7: Domain Details Popup ========== */}
-                    {showDomainPopup && (
+                    {/* ========== STEP 7: Domain Details Popup (URL Posted) ========== */}
+                    {showDomainPopup && editingDomainIndex !== null && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl">
-                                <div className="bg-gradient-to-r from-cyan-500 to-teal-500 px-6 py-4 rounded-t-2xl">
+                            <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl">
+                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 rounded-t-2xl">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white text-sm font-bold">7</div>
-                                            <h3 className="text-white font-bold">{editingDomainIndex !== null ? 'Edit Domain Details' : 'Add Domain Details'}</h3>
+                                            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                </svg>
+                                            </div>
+                                            <h3 className="text-white font-bold">Enter URL Posted</h3>
                                         </div>
                                         <button onClick={() => setShowDomainPopup(false)} className="text-white/80 hover:text-white">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -837,35 +872,36 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                             </svg>
                                         </button>
                                     </div>
-                                    <p className="text-cyan-100 text-xs mt-1">Mandatory interaction - Complete all fields</p>
                                 </div>
                                 <div className="p-6 space-y-4">
-                                    {/* Domain Name - from Backlink Master */}
+                                    {/* Domain Name - Display Only */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">Domain Name (from Backlink Master)</label>
-                                        <select value={domainPopupData.domain_name} onChange={(e) => setDomainPopupData({ ...domainPopupData, domain_name: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400">
-                                            <option value="">Select Domain...</option>
-                                            {backlinks.map(bl => (
-                                                <option key={bl.id} value={bl.domain || bl.source_name}>{bl.domain || bl.source_name} (DA: {bl.da || bl.domain_authority || 'N/A'})</option>
-                                            ))}
-                                        </select>
+                                        <label className="block text-sm font-medium text-slate-600 mb-2">Domain Name</label>
+                                        <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                            {domainPopupData.domain_name}
+                                        </div>
                                     </div>
 
                                     {/* URL Posted - User Input */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">URL Posted (User Input)</label>
-                                        <input type="url" value={domainPopupData.url_posted} onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
-                                            placeholder="https://example.com/posted-url" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400" />
+                                        <label className="block text-sm font-medium text-slate-600 mb-2">URL Posted *</label>
+                                        <input
+                                            type="url"
+                                            value={domainPopupData.url_posted}
+                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
+                                            placeholder="https://example.com/your-posted-url"
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                        />
+                                        <p className="text-xs text-slate-400 mt-1">Enter the URL where your content was posted</p>
                                     </div>
 
                                     {/* SEO Self QC Status */}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-600 mb-2">SEO Self QC Status</label>
                                         <select value={domainPopupData.seo_self_qc_status} onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400">
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
                                             {QC_STATUS_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label} → {opt.displayStatus}</option>
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -874,25 +910,16 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     <div>
                                         <label className="block text-sm font-medium text-slate-600 mb-2">QA Status</label>
                                         <select value={domainPopupData.qa_status} onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400">
+                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
                                             {QA_STATUS_OPTIONS.map(opt => (
                                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                                             ))}
                                         </select>
                                     </div>
-
-                                    {/* Auto-calculated Approval Status */}
-                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                        <p className="text-xs text-slate-500 mb-1">System Display Status (Auto-calculated)</p>
-                                        <span className={`inline-block text-sm font-medium px-3 py-1 rounded-full ${getStatusBadgeColor(calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status))}`}>
-                                            {calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status)}
-                                        </span>
-                                        <p className="text-xs text-slate-400 mt-2">Pass + Approved = Approved | Fail/Rejected = Rejected | Otherwise = Pending</p>
-                                    </div>
                                 </div>
                                 <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
                                     <button onClick={() => setShowDomainPopup(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
-                                    <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-cyan-500 text-white rounded-lg hover:bg-cyan-600">Save Domain</button>
+                                    <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600">Save</button>
                                 </div>
                             </div>
                         </div>
