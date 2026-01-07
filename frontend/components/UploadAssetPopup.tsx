@@ -441,6 +441,37 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         <h4 className="text-sm font-bold text-slate-700">Map Assets to Source Work</h4>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
+                                        {/* Row 1: Campaign & Project */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Campaign</label>
+                                            <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Campaign...</option>
+                                                {campaigns.map(campaign => (<option key={campaign.id} value={campaign.id}>{campaign.campaign_name}</option>))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Project</label>
+                                            <select value={linkedProjectId || ''} onChange={e => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Project...</option>
+                                                {projects.map(project => (<option key={project.id} value={project.id}>{project.project_name}</option>))}
+                                            </select>
+                                        </div>
+                                        {/* Row 2: Service & Sub-Service */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Service</label>
+                                            <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                                                <option value="">Select Service...</option>
+                                                {services.map(service => (<option key={service.id} value={service.id}>{service.service_name}</option>))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 mb-1">Linked Sub-Service</label>
+                                            <select value={linkedSubServiceId || ''} onChange={e => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!linkedServiceId} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                                <option value="">{linkedServiceId ? 'Select Sub-Service...' : 'Select Service first'}</option>
+                                                {filteredSubServices.map(subService => (<option key={subService.id} value={subService.id}>{subService.sub_service_name}</option>))}
+                                            </select>
+                                        </div>
+                                        {/* Row 3: Repository & Task */}
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Repository</label>
                                             <select value={linkedRepositoryItemId || ''} onChange={e => setLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
