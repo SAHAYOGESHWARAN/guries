@@ -6,7 +6,12 @@ import { getSocket } from '../socket';
 export const getTasks = async (req: any, res: any) => {
     try {
         const result = await pool.query('SELECT * FROM tasks ORDER BY due_date ASC');
-        res.status(200).json(result.rows);
+        // Add 'name' alias for 'task_name' for frontend compatibility
+        const tasksWithNameAlias = result.rows.map((task: any) => ({
+            ...task,
+            name: task.task_name || task.name // Ensure 'name' field exists for frontend
+        }));
+        res.status(200).json(tasksWithNameAlias);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
