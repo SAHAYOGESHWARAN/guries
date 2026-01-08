@@ -187,22 +187,44 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     }, [keywords, keywordSearch]);
 
     // ========== Handle Asset ID Selection ==========
-    const handleAssetIdSelect = (assetId: number) => {
+    const handleAssetIdSelect = async (assetId: number) => {
         if (assetId) {
             setSelectedAssetId(assetId);
             setIsAssetIdLocked(true);
 
-            // Pre-fill data from selected asset
+            // Pre-fill data from selected asset - first try from local cache
             const asset = existingAssets.find(a => a.id === assetId);
             if (asset) {
-                setLinkedTaskId(asset.linked_task_id || null);
+                // Auto-fetch all linked details from the asset
+                setLinkedTaskId(asset.linked_task_id || asset.linked_task || null);
                 setLinkedCampaignId(asset.linked_campaign_id || null);
                 setLinkedProjectId(asset.linked_project_id || null);
-                setLinkedServiceId(asset.linked_service_id || null);
-                setLinkedSubServiceId(asset.linked_sub_service_id || null);
+                setLinkedServiceId(asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]) || null);
+                setLinkedSubServiceId(asset.linked_sub_service_id || (asset.linked_sub_service_ids && asset.linked_sub_service_ids[0]) || null);
                 setLinkedRepositoryId(asset.linked_repository_item_id || null);
-                setAssetType(asset.type || '');
-                setSeoTitle(asset.name || '');
+                setAssetType(asset.type || asset.asset_type || '');
+                setAssetCategory(asset.asset_category || '');
+                setSeoTitle(asset.name || asset.seo_title || '');
+
+                // Also fetch from API for complete data
+                try {
+                    const response = await fetch(`${apiUrl}/assetLibrary/${assetId}`);
+                    if (response.ok) {
+                        const fullAsset = await response.json();
+                        // Update with complete data from API
+                        setLinkedTaskId(fullAsset.linked_task_id || fullAsset.linked_task || asset.linked_task_id || null);
+                        setLinkedCampaignId(fullAsset.linked_campaign_id || asset.linked_campaign_id || null);
+                        setLinkedProjectId(fullAsset.linked_project_id || asset.linked_project_id || null);
+                        setLinkedServiceId(fullAsset.linked_service_id || (fullAsset.linked_service_ids && fullAsset.linked_service_ids[0]) || asset.linked_service_id || null);
+                        setLinkedSubServiceId(fullAsset.linked_sub_service_id || (fullAsset.linked_sub_service_ids && fullAsset.linked_sub_service_ids[0]) || asset.linked_sub_service_id || null);
+                        setLinkedRepositoryId(fullAsset.linked_repository_item_id || asset.linked_repository_item_id || null);
+                        if (fullAsset.type) setAssetType(fullAsset.type);
+                        if (fullAsset.asset_category) setAssetCategory(fullAsset.asset_category);
+                        if (fullAsset.name || fullAsset.seo_title) setSeoTitle(fullAsset.name || fullAsset.seo_title);
+                    }
+                } catch (err) {
+                    console.log('Using cached asset data');
+                }
             }
         }
     };

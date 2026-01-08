@@ -6492,10 +6492,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {!assetsLoading && (
                             <div className="flex-1 min-h-0 w-full">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white border border-slate-200 w-full h-full flex flex-col">
-                                        {/* Scrollable Table Container */}
+                                    <div className="bg-white border border-slate-200 w-full h-full flex flex-col" style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)', maxWidth: '100vw' }}>
+                                        {/* Scrollable Table Container - Full Width */}
                                         <div className="flex-1 overflow-auto w-full">
-                                            <table className="w-full border-collapse">
+                                            <table className="w-full border-collapse min-w-max">
                                                 <thead className="bg-slate-100 sticky top-0 z-10">
                                                     <tr className="border-b border-slate-300">
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">ID</th>
@@ -6505,7 +6505,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Asset Category</th>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Content Type</th>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Service</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Sub-Service</th>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Task</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Campaign</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Project</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Repository</th>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">QC Status</th>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Version</th>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Designer</th>
@@ -6570,7 +6574,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                         {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
                                                                     </td>
                                                                     <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{service?.service_name || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{task?.name || '-'}</td>
+                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const subServiceId = asset.linked_sub_service_id || (asset.linked_sub_service_ids && asset.linked_sub_service_ids[0]); const subService = subServiceId ? subServices.find(ss => ss.id === subServiceId) : null; return subService?.sub_service_name || '-'; })()}</td>
+                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{task?.name || (task as any)?.task_name || '-'}</td>
+                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const campaign = asset.linked_campaign_id ? campaigns.find(c => c.id === asset.linked_campaign_id) : null; return campaign?.campaign_name || '-'; })()}</td>
+                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const project = asset.linked_project_id ? projects.find(p => p.id === asset.linked_project_id) : null; return project?.project_name || '-'; })()}</td>
+                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const repo = asset.linked_repository_item_id ? repositoryItems.find(r => r.id === asset.linked_repository_item_id) : null; return repo?.content_title_clean || '-'; })()}</td>
                                                                     <td className="px-3 py-2.5 whitespace-nowrap">
                                                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
                                                                             {statusText}
@@ -6597,7 +6605,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         })
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={16} className="px-6 py-16 text-center">
+                                                            <td colSpan={20} className="px-6 py-16 text-center">
                                                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                                                     <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

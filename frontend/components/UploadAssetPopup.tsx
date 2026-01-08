@@ -483,7 +483,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
                                             <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Task...</option>
-                                                {tasks.map(task => (<option key={task.id} value={task.id}>{task.name || `Task #${task.id}`}</option>))}
+                                                {tasks.map(task => (<option key={task.id} value={task.id}>{(task as any).task_name || task.name || task.title || `Task #${task.id}`}</option>))}
                                             </select>
                                         </div>
                                     </div>
@@ -1004,7 +1004,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
                                             <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
                                                 <option value="">Select Task</option>
-                                                {tasks.map(t => <option key={t.id} value={t.id}>{t.title || t.name}</option>)}
+                                                {tasks.map(t => <option key={t.id} value={t.id}>{(t as any).task_name || t.title || t.name || `Task #${t.id}`}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -1381,7 +1381,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
                                             <select value={smmLinkedTaskId || ''} onChange={e => setSmmLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
                                                 <option value="">Select Task</option>
-                                                {tasks.map(t => <option key={t.id} value={t.id}>{t.title || t.name}</option>)}
+                                                {tasks.map(t => <option key={t.id} value={t.id}>{(t as any).task_name || t.title || t.name || `Task #${t.id}`}</option>)}
                                             </select>
                                         </div>
                                         <div>
