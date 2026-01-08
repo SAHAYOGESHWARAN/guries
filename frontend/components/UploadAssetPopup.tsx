@@ -902,19 +902,19 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     </div>
                                 </div>
 
-                                {/* STEP 1: Asset ID Selection - MANDATORY */}
+                                {/* STEP 1: Asset ID Selection - OPTIONAL */}
                                 <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center">
                                             <span className="text-white text-xs font-bold">1</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-indigo-700">Asset ID Selection</h4>
-                                        <span className="text-xs text-red-500 font-medium">* Required</span>
+                                        <span className="text-xs text-blue-500 font-medium bg-blue-100 px-1.5 py-0.5 rounded">Optional</span>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-slate-600 mb-1">
-                                            Asset ID <span className="text-red-500">*</span>
-                                            <span className="text-slate-400 ml-1">(Select from existing assets)</span>
+                                            Asset ID
+                                            <span className="text-slate-400 ml-1">(Select to auto-fill linked details)</span>
                                         </label>
                                         <select
                                             value={selectedAssetId || ''}
@@ -958,7 +958,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                     </svg>
-                                                    Asset ID locked. All sections are now enabled.
+                                                    Asset ID selected. Linked details auto-filled.
                                                 </p>
                                                 <button
                                                     onClick={() => {
@@ -979,65 +979,62 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             </div>
                                         )}
                                         {!selectedAssetId && (
-                                            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                </svg>
-                                                Please select an Asset ID to enable all sections below
+                                            <p className="text-xs text-slate-500 mt-2">
+                                                Select an existing asset to auto-fill linked details, or skip to enter manually
                                             </p>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* STEP 2: Map Assets to Source Work */}
-                                <div className={`bg-blue-50 rounded-xl p-4 border border-blue-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-blue-500' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-blue-500">
                                             <span className="text-white text-xs font-bold">2</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-blue-700">Map Assets to Source Work</h4>
-                                        {!selectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
+                                        {selectedAssetId && <span className="text-xs text-green-500 bg-green-50 px-1.5 py-0.5 rounded">Auto-filled</span>}
                                     </div>
-                                    <p className="text-xs text-blue-600 mb-3">Link the selected Asset ID to its originating work/source</p>
+                                    <p className="text-xs text-blue-600 mb-3">Link the asset to its originating work/source</p>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
-                                            <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Task</option>
                                                 {tasks.map(t => <option key={t.id} value={t.id}>{(t as any).task_name || t.title || t.name || `Task #${t.id}`}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Campaign</label>
-                                            <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Campaign</option>
                                                 {campaigns.map(c => <option key={c.id} value={c.id}>{c.name || c.campaign_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Project</label>
-                                            <select value={linkedProjectId || ''} onChange={e => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={linkedProjectId || ''} onChange={e => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Project</option>
                                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name || p.project_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Service</label>
-                                            <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Service</option>
                                                 {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Sub-Service</label>
-                                            <select value={linkedSubServiceId || ''} onChange={e => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId || !linkedServiceId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={linkedSubServiceId || ''} onChange={e => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked || !linkedServiceId} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked || !linkedServiceId ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">{linkedServiceId ? 'Select Sub-Service' : 'Select Service first'}</option>
                                                 {filteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Repository Item</label>
-                                            <select value={linkedRepositoryItemId || ''} onChange={e => setLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} disabled={!selectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={linkedRepositoryItemId || ''} onChange={e => setLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Repository</option>
                                                 {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.title || r.content_title_clean}</option>)}
                                             </select>
@@ -1046,9 +1043,9 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 </div>
 
                                 {/* STEP 3: Asset Classification - From Master Database */}
-                                <div className={`bg-amber-50 rounded-xl p-4 border border-amber-100 ${!selectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${selectedAssetId ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-amber-500">
                                             <span className="text-white text-xs font-bold">3</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-amber-700">Asset Classification</h4>
@@ -1280,19 +1277,19 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     </div>
                                 </div>
 
-                                {/* STEP 1: Asset ID Selection - MANDATORY */}
+                                {/* STEP 1: Asset ID Selection - OPTIONAL */}
                                 <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center">
                                             <span className="text-white text-xs font-bold">1</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-indigo-700">Asset ID Selection</h4>
-                                        <span className="text-xs text-red-500 font-medium">* Required</span>
+                                        <span className="text-xs text-blue-500 font-medium bg-blue-100 px-1.5 py-0.5 rounded">Optional</span>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-slate-600 mb-1">
-                                            Asset ID <span className="text-red-500">*</span>
-                                            <span className="text-slate-400 ml-1">(Select from existing assets)</span>
+                                            Asset ID
+                                            <span className="text-slate-400 ml-1">(Select to auto-fill linked details)</span>
                                         </label>
                                         <select
                                             value={smmSelectedAssetId || ''}
@@ -1322,7 +1319,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             disabled={isSmmAssetIdLocked}
                                             className={`w-full h-10 px-3 border rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 border-slate-300 text-slate-600 cursor-not-allowed' : 'bg-white border-indigo-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'}`}
                                         >
-                                            <option value="">-- Select Asset ID --</option>
+                                            <option value="">-- Select Asset ID (Optional) --</option>
                                             {existingAssets.map(a => (
                                                 <option key={a.id} value={a.id}>
                                                     {String(a.id).padStart(4, '0')} - {a.name || 'Untitled Asset'}
@@ -1335,7 +1332,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                     </svg>
-                                                    Asset ID locked. All sections are now enabled.
+                                                    Asset ID selected. Linked details auto-filled.
                                                 </p>
                                                 <button
                                                     onClick={() => {
@@ -1356,65 +1353,62 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             </div>
                                         )}
                                         {!smmSelectedAssetId && (
-                                            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                </svg>
-                                                Please select an Asset ID to enable all sections below
+                                            <p className="text-xs text-slate-500 mt-2">
+                                                Select an existing asset to auto-fill linked details, or skip to enter manually
                                             </p>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* STEP 2: Map Assets to Source Work */}
-                                <div className={`bg-blue-50 rounded-xl p-4 border border-blue-100 ${!smmSelectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${smmSelectedAssetId ? 'bg-blue-500' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-blue-500">
                                             <span className="text-white text-xs font-bold">2</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-blue-700">Map Assets to Source Work</h4>
-                                        {!smmSelectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
+                                        {smmSelectedAssetId && <span className="text-xs text-green-500 bg-green-50 px-1.5 py-0.5 rounded">Auto-filled</span>}
                                     </div>
-                                    <p className="text-xs text-blue-600 mb-3">Link the selected Asset ID to its originating work/source</p>
+                                    <p className="text-xs text-blue-600 mb-3">Link the asset to its originating work/source</p>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
-                                            <select value={smmLinkedTaskId || ''} onChange={e => setSmmLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmLinkedTaskId || ''} onChange={e => setSmmLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Task</option>
                                                 {tasks.map(t => <option key={t.id} value={t.id}>{(t as any).task_name || t.title || t.name || `Task #${t.id}`}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Campaign</label>
-                                            <select value={smmLinkedCampaignId || ''} onChange={e => setSmmLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmLinkedCampaignId || ''} onChange={e => setSmmLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Campaign</option>
                                                 {campaigns.map(c => <option key={c.id} value={c.id}>{c.name || c.campaign_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Project</label>
-                                            <select value={smmLinkedProjectId || ''} onChange={e => setSmmLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmLinkedProjectId || ''} onChange={e => setSmmLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Project</option>
                                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name || p.project_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Service</label>
-                                            <select value={smmLinkedServiceId || ''} onChange={e => { setSmmLinkedServiceId(e.target.value ? Number(e.target.value) : null); setSmmLinkedSubServiceId(null); }} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmLinkedServiceId || ''} onChange={e => { setSmmLinkedServiceId(e.target.value ? Number(e.target.value) : null); setSmmLinkedSubServiceId(null); }} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Service</option>
                                                 {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Sub-Service</label>
-                                            <select value={smmLinkedSubServiceId || ''} onChange={e => setSmmLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId || !smmLinkedServiceId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmLinkedSubServiceId || ''} onChange={e => setSmmLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked || !smmLinkedServiceId} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked || !smmLinkedServiceId ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">{smmLinkedServiceId ? 'Select Sub-Service' : 'Select Service first'}</option>
                                                 {smmFilteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Repository Item</label>
-                                            <select value={smmLinkedRepositoryItemId || ''} onChange={e => setSmmLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmLinkedRepositoryItemId || ''} onChange={e => setSmmLinkedRepositoryItemId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Repository</option>
                                                 {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.title || r.content_title_clean}</option>)}
                                             </select>
@@ -1423,26 +1417,25 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 </div>
 
                                 {/* STEP 3: Asset Classification - From Master Database */}
-                                <div className={`bg-amber-50 rounded-xl p-4 border border-amber-100 ${!smmSelectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${smmSelectedAssetId ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-amber-500">
                                             <span className="text-white text-xs font-bold">3</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-amber-700">Asset Classification</h4>
                                         <span className="text-[10px] text-amber-600 bg-amber-100 px-2 py-0.5 rounded">From Master Database</span>
-                                        {!smmSelectedAssetId && <span className="text-xs text-slate-400 ml-auto">(Select Asset ID first)</span>}
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Asset Type * <span className="text-[10px] text-slate-400">(Master)</span></label>
-                                            <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select type...</option>
                                                 {assetTypes.filter(t => !t.status || t.status === 'active').map(type => <option key={type.id} value={type.asset_type_name || type.name}>{type.asset_type_name || type.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Asset Category * <span className="text-[10px] text-slate-400">(Master)</span></label>
-                                            <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} disabled={!smmSelectedAssetId} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select category...</option>
                                                 {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => <option key={cat.id} value={cat.category_name || cat.name}>{cat.category_name || cat.name}</option>)}
                                             </select>
@@ -1452,13 +1445,12 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
 
 
                                 {/* STEP 4: Social Media Configuration */}
-                                <div className={`bg-purple-50 rounded-xl p-4 border border-purple-100 ${!smmSelectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${smmSelectedAssetId ? 'bg-purple-500' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-purple-500">
                                             <span className="text-white text-xs font-bold">4</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-purple-700">Social Media Configuration</h4>
-                                        {!smmSelectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
                                     </div>
 
                                     {/* Platform Selection */}
@@ -1469,40 +1461,40 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         </label>
                                         <div className="grid grid-cols-5 gap-2">
                                             {/* Facebook */}
-                                            <button type="button" onClick={() => setSmmPlatform('facebook')} disabled={!smmSelectedAssetId}
-                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'facebook' ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 bg-white hover:border-blue-300'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                            <button type="button" onClick={() => setSmmPlatform('facebook')}
+                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'facebook' ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 bg-white hover:border-blue-300'}`}>
                                                 <svg className="w-5 h-5 text-blue-600 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                                                 </svg>
                                                 <span className="text-[10px] font-medium text-slate-700">Facebook</span>
                                             </button>
                                             {/* Instagram */}
-                                            <button type="button" onClick={() => setSmmPlatform('instagram')} disabled={!smmSelectedAssetId}
-                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'instagram' ? 'border-pink-500 bg-pink-50 shadow-md' : 'border-slate-200 bg-white hover:border-pink-300'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                            <button type="button" onClick={() => setSmmPlatform('instagram')}
+                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'instagram' ? 'border-pink-500 bg-pink-50 shadow-md' : 'border-slate-200 bg-white hover:border-pink-300'}`}>
                                                 <svg className="w-5 h-5 text-pink-600 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                                                 </svg>
                                                 <span className="text-[10px] font-medium text-slate-700">Instagram</span>
                                             </button>
                                             {/* Twitter/X */}
-                                            <button type="button" onClick={() => setSmmPlatform('twitter')} disabled={!smmSelectedAssetId}
-                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'twitter' ? 'border-slate-800 bg-slate-100 shadow-md' : 'border-slate-200 bg-white hover:border-slate-400'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                            <button type="button" onClick={() => setSmmPlatform('twitter')}
+                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'twitter' ? 'border-slate-800 bg-slate-100 shadow-md' : 'border-slate-200 bg-white hover:border-slate-400'}`}>
                                                 <svg className="w-5 h-5 text-slate-800 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                                                 </svg>
                                                 <span className="text-[10px] font-medium text-slate-700">Twitter/X</span>
                                             </button>
                                             {/* LinkedIn */}
-                                            <button type="button" onClick={() => setSmmPlatform('linkedin')} disabled={!smmSelectedAssetId}
-                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'linkedin' ? 'border-blue-700 bg-blue-50 shadow-md' : 'border-slate-200 bg-white hover:border-blue-400'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                            <button type="button" onClick={() => setSmmPlatform('linkedin')}
+                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'linkedin' ? 'border-blue-700 bg-blue-50 shadow-md' : 'border-slate-200 bg-white hover:border-blue-400'}`}>
                                                 <svg className="w-5 h-5 text-blue-700 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                                                 </svg>
                                                 <span className="text-[10px] font-medium text-slate-700">LinkedIn</span>
                                             </button>
                                             {/* YouTube */}
-                                            <button type="button" onClick={() => setSmmPlatform('youtube')} disabled={!smmSelectedAssetId}
-                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'youtube' ? 'border-red-500 bg-red-50 shadow-md' : 'border-slate-200 bg-white hover:border-red-300'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                            <button type="button" onClick={() => setSmmPlatform('youtube')}
+                                                className={`p-3 rounded-lg border-2 transition-all text-center ${smmPlatform === 'youtube' ? 'border-red-500 bg-red-50 shadow-md' : 'border-slate-200 bg-white hover:border-red-300'}`}>
                                                 <svg className="w-5 h-5 text-red-600 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                                                 </svg>
@@ -1645,13 +1637,12 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 </div>
 
                                 {/* STEP 5: Designer & Workflow Assignment */}
-                                <div className={`bg-green-50 rounded-xl p-4 border border-green-100 ${!smmSelectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-green-50 rounded-xl p-4 border border-green-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${smmSelectedAssetId ? 'bg-green-500' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-green-500">
                                             <span className="text-white text-xs font-bold">5</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-green-700">Designer & Workflow Assignment</h4>
-                                        {!smmSelectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
@@ -1662,8 +1653,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="flex items-center gap-1 text-xs font-medium text-slate-600 mb-1">
                                                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Designed By *
                                             </label>
-                                            <select value={smmDesignedBy || ''} onChange={e => setSmmDesignedBy(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId}
-                                                className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmDesignedBy || ''} onChange={e => setSmmDesignedBy(e.target.value ? Number(e.target.value) : null)}
+                                                className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select designer...</option>
                                                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
@@ -1672,8 +1663,8 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="flex items-center gap-1 text-xs font-medium text-slate-600 mb-1">
                                                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Verified By *
                                             </label>
-                                            <select value={smmVerifiedBy || ''} onChange={e => setSmmVerifiedBy(e.target.value ? Number(e.target.value) : null)} disabled={!smmSelectedAssetId}
-                                                className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                            <select value={smmVerifiedBy || ''} onChange={e => setSmmVerifiedBy(e.target.value ? Number(e.target.value) : null)}
+                                                className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select verifier...</option>
                                                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
@@ -1683,13 +1674,12 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                 </div>
 
                                 {/* STEP 6: Versioning Control */}
-                                <div className={`bg-slate-50 rounded-xl p-4 border border-slate-200 ${!smmSelectedAssetId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${smmSelectedAssetId ? 'bg-slate-600' : 'bg-slate-400'}`}>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-slate-600">
                                             <span className="text-white text-xs font-bold">6</span>
                                         </div>
                                         <h4 className="text-sm font-bold text-slate-700">Versioning Control</h4>
-                                        {!smmSelectedAssetId && <span className="text-xs text-slate-400">(Select Asset ID first)</span>}
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div>
@@ -1699,13 +1689,13 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             </div>
                                         </div>
                                         <div className="flex gap-2 pt-5">
-                                            <button disabled={!smmSelectedAssetId} className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 flex items-center gap-1.5 bg-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <button className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 flex items-center gap-1.5 bg-white">
                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                                 View History
                                             </button>
-                                            <button disabled={!smmSelectedAssetId} className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 flex items-center gap-1.5 bg-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <button className="h-9 px-3 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 flex items-center gap-1.5 bg-white">
                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                 </svg>
