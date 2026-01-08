@@ -30,42 +30,43 @@ export const getProjectById = async (req: any, res: any) => {
 
 // Create new project
 export const createProject = async (req: any, res: any) => {
-    const { 
-        brand_id, 
-        project_name, 
-        project_type, 
-        project_status, 
-        project_owner_id, 
-        project_start_date, 
-        project_end_date,
-        objective,
-        linked_services
+    const {
+        project_name,
+        project_code,
+        description,
+        status,
+        start_date,
+        end_date,
+        budget,
+        owner_id
     } = req.body;
-    
+
     try {
         const query = `
             INSERT INTO projects (
-                brand_id, project_name, project_type, project_status, 
-                project_owner_id, project_start_date, project_end_date,
-                objective, linked_services, created_at, last_updated
+                project_name, project_code, description, status, 
+                start_date, end_date, budget, owner_id,
+                created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, datetime('now'), datetime('now'))
             RETURNING *;
         `;
-        // Ensure array is stringified for JSONB column if using Postgres JSON type, 
-        // or passed as array for TEXT[] array type. Assuming TEXT[] or JSONB.
-        // Using JSON.stringify for safety if column is JSON/TEXT
         const values = [
-            brand_id, project_name, project_type, project_status || 'planning', 
-            project_owner_id, project_start_date, project_end_date,
-            objective, JSON.stringify(linked_services || [])
+            project_name,
+            project_code || null,
+            description || null,
+            status || 'Active',
+            start_date || null,
+            end_date || null,
+            budget || null,
+            owner_id || null
         ];
-        
+
         const result = await pool.query(query, values);
         const newProject = result.rows[0];
-        
+
         getSocket().emit('project_created', newProject);
-        
+
         res.status(201).json(newProject);
     } catch (error: any) {
         console.error('Error creating project:', error);
@@ -76,11 +77,11 @@ export const createProject = async (req: any, res: any) => {
 // Update project
 export const updateProject = async (req: any, res: any) => {
     const { id } = req.params;
-    const { 
-        project_name, project_status, project_end_date, objective, 
-        linked_services, project_owner_id, project_start_date 
+    const {
+        project_name, project_status, project_end_date, objective,
+        linked_services, project_owner_id, project_start_date
     } = req.body;
-    
+
     try {
         const result = await pool.query(
             `UPDATE projects SET 
@@ -94,18 +95,18 @@ export const updateProject = async (req: any, res: any) => {
                 last_updated = NOW()
             WHERE id = $8 RETURNING *`,
             [
-                project_name, project_status, project_end_date, project_start_date, 
+                project_name, project_status, project_end_date, project_start_date,
                 objective, JSON.stringify(linked_services), project_owner_id, id
             ]
         );
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Project not found' });
         }
-        
+
         const updatedProject = result.rows[0];
         getSocket().emit('project_updated', updatedProject);
-        
+
         res.status(200).json(updatedProject);
     } catch (error: any) {
         res.status(500).json({ error: 'Update failed', details: error.message });
@@ -118,7 +119,7 @@ export const deleteProject = async (req: any, res: any) => {
     try {
         // Optional: Check for linked campaigns before delete
         // await pool.query('DELETE FROM campaigns WHERE project_id = $1', [id]);
-        
+
         await pool.query('DELETE FROM projects WHERE id = $1', [id]);
         getSocket().emit('project_deleted', { id });
         res.status(204).send();

@@ -51,7 +51,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: existingAssets = [] } = useData<AssetLibraryItem>('assetLibrary');
-    const { data: industrySectors = [] } = useData<any>('industry-sectors');
+    const { data: industrySectors = [] } = useData<any>('industrySectors');
 
     // SEO Asset specific master data (fetched from dedicated endpoints)
     const [backlinkDomains, setBacklinkDomains] = useState<Array<{ id: number; name: string; url: string; da: number }>>([]);
