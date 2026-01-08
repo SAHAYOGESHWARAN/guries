@@ -233,14 +233,14 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
     };
 
     return (
-        <div className="h-full flex flex-col bg-white">
+        <div className="h-full flex flex-col bg-white w-full">
             {/* Header */}
-            <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-xl font-semibold text-slate-800">SEO Assets</h1>
+            <div className="flex-shrink-0 border-b border-slate-200 px-4 py-3">
+                <div className="flex items-center justify-between mb-3">
+                    <h1 className="text-lg font-semibold text-slate-800">SEO Assets</h1>
                     <button
                         onClick={() => onNavigate?.('seo-asset-upload')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-1"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -250,53 +250,54 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                 </div>
 
                 {/* Toolbar */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <span>Showing {startIndex + 1} to {Math.min(startIndex + entriesPerPage, filteredAssets.length)} of {filteredAssets.length} entries</span>
-                        <span className="mx-2">Show</span>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <span>Show</span>
                         <select
                             value={entriesPerPage}
                             onChange={(e) => { setEntriesPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                            className="border border-slate-300 rounded px-2 py-1 text-sm"
+                            className="border border-slate-300 rounded px-2 py-1 text-xs"
                         >
                             <option value={10}>10</option>
                             <option value={15}>15</option>
                             <option value={25}>25</option>
                             <option value={50}>50</option>
-                            <option value={100}>All</option>
+                            <option value={100}>100</option>
                         </select>
                         <span>entries</span>
+                        <span className="text-slate-400 mx-2">|</span>
+                        <span>{filteredAssets.length} total</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">Search:</span>
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                            className="border border-slate-300 rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Search..."
+                            className="border border-slate-300 rounded px-2 py-1 text-xs w-40 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
 
                     <div className="flex items-center gap-1">
-                        <button onClick={copyToClipboard} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">Copy</button>
-                        <button onClick={exportCSV} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">CSV</button>
-                        <button onClick={exportCSV} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">Excel</button>
-                        <button onClick={printTable} className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50">Print</button>
+                        <button onClick={copyToClipboard} className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">Copy</button>
+                        <button onClick={exportCSV} className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">CSV</button>
+                        <button onClick={exportCSV} className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">Excel</button>
+                        <button onClick={printTable} className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">Print</button>
                         <div className="relative" ref={columnMenuRef}>
                             <button
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
-                                className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-1"
+                                className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50 flex items-center gap-1"
                             >
-                                Column visibility
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                Columns
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
                             {showColumnMenu && (
                                 <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded shadow-lg z-20 py-1 min-w-[150px]">
                                     {ALL_COLUMNS.filter(c => c.key !== 'select' && c.key !== 'actions').map(col => (
-                                        <label key={col.key} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 cursor-pointer text-sm">
+                                        <label key={col.key} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 cursor-pointer text-xs">
                                             <input
                                                 type="checkbox"
                                                 checked={visibleColumns.includes(col.key)}
@@ -313,37 +314,37 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                 </div>
             </div>
 
-            {/* Table */}
+            {/* Full Width Table */}
             <div className="flex-1 overflow-auto">
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
                     </div>
                 ) : (
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                    <table className="w-full text-xs border-collapse">
+                        <thead className="bg-slate-100 border-b border-slate-200 sticky top-0">
                             <tr>
                                 {visibleColumns.includes('select') && (
-                                    <th className="px-3 py-2 text-left w-10">
+                                    <th className="px-2 py-2 text-left w-8 border-r border-slate-200">
                                         <input
                                             type="checkbox"
                                             checked={selectedRows.length === paginatedAssets.length && paginatedAssets.length > 0}
                                             onChange={toggleAllRows}
-                                            className="rounded"
+                                            className="rounded w-3 h-3"
                                         />
                                     </th>
                                 )}
                                 {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key) && c.key !== 'select').map(col => (
                                     <th
                                         key={col.key}
-                                        className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                                        className="px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200 border-r border-slate-200 whitespace-nowrap"
                                         onClick={() => col.sortable && handleSort(col.key)}
                                     >
                                         <div className="flex items-center gap-1">
                                             {col.label}
                                             {col.sortable && (
-                                                <span className="text-slate-400">
-                                                    {sortBy === col.key ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                                                <span className="text-slate-400 text-[10px]">
+                                                    {sortBy === col.key ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
                                                 </span>
                                             )}
                                         </div>
@@ -354,90 +355,89 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                         <tbody className="divide-y divide-slate-100">
                             {paginatedAssets.length === 0 ? (
                                 <tr>
-                                    <td colSpan={visibleColumns.length} className="px-3 py-8 text-center text-slate-500">
+                                    <td colSpan={visibleColumns.length} className="px-2 py-8 text-center text-slate-500">
                                         No SEO assets found
                                     </td>
                                 </tr>
                             ) : (
-                                paginatedAssets.map((asset) => (
-                                    <tr key={asset.id} className="hover:bg-slate-50">
+                                paginatedAssets.map((asset, idx) => (
+                                    <tr key={asset.id} className={`hover:bg-blue-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                                         {visibleColumns.includes('select') && (
-                                            <td className="px-3 py-2">
+                                            <td className="px-2 py-1.5 border-r border-slate-100">
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedRows.includes(asset.id)}
                                                     onChange={() => toggleRowSelection(asset.id)}
-                                                    className="rounded"
+                                                    className="rounded w-3 h-3"
                                                 />
                                             </td>
                                         )}
                                         {visibleColumns.includes('name') && (
-                                            <td className="px-3 py-2">
+                                            <td className="px-2 py-1.5 border-r border-slate-100">
                                                 <a
                                                     href="#"
                                                     onClick={(e) => { e.preventDefault(); onNavigate?.('seo-asset-edit', asset.id); }}
-                                                    className="text-blue-600 hover:underline font-medium"
+                                                    className="text-blue-600 hover:underline font-medium truncate block max-w-[200px]"
+                                                    title={asset.name || asset.seo_title || 'Untitled'}
                                                 >
                                                     {asset.name || asset.seo_title || 'Untitled'}
                                                 </a>
                                             </td>
                                         )}
                                         {visibleColumns.includes('id') && (
-                                            <td className="px-3 py-2 text-slate-600">{asset.id}</td>
+                                            <td className="px-2 py-1.5 text-slate-600 border-r border-slate-100">{asset.id}</td>
                                         )}
                                         {visibleColumns.includes('asset_type') && (
-                                            <td className="px-3 py-2">
+                                            <td className="px-2 py-1.5 border-r border-slate-100">
                                                 {asset.asset_type && (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-xs">
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px]">
                                                         {asset.asset_type}
                                                     </span>
                                                 )}
                                             </td>
                                         )}
                                         {visibleColumns.includes('workflow_stage') && (
-                                            <td className="px-3 py-2 text-slate-600">{asset.workflow_stage || '-'}</td>
+                                            <td className="px-2 py-1.5 text-slate-600 border-r border-slate-100">{asset.workflow_stage || '-'}</td>
                                         )}
                                         {visibleColumns.includes('linked_project_id') && (
-                                            <td className="px-3 py-2 text-slate-600">{getProjectName(asset.linked_project_id)}</td>
+                                            <td className="px-2 py-1.5 text-slate-600 border-r border-slate-100">{getProjectName(asset.linked_project_id)}</td>
                                         )}
                                         {visibleColumns.includes('qc_status') && (
-                                            <td className="px-3 py-2">
+                                            <td className="px-2 py-1.5 border-r border-slate-100">
                                                 {asset.qc_status && (
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(asset.qc_status)}`}>
+                                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${getStatusBadge(asset.qc_status)}`}>
                                                         {asset.qc_status}
                                                     </span>
                                                 )}
                                             </td>
                                         )}
                                         {visibleColumns.includes('created_at') && (
-                                            <td className="px-3 py-2 text-slate-600">{formatDate(asset.created_at)}</td>
+                                            <td className="px-2 py-1.5 text-slate-600 border-r border-slate-100 whitespace-nowrap">{formatDate(asset.created_at)}</td>
                                         )}
                                         {visibleColumns.includes('updated_at') && (
-                                            <td className="px-3 py-2 text-slate-600">{formatDate(asset.updated_at)}</td>
+                                            <td className="px-2 py-1.5 text-slate-600 border-r border-slate-100 whitespace-nowrap">{formatDate(asset.updated_at)}</td>
                                         )}
                                         {visibleColumns.includes('status') && (
-                                            <td className="px-3 py-2 text-slate-600">{asset.status || '-'}</td>
+                                            <td className="px-2 py-1.5 text-slate-600 border-r border-slate-100">{asset.status || '-'}</td>
                                         )}
                                         {visibleColumns.includes('created_by') && (
-                                            <td className="px-3 py-2">
-                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-600 text-xs font-medium">
+                                            <td className="px-2 py-1.5 border-r border-slate-100">
+                                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-medium">
                                                     {getUserName(asset.created_by)?.charAt(0) || '?'}
                                                 </span>
                                             </td>
                                         )}
                                         {visibleColumns.includes('actions') && (
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => onNavigate?.('seo-asset-edit', asset.id)}
-                                                        className="p-1 text-slate-400 hover:text-blue-600"
-                                                        title="Edit"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
+                                            <td className="px-2 py-1.5">
+                                                <button
+                                                    onClick={() => onNavigate?.('seo-asset-edit', asset.id)}
+                                                    className="p-1 text-slate-400 hover:text-blue-600"
+                                                    title="Edit"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
                                             </td>
                                         )}
                                     </tr>
@@ -450,24 +450,24 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex-shrink-0 border-t border-slate-200 px-6 py-3 flex items-center justify-between">
-                    <div className="text-sm text-slate-600">
-                        Page {currentPage} of {totalPages}
+                <div className="flex-shrink-0 border-t border-slate-200 px-4 py-2 flex items-center justify-between bg-slate-50">
+                    <div className="text-xs text-slate-600">
+                        Showing {startIndex + 1}-{Math.min(startIndex + entriesPerPage, filteredAssets.length)} of {filteredAssets.length}
                     </div>
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => setCurrentPage(1)}
                             disabled={currentPage === 1}
-                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                            className="px-2 py-1 border border-slate-300 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white"
                         >
                             First
                         </button>
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                            className="px-2 py-1 border border-slate-300 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white"
                         >
-                            Previous
+                            Prev
                         </button>
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
@@ -476,7 +476,7 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                                 <button
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
-                                    className={`px-3 py-1 border rounded text-sm ${currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 hover:bg-slate-50'}`}
+                                    className={`px-2 py-1 border rounded text-xs ${currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 hover:bg-white'}`}
                                 >
                                     {page}
                                 </button>
@@ -485,14 +485,14 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                            className="px-2 py-1 border border-slate-300 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white"
                         >
                             Next
                         </button>
                         <button
                             onClick={() => setCurrentPage(totalPages)}
                             disabled={currentPage === totalPages}
-                            className="px-2 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                            className="px-2 py-1 border border-slate-300 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white"
                         >
                             Last
                         </button>

@@ -13,17 +13,18 @@ interface SeoAssetUploadViewProps {
     editAssetId?: number;
 }
 
-// QC Status Options with Display Mapping
-const QC_STATUS_OPTIONS = [
-    { value: 'Pass', label: 'Pass', displayStatus: 'Approved' },
-    { value: 'Fail', label: 'Fail', displayStatus: 'Rejected' },
-    { value: 'Waiting', label: 'Waiting', displayStatus: 'Pending' }
-];
-
-const QA_STATUS_OPTIONS = [
+// Self QC Status Options (User can update after adding domain)
+const SELF_QC_STATUS_OPTIONS = [
     { value: 'Pending', label: 'Pending' },
     { value: 'Approved', label: 'Approved' },
     { value: 'Rejected', label: 'Rejected' }
+];
+
+// QA Status Options (Verifier only - Pass/Fail)
+const QA_STATUS_OPTIONS = [
+    { value: '', label: 'Not Reviewed' },
+    { value: 'Pass', label: 'Pass' },
+    { value: 'Fail', label: 'Fail' }
 ];
 
 interface DomainDetails {
@@ -75,6 +76,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     // ========== STEP 1: Asset ID Selection ==========
     const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
     const [isAssetIdLocked, setIsAssetIdLocked] = useState(false);
+    const [isManualEntryMode, setIsManualEntryMode] = useState(false); // True when user skips Asset ID selection
 
     // ========== STEP 2: Map Asset to Source Work ==========
     const [linkedTaskId, setLinkedTaskId] = useState<number | null>(null);
@@ -101,9 +103,6 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     // ========== STEP 5: Keywords ==========
     const [primaryKeywordId, setPrimaryKeywordId] = useState<number | null>(null);
     const [lsiKeywordIds, setLsiKeywordIds] = useState<number[]>([]);
-    const [keywordSearch, setKeywordSearch] = useState('');
-    const [showKeywordDropdown, setShowKeywordDropdown] = useState(false);
-    const [showLsiDropdown, setShowLsiDropdown] = useState(false);
 
     // ========== STEP 6: Domain Type & Domain Addition ==========
     const [domainType, setDomainType] = useState('');
@@ -140,12 +139,16 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
     // UI State
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFetchingAsset, setIsFetchingAsset] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const currentUser = user || { id: 1, name: 'Current User' };
 
-    // Sections enabled state - all disabled until Asset ID is selected
-    const sectionsEnabled = selectedAssetId !== null;
+    // Sections are always enabled - Asset ID is optional
+    const sectionsEnabled = true;
+
+    // Linked fields are read-only when Asset ID is selected (not in manual entry mode)
+    const linkedFieldsReadOnly = isAssetIdLocked && !isManualEntryMode;
 
     // Filter sub-services based on selected service
     const filteredSubServices = useMemo(() =>
@@ -178,19 +181,12 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     // Check if Blog Posting type (for conditional content editor)
     const isBlogPosting = assetType.toLowerCase().includes('blog');
 
-    // Filtered keywords for search
-    const filteredKeywords = useMemo(() => {
-        if (!keywordSearch.trim()) return keywords.slice(0, 20);
-        return keywords.filter(k =>
-            k.keyword?.toLowerCase().includes(keywordSearch.toLowerCase())
-        ).slice(0, 20);
-    }, [keywords, keywordSearch]);
-
     // ========== Handle Asset ID Selection ==========
     const handleAssetIdSelect = async (assetId: number) => {
         if (assetId) {
             setSelectedAssetId(assetId);
             setIsAssetIdLocked(true);
+            setIsFetchingAsset(true);
 
             // Pre-fill data from selected asset - first try from local cache
             const asset = existingAssets.find(a => a.id === assetId);
@@ -205,26 +201,28 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                 setAssetType(asset.type || asset.asset_type || '');
                 setAssetCategory(asset.asset_category || '');
                 setSeoTitle(asset.name || asset.seo_title || '');
+            }
 
-                // Also fetch from API for complete data
-                try {
-                    const response = await fetch(`${apiUrl}/assetLibrary/${assetId}`);
-                    if (response.ok) {
-                        const fullAsset = await response.json();
-                        // Update with complete data from API
-                        setLinkedTaskId(fullAsset.linked_task_id || fullAsset.linked_task || asset.linked_task_id || null);
-                        setLinkedCampaignId(fullAsset.linked_campaign_id || asset.linked_campaign_id || null);
-                        setLinkedProjectId(fullAsset.linked_project_id || asset.linked_project_id || null);
-                        setLinkedServiceId(fullAsset.linked_service_id || (fullAsset.linked_service_ids && fullAsset.linked_service_ids[0]) || asset.linked_service_id || null);
-                        setLinkedSubServiceId(fullAsset.linked_sub_service_id || (fullAsset.linked_sub_service_ids && fullAsset.linked_sub_service_ids[0]) || asset.linked_sub_service_id || null);
-                        setLinkedRepositoryId(fullAsset.linked_repository_item_id || asset.linked_repository_item_id || null);
-                        if (fullAsset.type) setAssetType(fullAsset.type);
-                        if (fullAsset.asset_category) setAssetCategory(fullAsset.asset_category);
-                        if (fullAsset.name || fullAsset.seo_title) setSeoTitle(fullAsset.name || fullAsset.seo_title);
-                    }
-                } catch (err) {
-                    console.log('Using cached asset data');
+            // Also fetch from API for complete data
+            try {
+                const response = await fetch(`${apiUrl}/assetLibrary/${assetId}`);
+                if (response.ok) {
+                    const fullAsset = await response.json();
+                    // Update with complete data from API
+                    setLinkedTaskId(fullAsset.linked_task_id || fullAsset.linked_task || null);
+                    setLinkedCampaignId(fullAsset.linked_campaign_id || null);
+                    setLinkedProjectId(fullAsset.linked_project_id || null);
+                    setLinkedServiceId(fullAsset.linked_service_id || (fullAsset.linked_service_ids && fullAsset.linked_service_ids[0]) || null);
+                    setLinkedSubServiceId(fullAsset.linked_sub_service_id || (fullAsset.linked_sub_service_ids && fullAsset.linked_sub_service_ids[0]) || null);
+                    setLinkedRepositoryId(fullAsset.linked_repository_item_id || null);
+                    if (fullAsset.type || fullAsset.asset_type) setAssetType(fullAsset.type || fullAsset.asset_type);
+                    if (fullAsset.asset_category) setAssetCategory(fullAsset.asset_category);
+                    if (fullAsset.name || fullAsset.seo_title) setSeoTitle(fullAsset.name || fullAsset.seo_title);
                 }
+            } catch (err) {
+                console.log('Using cached asset data');
+            } finally {
+                setIsFetchingAsset(false);
             }
         }
     };
@@ -233,7 +231,22 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const handleChangeSelection = () => {
         setIsAssetIdLocked(false);
         setSelectedAssetId(null);
+        setIsManualEntryMode(false);
         // Reset linked fields to allow manual entry
+        setLinkedTaskId(null);
+        setLinkedCampaignId(null);
+        setLinkedProjectId(null);
+        setLinkedServiceId(null);
+        setLinkedSubServiceId(null);
+        setLinkedRepositoryId(null);
+    };
+
+    // Handle Skip Asset ID - Enable manual entry mode
+    const handleSkipAssetId = () => {
+        setIsManualEntryMode(true);
+        setSelectedAssetId(null);
+        setIsAssetIdLocked(false);
+        // Reset linked fields for fresh manual entry
         setLinkedTaskId(null);
         setLinkedCampaignId(null);
         setLinkedProjectId(null);
@@ -290,12 +303,18 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         }
     }, [editAssetId, apiUrl]);
 
-    // Calculate Approval Status automatically based on QC statuses
+    // Calculate Approval Status automatically based on Self QC and QA statuses
+    // Approved: Self QC = Approved AND QA = Pass
+    // Rejected: Self QC = Rejected OR QA = Fail
+    // Pending: All other cases (waiting for review)
     const calculateApprovalStatus = (selfQcStatus: string, qaStatus: string): string => {
         if (selfQcStatus === 'Approved' && qaStatus === 'Pass') return 'Approved';
         if (selfQcStatus === 'Rejected' || qaStatus === 'Fail') return 'Rejected';
         return 'Pending';
     };
+
+    // Check if current user is a verifier (can update QA Status)
+    const isVerifier = verifiedBy === currentUser.id;
 
     // ========== Domain Handlers ==========
     // Add domain from dropdown selection
@@ -401,7 +420,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!selectedAssetId) newErrors.assetId = 'Asset ID is required';
+        // Asset ID is optional - user can select or skip
+        // No validation for assetId - it's not mandatory
         if (!seoTitle.trim()) newErrors.seoTitle = 'Title is required';
         if (!metaTitle.trim()) newErrors.metaTitle = 'Meta Title is required';
         if (!description.trim()) newErrors.description = 'Description is required';
@@ -557,39 +577,51 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-4xl mx-auto space-y-6">
 
-                    {/* ========== STEP 1: Asset ID Selection ========== */}
+                    {/* ========== STEP 1: Asset ID Selection (Optional) ========== */}
                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">1</div>
                             <h3 className="text-base font-bold text-slate-800">Asset ID Selection</h3>
-                            <span className="text-xs text-rose-500 font-medium">* Required</span>
+                            <span className="text-xs text-blue-500 font-medium bg-blue-50 px-2 py-0.5 rounded">Optional</span>
                         </div>
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                Asset ID *
-                                <span className="text-xs text-slate-400">(Select from existing assets)</span>
+                                Asset ID
+                                <span className="text-xs text-slate-400">(Select to auto-fill linked details, or skip for manual entry)</span>
                             </label>
                             <select
                                 value={selectedAssetId || ''}
                                 onChange={(e) => handleAssetIdSelect(Number(e.target.value))}
-                                disabled={isAssetIdLocked}
-                                className={`w-full h-11 px-4 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'border-slate-200'} ${errors.assetId ? 'border-rose-500' : ''}`}
+                                disabled={isAssetIdLocked || isManualEntryMode}
+                                className={`w-full h-11 px-4 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all ${(isAssetIdLocked || isManualEntryMode) ? 'bg-slate-100 cursor-not-allowed' : 'border-slate-200'}`}
                             >
-                                <option value="">Select Asset ID...</option>
+                                <option value="">Select Asset ID (Optional)...</option>
                                 {existingAssets.map(asset => (
                                     <option key={asset.id} value={asset.id}>
                                         {String(asset.id).padStart(4, '0')} - {asset.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.assetId && <p className="text-xs text-rose-500 mt-1">{errors.assetId}</p>}
-                            {isAssetIdLocked && (
+
+                            {/* Loading State */}
+                            {isFetchingAsset && (
+                                <div className="flex items-center gap-2 mt-2">
+                                    <svg className="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p className="text-xs text-blue-600">Fetching linked details...</p>
+                                </div>
+                            )}
+
+                            {/* Asset ID Locked State */}
+                            {isAssetIdLocked && !isManualEntryMode && !isFetchingAsset && (
                                 <div className="flex items-center justify-between mt-2">
                                     <p className="text-xs text-green-600 flex items-center gap-1">
                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
-                                        Asset ID locked. All sections are now enabled.
+                                        Asset ID selected. Linked details auto-filled from asset.
                                     </p>
                                     <button
                                         type="button"
@@ -597,6 +629,39 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         className="text-xs text-blue-600 hover:text-blue-800 underline"
                                     >
                                         Change Selection
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Manual Entry Mode State */}
+                            {isManualEntryMode && (
+                                <div className="flex items-center justify-between mt-2">
+                                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Manual entry mode. Enter all details manually.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleChangeSelection}
+                                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                    >
+                                        Select Asset ID Instead
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Skip Option - Only show when not locked and not in manual mode */}
+                            {!isAssetIdLocked && !isManualEntryMode && (
+                                <div className="flex items-center justify-between mt-2">
+                                    <p className="text-xs text-slate-500">Select an existing asset to auto-fill linked details, or skip to enter manually</p>
+                                    <button
+                                        type="button"
+                                        onClick={handleSkipAssetId}
+                                        className="text-xs text-amber-600 hover:text-amber-800 underline"
+                                    >
+                                        Skip & Enter Manually
                                     </button>
                                 </div>
                             )}
@@ -608,56 +673,131 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">2</div>
                             <h3 className="text-base font-bold text-slate-800">Map Assets to Source Work</h3>
+                            {isFetchingAsset && (
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded flex items-center gap-1">
+                                    <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Loading...
+                                </span>
+                            )}
+                            {linkedFieldsReadOnly && !isFetchingAsset && (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">Auto-filled from Asset</span>
+                            )}
+                            {isManualEntryMode && (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">Manual Entry</span>
+                            )}
                         </div>
-                        <p className="text-sm text-blue-600 mb-4 ml-11">Link the selected Asset ID to its originating work/source</p>
+                        <p className="text-sm text-blue-600 mb-4 ml-11">
+                            {isFetchingAsset
+                                ? 'Fetching linked details from asset...'
+                                : linkedFieldsReadOnly
+                                    ? 'Linked details fetched from selected Asset ID (read-only)'
+                                    : 'Link the selected Asset ID to its originating work/source'}
+                        </p>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Task</label>
-                                <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                    <option value="">Select Task...</option>
-                                    {tasks.map(task => <option key={task.id} value={task.id}>{(task as any).task_name || task.name}</option>)}
-                                </select>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    Linked Task
+                                    {linkedFieldsReadOnly && linkedTaskId && <span className="text-green-500 ml-1">✓</span>}
+                                </label>
+                                {linkedFieldsReadOnly ? (
+                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        {isFetchingAsset ? <span className="text-slate-400">Loading...</span> : linkedTaskId ? (tasks.find(t => t.id === linkedTaskId) as any)?.task_name || tasks.find(t => t.id === linkedTaskId)?.name || `Task #${linkedTaskId}` : <span className="text-slate-400">Not linked</span>}
+                                    </div>
+                                ) : (
+                                    <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select Task...</option>
+                                        {tasks.map(task => <option key={task.id} value={task.id}>{(task as any).task_name || task.name}</option>)}
+                                    </select>
+                                )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Campaign</label>
-                                <select value={linkedCampaignId || ''} onChange={(e) => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                    <option value="">Select Campaign...</option>
-                                    {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name}</option>)}
-                                </select>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    Linked Campaign
+                                    {linkedFieldsReadOnly && linkedCampaignId && <span className="text-green-500 ml-1">✓</span>}
+                                </label>
+                                {linkedFieldsReadOnly ? (
+                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        {linkedCampaignId ? campaigns.find(c => c.id === linkedCampaignId)?.campaign_name || `Campaign #${linkedCampaignId}` : <span className="text-slate-400">Not linked</span>}
+                                    </div>
+                                ) : (
+                                    <select value={linkedCampaignId || ''} onChange={(e) => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select Campaign...</option>
+                                        {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name}</option>)}
+                                    </select>
+                                )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Project</label>
-                                <select value={linkedProjectId || ''} onChange={(e) => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                    <option value="">Select Project...</option>
-                                    {projects.map(p => <option key={p.id} value={p.id}>{p.project_name}</option>)}
-                                </select>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    Linked Project
+                                    {linkedFieldsReadOnly && linkedProjectId && <span className="text-green-500 ml-1">✓</span>}
+                                </label>
+                                {linkedFieldsReadOnly ? (
+                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        {linkedProjectId ? projects.find(p => p.id === linkedProjectId)?.project_name || `Project #${linkedProjectId}` : <span className="text-slate-400">Not linked</span>}
+                                    </div>
+                                ) : (
+                                    <select value={linkedProjectId || ''} onChange={(e) => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select Project...</option>
+                                        {projects.map(p => <option key={p.id} value={p.id}>{p.project_name}</option>)}
+                                    </select>
+                                )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Service</label>
-                                <select value={linkedServiceId || ''} onChange={(e) => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                    <option value="">Select Service...</option>
-                                    {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
-                                </select>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    Linked Service
+                                    {linkedFieldsReadOnly && linkedServiceId && <span className="text-green-500 ml-1">✓</span>}
+                                </label>
+                                {linkedFieldsReadOnly ? (
+                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        {linkedServiceId ? services.find(s => s.id === linkedServiceId)?.service_name || `Service #${linkedServiceId}` : <span className="text-slate-400">Not linked</span>}
+                                    </div>
+                                ) : (
+                                    <select value={linkedServiceId || ''} onChange={(e) => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={!sectionsEnabled}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select Service...</option>
+                                        {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
+                                    </select>
+                                )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Sub-Service</label>
-                                <select value={linkedSubServiceId || ''} onChange={(e) => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled || !linkedServiceId}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                    <option value="">{linkedServiceId ? 'Select Sub-Service...' : 'Select a service first'}</option>
-                                    {filteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
-                                </select>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    Linked Sub-Service
+                                    {linkedFieldsReadOnly && linkedSubServiceId && <span className="text-green-500 ml-1">✓</span>}
+                                </label>
+                                {linkedFieldsReadOnly ? (
+                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        {linkedSubServiceId ? subServices.find(ss => ss.id === linkedSubServiceId)?.sub_service_name || `Sub-Service #${linkedSubServiceId}` : <span className="text-slate-400">Not linked</span>}
+                                    </div>
+                                ) : (
+                                    <select value={linkedSubServiceId || ''} onChange={(e) => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled || !linkedServiceId}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">{linkedServiceId ? 'Select Sub-Service...' : 'Select a service first'}</option>
+                                        {filteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
+                                    </select>
+                                )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Linked Repository Item</label>
-                                <select value={linkedRepositoryId || ''} onChange={(e) => setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                    <option value="">Select Repository Item...</option>
-                                    {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.content_title_clean || `Item #${r.id}`}</option>)}
-                                </select>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">
+                                    Linked Repository Item
+                                    {linkedFieldsReadOnly && linkedRepositoryId && <span className="text-green-500 ml-1">✓</span>}
+                                </label>
+                                {linkedFieldsReadOnly ? (
+                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
+                                        {linkedRepositoryId ? repositoryItems.find(r => r.id === linkedRepositoryId)?.content_title_clean || `Repository #${linkedRepositoryId}` : <span className="text-slate-400">Not linked</span>}
+                                    </div>
+                                ) : (
+                                    <select value={linkedRepositoryId || ''} onChange={(e) => setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select Repository Item...</option>
+                                        {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.content_title_clean || `Item #${r.id}`}</option>)}
+                                    </select>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -797,14 +937,16 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 >
                                     <option value="">Select from Keyword Master...</option>
                                     {keywords.map(kw => (
-                                        <option key={kw.id} value={kw.id}>{kw.keyword}</option>
+                                        <option key={kw.id} value={kw.id}>
+                                            {kw.keyword}{kw.keyword_type ? ` (${kw.keyword_type})` : ''}{kw.search_volume ? ` - Vol: ${kw.search_volume.toLocaleString()}` : ''}
+                                        </option>
                                     ))}
                                 </select>
                                 <p className="text-xs text-slate-400 mt-1">No manual entry - select from master only</p>
                                 {errors.primaryKeyword && <p className="text-xs text-rose-500 mt-1">{errors.primaryKeyword}</p>}
                             </div>
 
-                            {/* LSI Keywords - Dropdown from Keyword Master */}
+                            {/* LSI Keywords - Multi-select Dropdown from Keyword Master */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">
                                     LSI Keywords <span className="text-slate-400 text-xs">(Optional)</span>
@@ -817,6 +959,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                             return kw ? (
                                                 <span key={id} className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
                                                     {kw.keyword}
+                                                    {kw.keyword_type && <span className="text-purple-400">({kw.keyword_type})</span>}
                                                     <button type="button" onClick={() => toggleLsiKeyword(id)}
                                                         className="w-4 h-4 flex items-center justify-center hover:bg-purple-200 rounded-full">×</button>
                                                 </span>
@@ -824,7 +967,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         })}
                                     </div>
                                 )}
-                                {/* Dropdown to add LSI Keywords */}
+                                {/* Dropdown to add LSI Keywords from Keyword Master */}
                                 <select
                                     value=""
                                     onChange={(e) => {
@@ -836,14 +979,17 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     disabled={!sectionsEnabled}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50"
                                 >
-                                    <option value="">Add LSI keyword...</option>
+                                    <option value="">Add LSI keyword from master...</option>
                                     {keywords
                                         .filter(kw => kw.id !== primaryKeywordId && !lsiKeywordIds.includes(kw.id))
                                         .map(kw => (
-                                            <option key={kw.id} value={kw.id}>{kw.keyword}</option>
+                                            <option key={kw.id} value={kw.id}>
+                                                {kw.keyword}{kw.keyword_type ? ` (${kw.keyword_type})` : ''}{kw.search_volume ? ` - Vol: ${kw.search_volume.toLocaleString()}` : ''}
+                                            </option>
                                         ))
                                     }
                                 </select>
+                                <p className="text-xs text-slate-400 mt-1">Select from Keyword Master only - no manual entry</p>
                             </div>
                         </div>
                     </div>
@@ -858,8 +1004,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                         <div className="space-y-4">
                             {/* Domain Type & Add Domain - Same Row */}
-                            <div className="flex items-end gap-4">
-                                <div className="flex-1">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
                                     <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
                                     <select value={domainType} onChange={(e) => setDomainType(e.target.value)} disabled={!sectionsEnabled}
                                         className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
@@ -869,45 +1015,46 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         ))}
                                     </select>
                                 </div>
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowDomainDropdown(!showDomainDropdown)}
-                                        disabled={!sectionsEnabled}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-50 transition-all"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Domain
-                                    </button>
-
-                                    {/* Domain Selection Dropdown */}
-                                    {showDomainDropdown && sectionsEnabled && (
-                                        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto">
-                                            <div className="p-2 border-b border-slate-100">
-                                                <p className="text-xs text-slate-500 font-medium">Select from Backlink Master</p>
-                                            </div>
-                                            {backlinkDomains.length > 0 ? backlinkDomains.filter(b => !selectedDomains.some(d => d.domain_name === b.name)).map(b => (
-                                                <button
-                                                    key={b.id}
-                                                    onClick={() => handleAddDomainFromDropdown(b.name)}
-                                                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center justify-between border-b border-slate-50 last:border-0"
-                                                >
-                                                    <span className="font-medium text-slate-700">{b.name}</span>
-                                                    <span className="text-xs text-slate-400">DA: {b.da || 'N/A'}</span>
-                                                </button>
-                                            )) : (
-                                                <p className="px-3 py-4 text-sm text-slate-400 text-center">No domains in Backlink Master</p>
-                                            )}
-                                        </div>
-                                    )}
+                                {/* Domain Selection Dropdown + Add Button */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-2">Select Domain <span className="text-slate-400 text-xs">(From Backlink Master)</span></label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={selectedDomainToAdd}
+                                            onChange={(e) => setSelectedDomainToAdd(e.target.value)}
+                                            disabled={!sectionsEnabled}
+                                            className="flex-1 h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50"
+                                        >
+                                            <option value="">Select domain...</option>
+                                            {backlinkDomains
+                                                .filter(b => !selectedDomains.some(d => d.domain_name === b.name))
+                                                .map(b => (
+                                                    <option key={b.id} value={b.name}>{b.name} (DA: {b.da || 'N/A'})</option>
+                                                ))
+                                            }
+                                        </select>
+                                        <button
+                                            onClick={() => {
+                                                if (selectedDomainToAdd) {
+                                                    handleAddDomainFromDropdown(selectedDomainToAdd);
+                                                }
+                                            }}
+                                            disabled={!sectionsEnabled || !selectedDomainToAdd}
+                                            className="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                            title="Add Domain"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Added Domains List */}
                             {selectedDomains.length > 0 && (
                                 <div className="mt-4">
-                                    <p className="text-xs text-slate-500 mb-2">Click on a domain to enter URL Posted</p>
+                                    <p className="text-xs text-slate-500 mb-2">Click on a domain to enter URL Posted and update QC status</p>
                                     <div className="space-y-2">
                                         {selectedDomains.map((domain, idx) => (
                                             <div key={idx} onClick={() => handleDomainClick(idx)}
@@ -920,12 +1067,33 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium text-slate-700">{domain.domain_name}</p>
-                                                        <p className="text-xs text-slate-400">{domain.url_posted || 'Click to add URL Posted'}</p>
+                                                        <p className="text-xs text-slate-400">
+                                                            {domain.url_posted ? (
+                                                                <span className="text-blue-500 truncate max-w-[200px] inline-block">{domain.url_posted}</span>
+                                                            ) : (
+                                                                <span className="text-amber-500">Click to add URL Posted</span>
+                                                            )}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
+                                                    {/* Self QC Status Badge */}
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${domain.seo_self_qc_status === 'Approved' ? 'bg-green-100 text-green-700' :
+                                                        domain.seo_self_qc_status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
+                                                            'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        Self: {domain.seo_self_qc_status || 'Pending'}
+                                                    </span>
+                                                    {/* QA Status Badge */}
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${domain.qa_status === 'Pass' ? 'bg-green-100 text-green-700' :
+                                                        domain.qa_status === 'Fail' ? 'bg-rose-100 text-rose-700' :
+                                                            'bg-slate-100 text-slate-500'
+                                                        }`}>
+                                                        QA: {domain.qa_status || 'Pending'}
+                                                    </span>
+                                                    {/* Final Approval Status */}
                                                     {domain.url_posted && (
-                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadgeColor(domain.approval_status || 'Pending')}`}>
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusBadgeColor(domain.approval_status || 'Pending')}`}>
                                                             {domain.approval_status || 'Pending'}
                                                         </span>
                                                     )}
@@ -948,143 +1116,174 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     <svg className="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                                     </svg>
-                                    <p className="text-sm text-slate-400">No domains added yet. Click "Add Domain" to select from Backlink Master.</p>
+                                    <p className="text-sm text-slate-400">No domains added yet. Select a domain and click (+) to add.</p>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </div >
 
 
-                    {/* ========== STEP 7: Domain Details Popup (URL Posted) ========== */}
-                    {showDomainPopup && editingDomainIndex !== null && (
-                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl">
-                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 rounded-t-2xl">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                                </svg>
+                    {/* ========== STEP 7: Domain Details Popup (URL Posted & QC Status) ========== */}
+                    {
+                        showDomainPopup && editingDomainIndex !== null && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl">
+                                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 rounded-t-2xl">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                    </svg>
+                                                </div>
+                                                <h3 className="text-white font-bold">Domain Details</h3>
                                             </div>
-                                            <h3 className="text-white font-bold">Enter URL Posted</h3>
-                                        </div>
-                                        <button onClick={() => setShowDomainPopup(false)} className="text-white/80 hover:text-white">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="p-6 space-y-4">
-                                    {/* Domain Name - Display Only */}
-                                    <div>
-                                        <label className="text-sm font-medium text-slate-600 mb-2 flex items-center gap-2">
-                                            Domain Name
-                                            <span className="text-xs text-slate-400">(From Backlink Master)</span>
-                                        </label>
-                                        <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700 font-medium">
-                                            {domainPopupData.domain_name}
+                                            <button onClick={() => setShowDomainPopup(false)} className="text-white/80 hover:text-white">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </div>
-
-                                    {/* URL Posted - User Input */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">URL Posted</label>
-                                        <input
-                                            type="url"
-                                            value={domainPopupData.url_posted}
-                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
-                                            placeholder="https://..."
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                                        />
-                                    </div>
-
-                                    {/* SEO Self QC Status - User can update */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">SEO Self QC Status</label>
-                                        <select
-                                            value={domainPopupData.seo_self_qc_status}
-                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                                        >
-                                            <option value="Pending">Pending</option>
-                                            <option value="Approved">Approved</option>
-                                            <option value="Rejected">Rejected</option>
-                                        </select>
-                                    </div>
-
-                                    {/* QA Status - Only for Verifier */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">
-                                            QA Status
-                                            <span className="text-xs text-slate-400 ml-2">(Verifier Only)</span>
-                                        </label>
-                                        <select
-                                            value={domainPopupData.qa_status}
-                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
-                                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                                        >
-                                            <option value="">Select...</option>
-                                            <option value="Pass">Pass</option>
-                                            <option value="Fail">Fail</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Approval Status (Auto-calculated) */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-600 mb-2">Approval Status (Auto)</label>
-                                        <div className={`w-full h-10 px-3 flex items-center rounded-xl text-sm font-medium ${calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Approved'
-                                            ? 'bg-green-100 text-green-700'
-                                            : calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Rejected'
-                                                ? 'bg-rose-100 text-rose-700'
-                                                : 'bg-amber-100 text-amber-700'
-                                            }`}>
-                                            {calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status)}
+                                    <div className="p-6 space-y-4">
+                                        {/* Domain Name - Display Only */}
+                                        <div>
+                                            <label className="text-sm font-medium text-slate-600 mb-2 flex items-center gap-2">
+                                                Domain Name
+                                                <span className="text-xs text-slate-400">(From Backlink Master)</span>
+                                            </label>
+                                            <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700 font-medium">
+                                                {domainPopupData.domain_name}
+                                            </div>
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-1">Auto-calculated: Approved when Self QC = Approved AND QA = Pass</p>
+
+                                        {/* URL Posted - User Input */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-600 mb-2">
+                                                URL Posted
+                                                <span className="text-xs text-slate-400 ml-2">(Paste the posted URL)</span>
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={domainPopupData.url_posted}
+                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
+                                                placeholder="https://example.com/your-posted-article"
+                                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                            />
+                                        </div>
+
+                                        {/* Divider */}
+                                        <div className="border-t border-slate-200 pt-4">
+                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">QC Status Section</p>
+                                        </div>
+
+                                        {/* Self QC Status - User can update (Approved/Pending/Rejected) */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-600 mb-2">
+                                                Self QC Status
+                                                <span className="text-xs text-green-600 ml-2 bg-green-50 px-2 py-0.5 rounded">(You can update)</span>
+                                            </label>
+                                            <select
+                                                value={domainPopupData.seo_self_qc_status}
+                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
+                                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                            >
+                                                {SELF_QC_STATUS_OPTIONS.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                            <p className="text-xs text-slate-400 mt-1">Set your self-review status: Approved, Pending, or Rejected</p>
+                                        </div>
+
+                                        {/* QA Status - Verifier Only (Pass/Fail) */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-600 mb-2">
+                                                QA Status
+                                                <span className="text-xs text-amber-600 ml-2 bg-amber-50 px-2 py-0.5 rounded">(Verifier Only - Pass/Fail)</span>
+                                            </label>
+                                            <select
+                                                value={domainPopupData.qa_status}
+                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
+                                                disabled={!isVerifier}
+                                                className={`w-full h-10 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ${!isVerifier ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'bg-slate-50'}`}
+                                            >
+                                                {QA_STATUS_OPTIONS.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                            {!isVerifier && (
+                                                <p className="text-xs text-amber-500 mt-1">Only the assigned verifier can update QA Status</p>
+                                            )}
+                                            {isVerifier && (
+                                                <p className="text-xs text-green-500 mt-1">You are the verifier - you can update QA Status</p>
+                                            )}
+                                        </div>
+
+                                        {/* Approval Status (Auto-calculated) */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-600 mb-2">
+                                                Final Approval Status
+                                                <span className="text-xs text-slate-400 ml-2">(Auto-calculated)</span>
+                                            </label>
+                                            <div className={`w-full h-10 px-3 flex items-center rounded-xl text-sm font-medium ${calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Approved'
+                                                ? 'bg-green-100 text-green-700 border border-green-200'
+                                                : calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Rejected'
+                                                    ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                                    : 'bg-amber-100 text-amber-700 border border-amber-200'
+                                                }`}>
+                                                {calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status)}
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-1">
+                                                <span className="text-green-600">Approved</span> = Self QC Approved + QA Pass |
+                                                <span className="text-rose-600 ml-1">Rejected</span> = Self QC Rejected OR QA Fail
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
-                                    <button onClick={() => setShowDomainPopup(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
-                                    <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600">Update Domain</button>
+                                    <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
+                                        <button onClick={() => setShowDomainPopup(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
+                                        <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Save Changes</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
 
                     {/* ========== STEP 8: Blog Posting - Content Editor (Conditional) ========== */}
-                    {isBlogPosting && sectionsEnabled && (
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
-                                <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
-                                <span className="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">Conditional: Asset Type = Blog Posting</span>
+                    {
+                        isBlogPosting && sectionsEnabled && (
+                            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
+                                    <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
+                                    <span className="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">Conditional: Asset Type = Blog Posting</span>
+                                </div>
+                                <p className="text-xs text-slate-500 mb-4">Rich text editor with headings, formatting, links, and paragraphs support</p>
+                                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                    <MarkdownEditor
+                                        value={blogContent}
+                                        onChange={setBlogContent}
+                                        placeholder="Write your blog content here with full formatting support..."
+                                    />
+                                </div>
+                                <p className="text-xs text-slate-400 mt-2">Word count: {blogContent.split(/\s+/).filter(Boolean).length} words</p>
                             </div>
-                            <p className="text-xs text-slate-500 mb-4">Rich text editor with headings, formatting, links, and paragraphs support</p>
-                            <div className="border border-slate-200 rounded-xl overflow-hidden">
-                                <MarkdownEditor
-                                    value={blogContent}
-                                    onChange={setBlogContent}
-                                    placeholder="Write your blog content here with full formatting support..."
-                                />
-                            </div>
-                            <p className="text-xs text-slate-400 mt-2">Word count: {blogContent.split(/\s+/).filter(Boolean).length} words</p>
-                        </div>
-                    )}
+                        )
+                    }
 
                     {/* Show placeholder when not Blog Posting */}
-                    {!isBlogPosting && sectionsEnabled && (
-                        <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${disabledSectionClass}`}>
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
-                                <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
-                                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Hidden: Asset Type ≠ Blog Posting</span>
+                    {
+                        !isBlogPosting && sectionsEnabled && (
+                            <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${disabledSectionClass}`}>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
+                                    <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
+                                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Hidden: Asset Type ≠ Blog Posting</span>
+                                </div>
+                                <p className="text-sm text-slate-400 text-center py-4">Content editor is only visible when Asset Type = Blog Posting</p>
                             </div>
-                            <p className="text-sm text-slate-400 text-center py-4">Content editor is only visible when Asset Type = Blog Posting</p>
-                        </div>
-                    )}
+                        )
+                    }
 
                     {/* ========== STEP 9: Resource File Upload ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
@@ -1269,9 +1468,9 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                     </div>
 
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 };
 

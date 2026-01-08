@@ -152,22 +152,25 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
     const domainTypes = seoAssetDomainTypes;
 
 
-    // Enable sections based on Asset ID selection
+    // All sections are always enabled - Asset ID is optional
     useEffect(() => {
+        // Enable all sections by default
+        setSectionsEnabled({
+            mapSource: true,
+            classification: true,
+            seoMetadata: true,
+            keywords: true,
+            domains: true,
+            blogContent: true,
+            resourceUpload: true,
+            workflow: true,
+            versioning: true,
+            actions: true
+        });
+
+        // If Asset ID is selected, lock it and auto-fill linked details
         if (selectedAssetId) {
             setIsAssetIdLocked(true);
-            setSectionsEnabled({
-                mapSource: true,
-                classification: true,
-                seoMetadata: true,
-                keywords: true,
-                domains: true,
-                blogContent: true,
-                resourceUpload: true,
-                workflow: true,
-                versioning: true,
-                actions: true
-            });
         }
     }, [selectedAssetId]);
 
@@ -365,7 +368,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!selectedAssetId) newErrors.assetId = 'Asset ID is required';
+        // Asset ID is optional - no validation required
         if (!seoTitle.trim()) newErrors.seoTitle = 'Title is required';
         if (!metaTitle.trim()) newErrors.metaTitle = 'Meta Title is required';
         if (!description.trim()) newErrors.description = 'Description is required';
@@ -559,40 +562,38 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-4xl mx-auto space-y-6">
 
-                    {/* ========== SECTION 1: Asset ID Selection ========== */}
+                    {/* ========== SECTION 1: Asset ID Selection (Optional) ========== */}
                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">1</div>
                             <h3 className="text-base font-bold text-slate-800">Asset ID Selection</h3>
-                            <span className="text-xs text-rose-500 font-medium">* Required</span>
+                            <span className="text-xs text-blue-500 font-medium bg-blue-50 px-2 py-0.5 rounded">Optional</span>
                         </div>
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                Asset ID *
-                                <span className="text-xs text-slate-400">(Select from existing assets)</span>
+                                Asset ID
+                                <span className="text-xs text-slate-400">(Select to auto-fill linked details, or skip for manual entry)</span>
                             </label>
                             <select
                                 value={selectedAssetId || ''}
                                 onChange={(e) => handleAssetIdSelect(Number(e.target.value))}
                                 disabled={isAssetIdLocked}
-                                className={`w-full h-11 px-4 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'border-slate-200'
-                                    } ${errors.assetId ? 'border-rose-500' : ''}`}
+                                className={`w-full h-11 px-4 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'border-slate-200'}`}
                             >
-                                <option value="">Select Asset ID...</option>
+                                <option value="">Select Asset ID (Optional)...</option>
                                 {existingAssets.map(asset => (
                                     <option key={asset.id} value={asset.id}>
                                         {String(asset.id).padStart(4, '0')} - {asset.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.assetId && <p className="text-xs text-rose-500 mt-1">{errors.assetId}</p>}
                             {isAssetIdLocked && (
                                 <div className="flex items-center justify-between mt-2">
                                     <p className="text-xs text-green-600 flex items-center gap-1">
                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
-                                        Asset ID locked. All sections are now enabled.
+                                        Asset ID selected. Linked details auto-filled from asset.
                                     </p>
                                     <button
                                         type="button"
@@ -602,6 +603,9 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                         Change Selection
                                     </button>
                                 </div>
+                            )}
+                            {!isAssetIdLocked && (
+                                <p className="text-xs text-slate-500 mt-2">Select an existing asset to auto-fill linked details, or skip to enter manually</p>
                             )}
                         </div>
                     </div>

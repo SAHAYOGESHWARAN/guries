@@ -104,6 +104,7 @@ export const createSeoAsset = async (req: Request, res: Response) => {
 
         // Step 3: Asset Classification
         asset_type,
+        asset_category,
         sector_id,
         industry_id,
 
@@ -164,7 +165,7 @@ export const createSeoAsset = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `INSERT INTO assets (
-                asset_name, asset_type, application_type, status, workflow_stage,
+                asset_name, asset_type, asset_category, application_type, status, workflow_stage,
                 linked_task_id, linked_campaign_id, linked_project_id,
                 linked_service_id, linked_sub_service_id, linked_repository_item_id,
                 seo_title, seo_meta_title, seo_description, seo_service_url, seo_blog_url,
@@ -174,11 +175,12 @@ export const createSeoAsset = async (req: Request, res: Response) => {
                 resource_files, assigned_team_members,
                 created_by, verified_by, version_number, version_history, workflow_log,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
             RETURNING *`,
             [
                 name || seo_title,
                 asset_type || null,
+                asset_category || null,
                 'seo',
                 status || 'Draft',
                 'Add',
@@ -237,6 +239,7 @@ export const updateSeoAsset = async (req: Request, res: Response) => {
 
         // Step 3: Asset Classification
         asset_type,
+        asset_category,
         sector_id,
         industry_id,
 
@@ -309,40 +312,42 @@ export const updateSeoAsset = async (req: Request, res: Response) => {
             `UPDATE assets SET
                 asset_name = COALESCE($1, asset_name),
                 asset_type = COALESCE($2, asset_type),
-                linked_task_id = COALESCE($3, linked_task_id),
-                linked_campaign_id = COALESCE($4, linked_campaign_id),
-                linked_project_id = COALESCE($5, linked_project_id),
-                linked_service_id = COALESCE($6, linked_service_id),
-                linked_sub_service_id = COALESCE($7, linked_sub_service_id),
-                linked_repository_item_id = COALESCE($8, linked_repository_item_id),
-                seo_title = COALESCE($9, seo_title),
-                seo_meta_title = COALESCE($10, seo_meta_title),
-                seo_description = COALESCE($11, seo_description),
-                seo_service_url = COALESCE($12, seo_service_url),
-                seo_blog_url = COALESCE($13, seo_blog_url),
-                seo_anchor_text = COALESCE($14, seo_anchor_text),
-                seo_primary_keyword_id = COALESCE($15, seo_primary_keyword_id),
-                seo_lsi_keywords = COALESCE($16, seo_lsi_keywords),
-                seo_domain_type = COALESCE($17, seo_domain_type),
-                seo_domains = COALESCE($18, seo_domains),
-                seo_blog_content = COALESCE($19, seo_blog_content),
-                seo_sector_id = COALESCE($20, seo_sector_id),
-                seo_industry_id = COALESCE($21, seo_industry_id),
-                resource_files = COALESCE($22, resource_files),
-                assigned_team_members = COALESCE($23, assigned_team_members),
-                verified_by = COALESCE($24, verified_by),
-                workflow_stage = COALESCE($25, workflow_stage),
-                qc_status = COALESCE($26, qc_status),
-                status = COALESCE($27, status),
-                version_number = $28,
-                version_history = $29,
-                updated_by = $30,
-                updated_at = $31
-            WHERE id = $32 AND application_type = 'seo'
+                asset_category = COALESCE($3, asset_category),
+                linked_task_id = COALESCE($4, linked_task_id),
+                linked_campaign_id = COALESCE($5, linked_campaign_id),
+                linked_project_id = COALESCE($6, linked_project_id),
+                linked_service_id = COALESCE($7, linked_service_id),
+                linked_sub_service_id = COALESCE($8, linked_sub_service_id),
+                linked_repository_item_id = COALESCE($9, linked_repository_item_id),
+                seo_title = COALESCE($10, seo_title),
+                seo_meta_title = COALESCE($11, seo_meta_title),
+                seo_description = COALESCE($12, seo_description),
+                seo_service_url = COALESCE($13, seo_service_url),
+                seo_blog_url = COALESCE($14, seo_blog_url),
+                seo_anchor_text = COALESCE($15, seo_anchor_text),
+                seo_primary_keyword_id = COALESCE($16, seo_primary_keyword_id),
+                seo_lsi_keywords = COALESCE($17, seo_lsi_keywords),
+                seo_domain_type = COALESCE($18, seo_domain_type),
+                seo_domains = COALESCE($19, seo_domains),
+                seo_blog_content = COALESCE($20, seo_blog_content),
+                seo_sector_id = COALESCE($21, seo_sector_id),
+                seo_industry_id = COALESCE($22, seo_industry_id),
+                resource_files = COALESCE($23, resource_files),
+                assigned_team_members = COALESCE($24, assigned_team_members),
+                verified_by = COALESCE($25, verified_by),
+                workflow_stage = COALESCE($26, workflow_stage),
+                qc_status = COALESCE($27, qc_status),
+                status = COALESCE($28, status),
+                version_number = $29,
+                version_history = $30,
+                updated_by = $31,
+                updated_at = $32
+            WHERE id = $33 AND application_type = 'seo'
             RETURNING *`,
             [
                 name || seo_title,
                 asset_type,
+                asset_category,
                 linked_task_id,
                 linked_campaign_id,
                 linked_project_id,
@@ -666,27 +671,34 @@ export const addSeoAssetDomain = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Domain must be from Backlink Master' });
         }
 
-        // Map QC status to display status
-        let displayStatus = 'Pending';
-        if (seo_self_qc_status === 'Pass') displayStatus = 'Approved';
-        else if (seo_self_qc_status === 'Fail') displayStatus = 'Rejected';
-        else if (seo_self_qc_status === 'Waiting') displayStatus = 'Pending';
+        // Calculate approval status based on Self QC Status and QA Status
+        // Initial state: Self QC = Pending, QA = empty (not reviewed)
+        const selfQc = seo_self_qc_status || 'Pending';
+        const qa = qa_status || '';
+
+        let approvalStatus = 'Pending';
+        if (selfQc === 'Approved' && qa === 'Pass') {
+            approvalStatus = 'Approved';
+        } else if (selfQc === 'Rejected' || qa === 'Fail') {
+            approvalStatus = 'Rejected';
+        }
 
         const result = await pool.query(
             `INSERT INTO seo_asset_domains (
                 seo_asset_id, domain_name, domain_type, url_posted,
-                seo_self_qc_status, qa_status, display_status,
+                seo_self_qc_status, qa_status, approval_status, display_status,
                 backlink_source_id, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *`,
             [
                 assetId,
                 domain_name,
                 domain_type,
-                url_posted,
-                seo_self_qc_status || 'Waiting',
-                qa_status || 'Pending',
-                displayStatus,
+                url_posted || '',
+                selfQc,
+                qa,
+                approvalStatus,
+                approvalStatus,
                 backlinkCheck.rows[0].id,
                 new Date().toISOString(),
                 new Date().toISOString()
@@ -726,17 +738,23 @@ export const updateSeoAssetDomain = async (req: Request, res: Response) => {
     const { url_posted, seo_self_qc_status, qa_status } = req.body;
 
     try {
-        // Map QC status to display status (Step 7.3)
-        let displayStatus = 'Pending';
-        if (seo_self_qc_status === 'Pass') displayStatus = 'Approved';
-        else if (seo_self_qc_status === 'Fail') displayStatus = 'Rejected';
-        else if (seo_self_qc_status === 'Waiting') displayStatus = 'Pending';
+        // Calculate approval status based on Self QC Status and QA Status
+        // Approved: Self QC = Approved AND QA = Pass
+        // Rejected: Self QC = Rejected OR QA = Fail
+        // Pending: All other cases
+        let approvalStatus = 'Pending';
+        if (seo_self_qc_status === 'Approved' && qa_status === 'Pass') {
+            approvalStatus = 'Approved';
+        } else if (seo_self_qc_status === 'Rejected' || qa_status === 'Fail') {
+            approvalStatus = 'Rejected';
+        }
 
         const result = await pool.query(
             `UPDATE seo_asset_domains SET
                 url_posted = COALESCE($1, url_posted),
                 seo_self_qc_status = COALESCE($2, seo_self_qc_status),
                 qa_status = COALESCE($3, qa_status),
+                approval_status = $4,
                 display_status = $4,
                 updated_at = $5
             WHERE id = $6 AND seo_asset_id = $7
@@ -745,7 +763,7 @@ export const updateSeoAssetDomain = async (req: Request, res: Response) => {
                 url_posted,
                 seo_self_qc_status,
                 qa_status,
-                displayStatus,
+                approvalStatus,
                 new Date().toISOString(),
                 domainId,
                 assetId
