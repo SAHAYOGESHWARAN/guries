@@ -65,7 +65,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: assetCategories = [] } = useData<AssetCategoryMasterItem>('asset-category-master');
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
-    const { data: contentTypes = [] } = useData<any>('content-type-master');
+    const { data: contentTypes = [] } = useData<any>('contentTypes');
     const { data: tasks = [] } = useData<Task>('tasks');
     const { data: campaigns = [] } = useData<Campaign>('campaigns');
     const { data: projects = [] } = useData<Project>('projects');
@@ -1076,7 +1076,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Industry * <span className="text-[10px] text-slate-400">(Master)</span></label>
                                             <select value={asset.content_type || ''} onChange={e => setAsset({ ...asset, content_type: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm ">
                                                 <option value="">Select industry...</option>
-                                                {contentTypes.map((ct: any) => <option key={ct.id} value={ct.name}>{ct.name}</option>)}
+                                                {contentTypes.map((ct: any) => <option key={ct.id} value={ct.content_type || ct.name}>{ct.content_type || ct.name}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -1277,7 +1277,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         <h4 className="text-sm font-bold text-slate-700">Resource File Upload</h4>
                                         <span className="text-[10px] text-slate-500">Multi-file supported</span>
                                     </div>
-                                    <div onClick={() => selectedAssetId && fileInputRef.current?.click()} className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${selectedAssetId ? 'border-green-200 hover:border-green-400 cursor-pointer hover:bg-green-50/30 bg-green-50/20' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}>
+                                    <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed rounded-xl p-6 text-center transition-all border-green-200 hover:border-green-400 cursor-pointer hover:bg-green-50/30 bg-green-50/20">
                                         <input ref={fileInputRef} type="file" className="hidden" accept="image/*,video/*,.pdf,.doc,.docx" multiple onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
                                         {previewUrl ? (<div className="space-y-2"><img src={previewUrl} alt="Preview" className="max-h-24 mx-auto rounded-lg shadow-md" /><p className="text-xs text-slate-600">Click to add more files</p>{selectedFile && <p className="text-[10px] text-slate-500">{selectedFile.name}</p>}</div>) : (<><div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2"><svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg></div><p className="text-sm font-semibold text-slate-700 mb-1">Upload Resource Files</p><p className="text-xs text-slate-500">Files linked to Asset ID and Asset Type</p></>)}
                                     </div>
@@ -1592,12 +1592,12 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1">
                                                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Post Title *
                                             </label>
-                                            <input type="text" value={smmPostTitle} onChange={e => setSmmPostTitle(e.target.value)} disabled={!smmSelectedAssetId}
+                                            <input type="text" value={smmPostTitle} onChange={e => setSmmPostTitle(e.target.value)}
                                                 placeholder="Enter post title..." className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm " />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-700 mb-1">Content Format</label>
-                                            <select value={smmContentFormat} onChange={e => setSmmContentFormat(e.target.value)} disabled={!smmSelectedAssetId}
+                                            <select value={smmContentFormat} onChange={e => setSmmContentFormat(e.target.value)}
                                                 className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm ">
                                                 <option value="image">🖼️ Image Post (Default)</option>
                                                 <option value="video">🎬 Video</option>
@@ -1614,7 +1614,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                         <label className="flex items-center gap-1 text-xs font-medium text-slate-700 mb-1">
                                             <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Caption / Post Content *
                                         </label>
-                                        <textarea value={smmCaption} onChange={e => setSmmCaption(e.target.value)} disabled={!smmSelectedAssetId}
+                                        <textarea value={smmCaption} onChange={e => setSmmCaption(e.target.value)}
                                             placeholder="Write your engaging caption here... Use emojis and line breaks for better engagement!" rows={4}
                                             className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm resize-none " />
                                         <div className="flex items-center justify-between mt-1">
@@ -1632,12 +1632,12 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     <div className="grid grid-cols-2 gap-3 mb-4">
                                         <div>
                                             <label className="block text-xs font-medium text-slate-700 mb-1">Hashtags <span className="text-slate-400">(Optional)</span></label>
-                                            <input type="text" value={smmHashtags} onChange={e => setSmmHashtags(e.target.value)} disabled={!smmSelectedAssetId}
+                                            <input type="text" value={smmHashtags} onChange={e => setSmmHashtags(e.target.value)}
                                                 placeholder="#marketing #socialmedia #content" className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm " />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-700 mb-1">Call to Action <span className="text-slate-400">(Optional)</span></label>
-                                            <input type="text" value={smmCta} onChange={e => setSmmCta(e.target.value)} disabled={!smmSelectedAssetId}
+                                            <input type="text" value={smmCta} onChange={e => setSmmCta(e.target.value)}
                                                 placeholder="Link in bio, Shop now, Learn more..." className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm " />
                                         </div>
                                     </div>
@@ -1645,10 +1645,10 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                     {/* Resource Upload */}
                                     <div className="mb-4">
                                         <label className="block text-xs font-medium text-slate-700 mb-2">Resource Upload <span className="text-slate-400">(Multi-file supported)</span></label>
-                                        <div onClick={() => !smmSelectedAssetId ? null : document.getElementById('smm-file-input')?.click()}
-                                            className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${smmSelectedAssetId ? 'border-purple-200 hover:border-purple-400 hover:bg-purple-50/30 cursor-pointer' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}>
+                                        <div onClick={() => document.getElementById('smm-file-input')?.click()}
+                                            className="border-2 border-dashed rounded-lg p-4 text-center transition-all border-purple-200 hover:border-purple-400 hover:bg-purple-50/30 cursor-pointer">
                                             <input id="smm-file-input" type="file" className="hidden" accept="image/*,video/*,.pdf,.doc,.docx" multiple
-                                                onChange={(e) => handleSmmFileSelect(e.target.files)} disabled={!smmSelectedAssetId} />
+                                                onChange={(e) => handleSmmFileSelect(e.target.files)} />
                                             {smmPreviewUrls.length > 0 ? (
                                                 <div className="space-y-2">
                                                     <div className="flex flex-wrap gap-2 justify-center">
@@ -1817,7 +1817,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </button>
                             <button
                                 onClick={() => handleSave(false)}
-                                disabled={isSaving || !smmSelectedAssetId}
+                                disabled={isSaving}
                                 className="h-10 px-5 text-sm font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50 flex items-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1827,7 +1827,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </button>
                             <button
                                 onClick={() => handleSave(true)}
-                                disabled={isSaving || !smmSelectedAssetId}
+                                disabled={isSaving}
                                 className="h-10 px-5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
                             >
                                 {isSaving ? (
@@ -1857,7 +1857,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </button>
                             <button
                                 onClick={() => handleSave(false)}
-                                disabled={isSaving || !selectedAssetId}
+                                disabled={isSaving}
                                 className="h-10 px-5 text-sm font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50 flex items-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1867,7 +1867,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                             </button>
                             <button
                                 onClick={() => handleSave(true)}
-                                disabled={isSaving || !selectedAssetId}
+                                disabled={isSaving}
                                 className="h-10 px-5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
                             >
                                 {isSaving ? (
