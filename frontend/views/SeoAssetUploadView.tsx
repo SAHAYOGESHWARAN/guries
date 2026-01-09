@@ -110,16 +110,21 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const [showDomainDropdown, setShowDomainDropdown] = useState(false);
     const [selectedDomainToAdd, setSelectedDomainToAdd] = useState('');
 
-    // ========== STEP 7: Domain Details Popup (URL Posted) ==========
+    // ========== STEP 7: Domain Update & Self QC Popup ==========
     const [showDomainPopup, setShowDomainPopup] = useState(false);
     const [editingDomainIndex, setEditingDomainIndex] = useState<number | null>(null);
     const [domainPopupData, setDomainPopupData] = useState<DomainDetails>({
         domain_name: '',
         url_posted: '',
-        seo_self_qc_status: 'Waiting',
-        qa_status: 'Pending',
+        seo_self_qc_status: 'Pending',
+        qa_status: '',
         approval_status: 'Pending'
     });
+
+    // ========== Verifier QA Review Popup ==========
+    const [showQAReviewPopup, setShowQAReviewPopup] = useState(false);
+    const [qaReviewDomainIndex, setQAReviewDomainIndex] = useState<number | null>(null);
+    const [qaReviewVerdict, setQAReviewVerdict] = useState<'Pass' | 'Fail' | ''>('');
 
     // ========== STEP 8: Blog Content (Conditional) ==========
     const [blogContent, setBlogContent] = useState('');
@@ -345,6 +350,34 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         setEditingDomainIndex(index);
         setDomainPopupData({ ...selectedDomains[index] });
         setShowDomainPopup(true);
+    };
+
+    // Open QA Review popup (for verifier)
+    const handleOpenQAReview = (index: number) => {
+        setQAReviewDomainIndex(index);
+        setQAReviewVerdict(selectedDomains[index].qa_status as 'Pass' | 'Fail' | '' || '');
+        setShowQAReviewPopup(true);
+    };
+
+    // Submit QA Review verdict
+    const handleSubmitQAVerdict = () => {
+        if (qaReviewDomainIndex === null || !qaReviewVerdict) return;
+
+        const domain = selectedDomains[qaReviewDomainIndex];
+        const approvalStatus = calculateApprovalStatus(domain.seo_self_qc_status, qaReviewVerdict);
+
+        const updatedDomain = {
+            ...domain,
+            qa_status: qaReviewVerdict,
+            approval_status: approvalStatus
+        };
+        const updated = [...selectedDomains];
+        updated[qaReviewDomainIndex] = updatedDomain;
+        setSelectedDomains(updated);
+
+        setShowQAReviewPopup(false);
+        setQAReviewDomainIndex(null);
+        setQAReviewVerdict('');
     };
 
     // Save URL Posted and Self QC Status for domain
@@ -1000,107 +1033,154 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
                             <h3 className="text-base font-bold text-slate-800">Domain Type & Domain Addition</h3>
-                            <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded">From Backlink Master</span>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-medium rounded">From Backlink Master</span>
                         </div>
                         <div className="space-y-4">
-                            {/* Domain Type & Add Domain - Same Row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
+                            {/* Domain Type & Domain URL/Name - Same Row */}
+                            <div className="flex gap-4 items-end">
+                                <div className="flex-1">
                                     <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
                                     <select value={domainType} onChange={(e) => setDomainType(e.target.value)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
-                                        <option value="">Select Domain Type...</option>
+                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        <option value="">Select domain type...</option>
                                         {domainTypes.map((dt: string, idx: number) => (
                                             <option key={idx} value={dt}>{dt}</option>
                                         ))}
                                     </select>
                                 </div>
-                                {/* Domain Selection Dropdown + Add Button */}
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-2">Select Domain <span className="text-slate-400 text-xs">(From Backlink Master)</span></label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={selectedDomainToAdd}
-                                            onChange={(e) => setSelectedDomainToAdd(e.target.value)}
-                                            disabled={!sectionsEnabled}
-                                            className="flex-1 h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50"
-                                        >
-                                            <option value="">Select domain...</option>
-                                            {backlinkDomains
-                                                .filter(b => !selectedDomains.some(d => d.domain_name === b.name))
-                                                .map(b => (
-                                                    <option key={b.id} value={b.name}>{b.name} (DA: {b.da || 'N/A'})</option>
-                                                ))
-                                            }
-                                        </select>
-                                        <button
-                                            onClick={() => {
-                                                if (selectedDomainToAdd) {
-                                                    handleAddDomainFromDropdown(selectedDomainToAdd);
-                                                }
-                                            }}
-                                            disabled={!sectionsEnabled || !selectedDomainToAdd}
-                                            className="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                            title="Add Domain"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-slate-600 mb-2">Domain URL/Name</label>
+                                    <input
+                                        type="text"
+                                        value={selectedDomainToAdd}
+                                        onChange={(e) => setSelectedDomainToAdd(e.target.value)}
+                                        disabled={!sectionsEnabled}
+                                        placeholder="e.g. example.com"
+                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50"
+                                    />
                                 </div>
+                                <button
+                                    onClick={() => {
+                                        if (selectedDomainToAdd) {
+                                            handleAddDomainFromDropdown(selectedDomainToAdd);
+                                        }
+                                    }}
+                                    disabled={!sectionsEnabled || !selectedDomainToAdd}
+                                    className="flex items-center gap-2 h-11 px-5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-sm whitespace-nowrap"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Domain
+                                </button>
                             </div>
 
-                            {/* Added Domains List */}
+                            {/* Helper Text */}
+                            <p className="text-xs text-blue-500 flex items-center gap-1.5">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Click on a domain name in the list below to update Self QC and QA status.
+                            </p>
+
+                            {/* Managed Assets Table */}
                             {selectedDomains.length > 0 && (
                                 <div className="mt-4">
-                                    <p className="text-xs text-slate-500 mb-2">Click on a domain to enter URL Posted and update QC status</p>
-                                    <div className="space-y-2">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                            <span className="text-sm font-semibold text-slate-700">Managed Assets</span>
+                                        </div>
+                                        <span className="text-xs text-slate-500">Total Domains: {selectedDomains.length}</span>
+                                    </div>
+
+                                    {/* Table Header */}
+                                    <div className="bg-slate-50 rounded-t-xl border border-slate-200 border-b-0">
+                                        <div className="grid grid-cols-12 gap-2 px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                            <div className="col-span-3">Domain Details</div>
+                                            <div className="col-span-3">Posted URL</div>
+                                            <div className="col-span-2 text-center">Self QC</div>
+                                            <div className="col-span-2 text-center">QA Status</div>
+                                            <div className="col-span-2 text-center">Actions</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Table Body */}
+                                    <div className="border border-slate-200 rounded-b-xl overflow-hidden divide-y divide-slate-100">
                                         {selectedDomains.map((domain, idx) => (
-                                            <div key={idx} onClick={() => handleDomainClick(idx)}
-                                                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-slate-700">{domain.domain_name}</p>
-                                                        <p className="text-xs text-slate-400">
-                                                            {domain.url_posted ? (
-                                                                <span className="text-blue-500 truncate max-w-[200px] inline-block">{domain.url_posted}</span>
-                                                            ) : (
-                                                                <span className="text-amber-500">Click to add URL Posted</span>
-                                                            )}
-                                                        </p>
-                                                    </div>
+                                            <div key={idx} className="grid grid-cols-12 gap-2 px-4 py-3 items-center bg-white hover:bg-slate-50/50 transition-colors">
+                                                {/* Domain Details */}
+                                                <div className="col-span-3">
+                                                    <button
+                                                        onClick={() => handleDomainClick(idx)}
+                                                        className="text-left hover:text-blue-600 transition-colors"
+                                                    >
+                                                        <p className="text-sm font-medium text-blue-600 hover:underline">{domain.domain_name}</p>
+                                                        <p className="text-xs text-slate-400">{domainType || 'Guest Post'}</p>
+                                                    </button>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    {/* Self QC Status Badge */}
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${domain.seo_self_qc_status === 'Approved' ? 'bg-green-100 text-green-700' :
+
+                                                {/* Posted URL */}
+                                                <div className="col-span-3">
+                                                    {domain.url_posted ? (
+                                                        <a href={domain.url_posted} target="_blank" rel="noopener noreferrer"
+                                                            className="text-xs text-blue-500 hover:underline truncate block max-w-[180px]">
+                                                            {domain.url_posted}
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400 italic">Not posted yet</span>
+                                                    )}
+                                                </div>
+
+                                                {/* Self QC Status */}
+                                                <div className="col-span-2 text-center">
+                                                    <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${domain.seo_self_qc_status === 'Approved' ? 'bg-green-100 text-green-700' :
                                                         domain.seo_self_qc_status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
                                                             'bg-amber-100 text-amber-700'
                                                         }`}>
-                                                        Self: {domain.seo_self_qc_status || 'Pending'}
+                                                        {domain.seo_self_qc_status === 'Pending' && (
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        )}
+                                                        {domain.seo_self_qc_status || 'Pending'}
                                                     </span>
-                                                    {/* QA Status Badge */}
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${domain.qa_status === 'Pass' ? 'bg-green-100 text-green-700' :
-                                                        domain.qa_status === 'Fail' ? 'bg-rose-100 text-rose-700' :
-                                                            'bg-slate-100 text-slate-500'
+                                                </div>
+
+                                                {/* QA Status */}
+                                                <div className="col-span-2 text-center">
+                                                    <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium border ${domain.qa_status === 'Pass' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                        domain.qa_status === 'Fail' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                                            'bg-slate-50 text-slate-600 border-slate-200'
                                                         }`}>
-                                                        QA: {domain.qa_status || 'Pending'}
+                                                        {domain.qa_status === 'Pass' ? 'Pass' :
+                                                            domain.qa_status === 'Fail' ? 'Fail' :
+                                                                'Review Pending'}
                                                     </span>
-                                                    {/* Final Approval Status */}
-                                                    {domain.url_posted && (
-                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusBadgeColor(domain.approval_status || 'Pending')}`}>
-                                                            {domain.approval_status || 'Pending'}
-                                                        </span>
-                                                    )}
-                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteDomain(idx); }}
-                                                        className="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded">
+                                                </div>
+
+                                                {/* Actions */}
+                                                <div className="col-span-2 flex items-center justify-center gap-2">
+                                                    {/* Clock icon - Edit Domain Details & Self QC */}
+                                                    <button
+                                                        onClick={() => handleDomainClick(idx)}
+                                                        className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Update Domain & Self QC"
+                                                    >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </button>
+                                                    {/* Profile icon - QA Verifier Review */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenQAReview(idx); }}
+                                                        className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                        title="QA Verifier Review"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                         </svg>
                                                     </button>
                                                 </div>
@@ -1112,141 +1192,235 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
                             {/* Empty State */}
                             {selectedDomains.length === 0 && (
-                                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 mt-4">
-                                    <svg className="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 mt-4">
+                                    <svg className="w-10 h-10 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                                     </svg>
-                                    <p className="text-sm text-slate-400">No domains added yet. Select a domain and click (+) to add.</p>
+                                    <p className="text-sm text-slate-500 font-medium">No domains added yet</p>
+                                    <p className="text-xs text-slate-400 mt-1">Select a domain type and enter a domain URL to add.</p>
                                 </div>
                             )}
                         </div>
                     </div >
 
 
-                    {/* ========== STEP 7: Domain Details Popup (URL Posted & QC Status) ========== */}
-                    {
-                        showDomainPopup && editingDomainIndex !== null && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl">
-                                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 rounded-t-2xl">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    {/* ========== Domain Update & Self QC Popup ========== */}
+                    {showDomainPopup && editingDomainIndex !== null && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
+                                {/* Header */}
+                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-800">Domain Update & Self QC</h3>
+                                            <p className="text-xs text-slate-500">Domain: {domainPopupData.domain_name}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowDomainPopup(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-6 space-y-5">
+                                    {/* Posted URL */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Posted URL <span className="text-rose-500">*</span>
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={domainPopupData.url_posted}
+                                            onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
+                                            placeholder="https://guires.com/"
+                                            className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                        />
+                                        <p className="text-xs text-slate-400 mt-1.5">Include http:// or https:// for direct linking.</p>
+                                    </div>
+
+                                    {/* Self QC Status */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-3">Self QC Status</label>
+                                        <div className="flex gap-3">
+                                            {/* Pending */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Pending' })}
+                                                className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${domainPopupData.seo_self_qc_status === 'Pending'
+                                                        ? 'border-amber-400 bg-amber-50 text-amber-700'
+                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    }`}
+                                            >
+                                                Pending
+                                            </button>
+                                            {/* Approved */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Approved' })}
+                                                className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all flex items-center justify-center gap-2 ${domainPopupData.seo_self_qc_status === 'Approved'
+                                                        ? 'border-green-400 bg-green-50 text-green-700'
+                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    }`}
+                                            >
+                                                {domainPopupData.seo_self_qc_status === 'Approved' && (
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                     </svg>
-                                                </div>
-                                                <h3 className="text-white font-bold">Domain Details</h3>
-                                            </div>
-                                            <button onClick={() => setShowDomainPopup(false)} className="text-white/80 hover:text-white">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
+                                                )}
+                                                Approved
+                                            </button>
+                                            {/* Rejected */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Rejected' })}
+                                                className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${domainPopupData.seo_self_qc_status === 'Rejected'
+                                                        ? 'border-rose-400 bg-rose-50 text-rose-700'
+                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    }`}
+                                            >
+                                                Rejected
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="p-6 space-y-4">
-                                        {/* Domain Name - Display Only */}
-                                        <div>
-                                            <label className="text-sm font-medium text-slate-600 mb-2 flex items-center gap-2">
-                                                Domain Name
-                                                <span className="text-xs text-slate-400">(From Backlink Master)</span>
-                                            </label>
-                                            <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700 font-medium">
-                                                {domainPopupData.domain_name}
-                                            </div>
-                                        </div>
+                                </div>
 
-                                        {/* URL Posted - User Input */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-600 mb-2">
-                                                URL Posted
-                                                <span className="text-xs text-slate-400 ml-2">(Paste the posted URL)</span>
-                                            </label>
-                                            <input
-                                                type="url"
-                                                value={domainPopupData.url_posted}
-                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, url_posted: e.target.value })}
-                                                placeholder="https://example.com/your-posted-article"
-                                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                                            />
-                                        </div>
-
-                                        {/* Divider */}
-                                        <div className="border-t border-slate-200 pt-4">
-                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">QC Status Section</p>
-                                        </div>
-
-                                        {/* Self QC Status - User can update (Approved/Pending/Rejected) */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-600 mb-2">
-                                                Self QC Status
-                                                <span className="text-xs text-green-600 ml-2 bg-green-50 px-2 py-0.5 rounded">(You can update)</span>
-                                            </label>
-                                            <select
-                                                value={domainPopupData.seo_self_qc_status}
-                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: e.target.value })}
-                                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                                            >
-                                                {SELF_QC_STATUS_OPTIONS.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                            <p className="text-xs text-slate-400 mt-1">Set your self-review status: Approved, Pending, or Rejected</p>
-                                        </div>
-
-                                        {/* QA Status - Verifier Only (Pass/Fail) */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-600 mb-2">
-                                                QA Status
-                                                <span className="text-xs text-amber-600 ml-2 bg-amber-50 px-2 py-0.5 rounded">(Verifier Only - Pass/Fail)</span>
-                                            </label>
-                                            <select
-                                                value={domainPopupData.qa_status}
-                                                onChange={(e) => setDomainPopupData({ ...domainPopupData, qa_status: e.target.value })}
-                                                disabled={!isVerifier}
-                                                className={`w-full h-10 px-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ${!isVerifier ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'bg-slate-50'}`}
-                                            >
-                                                {QA_STATUS_OPTIONS.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                            {!isVerifier && (
-                                                <p className="text-xs text-amber-500 mt-1">Only the assigned verifier can update QA Status</p>
-                                            )}
-                                            {isVerifier && (
-                                                <p className="text-xs text-green-500 mt-1">You are the verifier - you can update QA Status</p>
-                                            )}
-                                        </div>
-
-                                        {/* Approval Status (Auto-calculated) */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-600 mb-2">
-                                                Final Approval Status
-                                                <span className="text-xs text-slate-400 ml-2">(Auto-calculated)</span>
-                                            </label>
-                                            <div className={`w-full h-10 px-3 flex items-center rounded-xl text-sm font-medium ${calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Approved'
-                                                ? 'bg-green-100 text-green-700 border border-green-200'
-                                                : calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status) === 'Rejected'
-                                                    ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                                    : 'bg-amber-100 text-amber-700 border border-amber-200'
-                                                }`}>
-                                                {calculateApprovalStatus(domainPopupData.seo_self_qc_status, domainPopupData.qa_status)}
-                                            </div>
-                                            <p className="text-xs text-slate-400 mt-1">
-                                                <span className="text-green-600">Approved</span> = Self QC Approved + QA Pass |
-                                                <span className="text-rose-600 ml-1">Rejected</span> = Self QC Rejected OR QA Fail
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
-                                        <button onClick={() => setShowDomainPopup(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
-                                        <button onClick={handleSaveDomainDetails} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Save Changes</button>
-                                    </div>
+                                {/* Footer */}
+                                <div className="px-6 py-4 bg-slate-50 flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setShowDomainPopup(false)}
+                                        className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveDomainDetails}
+                                        className="px-5 py-2.5 text-sm font-medium bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                                    >
+                                        Update Entry
+                                    </button>
                                 </div>
                             </div>
-                        )
-                    }
+                        </div>
+                    )}
+
+                    {/* ========== Verifier QA Review Popup ========== */}
+                    {showQAReviewPopup && qaReviewDomainIndex !== null && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
+                                {/* Header */}
+                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-800">Verifier QA Review</h3>
+                                            <p className="text-xs text-slate-500">{selectedDomains[qaReviewDomainIndex]?.domain_name}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowQAReviewPopup(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-6 space-y-5">
+                                    {/* Info Card */}
+                                    <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Type</span>
+                                            <span className="text-sm font-medium text-slate-700">{domainType || 'Guest Post'}</span>
+                                        </div>
+                                        <div className="border-t border-slate-200"></div>
+                                        <div>
+                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Posted URL</span>
+                                            <a
+                                                href={selectedDomains[qaReviewDomainIndex]?.url_posted || '#'}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block text-sm text-blue-600 hover:underline mt-1 truncate"
+                                            >
+                                                {selectedDomains[qaReviewDomainIndex]?.url_posted || 'Not posted yet'}
+                                            </a>
+                                        </div>
+                                        <div className="border-t border-slate-200"></div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Self QC Result</span>
+                                            <span className={`text-sm font-semibold ${selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Approved' ? 'text-green-600' :
+                                                    selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Rejected' ? 'text-rose-600' :
+                                                        'text-amber-600'
+                                                }`}>
+                                                {selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status || 'Pending'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Final Verification Status */}
+                                    <div>
+                                        <h4 className="text-sm font-bold text-slate-800 text-center mb-4">Final Verification Status</h4>
+                                        <div className="flex gap-4">
+                                            {/* Pass Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setQAReviewVerdict('Pass')}
+                                                className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${qaReviewVerdict === 'Pass'
+                                                        ? 'border-green-400 bg-green-50'
+                                                        : 'border-slate-200 bg-white hover:border-green-300 hover:bg-green-50/50'
+                                                    }`}
+                                            >
+                                                <svg className={`w-8 h-8 ${qaReviewVerdict === 'Pass' ? 'text-green-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                                </svg>
+                                                <span className={`text-sm font-semibold ${qaReviewVerdict === 'Pass' ? 'text-green-700' : 'text-slate-600'}`}>Pass</span>
+                                            </button>
+                                            {/* Fail Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setQAReviewVerdict('Fail')}
+                                                className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${qaReviewVerdict === 'Fail'
+                                                        ? 'border-rose-400 bg-rose-50'
+                                                        : 'border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/50'
+                                                    }`}
+                                            >
+                                                <svg className={`w-8 h-8 ${qaReviewVerdict === 'Fail' ? 'text-rose-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                                </svg>
+                                                <span className={`text-sm font-semibold ${qaReviewVerdict === 'Fail' ? 'text-rose-700' : 'text-slate-600'}`}>Fail</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="px-6 py-4 bg-slate-50 flex justify-end gap-3">
+                                    <button
+                                        onClick={() => { setShowQAReviewPopup(false); setQAReviewVerdict(''); }}
+                                        className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-xl transition-colors"
+                                    >
+                                        Discard
+                                    </button>
+                                    <button
+                                        onClick={handleSubmitQAVerdict}
+                                        disabled={!qaReviewVerdict}
+                                        className="px-5 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Submit Verdict
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
 
                     {/* ========== STEP 8: Blog Posting - Content Editor (Conditional) ========== */}

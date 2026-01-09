@@ -11,10 +11,9 @@ export const getKeywords = async (req: any, res: any) => {
 
     try {
         const keywords = db.prepare(`
-            SELECT id, keyword, keyword_type, search_volume, competition, mapped_service, status, created_at,
+            SELECT id, keyword, keyword_type, search_volume, competition, mapped_service, created_at,
                    0 as usage_count
             FROM keywords 
-            WHERE status IS NULL OR status = 'active'
             ORDER BY keyword ASC
         `).all();
 
