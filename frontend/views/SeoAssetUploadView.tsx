@@ -110,7 +110,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const [showDomainDropdown, setShowDomainDropdown] = useState(false);
     const [selectedDomainToAdd, setSelectedDomainToAdd] = useState('');
 
-    // ========== STEP 7: Domain Update & Self QC Popup ==========
+    // ========== Domain Update & Self QC Popup ==========
     const [showDomainPopup, setShowDomainPopup] = useState(false);
     const [editingDomainIndex, setEditingDomainIndex] = useState<number | null>(null);
     const [domainPopupData, setDomainPopupData] = useState<DomainDetails>({
@@ -702,7 +702,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== STEP 2: Map Asset to Source Work ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">2</div>
                             <h3 className="text-base font-bold text-slate-800">Map Assets to Source Work</h3>
@@ -740,8 +740,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {isFetchingAsset ? <span className="text-slate-400">Loading...</span> : linkedTaskId ? (tasks.find(t => t.id === linkedTaskId) as any)?.task_name || tasks.find(t => t.id === linkedTaskId)?.name || `Task #${linkedTaskId}` : <span className="text-slate-400">Not linked</span>}
                                     </div>
                                 ) : (
-                                    <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                    <select value={linkedTaskId || ''} onChange={(e) => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">Select Task...</option>
                                         {tasks.map(task => <option key={task.id} value={task.id}>{(task as any).task_name || task.name}</option>)}
                                     </select>
@@ -757,8 +757,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {linkedCampaignId ? campaigns.find(c => c.id === linkedCampaignId)?.campaign_name || `Campaign #${linkedCampaignId}` : <span className="text-slate-400">Not linked</span>}
                                     </div>
                                 ) : (
-                                    <select value={linkedCampaignId || ''} onChange={(e) => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                    <select value={linkedCampaignId || ''} onChange={(e) => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">Select Campaign...</option>
                                         {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name}</option>)}
                                     </select>
@@ -774,8 +774,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {linkedProjectId ? projects.find(p => p.id === linkedProjectId)?.project_name || `Project #${linkedProjectId}` : <span className="text-slate-400">Not linked</span>}
                                     </div>
                                 ) : (
-                                    <select value={linkedProjectId || ''} onChange={(e) => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                    <select value={linkedProjectId || ''} onChange={(e) => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">Select Project...</option>
                                         {projects.map(p => <option key={p.id} value={p.id}>{p.project_name}</option>)}
                                     </select>
@@ -791,8 +791,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {linkedServiceId ? services.find(s => s.id === linkedServiceId)?.service_name || `Service #${linkedServiceId}` : <span className="text-slate-400">Not linked</span>}
                                     </div>
                                 ) : (
-                                    <select value={linkedServiceId || ''} onChange={(e) => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                    <select value={linkedServiceId || ''} onChange={(e) => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">Select Service...</option>
                                         {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
                                     </select>
@@ -809,7 +809,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     </div>
                                 ) : (
                                     <select value={linkedSubServiceId || ''} onChange={(e) => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled || !linkedServiceId}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">{linkedServiceId ? 'Select Sub-Service...' : 'Select a service first'}</option>
                                         {filteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
                                     </select>
@@ -825,8 +825,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {linkedRepositoryId ? repositoryItems.find(r => r.id === linkedRepositoryId)?.content_title_clean || `Repository #${linkedRepositoryId}` : <span className="text-slate-400">Not linked</span>}
                                     </div>
                                 ) : (
-                                    <select value={linkedRepositoryId || ''} onChange={(e) => setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                                    <select value={linkedRepositoryId || ''} onChange={(e) => setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">Select Repository Item...</option>
                                         {repositoryItems.map(r => <option key={r.id} value={r.id}>{r.content_title_clean || `Item #${r.id}`}</option>)}
                                     </select>
@@ -837,7 +837,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
 
                     {/* ========== STEP 3: Asset Classification ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">3</div>
                             <h3 className="text-base font-bold text-slate-800">Asset Classification</h3>
@@ -846,8 +846,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         <div className="grid grid-cols-4 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Asset Type * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={assetType} onChange={(e) => setAssetType(e.target.value)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
+                                <select value={assetType} onChange={(e) => setAssetType(e.target.value)}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
                                     <option value="">Select type...</option>
                                     {activeAssetTypes.map(type => (
                                         <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>
@@ -856,8 +856,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Asset Category * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
+                                <select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
                                     <option value="">Select category...</option>
                                     {assetCategories.filter(cat => (cat as any).is_active !== false && (cat as any).status !== 'inactive').map(category => (
                                         <option key={category.id} value={category.category_name}>{category.category_name}</option>
@@ -866,8 +866,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Sector * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={sector} onChange={(e) => setSector(e.target.value)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
+                                <select value={sector} onChange={(e) => setSector(e.target.value)}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
                                     <option value="">Select sector...</option>
                                     {sectors.map((s: string, idx: number) => (
                                         <option key={idx} value={s}>{s}</option>
@@ -876,8 +876,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Industry * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={industry} onChange={(e) => setIndustry(e.target.value)} disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50">
+                                <select value={industry} onChange={(e) => setIndustry(e.target.value)}
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
                                     <option value="">Select industry...</option>
                                     {industries.map((ind: string, idx: number) => (
                                         <option key={idx} value={ind}>{ind}</option>
@@ -888,7 +888,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== STEP 4: SEO Metadata Fields & Anchor Text ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">4</div>
                             <h3 className="text-base font-bold text-slate-800">SEO Metadata Fields & Anchor Text</h3>
@@ -900,8 +900,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                                         Title *
                                     </label>
-                                    <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} disabled={!sectionsEnabled}
-                                        placeholder="Enter SEO Title" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 disabled:opacity-50 ${errors.seoTitle ? 'border-rose-500' : 'border-slate-200'}`} />
+                                    <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)}
+                                        placeholder="Enter SEO Title" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400  ${errors.seoTitle ? 'border-rose-500' : 'border-slate-200'}`} />
                                     {errors.seoTitle && <p className="text-xs text-rose-500 mt-1">{errors.seoTitle}</p>}
                                 </div>
                                 <div>
@@ -909,8 +909,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                                         Meta Title *
                                     </label>
-                                    <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} disabled={!sectionsEnabled}
-                                        placeholder="Enter Meta Title" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 disabled:opacity-50 ${errors.metaTitle ? 'border-rose-500' : 'border-slate-200'}`} />
+                                    <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}
+                                        placeholder="Enter Meta Title" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400  ${errors.metaTitle ? 'border-rose-500' : 'border-slate-200'}`} />
                                     {errors.metaTitle && <p className="text-xs text-rose-500 mt-1">{errors.metaTitle}</p>}
                                 </div>
                             </div>
@@ -919,20 +919,20 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                                     Description *
                                 </label>
-                                <textarea value={description} onChange={(e) => setDescription(e.target.value)} disabled={!sectionsEnabled} rows={3}
-                                    placeholder="Enter SEO Description" className={`w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 resize-none disabled:opacity-50 ${errors.description ? 'border-rose-500' : 'border-slate-200'}`} />
+                                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
+                                    placeholder="Enter SEO Description" className={`w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 resize-none  ${errors.description ? 'border-rose-500' : 'border-slate-200'}`} />
                                 {errors.description && <p className="text-xs text-rose-500 mt-1">{errors.description}</p>}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-600 mb-2">Service URL (Optional)</label>
-                                    <input type="url" value={serviceUrl} onChange={(e) => setServiceUrl(e.target.value)} disabled={!sectionsEnabled}
-                                        placeholder="https://example.com/service" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 disabled:opacity-50" />
+                                    <input type="url" value={serviceUrl} onChange={(e) => setServiceUrl(e.target.value)}
+                                        placeholder="https://example.com/service" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 " />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-600 mb-2">Blog URL (Optional)</label>
-                                    <input type="url" value={blogUrl} onChange={(e) => setBlogUrl(e.target.value)} disabled={!sectionsEnabled}
-                                        placeholder="https://example.com/blog" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 disabled:opacity-50" />
+                                    <input type="url" value={blogUrl} onChange={(e) => setBlogUrl(e.target.value)}
+                                        placeholder="https://example.com/blog" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 " />
                                 </div>
                             </div>
                             <div>
@@ -940,8 +940,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                                     Anchor Text *
                                 </label>
-                                <input type="text" value={anchorText} onChange={(e) => setAnchorText(e.target.value)} disabled={!sectionsEnabled}
-                                    placeholder="Enter Anchor Text" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 disabled:opacity-50 ${errors.anchorText ? 'border-rose-500' : 'border-slate-200'}`} />
+                                <input type="text" value={anchorText} onChange={(e) => setAnchorText(e.target.value)}
+                                    placeholder="Enter Anchor Text" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400  ${errors.anchorText ? 'border-rose-500' : 'border-slate-200'}`} />
                                 {errors.anchorText && <p className="text-xs text-rose-500 mt-1">{errors.anchorText}</p>}
                             </div>
                         </div>
@@ -949,7 +949,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
 
                     {/* ========== STEP 5: Keywords ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">5</div>
                             <h3 className="text-base font-bold text-slate-800">Keywords</h3>
@@ -965,8 +965,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 <select
                                     value={primaryKeywordId || ''}
                                     onChange={(e) => setPrimaryKeywordId(e.target.value ? Number(e.target.value) : null)}
-                                    disabled={!sectionsEnabled}
-                                    className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50 ${errors.primaryKeyword ? 'border-rose-500' : 'border-slate-200'}`}
+
+                                    className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400  ${errors.primaryKeyword ? 'border-rose-500' : 'border-slate-200'}`}
                                 >
                                     <option value="">Select from Keyword Master...</option>
                                     {keywords.map(kw => (
@@ -1009,8 +1009,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                             toggleLsiKeyword(kwId);
                                         }
                                     }}
-                                    disabled={!sectionsEnabled}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 disabled:opacity-50"
+
+                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 "
                                 >
                                     <option value="">Add LSI keyword from master...</option>
                                     {keywords
@@ -1029,59 +1029,44 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
 
                     {/* ========== STEP 6: Domain Type & Domain Addition ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
                             <h3 className="text-base font-bold text-slate-800">Domain Type & Domain Addition</h3>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-medium rounded">From Backlink Master</span>
                         </div>
                         <div className="space-y-4">
-                            {/* Domain Type & Domain URL/Name - Same Row */}
-                            <div className="flex gap-4 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
-                                    <select value={domainType} onChange={(e) => setDomainType(e.target.value)} disabled={!sectionsEnabled}
-                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                            {/* Domain Type Dropdown + Add Domain Button - Same Row */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
+                                <div className="flex gap-4 items-center">
+                                    <select
+                                        value={domainType}
+                                        onChange={(e) => setDomainType(e.target.value)}
+                                        className="flex-1 h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                    >
                                         <option value="">Select domain type...</option>
                                         {domainTypes.map((dt: string, idx: number) => (
                                             <option key={idx} value={dt}>{dt}</option>
                                         ))}
                                     </select>
+                                    <button
+                                        onClick={() => {
+                                            if (domainType) {
+                                                const domainName = `${domainType}-${Date.now()}`;
+                                                handleAddDomainFromDropdown(domainName);
+                                            }
+                                        }}
+                                        disabled={!domainType}
+                                        className="flex items-center gap-2 h-11 px-6 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-medium text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Domain
+                                    </button>
                                 </div>
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-slate-600 mb-2">Domain URL/Name</label>
-                                    <input
-                                        type="text"
-                                        value={selectedDomainToAdd}
-                                        onChange={(e) => setSelectedDomainToAdd(e.target.value)}
-                                        disabled={!sectionsEnabled}
-                                        placeholder="e.g. example.com"
-                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50"
-                                    />
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        if (selectedDomainToAdd) {
-                                            handleAddDomainFromDropdown(selectedDomainToAdd);
-                                        }
-                                    }}
-                                    disabled={!sectionsEnabled || !selectedDomainToAdd}
-                                    className="flex items-center gap-2 h-11 px-5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-sm whitespace-nowrap"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Add Domain
-                                </button>
                             </div>
-
-                            {/* Helper Text */}
-                            <p className="text-xs text-blue-500 flex items-center gap-1.5">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Click on a domain name in the list below to update Self QC and QA status.
-                            </p>
 
                             {/* Managed Assets Table */}
                             {selectedDomains.length > 0 && (
@@ -1254,8 +1239,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Pending' })}
                                                 className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${domainPopupData.seo_self_qc_status === 'Pending'
-                                                        ? 'border-amber-400 bg-amber-50 text-amber-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    ? 'border-amber-400 bg-amber-50 text-amber-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 Pending
@@ -1265,8 +1250,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Approved' })}
                                                 className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all flex items-center justify-center gap-2 ${domainPopupData.seo_self_qc_status === 'Approved'
-                                                        ? 'border-green-400 bg-green-50 text-green-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    ? 'border-green-400 bg-green-50 text-green-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 {domainPopupData.seo_self_qc_status === 'Approved' && (
@@ -1281,8 +1266,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Rejected' })}
                                                 className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${domainPopupData.seo_self_qc_status === 'Rejected'
-                                                        ? 'border-rose-400 bg-rose-50 text-rose-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    ? 'border-rose-400 bg-rose-50 text-rose-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 Rejected
@@ -1358,8 +1343,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         <div className="flex justify-between items-center">
                                             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Self QC Result</span>
                                             <span className={`text-sm font-semibold ${selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Approved' ? 'text-green-600' :
-                                                    selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Rejected' ? 'text-rose-600' :
-                                                        'text-amber-600'
+                                                selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Rejected' ? 'text-rose-600' :
+                                                    'text-amber-600'
                                                 }`}>
                                                 {selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status || 'Pending'}
                                             </span>
@@ -1375,8 +1360,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setQAReviewVerdict('Pass')}
                                                 className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${qaReviewVerdict === 'Pass'
-                                                        ? 'border-green-400 bg-green-50'
-                                                        : 'border-slate-200 bg-white hover:border-green-300 hover:bg-green-50/50'
+                                                    ? 'border-green-400 bg-green-50'
+                                                    : 'border-slate-200 bg-white hover:border-green-300 hover:bg-green-50/50'
                                                     }`}
                                             >
                                                 <svg className={`w-8 h-8 ${qaReviewVerdict === 'Pass' ? 'text-green-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1389,8 +1374,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setQAReviewVerdict('Fail')}
                                                 className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${qaReviewVerdict === 'Fail'
-                                                        ? 'border-rose-400 bg-rose-50'
-                                                        : 'border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/50'
+                                                    ? 'border-rose-400 bg-rose-50'
+                                                    : 'border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/50'
                                                     }`}
                                             >
                                                 <svg className={`w-8 h-8 ${qaReviewVerdict === 'Fail' ? 'text-rose-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1413,7 +1398,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     <button
                                         onClick={handleSubmitQAVerdict}
                                         disabled={!qaReviewVerdict}
-                                        className="px-5 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-5 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors  disabled:cursor-not-allowed"
                                     >
                                         Submit Verdict
                                     </button>
@@ -1460,7 +1445,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     }
 
                     {/* ========== STEP 9: Resource File Upload ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">9</div>
                             <h3 className="text-base font-bold text-slate-800">Resource File Upload</h3>
@@ -1473,7 +1458,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                             onDrop={handleDrop}
                             className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${dragActive ? 'border-pink-400 bg-pink-50' : 'border-slate-200 hover:border-slate-300'}`}
                         >
-                            <input type="file" multiple onChange={handleFileUpload} className="hidden" id="resource-upload" disabled={!sectionsEnabled} />
+                            <input type="file" multiple onChange={handleFileUpload} className="hidden" id="resource-upload" />
                             <label htmlFor="resource-upload" className={`cursor-pointer ${!sectionsEnabled ? 'pointer-events-none' : ''}`}>
                                 <div className="w-14 h-14 bg-pink-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                                     <svg className="w-7 h-7 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1515,7 +1500,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
 
                     {/* ========== STEP 10: Designer & Workflow ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">10</div>
                             <h3 className="text-base font-bold text-slate-800">Designer & Workflow</h3>
@@ -1526,8 +1511,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 <label className="block text-sm font-medium text-slate-600 mb-2">Assign Team Members (Multi-select - All Users)</label>
                                 <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl min-h-[44px]">
                                     {users.filter(u => u.status === 'active').map(u => (
-                                        <button key={u.id} onClick={() => toggleTeamMember(u.id)} disabled={!sectionsEnabled}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${assignedTeamMembers.includes(u.id) ? 'bg-amber-500 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-amber-400'} disabled:opacity-50`}>
+                                        <button key={u.id} onClick={() => toggleTeamMember(u.id)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${assignedTeamMembers.includes(u.id) ? 'bg-amber-500 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-amber-400'} `}>
                                             {u.name}
                                         </button>
                                     ))}
@@ -1545,8 +1530,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                 {/* Verified By (SEO) */}
                                 <div>
                                     <label className="block text-sm font-medium text-slate-600 mb-2">Verified By (SEO) - All Users</label>
-                                    <select value={verifiedBy || ''} onChange={(e) => setVerifiedBy(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 disabled:opacity-50">
+                                    <select value={verifiedBy || ''} onChange={(e) => setVerifiedBy(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 ">
                                         <option value="">Select Verifier...</option>
                                         {users.filter(u => u.status === 'active').map(u => (
                                             <option key={u.id} value={u.id}>{u.name}</option>
@@ -1558,7 +1543,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== STEP 11: Versioning ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center text-white text-sm font-bold">11</div>
                             <h3 className="text-base font-bold text-slate-800">Versioning</h3>
@@ -1572,8 +1557,8 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                     <span className="text-xs text-slate-400">Previous versions remain read-only</span>
                                 </div>
                             </div>
-                            <button onClick={() => setShowVersionHistory(!showVersionHistory)} disabled={!sectionsEnabled}
-                                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50">
+                            <button onClick={() => setShowVersionHistory(!showVersionHistory)}
+                                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium ">
                                 View Version History
                             </button>
                         </div>
@@ -1599,7 +1584,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== STEP 12: Actions ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">12</div>
                             <h3 className="text-base font-bold text-slate-800">Actions - Save, Submit, Discard</h3>
@@ -1613,15 +1598,15 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                         <div className="flex items-center justify-end gap-3">
                             <button onClick={handleDiscard} disabled={!sectionsEnabled || isSubmitting}
-                                className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                                className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors ">
                                 Discard
                             </button>
                             <button onClick={handleSaveDraft} disabled={!sectionsEnabled || isSubmitting}
-                                className="px-5 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50">
+                                className="px-5 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors ">
                                 {isSubmitting ? 'Saving...' : 'Save (Draft)'}
                             </button>
                             <button onClick={handleSubmit} disabled={!sectionsEnabled || isSubmitting}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-50">
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all ">
                                 {isSubmitting ? (
                                     <>
                                         <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

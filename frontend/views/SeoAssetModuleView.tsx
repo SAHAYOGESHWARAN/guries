@@ -105,7 +105,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
     const [selectedDomains, setSelectedDomains] = useState<DomainDetails[]>([]);
     const [domainInputValue, setDomainInputValue] = useState('');
 
-    // ========== SECTION 7: Domain Update & Self QC Popup ==========
+    // ========== Domain Update & Self QC Popup ==========
     const [showDomainPopup, setShowDomainPopup] = useState(false);
     const [editingDomainIndex, setEditingDomainIndex] = useState<number | null>(null);
     const [domainPopupData, setDomainPopupData] = useState<DomainDetails>({
@@ -139,16 +139,16 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [sectionsEnabled, setSectionsEnabled] = useState({
-        mapSource: false,
-        classification: false,
-        seoMetadata: false,
-        keywords: false,
-        domains: false,
-        blogContent: false,
-        resourceUpload: false,
-        workflow: false,
-        versioning: false,
-        actions: false
+        mapSource: true,
+        classification: true,
+        seoMetadata: true,
+        keywords: true,
+        domains: true,
+        blogContent: true,
+        resourceUpload: true,
+        workflow: true,
+        versioning: true,
+        actions: true
     });
 
     // Get unique sectors and industries from master data
@@ -641,7 +641,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 2: Map Asset to Source Work ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.mapSource ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">2</div>
                             <h3 className="text-base font-bold text-slate-800">Map Assets to Source Work</h3>
@@ -710,7 +710,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
 
 
                     {/* ========== SECTION 3: Asset Classification ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.classification ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">3</div>
                             <h3 className="text-base font-bold text-slate-800">Asset Classification</h3>
@@ -747,7 +747,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 4: SEO Metadata ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.seoMetadata ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">4</div>
                             <h3 className="text-base font-bold text-slate-800">SEO Metadata</h3>
@@ -815,7 +815,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 5: Keywords ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.keywords ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">5</div>
                             <h3 className="text-base font-bold text-slate-800">Keywords</h3>
@@ -879,57 +879,42 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
 
 
                     {/* ========== SECTION 6: Domain Type & Domain Addition ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.domains ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
                             <h3 className="text-base font-bold text-slate-800">Domain Type & Domain Addition</h3>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-medium rounded">From Backlink Master</span>
                         </div>
                         <div className="space-y-4">
-                            {/* Domain Type & Domain URL/Name - Same Row */}
-                            <div className="flex gap-4 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
-                                    <select value={domainType} onChange={(e) => setDomainType(e.target.value)}
-                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                            {/* Domain Type Dropdown + Add Domain Button - Same Row */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Domain Type</label>
+                                <div className="flex gap-4 items-center">
+                                    <select
+                                        value={domainType}
+                                        onChange={(e) => setDomainType(e.target.value)}
+                                        className="flex-1 h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                                    >
                                         <option value="">Select domain type...</option>
                                         {domainTypes.map((dt: string) => <option key={dt} value={dt}>{dt}</option>)}
                                     </select>
+                                    <button
+                                        onClick={() => {
+                                            if (domainType) {
+                                                const domainName = `${domainType}-${Date.now()}`;
+                                                handleAddDomainFromDropdown(domainName);
+                                            }
+                                        }}
+                                        disabled={!domainType}
+                                        className="flex items-center gap-2 h-11 px-6 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-medium text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Domain
+                                    </button>
                                 </div>
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-slate-600 mb-2">Domain URL/Name</label>
-                                    <input
-                                        type="text"
-                                        value={domainInputValue || ''}
-                                        onChange={(e) => setDomainInputValue(e.target.value)}
-                                        placeholder="e.g. example.com"
-                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                                    />
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        if (domainInputValue) {
-                                            handleAddDomainFromDropdown(domainInputValue);
-                                            setDomainInputValue('');
-                                        }
-                                    }}
-                                    disabled={!domainInputValue}
-                                    className="flex items-center gap-2 h-11 px-5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-sm whitespace-nowrap"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Add Domain
-                                </button>
                             </div>
-
-                            {/* Helper Text */}
-                            <p className="text-xs text-blue-500 flex items-center gap-1.5">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Click on a domain name in the list below to update Self QC and QA status.
-                            </p>
 
                             {/* Managed Assets Table */}
                             {selectedDomains.length > 0 && (
@@ -1099,8 +1084,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Pending' })}
                                                 className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${domainPopupData.seo_self_qc_status === 'Pending'
-                                                        ? 'border-amber-400 bg-amber-50 text-amber-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    ? 'border-amber-400 bg-amber-50 text-amber-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 Pending
@@ -1110,8 +1095,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Approved' })}
                                                 className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all flex items-center justify-center gap-2 ${domainPopupData.seo_self_qc_status === 'Approved'
-                                                        ? 'border-green-400 bg-green-50 text-green-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    ? 'border-green-400 bg-green-50 text-green-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 {domainPopupData.seo_self_qc_status === 'Approved' && (
@@ -1126,8 +1111,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setDomainPopupData({ ...domainPopupData, seo_self_qc_status: 'Rejected' })}
                                                 className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${domainPopupData.seo_self_qc_status === 'Rejected'
-                                                        ? 'border-rose-400 bg-rose-50 text-rose-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                                    ? 'border-rose-400 bg-rose-50 text-rose-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 Rejected
@@ -1203,8 +1188,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                         <div className="flex justify-between items-center">
                                             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Self QC Result</span>
                                             <span className={`text-sm font-semibold ${selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Approved' ? 'text-green-600' :
-                                                    selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Rejected' ? 'text-rose-600' :
-                                                        'text-amber-600'
+                                                selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status === 'Rejected' ? 'text-rose-600' :
+                                                    'text-amber-600'
                                                 }`}>
                                                 {selectedDomains[qaReviewDomainIndex]?.seo_self_qc_status || 'Pending'}
                                             </span>
@@ -1220,8 +1205,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setQAReviewVerdict('Pass')}
                                                 className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${qaReviewVerdict === 'Pass'
-                                                        ? 'border-green-400 bg-green-50'
-                                                        : 'border-slate-200 bg-white hover:border-green-300 hover:bg-green-50/50'
+                                                    ? 'border-green-400 bg-green-50'
+                                                    : 'border-slate-200 bg-white hover:border-green-300 hover:bg-green-50/50'
                                                     }`}
                                             >
                                                 <svg className={`w-8 h-8 ${qaReviewVerdict === 'Pass' ? 'text-green-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1234,8 +1219,8 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                                 type="button"
                                                 onClick={() => setQAReviewVerdict('Fail')}
                                                 className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${qaReviewVerdict === 'Fail'
-                                                        ? 'border-rose-400 bg-rose-50'
-                                                        : 'border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/50'
+                                                    ? 'border-rose-400 bg-rose-50'
+                                                    : 'border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/50'
                                                     }`}
                                             >
                                                 <svg className={`w-8 h-8 ${qaReviewVerdict === 'Fail' ? 'text-rose-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1258,7 +1243,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                                     <button
                                         onClick={handleSubmitQAVerdict}
                                         disabled={!qaReviewVerdict}
-                                        className="px-5 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-5 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors  disabled:cursor-not-allowed"
                                     >
                                         Submit Verdict
                                     </button>
@@ -1270,7 +1255,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
 
                     {/* ========== SECTION 8: Blog Posting - Content Editor (Conditional) ========== */}
                     {isBlogPosting && (
-                        <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.blogContent ? disabledSectionClass : ''}`}>
+                        <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
                                 <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
@@ -1289,7 +1274,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     )}
 
                     {/* ========== SECTION 9: Resource File Upload ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.resourceUpload ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">9</div>
                             <h3 className="text-base font-bold text-slate-800">Resource File Upload</h3>
@@ -1330,7 +1315,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 10: Designer & Workflow ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.workflow ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">10</div>
                             <h3 className="text-base font-bold text-slate-800">Designer & Workflow</h3>
@@ -1381,7 +1366,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 11: Versioning ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.versioning ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-slate-500 to-gray-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">11</div>
                             <h3 className="text-base font-bold text-slate-800">Versioning</h3>
@@ -1420,7 +1405,7 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                     </div>
 
                     {/* ========== SECTION 12: Actions ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${!sectionsEnabled.actions ? disabledSectionClass : ''}`}>
+                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">12</div>
                             <h3 className="text-base font-bold text-slate-800">Actions</h3>
@@ -1428,17 +1413,17 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                         <div className="flex gap-4">
                             {/* Save (Draft) */}
                             <button onClick={handleSaveDraft} disabled={isSubmitting}
-                                className="flex-1 px-5 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 disabled:opacity-50 transition-all">
+                                className="flex-1 px-5 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200  transition-all">
                                 {isSubmitting ? 'Saving...' : 'Save (Draft)'}
                             </button>
                             {/* Submit */}
                             <button onClick={handleSubmit} disabled={isSubmitting}
-                                className="flex-1 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25 disabled:opacity-50 transition-all">
+                                className="flex-1 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25  transition-all">
                                 {isSubmitting ? 'Submitting...' : 'Submit'}
                             </button>
                             {/* Discard */}
                             <button onClick={handleDiscard} disabled={isSubmitting}
-                                className="px-5 py-2.5 text-sm font-medium text-rose-600 bg-rose-50 rounded-xl hover:bg-rose-100 disabled:opacity-50 transition-all">
+                                className="px-5 py-2.5 text-sm font-medium text-rose-600 bg-rose-50 rounded-xl hover:bg-rose-100  transition-all">
                                 Discard
                             </button>
                         </div>
