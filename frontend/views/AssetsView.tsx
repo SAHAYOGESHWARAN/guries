@@ -61,7 +61,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         checkbox: true,
         name: true,
         index: true,
-        icon: true,
         type: true,
         category: true,
         tags: true,
@@ -6606,13 +6605,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 }
                                                             }} className="w-4 h-4 rounded border-gray-300" />
                                                         </th>}
-                                                        {visibleColumns.name && <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
-                                                        {visibleColumns.index && <th className="w-12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>
-                                                        </th>}
-                                                        {visibleColumns.icon && <th className="w-14 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
-                                                        </th>}
+                                                        {visibleColumns.index && <th className="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>}
+                                                        {visibleColumns.name && <th className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
                                                         {visibleColumns.type && <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>}
                                                         {visibleColumns.category && <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
                                                         {visibleColumns.tags && <th className="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>}
@@ -6649,7 +6643,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             else if (status === 'QC Approved' || status === 'Published') statusText = 'Low, Waiting';
 
                                                             return (
-                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className={`hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}>
+                                                                <tr key={asset.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}>
                                                                     {visibleColumns.checkbox && <td className="px-3 py-3">
                                                                         <input type="checkbox" checked={isSelected} onChange={(e) => {
                                                                             const newSet = new Set(selectedAssetIds);
@@ -6657,16 +6651,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             else newSet.delete(asset.id);
                                                                             setSelectedAssetIds(newSet);
                                                                             setSelectAll(newSet.size === filteredAssets.length);
-                                                                        }} onClick={(e) => e.stopPropagation()} className="w-4 h-4 rounded border-gray-300" />
+                                                                        }} className="w-4 h-4 rounded border-gray-300" />
                                                                     </td>}
+                                                                    {visibleColumns.index && <td className="px-3 py-3 text-sm text-gray-600">{asset.id}</td>}
                                                                     {visibleColumns.name && <td className="px-3 py-3 truncate" title={asset.name}>
-                                                                        <span className="text-blue-600 hover:text-blue-800 text-sm font-medium truncate block">{asset.name}</span>
-                                                                    </td>}
-                                                                    {visibleColumns.index && <td className="px-3 py-3 text-sm text-gray-600">{startIdx + index + 1}</td>}
-                                                                    {visibleColumns.icon && <td className="px-3 py-3">
-                                                                        <div className="w-6 h-6 bg-gray-800 rounded flex items-center justify-center">
-                                                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
-                                                                        </div>
+                                                                        <span
+                                                                            onClick={() => handleRowClick(asset)}
+                                                                            className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium truncate block cursor-pointer"
+                                                                        >
+                                                                            {asset.name}
+                                                                        </span>
                                                                     </td>}
                                                                     {visibleColumns.type && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={asset.type || '-'}>{asset.type || '-'}</td>}
                                                                     {visibleColumns.category && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={asset.asset_category || service?.service_name || '-'}>{asset.asset_category || service?.service_name || '-'}</td>}
