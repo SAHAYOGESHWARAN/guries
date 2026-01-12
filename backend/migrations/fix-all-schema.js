@@ -88,6 +88,7 @@ addColumnIfNotExists('assets', 'version_number', 'TEXT DEFAULT "v1.0"');
 addColumnIfNotExists('assets', 'designed_by', 'INTEGER');
 addColumnIfNotExists('assets', 'created_by', 'INTEGER');
 addColumnIfNotExists('assets', 'updated_by', 'INTEGER');
+addColumnIfNotExists('assets', 'workflow_stage', 'TEXT DEFAULT "Add"');
 
 console.log('\n✓ Schema fix completed!');
 db.close();

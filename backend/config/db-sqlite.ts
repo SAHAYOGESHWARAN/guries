@@ -696,6 +696,7 @@ export const initDatabase = () => {
     addColumnIfNotExists('assets', 'designed_by', 'INTEGER');
     addColumnIfNotExists('assets', 'created_by', 'INTEGER');
     addColumnIfNotExists('assets', 'updated_by', 'INTEGER');
+    addColumnIfNotExists('assets', 'workflow_stage', 'TEXT DEFAULT "Add"');
 
     // Add missing columns to users table for admin functionality
     addColumnIfNotExists('users', 'password_hash', 'TEXT');
