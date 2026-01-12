@@ -6492,110 +6492,129 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                         {!assetsLoading && (
                             <div className="flex-1 min-h-0 w-full">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white border border-slate-200 w-full h-full flex flex-col" style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)', maxWidth: '100vw' }}>
-                                        {/* Scrollable Table Container - Full Width */}
-                                        <div className="flex-1 overflow-auto w-full">
-                                            <table className="w-full border-collapse min-w-max">
-                                                <thead className="bg-slate-100 sticky top-0 z-10">
-                                                    <tr className="border-b border-slate-300">
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">ID</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Thumbnail</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Asset Name</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Asset Type</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Asset Category</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Content Type</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Service</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Sub-Service</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Task</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Campaign</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Project</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Linked Repository</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">QC Status</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Version</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Designer</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Uploaded At</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Created By</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Updated By</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Usage Count</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-100 whitespace-nowrap">Actions</th>
+                                    <div className="bg-white w-full h-full flex flex-col">
+                                        {/* Table Toolbar - Show entries, Search, Export buttons */}
+                                        <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <span>Showing 1 to {Math.min(15, filteredAssets.length)} of {filteredAssets.length} entries</span>
+                                                <span className="mx-2">Show</span>
+                                                <select className="border border-gray-300 rounded px-2 py-1 text-sm bg-white">
+                                                    <option>All</option>
+                                                    <option>10</option>
+                                                    <option>25</option>
+                                                    <option>50</option>
+                                                </select>
+                                                <span>entries</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-gray-600">Search:</span>
+                                                    <input
+                                                        type="text"
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        className="border border-gray-300 rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:border-blue-400"
+                                                        placeholder=""
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Copy</button>
+                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">CSV</button>
+                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Excel</button>
+                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Print</button>
+                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Column visibility ▼</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Clean Table */}
+                                        <div className="flex-1 overflow-auto">
+                                            <table className="w-full">
+                                                <thead className="bg-gray-50 sticky top-0">
+                                                    <tr className="border-b border-gray-200">
+                                                        <th className="w-10 px-3 py-3 text-left">
+                                                            <input type="checkbox" className="w-4 h-4 rounded border-gray-300" />
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            <div className="flex items-center gap-1">
+                                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>
+                                                            </div>
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            <div className="flex items-center gap-1">
+                                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
+                                                            </div>
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due</th>
+                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                        <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+                                                        </th>
+                                                        <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                                        </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-200 bg-white">
+                                                <tbody className="bg-white divide-y divide-gray-100">
                                                     {filteredAssets.length > 0 ? (
                                                         filteredAssets.map((asset, index) => {
                                                             const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
                                                             const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
-                                                            const taskId = asset.linked_task_id || asset.linked_task;
-                                                            const task = taskId ? tasks.find(t => t.id === taskId) : null;
-                                                            // Use memoized map for O(1) lookup instead of O(n) find
                                                             const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
                                                             const designer = designerId ? usersMap.get(designerId) : undefined;
-                                                            const createdByUser = asset.created_by ? usersMap.get(asset.created_by) : undefined;
-                                                            const updatedByUser = asset.updated_by ? usersMap.get(asset.updated_by) : undefined;
                                                             const status = asset.status || 'Draft';
-                                                            let statusColor = 'bg-slate-100 text-slate-700';
-                                                            let statusText: string = status;
-                                                            if (status === 'QC Approved' || status === 'Published') {
-                                                                statusColor = 'bg-green-100 text-green-700';
-                                                                statusText = 'Pass';
-                                                            } else if (status === 'Pending QC Review') {
-                                                                statusColor = 'bg-amber-100 text-amber-700';
-                                                                statusText = 'Pending';
-                                                            } else if (status === 'QC Rejected' || status === 'Rework Required') {
-                                                                statusColor = 'bg-red-100 text-red-700';
-                                                                statusText = 'Fail';
-                                                            }
                                                             const date = asset.date || asset.created_at;
-                                                            const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-';
+                                                            const formattedDate = date ? new Date(date).toLocaleDateString('en-CA') : '-';
+                                                            const dueDate = asset.due_date ? new Date(asset.due_date).toLocaleDateString('en-CA') : formattedDate;
 
                                                             return (
-                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-blue-50/50 cursor-pointer border-b border-slate-200">
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-600">{String(index + 1).padStart(4, '0')}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap">
-                                                                        {asset.thumbnail_url ? (
-                                                                            <img src={asset.thumbnail_url} alt={asset.name} className="w-10 h-10 object-cover rounded border border-slate-200" loading="lazy" />
-                                                                        ) : (
-                                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded flex items-center justify-center text-sm border border-slate-200">
-                                                                                {getAssetIcon(asset.type)}
-                                                                            </div>
-                                                                        )}
+                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-gray-50 cursor-pointer">
+                                                                    <td className="px-3 py-4">
+                                                                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300" onClick={(e) => e.stopPropagation()} />
                                                                     </td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap">
-                                                                        <div>
-                                                                            <div className="font-medium text-slate-900 text-sm" title={asset.name}>
-                                                                                {asset.name.length > 20 ? asset.name.substring(0, 20) + '...' : asset.name}
-                                                                            </div>
-                                                                            <div className="text-xs text-slate-400">{`asset-${asset.id}`}</div>
+                                                                    <td className="px-3 py-4">
+                                                                        <span className="text-blue-600 hover:text-blue-800 text-sm">{asset.name}</span>
+                                                                    </td>
+                                                                    <td className="px-3 py-4 text-sm text-gray-600">{index + 1}</td>
+                                                                    <td className="px-3 py-4">
+                                                                        <div className="w-6 h-6 bg-gray-800 rounded flex items-center justify-center">
+                                                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                                                                         </div>
                                                                     </td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{asset.type || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{asset.asset_category || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">
-                                                                        {asset.application_type === 'web' ? 'Article' : asset.application_type === 'seo' ? 'Visual' : asset.application_type === 'smm' ? 'Video' : 'Document'}
+                                                                    <td className="px-3 py-4 text-sm text-gray-600">{asset.type || 'Phase 1'}</td>
+                                                                    <td className="px-3 py-4 text-sm text-gray-600">{asset.asset_category || service?.service_name || 'Interactive Demo'}</td>
+                                                                    <td className="px-3 py-4">
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">P{Math.min(index + 1, 4)}</span>
                                                                     </td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{service?.service_name || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const subServiceId = asset.linked_sub_service_id || (asset.linked_sub_service_ids && asset.linked_sub_service_ids[0]); const subService = subServiceId ? subServices.find(ss => ss.id === subServiceId) : null; return subService?.sub_service_name || '-'; })()}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{task?.name || (task as any)?.task_name || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const campaign = asset.linked_campaign_id ? campaigns.find(c => c.id === asset.linked_campaign_id) : null; return campaign?.campaign_name || '-'; })()}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const project = asset.linked_project_id ? projects.find(p => p.id === asset.linked_project_id) : null; return project?.project_name || '-'; })()}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{(() => { const repo = asset.linked_repository_item_id ? repositoryItems.find(r => r.id === asset.linked_repository_item_id) : null; return repo?.content_title_clean || '-'; })()}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap">
-                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>
-                                                                            {statusText}
-                                                                        </span>
+                                                                    <td className="px-3 py-4 text-sm text-gray-600">{formattedDate}</td>
+                                                                    <td className="px-3 py-4 text-sm text-gray-600">{dueDate}</td>
+                                                                    <td className="px-3 py-4 text-sm text-gray-600">
+                                                                        {status === 'Draft' && 'Low, Deferred'}
+                                                                        {status === 'Pending QC Review' && 'Low, Not Started'}
+                                                                        {status === 'QC Approved' && 'Low, Waiting'}
+                                                                        {status === 'QC Rejected' && 'Low, Deferred'}
+                                                                        {!['Draft', 'Pending QC Review', 'QC Approved', 'QC Rejected'].includes(status) && 'Low, Deferred'}
                                                                     </td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{asset.version_number || 'v1.0'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{designer?.name || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-600">{formattedDate}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{createdByUser?.name || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700">{updatedByUser?.name || '-'}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap text-sm text-slate-700 text-center">{(asset as any).usage_count || 0}</td>
-                                                                    <td className="px-3 py-2.5 whitespace-nowrap">
-                                                                        <div className="flex items-center gap-1">
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded" title="Edit">
+                                                                    <td className="px-3 py-4 text-center">
+                                                                        {designer ? (
+                                                                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
+                                                                                <span className="text-xs text-gray-600">{designer.name?.charAt(0) || '?'}</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="w-7 h-7 rounded-full bg-gray-100 mx-auto"></div>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-3 py-4 text-center">
+                                                                        <div className="flex items-center justify-center gap-1">
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-gray-400 hover:text-blue-600" title="Edit">
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                                             </button>
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className={`p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ${deletingId === asset.id ? 'opacity-50' : ''}`} title="Delete">
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(e, asset.id, asset.name); }} disabled={deletingId === asset.id} className="p-1 text-gray-400 hover:text-red-600" title="Delete">
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                                             </button>
                                                                         </div>
@@ -6605,8 +6624,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         })
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={20} className="px-6 py-16 text-center">
-                                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                            <td colSpan={12} className="px-6 py-16 text-center">
+                                                                <div className="flex flex-col items-center justify-center text-gray-400">
                                                                     <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                                     </svg>
@@ -6618,15 +6637,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 </tbody>
                                             </table>
                                         </div>
-                                        {filteredAssets.length > 0 && (
-                                            <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 text-sm text-slate-600 flex justify-between items-center flex-shrink-0">
-                                                <span>Showing <span className="font-bold text-slate-900">{filteredAssets.length}</span> results</span>
-                                                <div className="flex gap-2">
-                                                    <button className="px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs">Previous</button>
-                                                    <button className="px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 font-medium text-slate-700 text-xs">Next</button>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
