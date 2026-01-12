@@ -6030,7 +6030,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             {/* List View */}
             {
                 viewMode === 'list' && (
-                    <div className="flex flex-col w-full px-4 pb-4">
+                    <div className="h-full flex flex-col w-full px-4 overflow-y-auto">
                         <div className="flex justify-between items-start flex-shrink-0 w-full mb-4 pt-4">
                             <div>
                                 <div className="flex items-center gap-3">
@@ -6511,7 +6511,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                         {/* Display Content Based on View Mode */}
                         {!assetsLoading && (
-                            <div className="w-full">
+                            <div className="w-full pb-6">
                                 {displayMode === 'table' ? (
                                     <div className="bg-white w-full flex flex-col">
                                         {/* Table Toolbar - Show entries, Search, Export buttons */}
@@ -6592,8 +6592,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
 
                                         {/* Clean Table - Non-scrollable, displays all paginated rows */}
-                                        <div className="w-full border border-gray-200 rounded-lg overflow-hidden">
-                                            <table className="w-full table-fixed">
+                                        <div className="w-full border border-gray-200 rounded-lg">
+                                            <table className="w-full table-fixed border-collapse">
                                                 <thead className="bg-gray-50">
                                                     <tr className="border-b border-gray-200">
                                                         {visibleColumns.checkbox && <th className="w-12 px-3 py-3 text-left">
