@@ -314,16 +314,20 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                 name: asset.web_title || asset.name,
                 keywords,
                 status: submitForQC ? 'Pending QC Review' : 'Draft',
+                workflow_stage: submitForQC ? 'Sent to QC' : (workflowStage || 'Add'),
+                qc_status: submitForQC ? 'QC Pending' : null,
+                version_number: asset.version_number || 'v1.0',
                 linked_task_id: linkedTaskId,
                 linked_campaign_id: linkedCampaignId,
                 linked_project_id: linkedProjectId,
                 linked_service_id: linkedServiceId,
                 linked_sub_service_id: linkedSubServiceId,
                 linked_repository_item_id: linkedRepositoryItemId,
-                designed_by: designedBy,
-                workflow_stage: workflowStage,
+                designed_by: designedBy || user?.id,
                 created_by: user?.id,
                 created_at: new Date().toISOString(),
+                submitted_by: submitForQC ? user?.id : undefined,
+                submitted_at: submitForQC ? new Date().toISOString() : undefined,
             };
 
             if (initialData?.id) await updateAsset(initialData.id, data);
@@ -341,7 +345,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
         } finally {
             setIsSaving(false);
         }
-    }, [asset, keywordsInput, linkedTaskId, linkedCampaignId, linkedProjectId, linkedServiceId, linkedSubServiceId, linkedRepositoryItemId, designedBy, workflowStage, initialData, createAsset, updateAsset, onSuccess, onClose, user]);
+    }, [asset, keywordsInput, webSelectedKeywords, linkedTaskId, linkedCampaignId, linkedProjectId, linkedServiceId, linkedSubServiceId, linkedRepositoryItemId, designedBy, workflowStage, initialData, createAsset, updateAsset, onSuccess, onClose, user]);
 
     if (!isOpen) return null;
 

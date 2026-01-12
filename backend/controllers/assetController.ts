@@ -147,12 +147,12 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 a.smm_hashtags,
                 a.smm_media_url,
                 a.smm_media_type,
-                (
-                    SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id
-                ) + (
-                    SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id
-                ) + (
-                    SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id
+                COALESCE(
+                    (SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id), 0
+                ) + COALESCE(
+                    (SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0
+                ) + COALESCE(
+                    (SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0
                 ) as usage_count
             FROM assets a
             ORDER BY a.created_at DESC

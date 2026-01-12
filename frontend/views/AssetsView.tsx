@@ -65,6 +65,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         category: true,
         linkedService: true,
         linkedTask: true,
+        workflowStage: true,
         qcStatus: true,
         version: true,
         uploadedAt: true,
@@ -195,10 +196,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         seo_score: undefined, // 15. SEO Score (AI integration)
         grammar_score: undefined, // 16. Grammar Score (AI integration)
         status: 'Draft', // 17. Status (removed usage_status as per requirement 3)
+        workflow_stage: 'Add', // Workflow stage
+        qc_status: undefined, // QC Status
+        version_number: 'v1.0', // Version number
 
         // Internal fields
         linked_service_ids: [],
         linked_sub_service_ids: [],
+        linked_service_id: undefined,
+        linked_task_id: undefined,
         smm_platform: undefined,
         smm_additional_pages: [],
         keywords: [] // Added keywords array for master database integration
@@ -604,10 +610,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 date: new Date().toISOString(),
                 created_at: new Date().toISOString(),
                 created_by: currentUser.id, // Always set created_by for proper ownership tracking
+                designed_by: currentUser.id, // Set designer as current user
                 linked_service_ids: linkedServiceIds,
                 linked_sub_service_ids: linkedSubServiceIds,
+                linked_service_id: selectedServiceId || null, // Single linked service ID
+                linked_task_id: newAsset.linked_task_id || newAsset.linked_task || null, // Linked task
                 mapped_to: mappedToString || newAsset.mapped_to,
                 status: submitForQC ? 'Pending QC Review' : (newAsset.status || 'Draft'),
+                workflow_stage: submitForQC ? 'Sent to QC' : (newAsset.workflow_stage || 'Add'),
+                qc_status: submitForQC ? 'QC Pending' : (newAsset.qc_status || null),
+                version_number: newAsset.version_number || 'v1.0',
                 submitted_by: submitForQC ? currentUser.id : undefined,
                 submitted_at: submitForQC ? new Date().toISOString() : undefined,
                 linking_active: false // Linking only becomes active after QC approval
@@ -640,8 +652,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 type: 'article',
                 repository: 'Content Repository',
                 status: 'Draft',
+                workflow_stage: 'Add',
+                qc_status: undefined,
+                version_number: 'v1.0',
                 linked_service_ids: [],
                 linked_sub_service_ids: [],
+                linked_service_id: undefined,
+                linked_task_id: undefined,
                 application_type: 'web',
                 smm_platform: undefined,
                 seo_score: undefined,
@@ -6613,6 +6630,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {visibleColumns.category && <th className="w-28 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
                                                         {visibleColumns.linkedService && <th className="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linked Service</th>}
                                                         {visibleColumns.linkedTask && <th className="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linked Task</th>}
+                                                        {visibleColumns.workflowStage && <th className="w-28 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Workflow Stage</th>}
                                                         {visibleColumns.qcStatus && <th className="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QC Status</th>}
                                                         {visibleColumns.version && <th className="w-16 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>}
                                                         {visibleColumns.uploadedAt && <th className="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded At</th>}
@@ -6693,6 +6711,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             <span className="text-purple-600">{linkedTask.name}</span>
                                                                         ) : '-'}
                                                                     </td>}
+                                                                    {visibleColumns.workflowStage && <td className="px-2 py-3">
+                                                                        {asset.workflow_stage ? (
+                                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${asset.workflow_stage === 'Published' ? 'bg-green-100 text-green-800' :
+                                                                                asset.workflow_stage === 'Sent to QC' ? 'bg-blue-100 text-blue-800' :
+                                                                                    asset.workflow_stage === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                        asset.workflow_stage === 'In Rework' ? 'bg-orange-100 text-orange-800' :
+                                                                                            asset.workflow_stage === 'Moved to CW' ? 'bg-purple-100 text-purple-800' :
+                                                                                                asset.workflow_stage === 'Moved to GD' ? 'bg-pink-100 text-pink-800' :
+                                                                                                    asset.workflow_stage === 'Moved to WD' ? 'bg-cyan-100 text-cyan-800' :
+                                                                                                        'bg-gray-100 text-gray-600'
+                                                                                }`}>
+                                                                                {asset.workflow_stage}
+                                                                            </span>
+                                                                        ) : <span className="text-sm text-gray-400">Add</span>}
+                                                                    </td>}
                                                                     {visibleColumns.qcStatus && <td className="px-2 py-3">
                                                                         {qcStatus !== '-' ? (
                                                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getQcStatusStyle(qcStatus)}`}>
@@ -6733,7 +6766,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             );
                                                         }) : (
                                                             <tr>
-                                                                <td colSpan={13} className="px-6 py-16 text-center">
+                                                                <td colSpan={14} className="px-6 py-16 text-center">
                                                                     <div className="flex flex-col items-center justify-center text-gray-400">
                                                                         <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
