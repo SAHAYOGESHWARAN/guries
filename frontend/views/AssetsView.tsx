@@ -59,14 +59,16 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const [selectAll, setSelectAll] = useState(false);
     const [visibleColumns, setVisibleColumns] = useState({
         checkbox: true,
-        name: true,
         index: true,
+        name: true,
         type: true,
         category: true,
-        tags: true,
-        start: true,
-        due: true,
-        status: true,
+        linkedService: true,
+        linkedTask: true,
+        qcStatus: true,
+        version: true,
+        uploadedAt: true,
+        usageCount: true,
         user: true,
         actions: true
     });
@@ -6591,11 +6593,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         </div>
 
                                         {/* Clean Table - Non-scrollable, displays all paginated rows */}
-                                        <div className="w-full border border-gray-200 rounded-lg">
-                                            <table className="w-full table-fixed border-collapse">
+                                        <div className="w-full border border-gray-200 rounded-lg overflow-x-auto">
+                                            <table className="w-full min-w-[1200px] border-collapse">
                                                 <thead className="bg-gray-50">
                                                     <tr className="border-b border-gray-200">
-                                                        {visibleColumns.checkbox && <th className="w-12 px-3 py-3 text-left">
+                                                        {visibleColumns.checkbox && <th className="w-10 px-2 py-3 text-left">
                                                             <input type="checkbox" checked={selectAll} onChange={(e) => {
                                                                 setSelectAll(e.target.checked);
                                                                 if (e.target.checked) {
@@ -6605,20 +6607,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 }
                                                             }} className="w-4 h-4 rounded border-gray-300" />
                                                         </th>}
-                                                        {visibleColumns.index && <th className="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>}
-                                                        {visibleColumns.name && <th className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
-                                                        {visibleColumns.type && <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>}
-                                                        {visibleColumns.category && <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
-                                                        {visibleColumns.tags && <th className="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>}
-                                                        {visibleColumns.start && <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>}
-                                                        {visibleColumns.due && <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due</th>}
-                                                        {visibleColumns.status && <th className="w-[14%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>}
-                                                        {visibleColumns.user && <th className="w-14 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
-                                                        </th>}
-                                                        {visibleColumns.actions && <th className="w-20 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                                                        </th>}
+                                                        {visibleColumns.index && <th className="w-14 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>}
+                                                        {visibleColumns.name && <th className="w-48 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
+                                                        {visibleColumns.type && <th className="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>}
+                                                        {visibleColumns.category && <th className="w-28 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
+                                                        {visibleColumns.linkedService && <th className="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linked Service</th>}
+                                                        {visibleColumns.linkedTask && <th className="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linked Task</th>}
+                                                        {visibleColumns.qcStatus && <th className="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QC Status</th>}
+                                                        {visibleColumns.version && <th className="w-16 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>}
+                                                        {visibleColumns.uploadedAt && <th className="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded At</th>}
+                                                        {visibleColumns.usageCount && <th className="w-20 px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>}
+                                                        {visibleColumns.user && <th className="w-28 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Designer</th>}
+                                                        {visibleColumns.actions && <th className="w-20 px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-100">
@@ -6629,22 +6629,41 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                                         return paginatedAssets.length > 0 ? paginatedAssets.map((asset, index) => {
                                                             const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
-                                                            const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
+                                                            const linkedService = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
+                                                            const linkedTaskId = asset.linked_task_id || asset.linked_task;
+                                                            const linkedTask = linkedTaskId ? tasks.find(t => t.id === linkedTaskId) : null;
                                                             const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
                                                             const designer = designerId ? usersMap.get(designerId) : undefined;
-                                                            const status = asset.status || 'Draft';
-                                                            const date = asset.date || asset.created_at;
-                                                            const formattedDate = date ? new Date(date).toLocaleDateString('en-CA') : '-';
-                                                            const dueDate = (asset as any).due_date ? new Date((asset as any).due_date).toLocaleDateString('en-CA') : formattedDate;
-                                                            const priority = (asset as any).priority || Math.min(index + 1, 4);
+                                                            const uploadedAt = asset.created_at || asset.date;
+                                                            const formattedUploadDate = uploadedAt ? new Date(uploadedAt).toLocaleDateString('en-CA') : '-';
                                                             const isSelected = selectedAssetIds.has(asset.id);
-                                                            let statusText = 'Low, Deferred';
-                                                            if (status === 'Pending QC Review') statusText = 'Low, Not Started';
-                                                            else if (status === 'QC Approved' || status === 'Published') statusText = 'Low, Waiting';
+                                                            const qcStatus = asset.qc_status || (asset.status === 'QC Approved' ? 'Pass' : asset.status === 'QC Rejected' ? 'Fail' : asset.status === 'Pending QC Review' ? 'Pending' : '-');
+                                                            const version = asset.version_number || 'v1.0';
+                                                            const usageCount = (asset as any).usage_count || 0;
+
+                                                            // QC Status badge colors
+                                                            const getQcStatusStyle = (status: string) => {
+                                                                switch (status?.toLowerCase()) {
+                                                                    case 'pass':
+                                                                    case 'approved':
+                                                                        return 'bg-green-100 text-green-800';
+                                                                    case 'fail':
+                                                                    case 'reject':
+                                                                    case 'rejected':
+                                                                        return 'bg-red-100 text-red-800';
+                                                                    case 'pending':
+                                                                    case 'qc pending':
+                                                                        return 'bg-yellow-100 text-yellow-800';
+                                                                    case 'rework':
+                                                                        return 'bg-orange-100 text-orange-800';
+                                                                    default:
+                                                                        return 'bg-gray-100 text-gray-600';
+                                                                }
+                                                            };
 
                                                             return (
                                                                 <tr key={asset.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}>
-                                                                    {visibleColumns.checkbox && <td className="px-3 py-3">
+                                                                    {visibleColumns.checkbox && <td className="px-2 py-3">
                                                                         <input type="checkbox" checked={isSelected} onChange={(e) => {
                                                                             const newSet = new Set(selectedAssetIds);
                                                                             if (e.target.checked) newSet.add(asset.id);
@@ -6653,8 +6672,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             setSelectAll(newSet.size === filteredAssets.length);
                                                                         }} className="w-4 h-4 rounded border-gray-300" />
                                                                     </td>}
-                                                                    {visibleColumns.index && <td className="px-3 py-3 text-sm text-gray-600">{asset.id}</td>}
-                                                                    {visibleColumns.name && <td className="px-3 py-3 truncate" title={asset.name}>
+                                                                    {visibleColumns.index && <td className="px-2 py-3 text-sm text-gray-600">{asset.id}</td>}
+                                                                    {visibleColumns.name && <td className="px-2 py-3 max-w-[200px]" title={asset.name}>
                                                                         <span
                                                                             onClick={() => handleRowClick(asset)}
                                                                             className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium truncate block cursor-pointer"
@@ -6662,24 +6681,45 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             {asset.name}
                                                                         </span>
                                                                     </td>}
-                                                                    {visibleColumns.type && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={asset.type || '-'}>{asset.type || '-'}</td>}
-                                                                    {visibleColumns.category && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={asset.asset_category || service?.service_name || '-'}>{asset.asset_category || service?.service_name || '-'}</td>}
-                                                                    {visibleColumns.tags && <td className="px-3 py-3">
-                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${priority === 1 ? 'bg-red-100 text-red-800' : priority === 2 ? 'bg-orange-100 text-orange-800' : priority === 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>P{priority}</span>
+                                                                    {visibleColumns.type && <td className="px-2 py-3 text-sm text-gray-600 truncate" title={asset.type || '-'}>{asset.type || '-'}</td>}
+                                                                    {visibleColumns.category && <td className="px-2 py-3 text-sm text-gray-600 truncate" title={asset.asset_category || '-'}>{asset.asset_category || '-'}</td>}
+                                                                    {visibleColumns.linkedService && <td className="px-2 py-3 text-sm text-gray-600 truncate" title={linkedService?.service_name || '-'}>
+                                                                        {linkedService ? (
+                                                                            <span className="text-indigo-600">{linkedService.service_name}</span>
+                                                                        ) : '-'}
                                                                     </td>}
-                                                                    {visibleColumns.start && <td className="px-3 py-3 text-sm text-gray-600">{formattedDate}</td>}
-                                                                    {visibleColumns.due && <td className="px-3 py-3 text-sm text-gray-600">{dueDate}</td>}
-                                                                    {visibleColumns.status && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={statusText}>{statusText}</td>}
-                                                                    {visibleColumns.user && <td className="px-3 py-3 text-center">
+                                                                    {visibleColumns.linkedTask && <td className="px-2 py-3 text-sm text-gray-600 truncate" title={linkedTask?.name || '-'}>
+                                                                        {linkedTask ? (
+                                                                            <span className="text-purple-600">{linkedTask.name}</span>
+                                                                        ) : '-'}
+                                                                    </td>}
+                                                                    {visibleColumns.qcStatus && <td className="px-2 py-3">
+                                                                        {qcStatus !== '-' ? (
+                                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getQcStatusStyle(qcStatus)}`}>
+                                                                                {qcStatus}
+                                                                            </span>
+                                                                        ) : <span className="text-sm text-gray-400">-</span>}
+                                                                    </td>}
+                                                                    {visibleColumns.version && <td className="px-2 py-3 text-sm text-gray-600">{version}</td>}
+                                                                    {visibleColumns.uploadedAt && <td className="px-2 py-3 text-sm text-gray-600">{formattedUploadDate}</td>}
+                                                                    {visibleColumns.usageCount && <td className="px-2 py-3 text-center">
+                                                                        <span className={`inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 rounded-full text-xs font-medium ${usageCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'}`}>
+                                                                            {usageCount}
+                                                                        </span>
+                                                                    </td>}
+                                                                    {visibleColumns.user && <td className="px-2 py-3">
                                                                         {designer ? (
-                                                                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center mx-auto" title={designer.name}>
-                                                                                <span className="text-xs text-gray-600 font-medium">{designer.name?.charAt(0).toUpperCase() || '?'}</span>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center" title={designer.name}>
+                                                                                    <span className="text-xs text-white font-medium">{designer.name?.charAt(0).toUpperCase() || '?'}</span>
+                                                                                </div>
+                                                                                <span className="text-sm text-gray-700 truncate">{designer.name}</span>
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="w-7 h-7 rounded-full bg-gray-100 mx-auto"></div>
+                                                                            <span className="text-sm text-gray-400">-</span>
                                                                         )}
                                                                     </td>}
-                                                                    {visibleColumns.actions && <td className="px-3 py-3 text-center">
+                                                                    {visibleColumns.actions && <td className="px-2 py-3 text-center">
                                                                         <div className="flex items-center justify-center gap-1">
                                                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-gray-400 hover:text-blue-600" title="Edit">
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -6693,7 +6733,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             );
                                                         }) : (
                                                             <tr>
-                                                                <td colSpan={12} className="px-6 py-16 text-center">
+                                                                <td colSpan={13} className="px-6 py-16 text-center">
                                                                     <div className="flex flex-col items-center justify-center text-gray-400">
                                                                         <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
