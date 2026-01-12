@@ -52,8 +52,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Table pagination and selection state
-    const [entriesPerPage, setEntriesPerPage] = useState<number | 'all'>('all');
+    // Table pagination and selection state - default to 6 rows per page for non-scrollable view
+    const [entriesPerPage, setEntriesPerPage] = useState<number | 'all'>(6);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedAssetIds, setSelectedAssetIds] = useState<Set<number>>(new Set());
     const [selectAll, setSelectAll] = useState(false);
@@ -6528,10 +6528,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     }}
                                                     className="border border-gray-300 rounded px-2 py-1 text-sm bg-white"
                                                 >
-                                                    <option value="all">All</option>
+                                                    <option value="6">6</option>
                                                     <option value="10">10</option>
                                                     <option value="25">25</option>
                                                     <option value="50">50</option>
+                                                    <option value="all">All</option>
                                                 </select>
                                                 <span>entries</span>
                                             </div>
@@ -6590,12 +6591,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        {/* Clean Table */}
-                                        <div className="flex-1 overflow-auto">
-                                            <table className="w-full">
-                                                <thead className="bg-gray-50 sticky top-0">
+                                        {/* Clean Table - Non-scrollable, fixed height for 6 rows */}
+                                        <div className="flex-1">
+                                            <table className="w-full table-fixed">
+                                                <thead className="bg-gray-50">
                                                     <tr className="border-b border-gray-200">
-                                                        {visibleColumns.checkbox && <th className="w-10 px-3 py-3 text-left">
+                                                        {visibleColumns.checkbox && <th className="w-12 px-3 py-3 text-left">
                                                             <input type="checkbox" checked={selectAll} onChange={(e) => {
                                                                 setSelectAll(e.target.checked);
                                                                 if (e.target.checked) {
@@ -6605,23 +6606,23 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                 }
                                                             }} className="w-4 h-4 rounded border-gray-300" />
                                                         </th>}
-                                                        {visibleColumns.name && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
-                                                        {visibleColumns.index && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        {visibleColumns.name && <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
+                                                        {visibleColumns.index && <th className="w-12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>
                                                         </th>}
-                                                        {visibleColumns.icon && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        {visibleColumns.icon && <th className="w-14 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                                                         </th>}
-                                                        {visibleColumns.type && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>}
-                                                        {visibleColumns.category && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
-                                                        {visibleColumns.tags && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>}
-                                                        {visibleColumns.start && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>}
-                                                        {visibleColumns.due && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due</th>}
-                                                        {visibleColumns.status && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>}
-                                                        {visibleColumns.user && <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        {visibleColumns.type && <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>}
+                                                        {visibleColumns.category && <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
+                                                        {visibleColumns.tags && <th className="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>}
+                                                        {visibleColumns.start && <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>}
+                                                        {visibleColumns.due && <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due</th>}
+                                                        {visibleColumns.status && <th className="w-[14%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>}
+                                                        {visibleColumns.user && <th className="w-14 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                             <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
                                                         </th>}
-                                                        {visibleColumns.actions && <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        {visibleColumns.actions && <th className="w-20 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                             <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                                                         </th>}
                                                     </tr>
@@ -6649,7 +6650,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                                                             return (
                                                                 <tr key={asset.id} onClick={() => handleRowClick(asset)} className={`hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}>
-                                                                    {visibleColumns.checkbox && <td className="px-3 py-4">
+                                                                    {visibleColumns.checkbox && <td className="px-3 py-3">
                                                                         <input type="checkbox" checked={isSelected} onChange={(e) => {
                                                                             const newSet = new Set(selectedAssetIds);
                                                                             if (e.target.checked) newSet.add(asset.id);
@@ -6658,24 +6659,24 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             setSelectAll(newSet.size === filteredAssets.length);
                                                                         }} onClick={(e) => e.stopPropagation()} className="w-4 h-4 rounded border-gray-300" />
                                                                     </td>}
-                                                                    {visibleColumns.name && <td className="px-3 py-4">
-                                                                        <span className="text-blue-600 hover:text-blue-800 text-sm font-medium">{asset.name}</span>
+                                                                    {visibleColumns.name && <td className="px-3 py-3 truncate" title={asset.name}>
+                                                                        <span className="text-blue-600 hover:text-blue-800 text-sm font-medium truncate block">{asset.name}</span>
                                                                     </td>}
-                                                                    {visibleColumns.index && <td className="px-3 py-4 text-sm text-gray-600">{startIdx + index + 1}</td>}
-                                                                    {visibleColumns.icon && <td className="px-3 py-4">
+                                                                    {visibleColumns.index && <td className="px-3 py-3 text-sm text-gray-600">{startIdx + index + 1}</td>}
+                                                                    {visibleColumns.icon && <td className="px-3 py-3">
                                                                         <div className="w-6 h-6 bg-gray-800 rounded flex items-center justify-center">
                                                                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                                                                         </div>
                                                                     </td>}
-                                                                    {visibleColumns.type && <td className="px-3 py-4 text-sm text-gray-600">{asset.type || '-'}</td>}
-                                                                    {visibleColumns.category && <td className="px-3 py-4 text-sm text-gray-600">{asset.asset_category || service?.service_name || '-'}</td>}
-                                                                    {visibleColumns.tags && <td className="px-3 py-4">
+                                                                    {visibleColumns.type && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={asset.type || '-'}>{asset.type || '-'}</td>}
+                                                                    {visibleColumns.category && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={asset.asset_category || service?.service_name || '-'}>{asset.asset_category || service?.service_name || '-'}</td>}
+                                                                    {visibleColumns.tags && <td className="px-3 py-3">
                                                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${priority === 1 ? 'bg-red-100 text-red-800' : priority === 2 ? 'bg-orange-100 text-orange-800' : priority === 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>P{priority}</span>
                                                                     </td>}
-                                                                    {visibleColumns.start && <td className="px-3 py-4 text-sm text-gray-600">{formattedDate}</td>}
-                                                                    {visibleColumns.due && <td className="px-3 py-4 text-sm text-gray-600">{dueDate}</td>}
-                                                                    {visibleColumns.status && <td className="px-3 py-4 text-sm text-gray-600">{statusText}</td>}
-                                                                    {visibleColumns.user && <td className="px-3 py-4 text-center">
+                                                                    {visibleColumns.start && <td className="px-3 py-3 text-sm text-gray-600">{formattedDate}</td>}
+                                                                    {visibleColumns.due && <td className="px-3 py-3 text-sm text-gray-600">{dueDate}</td>}
+                                                                    {visibleColumns.status && <td className="px-3 py-3 text-sm text-gray-600 truncate" title={statusText}>{statusText}</td>}
+                                                                    {visibleColumns.user && <td className="px-3 py-3 text-center">
                                                                         {designer ? (
                                                                             <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center mx-auto" title={designer.name}>
                                                                                 <span className="text-xs text-gray-600 font-medium">{designer.name?.charAt(0).toUpperCase() || '?'}</span>
@@ -6684,7 +6685,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             <div className="w-7 h-7 rounded-full bg-gray-100 mx-auto"></div>
                                                                         )}
                                                                     </td>}
-                                                                    {visibleColumns.actions && <td className="px-3 py-4 text-center">
+                                                                    {visibleColumns.actions && <td className="px-3 py-3 text-center">
                                                                         <div className="flex items-center justify-center gap-1">
                                                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-gray-400 hover:text-blue-600" title="Edit">
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -6713,10 +6714,10 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </table>
                                         </div>
 
-                                        {/* Pagination Footer */}
-                                        {entriesPerPage !== 'all' && Math.ceil(filteredAssets.length / entriesPerPage) > 1 && (
+                                        {/* Pagination Footer - Always show when not showing all */}
+                                        {entriesPerPage !== 'all' && (
                                             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
-                                                <div className="text-sm text-gray-600">Page {currentPage} of {Math.ceil(filteredAssets.length / (entriesPerPage as number))}</div>
+                                                <div className="text-sm text-gray-600">Page {currentPage} of {Math.max(1, Math.ceil(filteredAssets.length / (entriesPerPage as number)))}</div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
                                                     <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredAssets.length / (entriesPerPage as number)), p + 1))} disabled={currentPage === Math.ceil(filteredAssets.length / (entriesPerPage as number))} className="px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
