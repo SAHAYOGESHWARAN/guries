@@ -6030,7 +6030,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             {/* List View */}
             {
                 viewMode === 'list' && (
-                    <div className="h-full flex flex-col w-full px-4">
+                    <div className="flex flex-col w-full px-4 pb-4">
                         <div className="flex justify-between items-start flex-shrink-0 w-full mb-4 pt-4">
                             <div>
                                 <div className="flex items-center gap-3">
@@ -6511,9 +6511,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                         {/* Display Content Based on View Mode */}
                         {!assetsLoading && (
-                            <div className="flex-1 min-h-0 w-full">
+                            <div className="w-full">
                                 {displayMode === 'table' ? (
-                                    <div className="bg-white w-full h-full flex flex-col">
+                                    <div className="bg-white w-full flex flex-col">
                                         {/* Table Toolbar - Show entries, Search, Export buttons */}
                                         <div className="flex items-center justify-between py-3 border-b border-gray-200">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -6591,8 +6591,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             </div>
                                         </div>
 
-                                        {/* Clean Table - Non-scrollable, fixed height for 6 rows */}
-                                        <div className="flex-1">
+                                        {/* Clean Table - Non-scrollable, displays all paginated rows */}
+                                        <div className="w-full border border-gray-200 rounded-lg overflow-hidden">
                                             <table className="w-full table-fixed">
                                                 <thead className="bg-gray-50">
                                                     <tr className="border-b border-gray-200">
