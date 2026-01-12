@@ -52,6 +52,27 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Table pagination and selection state
+    const [entriesPerPage, setEntriesPerPage] = useState<number | 'all'>('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedAssetIds, setSelectedAssetIds] = useState<Set<number>>(new Set());
+    const [selectAll, setSelectAll] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState({
+        checkbox: true,
+        name: true,
+        index: true,
+        icon: true,
+        type: true,
+        category: true,
+        tags: true,
+        start: true,
+        due: true,
+        status: true,
+        user: true,
+        actions: true
+    });
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+
     // Filter state variables matching the specification
     const [assetTypeFilter, setAssetTypeFilter] = useState('All');           // Asset Type - from Asset Type Master
     const [assetCategoryFilter, setAssetCategoryFilter] = useState('All');   // Asset Category - from Asset Category Master
@@ -6496,13 +6517,21 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         {/* Table Toolbar - Show entries, Search, Export buttons */}
                                         <div className="flex items-center justify-between py-3 border-b border-gray-200">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <span>Showing 1 to {Math.min(15, filteredAssets.length)} of {filteredAssets.length} entries</span>
+                                                <span>Showing {filteredAssets.length > 0 ? ((currentPage - 1) * (entriesPerPage === 'all' ? filteredAssets.length : entriesPerPage)) + 1 : 0} to {Math.min(currentPage * (entriesPerPage === 'all' ? filteredAssets.length : entriesPerPage), filteredAssets.length)} of {filteredAssets.length} entries</span>
                                                 <span className="mx-2">Show</span>
-                                                <select className="border border-gray-300 rounded px-2 py-1 text-sm bg-white">
-                                                    <option>All</option>
-                                                    <option>10</option>
-                                                    <option>25</option>
-                                                    <option>50</option>
+                                                <select
+                                                    value={entriesPerPage === 'all' ? 'all' : entriesPerPage}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setEntriesPerPage(val === 'all' ? 'all' : parseInt(val));
+                                                        setCurrentPage(1);
+                                                    }}
+                                                    className="border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                                                >
+                                                    <option value="all">All</option>
+                                                    <option value="10">10</option>
+                                                    <option value="25">25</option>
+                                                    <option value="50">50</option>
                                                 </select>
                                                 <span>entries</span>
                                             </div>
@@ -6512,17 +6541,51 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <input
                                                         type="text"
                                                         value={searchQuery}
-                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                                                         className="border border-gray-300 rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:border-blue-400"
                                                         placeholder=""
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Copy</button>
-                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">CSV</button>
-                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Excel</button>
-                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Print</button>
-                                                    <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Column visibility ▼</button>
+                                                    <button onClick={() => {
+                                                        const text = filteredAssets.map(a => `${a.name}\t${a.type || ''}\t${a.asset_category || ''}\t${a.status || ''}`).join('\n');
+                                                        navigator.clipboard.writeText(text);
+                                                        alert('Copied to clipboard!');
+                                                    }} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Copy</button>
+                                                    <button onClick={() => {
+                                                        const headers = 'Name,Type,Category,Status,Date\n';
+                                                        const rows = filteredAssets.map(a => `"${a.name}","${a.type || ''}","${a.asset_category || ''}","${a.status || ''}","${a.date || ''}"`).join('\n');
+                                                        const blob = new Blob([headers + rows], { type: 'text/csv' });
+                                                        const url = URL.createObjectURL(blob);
+                                                        const link = document.createElement('a');
+                                                        link.href = url;
+                                                        link.download = 'assets.csv';
+                                                        link.click();
+                                                    }} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">CSV</button>
+                                                    <button onClick={() => {
+                                                        const headers = 'Name,Type,Category,Status,Date\n';
+                                                        const rows = filteredAssets.map(a => `"${a.name}","${a.type || ''}","${a.asset_category || ''}","${a.status || ''}","${a.date || ''}"`).join('\n');
+                                                        const blob = new Blob([headers + rows], { type: 'text/csv' });
+                                                        const url = URL.createObjectURL(blob);
+                                                        const link = document.createElement('a');
+                                                        link.href = url;
+                                                        link.download = 'assets.xlsx';
+                                                        link.click();
+                                                    }} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Excel</button>
+                                                    <button onClick={() => window.print()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Print</button>
+                                                    <div className="relative">
+                                                        <button onClick={() => setShowColumnMenu(!showColumnMenu)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded border border-gray-300">Column visibility ▼</button>
+                                                        {showColumnMenu && (
+                                                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 py-2 min-w-[150px]">
+                                                                {Object.entries(visibleColumns).map(([key, visible]) => (
+                                                                    <label key={key} className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-sm">
+                                                                        <input type="checkbox" checked={visible} onChange={(e) => setVisibleColumns(prev => ({ ...prev, [key]: e.target.checked }))} className="w-4 h-4" />
+                                                                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -6532,37 +6595,44 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                             <table className="w-full">
                                                 <thead className="bg-gray-50 sticky top-0">
                                                     <tr className="border-b border-gray-200">
-                                                        <th className="w-10 px-3 py-3 text-left">
-                                                            <input type="checkbox" className="w-4 h-4 rounded border-gray-300" />
-                                                        </th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            <div className="flex items-center gap-1">
-                                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>
-                                                            </div>
-                                                        </th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            <div className="flex items-center gap-1">
-                                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
-                                                            </div>
-                                                        </th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due</th>
-                                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                        <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        {visibleColumns.checkbox && <th className="w-10 px-3 py-3 text-left">
+                                                            <input type="checkbox" checked={selectAll} onChange={(e) => {
+                                                                setSelectAll(e.target.checked);
+                                                                if (e.target.checked) {
+                                                                    setSelectedAssetIds(new Set(filteredAssets.map(a => a.id)));
+                                                                } else {
+                                                                    setSelectedAssetIds(new Set());
+                                                                }
+                                                            }} className="w-4 h-4 rounded border-gray-300" />
+                                                        </th>}
+                                                        {visibleColumns.name && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>}
+                                                        {visibleColumns.index && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>
+                                                        </th>}
+                                                        {visibleColumns.icon && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
+                                                        </th>}
+                                                        {visibleColumns.type && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>}
+                                                        {visibleColumns.category && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>}
+                                                        {visibleColumns.tags && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>}
+                                                        {visibleColumns.start && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>}
+                                                        {visibleColumns.due && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due</th>}
+                                                        {visibleColumns.status && <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>}
+                                                        {visibleColumns.user && <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                             <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
-                                                        </th>
-                                                        <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        </th>}
+                                                        {visibleColumns.actions && <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                             <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                                                        </th>
+                                                        </th>}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-100">
-                                                    {filteredAssets.length > 0 ? (
-                                                        filteredAssets.map((asset, index) => {
+                                                    {(() => {
+                                                        const pageSize = entriesPerPage === 'all' ? filteredAssets.length : entriesPerPage;
+                                                        const startIdx = (currentPage - 1) * pageSize;
+                                                        const paginatedAssets = filteredAssets.slice(startIdx, startIdx + pageSize);
+
+                                                        return paginatedAssets.length > 0 ? paginatedAssets.map((asset, index) => {
                                                             const linkedServiceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
                                                             const service = linkedServiceId ? services.find(s => s.id === linkedServiceId) : null;
                                                             const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
@@ -6570,46 +6640,51 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             const status = asset.status || 'Draft';
                                                             const date = asset.date || asset.created_at;
                                                             const formattedDate = date ? new Date(date).toLocaleDateString('en-CA') : '-';
-                                                            const dueDate = asset.due_date ? new Date(asset.due_date).toLocaleDateString('en-CA') : formattedDate;
+                                                            const dueDate = (asset as any).due_date ? new Date((asset as any).due_date).toLocaleDateString('en-CA') : formattedDate;
+                                                            const priority = (asset as any).priority || Math.min(index + 1, 4);
+                                                            const isSelected = selectedAssetIds.has(asset.id);
+                                                            let statusText = 'Low, Deferred';
+                                                            if (status === 'Pending QC Review') statusText = 'Low, Not Started';
+                                                            else if (status === 'QC Approved' || status === 'Published') statusText = 'Low, Waiting';
 
                                                             return (
-                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className="hover:bg-gray-50 cursor-pointer">
-                                                                    <td className="px-3 py-4">
-                                                                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300" onClick={(e) => e.stopPropagation()} />
-                                                                    </td>
-                                                                    <td className="px-3 py-4">
-                                                                        <span className="text-blue-600 hover:text-blue-800 text-sm">{asset.name}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-4 text-sm text-gray-600">{index + 1}</td>
-                                                                    <td className="px-3 py-4">
+                                                                <tr key={asset.id} onClick={() => handleRowClick(asset)} className={`hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}>
+                                                                    {visibleColumns.checkbox && <td className="px-3 py-4">
+                                                                        <input type="checkbox" checked={isSelected} onChange={(e) => {
+                                                                            const newSet = new Set(selectedAssetIds);
+                                                                            if (e.target.checked) newSet.add(asset.id);
+                                                                            else newSet.delete(asset.id);
+                                                                            setSelectedAssetIds(newSet);
+                                                                            setSelectAll(newSet.size === filteredAssets.length);
+                                                                        }} onClick={(e) => e.stopPropagation()} className="w-4 h-4 rounded border-gray-300" />
+                                                                    </td>}
+                                                                    {visibleColumns.name && <td className="px-3 py-4">
+                                                                        <span className="text-blue-600 hover:text-blue-800 text-sm font-medium">{asset.name}</span>
+                                                                    </td>}
+                                                                    {visibleColumns.index && <td className="px-3 py-4 text-sm text-gray-600">{startIdx + index + 1}</td>}
+                                                                    {visibleColumns.icon && <td className="px-3 py-4">
                                                                         <div className="w-6 h-6 bg-gray-800 rounded flex items-center justify-center">
                                                                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                                                                         </div>
-                                                                    </td>
-                                                                    <td className="px-3 py-4 text-sm text-gray-600">{asset.type || 'Phase 1'}</td>
-                                                                    <td className="px-3 py-4 text-sm text-gray-600">{asset.asset_category || service?.service_name || 'Interactive Demo'}</td>
-                                                                    <td className="px-3 py-4">
-                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">P{Math.min(index + 1, 4)}</span>
-                                                                    </td>
-                                                                    <td className="px-3 py-4 text-sm text-gray-600">{formattedDate}</td>
-                                                                    <td className="px-3 py-4 text-sm text-gray-600">{dueDate}</td>
-                                                                    <td className="px-3 py-4 text-sm text-gray-600">
-                                                                        {status === 'Draft' && 'Low, Deferred'}
-                                                                        {status === 'Pending QC Review' && 'Low, Not Started'}
-                                                                        {status === 'QC Approved' && 'Low, Waiting'}
-                                                                        {status === 'QC Rejected' && 'Low, Deferred'}
-                                                                        {!['Draft', 'Pending QC Review', 'QC Approved', 'QC Rejected'].includes(status) && 'Low, Deferred'}
-                                                                    </td>
-                                                                    <td className="px-3 py-4 text-center">
+                                                                    </td>}
+                                                                    {visibleColumns.type && <td className="px-3 py-4 text-sm text-gray-600">{asset.type || '-'}</td>}
+                                                                    {visibleColumns.category && <td className="px-3 py-4 text-sm text-gray-600">{asset.asset_category || service?.service_name || '-'}</td>}
+                                                                    {visibleColumns.tags && <td className="px-3 py-4">
+                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${priority === 1 ? 'bg-red-100 text-red-800' : priority === 2 ? 'bg-orange-100 text-orange-800' : priority === 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>P{priority}</span>
+                                                                    </td>}
+                                                                    {visibleColumns.start && <td className="px-3 py-4 text-sm text-gray-600">{formattedDate}</td>}
+                                                                    {visibleColumns.due && <td className="px-3 py-4 text-sm text-gray-600">{dueDate}</td>}
+                                                                    {visibleColumns.status && <td className="px-3 py-4 text-sm text-gray-600">{statusText}</td>}
+                                                                    {visibleColumns.user && <td className="px-3 py-4 text-center">
                                                                         {designer ? (
-                                                                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
-                                                                                <span className="text-xs text-gray-600">{designer.name?.charAt(0) || '?'}</span>
+                                                                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center mx-auto" title={designer.name}>
+                                                                                <span className="text-xs text-gray-600 font-medium">{designer.name?.charAt(0).toUpperCase() || '?'}</span>
                                                                             </div>
                                                                         ) : (
                                                                             <div className="w-7 h-7 rounded-full bg-gray-100 mx-auto"></div>
                                                                         )}
-                                                                    </td>
-                                                                    <td className="px-3 py-4 text-center">
+                                                                    </td>}
+                                                                    {visibleColumns.actions && <td className="px-3 py-4 text-center">
                                                                         <div className="flex items-center justify-center gap-1">
                                                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(e, asset); }} className="p-1 text-gray-400 hover:text-blue-600" title="Edit">
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -6618,25 +6693,36 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                                             </button>
                                                                         </div>
-                                                                    </td>
+                                                                    </td>}
                                                                 </tr>
                                                             );
-                                                        })
-                                                    ) : (
-                                                        <tr>
-                                                            <td colSpan={12} className="px-6 py-16 text-center">
-                                                                <div className="flex flex-col items-center justify-center text-gray-400">
-                                                                    <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                    </svg>
-                                                                    <p className="text-sm font-medium">No assets yet. Click 'Upload Asset' to add your first file!</p>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
+                                                        }) : (
+                                                            <tr>
+                                                                <td colSpan={12} className="px-6 py-16 text-center">
+                                                                    <div className="flex flex-col items-center justify-center text-gray-400">
+                                                                        <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                        </svg>
+                                                                        <p className="text-sm font-medium">No assets found</p>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })()}
                                                 </tbody>
                                             </table>
                                         </div>
+
+                                        {/* Pagination Footer */}
+                                        {entriesPerPage !== 'all' && Math.ceil(filteredAssets.length / entriesPerPage) > 1 && (
+                                            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+                                                <div className="text-sm text-gray-600">Page {currentPage} of {Math.ceil(filteredAssets.length / (entriesPerPage as number))}</div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                                                    <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredAssets.length / (entriesPerPage as number)), p + 1))} disabled={currentPage === Math.ceil(filteredAssets.length / (entriesPerPage as number))} className="px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
