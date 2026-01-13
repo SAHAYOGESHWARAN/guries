@@ -413,18 +413,25 @@ export interface Campaign {
 export interface Task {
     id: number;
     name: string;
+    task_name?: string;
     status: string;
-    campaign_id: number;
-    primary_owner_id: number;
-    due_date: string;
-    priority?: 'High' | 'Medium' | 'Low';
+    description?: string;
+    campaign_id?: number;
+    primary_owner_id?: number;
+    assigned_to?: number;
+    project_id?: number;
+    due_date?: string;
+    completed_at?: string;
+    priority?: 'High' | 'Medium' | 'Low' | 'high' | 'medium' | 'low';
     task_type?: string;
     sub_campaign?: string;
     progress_stage?: string;
     qc_stage?: string;
     rework_count?: number;
     repo_link_count?: number;
+    created_by?: number;
     created_at?: string;
+    updated_at?: string;
 }
 
 export interface Notification {

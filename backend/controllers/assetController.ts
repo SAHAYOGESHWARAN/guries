@@ -430,7 +430,7 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
         seo_score, grammar_score, ai_plagiarism_score,
         linked_task_id, linked_campaign_id, linked_project_id, linked_service_id, linked_sub_service_id,
         linked_repository_item_id, designed_by, published_by, verified_by, version_number, version_history,
-        workflow_stage, qc_status, resource_files,
+        workflow_stage, qc_status, resource_files, updated_by,
         application_type, web_title, web_description, web_meta_description, web_keywords, web_url,
         web_h1, web_h2_1, web_h2_2, web_h3_tags,
         web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
@@ -496,8 +496,9 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 web_h3_tags = COALESCE($51, web_h3_tags),
                 resource_files = COALESCE($52, resource_files),
                 version_history = COALESCE($53, version_history),
+                updated_by = COALESCE($54, updated_by),
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $54 RETURNING 
+            WHERE id = $55 RETURNING 
                 id,
                 asset_name as name,
                 asset_type as type,
@@ -514,6 +515,8 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 file_size,
                 file_type,
                 created_at as date,
+                created_at,
+                updated_at,
                 linked_service_ids,
                 linked_sub_service_ids,
                 linked_task_id,
@@ -531,7 +534,7 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
                 submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active, 
                 rework_count, version_number, version_history, resource_files,
-                designed_by, published_by, verified_by`,
+                designed_by, published_by, verified_by, created_by, updated_by`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, usage_status, status,
                 file_url, thumbnail_url, thumbnail_url,
@@ -553,6 +556,7 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
                 web_h3_tags ? JSON.stringify(web_h3_tags) : null,
                 resource_files ? JSON.stringify(resource_files) : null,
                 version_history ? JSON.stringify(version_history) : null,
+                updated_by || null,
                 id
             ]
         );

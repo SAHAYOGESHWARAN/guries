@@ -105,7 +105,8 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const getLinkedTaskName = (asset: AssetLibraryItem): string => {
         const taskId = asset.linked_task_id || asset.linked_task;
         if (!taskId) return '-';
-        return tasks.find(t => t.id === taskId)?.name || '-';
+        const task = tasks.find(t => t.id === taskId);
+        return task?.name || (task as any)?.task_name || '-';
     };
 
     // Helper: Get designer/creator name from workflow configuration
@@ -407,14 +408,104 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                         </div>
 
                         {/* Keywords */}
-                        <div>
+                        <div className="mb-5">
                             <label className="text-rose-500 text-sm font-medium block mb-2">Keywords</label>
                             <div className="flex flex-wrap gap-2">
-                                {(selectedAsset.keywords?.length ? selectedAsset.keywords : ['cancer', 'research', 'medical']).map((kw, i) => (
+                                {(selectedAsset.keywords?.length ? selectedAsset.keywords : []).map((kw, i) => (
                                     <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium border border-blue-200">{kw}</span>
                                 ))}
+                                {(!selectedAsset.keywords || selectedAsset.keywords.length === 0) && (
+                                    <span className="text-gray-400 text-sm">No keywords specified</span>
+                                )}
                             </div>
                         </div>
+
+                        {/* Body Content Section */}
+                        {(selectedAsset.web_body_content || selectedAsset.smm_description) && (
+                            <div className="mb-5">
+                                <label className="text-rose-500 text-sm font-medium block mb-2">Body Content</label>
+                                <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-96 overflow-y-auto">
+                                    <div
+                                        className="prose prose-sm max-w-none text-gray-700"
+                                        dangerouslySetInnerHTML={{
+                                            __html: selectedAsset.web_body_content || selectedAsset.smm_description || ''
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* H1, H2 Tags Section */}
+                        {(selectedAsset.web_h1 || selectedAsset.web_h2_1 || selectedAsset.web_h2_2) && (
+                            <div className="mb-5">
+                                <label className="text-rose-500 text-sm font-medium block mb-2">Heading Tags</label>
+                                <div className="space-y-2">
+                                    {selectedAsset.web_h1 && (
+                                        <div className="flex items-start gap-2">
+                                            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold">H1</span>
+                                            <span className="text-gray-700 text-sm">{selectedAsset.web_h1}</span>
+                                        </div>
+                                    )}
+                                    {selectedAsset.web_h2_1 && (
+                                        <div className="flex items-start gap-2">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">H2</span>
+                                            <span className="text-gray-700 text-sm">{selectedAsset.web_h2_1}</span>
+                                        </div>
+                                    )}
+                                    {selectedAsset.web_h2_2 && (
+                                        <div className="flex items-start gap-2">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">H2</span>
+                                            <span className="text-gray-700 text-sm">{selectedAsset.web_h2_2}</span>
+                                        </div>
+                                    )}
+                                    {selectedAsset.web_h3_tags && selectedAsset.web_h3_tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {selectedAsset.web_h3_tags.map((h3, i) => (
+                                                <div key={i} className="flex items-start gap-1">
+                                                    <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded text-xs font-bold">H3</span>
+                                                    <span className="text-gray-600 text-sm">{h3}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Meta Description */}
+                        {selectedAsset.web_meta_description && (
+                            <div className="mb-5">
+                                <label className="text-rose-500 text-sm font-medium block mb-2">Meta Description</label>
+                                <p className="text-gray-700 text-sm bg-gray-50 rounded-lg border border-gray-200 p-3">
+                                    {selectedAsset.web_meta_description}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* SEO & Grammar Scores */}
+                        {(selectedAsset.seo_score || selectedAsset.grammar_score) && (
+                            <div className="mb-5">
+                                <label className="text-rose-500 text-sm font-medium block mb-2">AI Scores</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {selectedAsset.seo_score !== undefined && selectedAsset.seo_score !== null && (
+                                        <div className="bg-blue-50 rounded-lg p-3 text-center">
+                                            <p className="text-xs text-blue-600 font-medium mb-1">SEO Score</p>
+                                            <p className={`text-xl font-bold ${selectedAsset.seo_score >= 80 ? 'text-green-600' : selectedAsset.seo_score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
+                                                {selectedAsset.seo_score}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {selectedAsset.grammar_score !== undefined && selectedAsset.grammar_score !== null && (
+                                        <div className="bg-purple-50 rounded-lg p-3 text-center">
+                                            <p className="text-xs text-purple-600 font-medium mb-1">Grammar Score</p>
+                                            <p className={`text-xl font-bold ${selectedAsset.grammar_score >= 80 ? 'text-green-600' : selectedAsset.grammar_score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
+                                                {selectedAsset.grammar_score}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Panel - QC Assessment (Admin assigns score and submits) */}

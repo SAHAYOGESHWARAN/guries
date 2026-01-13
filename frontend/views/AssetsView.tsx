@@ -610,7 +610,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 date: new Date().toISOString(),
                 created_at: new Date().toISOString(),
                 created_by: currentUser.id, // Always set created_by for proper ownership tracking
-                designed_by: currentUser.id, // Set designer as current user
+                designed_by: newAsset.designed_by || currentUser.id, // Set designer as current user if not already set
+                updated_by: viewMode === 'edit' ? currentUser.id : undefined, // Set updated_by when editing
                 linked_service_ids: linkedServiceIds,
                 linked_sub_service_ids: linkedSubServiceIds,
                 linked_service_id: selectedServiceId || null, // Single linked service ID
@@ -970,7 +971,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                 return (
                     <div className="text-xs text-slate-700">
-                        {task.name}
+                        {task.name || task.task_name || `Task #${task.id}`}
                     </div>
                 );
             }
@@ -3914,7 +3915,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                     <option value="">Select task</option>
                                                     {tasks.map(task => (
                                                         <option key={task.id} value={task.id}>
-                                                            {task.name}
+                                                            {task.name || task.task_name || `Task #${task.id}`}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -6427,7 +6428,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Tasks</option>
                                             {tasks.map(task => (
-                                                <option key={task.id} value={task.id.toString()}>{task.name}</option>
+                                                <option key={task.id} value={task.id.toString()}>{task.name || task.task_name || `Task #${task.id}`}</option>
                                             ))}
                                         </select>
                                     </div>
