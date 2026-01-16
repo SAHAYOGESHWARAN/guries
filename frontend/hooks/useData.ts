@@ -35,7 +35,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     uxIssues: { endpoint: 'ux-issues', event: 'ux_issue' },
     qc: { endpoint: 'qc-runs', event: 'qc_run' },
     // Read-only view or filtered
-    promotionItems: { endpoint: 'promotion-items', event: 'content' },
+    promotionItems: { endpoint: 'promotion-items', event: 'promotion_item' },
     // Configs & Masters
     effortTargets: { endpoint: 'effort-targets', event: 'effort_target' },
     goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
@@ -161,10 +161,7 @@ export function useData<T>(collection: string) {
     // Initialize with local storage data immediately if available (Optimistic UI)
     const getInitialData = () => {
         try {
-            if (collection === 'promotionItems') {
-                const allContent = (db as any)['content']?.getAll() || [];
-                return allContent.filter((i: any) => ['qc_passed', 'updated', 'ready_to_publish', 'published'].includes(i.status));
-            } else if ((db as any)[collection]) {
+            if ((db as any)[collection]) {
                 return (db as any)[collection].getAll() || [];
             }
         } catch (e) {
@@ -183,13 +180,7 @@ export function useData<T>(collection: string) {
     // Load data from local storage (Synchronous helper)
     const loadLocal = useCallback(() => {
         try {
-            if (collection === 'promotionItems') {
-                const allContent = (db as any)['content']?.getAll() || [];
-                const filtered = allContent.filter((i: any) =>
-                    ['qc_passed', 'updated', 'ready_to_publish', 'published'].includes(i.status)
-                );
-                setData(filtered);
-            } else if ((db as any)[collection]) {
+            if ((db as any)[collection]) {
                 const localData = (db as any)[collection].getAll() || [];
                 setData(localData);
             }
@@ -326,7 +317,7 @@ export function useData<T>(collection: string) {
         // Always listen to local storage events for optimistic UI / offline updates
         const handleStorageChange = (e: Event) => {
             const customEvent = e as CustomEvent;
-            const targetKey = collection === 'promotionItems' ? (db as any)['content']?.key : (db as any)[collection]?.key;
+            const targetKey = (db as any)[collection]?.key;
 
             if (targetKey && customEvent.detail?.key === targetKey) {
                 loadLocal();

@@ -8,7 +8,7 @@ import type {
     EffortTarget, GoldStandardMetric, SubServiceItem, IndustrySectorItem, ContentTypeItem,
     AssetTypeItem, PlatformMasterItem, CountryMasterItem, SeoErrorTypeItem, WorkflowStageItem,
     CompetitorBenchmarkItem, OKRItem, UxIssue, ServicePageItem, PersonaMasterItem, FormMasterItem,
-    OnPageSeoAudit, AssetCategoryMasterItem, AssetTypeMasterItem, AssetFormat
+    OnPageSeoAudit, AssetCategoryMasterItem, AssetTypeMasterItem, AssetFormat, PromotionItem
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -48,6 +48,7 @@ const STORAGE_KEYS = {
     SMM: 'mcc_smm',
     UX_ISSUES: 'mcc_ux_issues',
     SERVICE_PAGES: 'mcc_service_pages',
+    PROMOTION_ITEMS: 'mcc_promotion_items',
     // Execution
     PROJECTS: 'mcc_projects',
     CAMPAIGNS: 'mcc_campaigns',
@@ -169,6 +170,7 @@ export const db = {
     smm: new DataService<SmmPost>(STORAGE_KEYS.SMM),
     uxIssues: new DataService<UxIssue>(STORAGE_KEYS.UX_ISSUES),
     servicePages: new DataService<ServicePageItem>(STORAGE_KEYS.SERVICE_PAGES),
+    promotionItems: new DataService<PromotionItem>(STORAGE_KEYS.PROMOTION_ITEMS),
     // Execution
     projects: new DataService<Project>(STORAGE_KEYS.PROJECTS),
     campaigns: new DataService<Campaign>(STORAGE_KEYS.CAMPAIGNS),

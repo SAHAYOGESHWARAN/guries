@@ -557,13 +557,30 @@ export interface UrlError {
 
 export interface BacklinkSubmission {
     id: number;
-    backlink_source_id: number;
+    domain: string;
+    opportunity_type: 'Guest Post' | 'Directory' | 'Forum' | 'Comment' | 'Profile' | 'Social Bookmark' | 'Press Release' | 'Infographic' | 'Resource Page' | 'Broken Link' | string;
+    category?: string;
     target_url: string;
-    anchor_text_used: string;
-    content_used: string;
-    owner_id: number;
+    anchor_text: string;
+    content_used?: string;
+    da_score?: number;
+    spam_score?: number;
+    country?: string;
+    service_id?: number;
+    service_name?: string;
+    sub_service_id?: number;
+    sub_service_name?: string;
+    seo_owner_id?: number;
+    seo_owner_name?: string;
+    is_paid?: boolean;
     submission_status: 'Pending' | 'Submitted' | 'Verified' | 'Rejected' | 'Expired';
-    submitted_at: string;
+    created_at?: string;
+    updated_at?: string;
+    // Legacy fields for backward compatibility
+    backlink_source_id?: number;
+    anchor_text_used?: string;
+    owner_id?: number;
+    submitted_at?: string;
 }
 
 export interface GraphicAssetPlan {
@@ -575,6 +592,27 @@ export interface GraphicAssetPlan {
     designer_owner_id?: number;
     brand_id?: number;
     created_at?: string;
+}
+
+export interface PromotionItem {
+    id: number;
+    title: string;
+    subtitle?: string;
+    content_type: 'Blog' | 'Infographic' | 'Service Page' | 'Video' | 'Case Study' | 'Whitepaper' | 'Guide' | string;
+    promotion_types: string[]; // ['SEO', 'SMM', 'Email', 'Paid Ads', 'Partnerships', 'Press Release']
+    campaign_id?: number;
+    campaign_name?: string;
+    service_id?: number;
+    service_name?: string;
+    keywords?: string[];
+    thumbnail_url?: string;
+    full_url?: string;
+    qc_status: 'QC Passed' | 'QC Pending' | 'QC Failed' | 'Rework Completed' | 'Updated' | string;
+    published_date?: string;
+    created_by?: number;
+    created_by_name?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface SmmPost {
@@ -833,16 +871,22 @@ export interface IntegrationLog {
 export interface ToxicBacklink {
     id: number;
     domain: string;
-    spam_score: number;
-    anchor_text: string;
-    status: string;
-    toxic_url?: string;
+    toxic_url: string;
     landing_page?: string;
+    anchor_text: string;
+    spam_score: number;
     dr?: number;
-    type?: string;
-    severity?: string;
+    dr_type?: 'Hacked Site' | 'Adult/Gambling/Pharma' | 'PBN (Private Blog Network)' | 'Foreign Language Unrelated' | 'Comment Spam' | 'Link Farm' | string;
+    severity: 'Critical' | 'High' | 'Medium' | 'Low';
+    status: 'Pending' | 'Verified Removal' | 'Disavowed' | 'Submitted' | 'Rejected' | 'In Review' | string;
     assigned_to_id?: number;
+    assigned_to_name?: string;
+    service_id?: number;
+    service_name?: string;
+    notes?: string;
+    disavow_date?: string;
     created_at?: string;
+    updated_at?: string;
 }
 
 export interface QcChecklistVersion {
@@ -1011,18 +1055,33 @@ export interface WorkflowStageItem {
 
 export interface CompetitorBenchmarkItem {
     id: number;
+    // General Info
     competitor_name: string;
-    domain: string;
-    industry: string;
+    website_url: string;
+    domain?: string; // legacy
+    primary_country?: string;
+    industry?: string;
     sector?: string;
-    region: string;
-    da: number;
-    dr: number;
-    monthly_traffic: number | string;
-    total_keywords: number;
-    backlinks: number;
+    services_offered?: string[]; // ['SEO Services', 'Content Marketing', 'Social Media Marketing', etc.]
+    notes?: string;
+    status: 'Active' | 'Inactive' | 'Archived' | string;
+    // SEO & Benchmark Metrics
+    da: number; // Domain Authority 0-100
+    spam_score?: number; // 0-100
+    estimated_monthly_traffic?: number | string;
+    total_keywords_ranked?: number;
+    total_backlinks?: number;
+    primary_traffic_sources?: string[]; // ['Organic', 'Paid', 'Social', 'Referral']
+    attachments?: string[]; // URLs to uploaded files
+    // Legacy fields for backward compatibility
+    region?: string;
+    dr?: number;
+    monthly_traffic?: number | string;
+    total_keywords?: number;
+    backlinks?: number;
     ranking_coverage?: number;
-    status: string;
+    created_at?: string;
+    updated_at?: string;
     updated_on?: string;
 }
 
@@ -1042,16 +1101,21 @@ export interface UxIssue {
     id: number;
     title: string;
     url: string;
-    severity: 'High' | 'Medium' | 'Low';
-    device: string;
-    status: string;
+    issue_type: 'Button not clickable' | 'Rage clicks' | 'Form abandonment' | 'Scroll depth issue' | 'Dead clicks' | 'Element overlapping' | 'Layout shift' | 'Slow interaction' | string;
+    device: 'Desktop' | 'Mobile' | 'Tablet' | string;
+    severity: 'Critical' | 'High' | 'Medium' | 'Low';
+    source: 'Microsoft Clarity' | 'Hotjar' | 'GA4 Engagement' | 'BrowserStack Test' | 'Manual Report' | string;
+    status: 'Pending' | 'Assigned' | 'Dev Fix Applied' | 'In Progress' | 'Resolved' | 'Reopened' | string;
     description?: string;
-    issue_type?: string;
-    source?: string;
     screenshot_url?: string;
     assigned_to_id?: number;
-    updated_at?: string;
+    assigned_to_name?: string;
+    service_id?: number;
+    service_name?: string;
+    resolution_notes?: string;
+    priority_score?: number;
     created_at?: string;
+    updated_at?: string;
 }
 
 export interface PerformanceMetric {

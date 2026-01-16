@@ -252,6 +252,9 @@ router.get('/reports/today', reportController.getTodayReport);
 
 // --- Promotion & Errors ---
 router.get('/promotion-items', promotionController.getPromotionItems);
+router.post('/promotion-items', promotionController.createPromotionItem);
+router.put('/promotion-items/:id', promotionController.updatePromotionItem);
+router.delete('/promotion-items/:id', promotionController.deletePromotionItem);
 router.get('/url-errors', urlErrorController.getUrlErrors);
 router.post('/url-errors', urlErrorController.createUrlError);
 router.put('/url-errors/:id', urlErrorController.updateUrlError);

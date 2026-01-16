@@ -824,6 +824,147 @@ export const initDatabase = () => {
     addColumnIfNotExists('users', 'country', 'TEXT');
     addColumnIfNotExists('users', 'last_login', 'DATETIME');
 
+    // Create backlink_submissions table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS backlink_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain TEXT,
+            opportunity_type TEXT DEFAULT 'Guest Post',
+            category TEXT,
+            target_url TEXT,
+            anchor_text TEXT,
+            content_used TEXT,
+            da_score INTEGER,
+            spam_score INTEGER,
+            country TEXT,
+            service_id INTEGER,
+            sub_service_id INTEGER,
+            seo_owner_id INTEGER,
+            is_paid INTEGER DEFAULT 0,
+            submission_status TEXT DEFAULT 'Pending',
+            backlink_source_id INTEGER,
+            anchor_text_used TEXT,
+            owner_id INTEGER,
+            submitted_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Add missing columns to backlink_submissions table
+    addColumnIfNotExists('backlink_submissions', 'domain', 'TEXT');
+    addColumnIfNotExists('backlink_submissions', 'opportunity_type', 'TEXT DEFAULT "Guest Post"');
+    addColumnIfNotExists('backlink_submissions', 'category', 'TEXT');
+    addColumnIfNotExists('backlink_submissions', 'anchor_text', 'TEXT');
+    addColumnIfNotExists('backlink_submissions', 'da_score', 'INTEGER');
+    addColumnIfNotExists('backlink_submissions', 'spam_score', 'INTEGER');
+    addColumnIfNotExists('backlink_submissions', 'country', 'TEXT');
+    addColumnIfNotExists('backlink_submissions', 'service_id', 'INTEGER');
+    addColumnIfNotExists('backlink_submissions', 'sub_service_id', 'INTEGER');
+    addColumnIfNotExists('backlink_submissions', 'seo_owner_id', 'INTEGER');
+    addColumnIfNotExists('backlink_submissions', 'is_paid', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('backlink_submissions', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('backlink_submissions', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Create toxic_backlinks table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS toxic_backlinks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain TEXT NOT NULL,
+            toxic_url TEXT,
+            landing_page TEXT,
+            anchor_text TEXT,
+            spam_score INTEGER DEFAULT 0,
+            dr INTEGER,
+            dr_type TEXT,
+            severity TEXT DEFAULT 'Medium',
+            status TEXT DEFAULT 'Pending',
+            assigned_to_id INTEGER,
+            service_id INTEGER,
+            notes TEXT,
+            disavow_date DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Add missing columns to toxic_backlinks table
+    addColumnIfNotExists('toxic_backlinks', 'domain', 'TEXT');
+    addColumnIfNotExists('toxic_backlinks', 'toxic_url', 'TEXT');
+    addColumnIfNotExists('toxic_backlinks', 'landing_page', 'TEXT');
+    addColumnIfNotExists('toxic_backlinks', 'anchor_text', 'TEXT');
+    addColumnIfNotExists('toxic_backlinks', 'spam_score', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('toxic_backlinks', 'dr', 'INTEGER');
+    addColumnIfNotExists('toxic_backlinks', 'dr_type', 'TEXT');
+    addColumnIfNotExists('toxic_backlinks', 'severity', 'TEXT DEFAULT "Medium"');
+    addColumnIfNotExists('toxic_backlinks', 'status', 'TEXT DEFAULT "Pending"');
+    addColumnIfNotExists('toxic_backlinks', 'assigned_to_id', 'INTEGER');
+    addColumnIfNotExists('toxic_backlinks', 'service_id', 'INTEGER');
+    addColumnIfNotExists('toxic_backlinks', 'notes', 'TEXT');
+    addColumnIfNotExists('toxic_backlinks', 'disavow_date', 'DATETIME');
+    addColumnIfNotExists('toxic_backlinks', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('toxic_backlinks', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Create ux_issues table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS ux_issues (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            url TEXT,
+            issue_type TEXT DEFAULT 'Manual Report',
+            device TEXT DEFAULT 'Desktop',
+            severity TEXT DEFAULT 'Medium',
+            source TEXT DEFAULT 'Manual Report',
+            screenshot_url TEXT,
+            assigned_to_id INTEGER,
+            service_id INTEGER,
+            status TEXT DEFAULT 'Pending',
+            resolution_notes TEXT,
+            priority_score INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Add missing columns to ux_issues table
+    addColumnIfNotExists('ux_issues', 'title', 'TEXT');
+    addColumnIfNotExists('ux_issues', 'description', 'TEXT');
+    addColumnIfNotExists('ux_issues', 'url', 'TEXT');
+    addColumnIfNotExists('ux_issues', 'issue_type', 'TEXT DEFAULT "Manual Report"');
+    addColumnIfNotExists('ux_issues', 'device', 'TEXT DEFAULT "Desktop"');
+    addColumnIfNotExists('ux_issues', 'severity', 'TEXT DEFAULT "Medium"');
+    addColumnIfNotExists('ux_issues', 'source', 'TEXT DEFAULT "Manual Report"');
+    addColumnIfNotExists('ux_issues', 'screenshot_url', 'TEXT');
+    addColumnIfNotExists('ux_issues', 'assigned_to_id', 'INTEGER');
+    addColumnIfNotExists('ux_issues', 'service_id', 'INTEGER');
+    addColumnIfNotExists('ux_issues', 'status', 'TEXT DEFAULT "Pending"');
+    addColumnIfNotExists('ux_issues', 'resolution_notes', 'TEXT');
+    addColumnIfNotExists('ux_issues', 'priority_score', 'INTEGER');
+    addColumnIfNotExists('ux_issues', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('ux_issues', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Create promotion_items table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS promotion_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            subtitle TEXT,
+            content_type TEXT DEFAULT 'Blog',
+            promotion_types TEXT,
+            campaign_id INTEGER,
+            service_id INTEGER,
+            keywords TEXT,
+            thumbnail_url TEXT,
+            full_url TEXT,
+            qc_status TEXT DEFAULT 'QC Pending',
+            published_date DATETIME,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // Create on_page_seo_audits table if not exists
     sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS on_page_seo_audits (
@@ -851,6 +992,59 @@ export const initDatabase = () => {
             FOREIGN KEY (assigned_to_id) REFERENCES users(id)
         )
     `);
+
+    // Create competitor_benchmarks table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS competitor_benchmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            competitor_name TEXT NOT NULL,
+            website_url TEXT,
+            domain TEXT,
+            primary_country TEXT,
+            industry TEXT,
+            sector TEXT,
+            services_offered TEXT,
+            notes TEXT,
+            status TEXT DEFAULT 'Active',
+            da INTEGER DEFAULT 0,
+            spam_score INTEGER DEFAULT 0,
+            estimated_monthly_traffic INTEGER DEFAULT 0,
+            total_keywords_ranked INTEGER DEFAULT 0,
+            total_backlinks INTEGER DEFAULT 0,
+            primary_traffic_sources TEXT,
+            attachments TEXT,
+            region TEXT,
+            dr INTEGER DEFAULT 0,
+            monthly_traffic INTEGER DEFAULT 0,
+            total_keywords INTEGER DEFAULT 0,
+            backlinks INTEGER DEFAULT 0,
+            ranking_coverage INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_on DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Add missing columns to competitor_benchmarks table
+    addColumnIfNotExists('competitor_benchmarks', 'website_url', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'domain', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'primary_country', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'industry', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'sector', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'services_offered', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'notes', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'da', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'spam_score', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'estimated_monthly_traffic', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'total_keywords_ranked', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'total_backlinks', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'primary_traffic_sources', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'attachments', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'region', 'TEXT');
+    addColumnIfNotExists('competitor_benchmarks', 'dr', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'ranking_coverage', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('competitor_benchmarks', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('competitor_benchmarks', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 
     // Add missing columns to on_page_seo_audits table
     addColumnIfNotExists('on_page_seo_audits', 'url', 'TEXT');
