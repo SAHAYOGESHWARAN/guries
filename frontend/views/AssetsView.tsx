@@ -6,7 +6,6 @@ import AssetCategoryMasterModal from '../components/AssetCategoryMasterModal';
 import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
 import UploadAssetPopup from '../components/UploadAssetPopup';
 import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
-import EditAssetForm from '../components/EditAssetForm';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
 import { getStatusBadge } from '../constants';
@@ -702,6 +701,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             asset_category: asset.asset_category,
             content_type: asset.content_type,
             mapped_to: asset.mapped_to,
+            workflow_stage: asset.workflow_stage,
+            qc_status: asset.qc_status,
 
             // Scores
             qc_score: asset.qc_score,
@@ -811,7 +812,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             setPreviewUrl('');
         }
 
-        setViewMode('edit');
+        // Use the same upload form for editing - skip to form-fields step since we already know the application type
+        setUploadStep('form-fields');
+        setViewMode('upload');
     }, []);
 
     // Handle row click to show detailed view in side panel
@@ -1226,10 +1229,43 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Render form fields based on application type
     const renderFormFields = () => (
         <div className="max-w-4xl mx-auto">
+            {/* Workflow Stage Banner - Shows when asset is moved to CW/GD/WD */}
+            {(newAsset.workflow_stage === 'Moved to CW' || newAsset.workflow_stage === 'Moved to GD' || newAsset.workflow_stage === 'Moved to WD') && (
+                <div className={`mb-4 p-4 rounded-xl border-2 flex items-center gap-3 ${newAsset.workflow_stage === 'Moved to CW' ? 'bg-purple-50 border-purple-300 text-purple-800' :
+                    newAsset.workflow_stage === 'Moved to GD' ? 'bg-pink-50 border-pink-300 text-pink-800' :
+                        'bg-cyan-50 border-cyan-300 text-cyan-800'
+                    }`}>
+                    <span className="text-2xl">
+                        {newAsset.workflow_stage === 'Moved to CW' ? '✍️' :
+                            newAsset.workflow_stage === 'Moved to GD' ? '🎨' : '💻'}
+                    </span>
+                    <div>
+                        <p className="font-semibold">
+                            {newAsset.workflow_stage === 'Moved to CW' ? 'CW is working on this asset' :
+                                newAsset.workflow_stage === 'Moved to GD' ? 'GD is working on this asset' :
+                                    'WD is working on this asset'}
+                        </p>
+                        <p className="text-sm opacity-80">
+                            {newAsset.workflow_stage === 'Moved to CW' ? 'Content Writing team is currently editing this asset' :
+                                newAsset.workflow_stage === 'Moved to GD' ? 'Graphic Design team is currently working on this asset' :
+                                    'Web Development team is currently working on this asset'}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex items-center gap-4 mb-6">
                     <button
-                        onClick={() => setUploadStep('select-type')}
+                        onClick={() => {
+                            if (editingAsset) {
+                                // If editing, go back to list
+                                setViewMode('list');
+                                setEditingAsset(null);
+                            } else {
+                                setUploadStep('select-type');
+                            }
+                        }}
                         className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1238,9 +1274,11 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     </button>
                     <div>
                         <h2 className="text-xl font-bold text-slate-900">
-                            {selectedApplicationType?.toUpperCase()} Asset Details
+                            {editingAsset ? `Edit ${selectedApplicationType?.toUpperCase()} Asset` : `${selectedApplicationType?.toUpperCase()} Asset Details`}
                         </h2>
-                        <p className="text-slate-600 text-sm">Fill in the asset information</p>
+                        <p className="text-slate-600 text-sm">
+                            {editingAsset ? 'Update the asset information' : 'Fill in the asset information'}
+                        </p>
                     </div>
                 </div>
 
@@ -2129,34 +2167,6 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
             {viewMode === 'upload' && uploadStep === 'upload-file' && (
                 renderFileUpload()
-            )}
-
-            {viewMode === 'edit' && editingAsset && (
-                <EditAssetForm
-                    asset={editingAsset}
-                    onSave={async (assetData, submitForQC) => {
-                        try {
-                            setIsUploading(true);
-                            await updateAsset(editingAsset.id, {
-                                ...assetData,
-                                status: submitForQC ? 'Pending QC Review' : assetData.status,
-                            });
-                            setViewMode('list');
-                            setEditingAsset(null);
-                            refresh();
-                        } catch (error) {
-                            console.error('Failed to update asset:', error);
-                            alert('Failed to update asset');
-                        } finally {
-                            setIsUploading(false);
-                        }
-                    }}
-                    onCancel={() => {
-                        setViewMode('list');
-                        setEditingAsset(null);
-                    }}
-                    isUploading={isUploading}
-                />
             )}
 
             {(viewMode === 'upload' && uploadStep === 'asset-details') && (

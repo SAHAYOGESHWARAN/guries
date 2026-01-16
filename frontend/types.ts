@@ -305,30 +305,46 @@ export interface ServicePageItem {
     id: number;
     page_title: string;
     url: string;
-    page_type: 'Service Page' | 'Sub-Service Page';
-    service_name: string;
+    url_slug?: string;
+    page_type: 'Service Page' | 'Sub-Service Page' | string;
+    service_id?: number;
+    service_name?: string;
+    sub_service_id?: number;
     sub_service_name?: string;
-    seo_score: number;
-    audit_score: number;
-    primary_keyword: string;
-    last_audit: string;
-    status: 'Draft' | 'In Progress' | 'Published' | 'Audit Pending' | 'Needs Fix' | 'QC Pending' | 'QC Passed' | 'Promoted';
+    industry?: string;
+    target_keyword?: string;
+    primary_keyword?: string;
+    seo_score?: number;
+    audit_score?: number;
+    last_audit?: string;
+    status: 'Draft' | 'In Progress' | 'Published' | 'Audit Pending' | 'Needs Fix' | 'QC Pending' | 'QC Passed' | 'Promoted' | string;
     meta_description?: string;
+    writer_id?: number;
+    writer_name?: string;
+    seo_id?: number;
+    seo_name?: string;
+    developer_id?: number;
+    developer_name?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface ContentRepositoryItem {
     id: number;
     content_title_clean: string;
-    asset_type: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page';
+    asset_type: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page' | string;
     asset_category?: string;
     asset_format?: 'image' | 'video' | 'text';
+    content_type?: 'Article' | 'Blog' | 'Service Page' | 'SMM Caption' | 'Whitepaper' | 'Case Study' | string;
     slug?: string;
     full_url?: string;
-    status: 'idea' | 'outline' | 'draft' | 'qc_pending' | 'qc_passed' | 'published' | 'updated' | 'ready_to_publish';
+    status: 'idea' | 'outline' | 'draft' | 'final_draft' | 'qc_pending' | 'qc_passed' | 'ready_for_graphics' | 'ready_to_publish' | 'published' | 'updated' | string;
 
     // Linking
     linked_service_ids?: number[];
     linked_sub_service_ids?: number[];
+    linked_service_id?: number;
+    linked_sub_service_id?: number;
     linked_campaign_id?: number;
 
     // Content Block (Working Copy)
@@ -359,18 +375,25 @@ export interface ContentRepositoryItem {
         issues: string[];
         suggestions: string[];
     };
+    qc_score?: number;
 
     brand_id?: number;
     created_at?: string;
+    updated_at?: string;
     last_status_update_at: string;
     word_count?: number;
     assigned_to_id?: number;
+    industry?: string;
+    keywords?: string[];
+
+    // Joined fields
+    service_name?: string;
+    sub_service_name?: string;
+    assigned_to_name?: string;
 
     // Legacy/Compat
     service_id?: number;
-    service_name?: string;
     campaign_name?: string;
-    keywords?: string[];
     promotion_channels?: string[];
     thumbnail_url?: string;
     context?: string;
@@ -380,34 +403,66 @@ export interface ContentRepositoryItem {
 export interface Project {
     id: number;
     project_name: string;
-    project_type: string;
-    project_status: string;
-    project_owner_id: number;
+    name?: string;
+    project_code?: string;
+    project_type?: string;
+    project_status?: string;
+    status?: string;
+    project_owner_id?: number;
+    owner_id?: number;
+    owner_name?: string;
     created_at?: string;
+    updated_at?: string;
     brand_id?: number;
+    brand_name?: string;
     project_start_date?: string;
     project_end_date?: string;
+    start_date?: string;
+    end_date?: string;
     objective?: string;
+    description?: string;
     linked_services?: any[];
+    linked_service_id?: number;
+    priority?: string;
+    sub_services?: string;
+    outcome_kpis?: string;
+    expected_outcome?: string;
+    team_members?: string;
+    weekly_report?: boolean | number;
+    progress?: number;
+    open_tasks?: number;
+    closed_tasks?: number;
+    budget?: number;
 }
 
 export interface Campaign {
     id: number;
     campaign_name: string;
     campaign_status: string;
+    status?: string;
     linked_service_ids?: number[];
     project_id?: number;
     brand_id?: number;
     campaign_type?: string;
     target_url?: string;
-    backlinks_planned: number;
-    backlinks_completed: number;
+    backlinks_planned?: number;
+    backlinks_completed?: number;
     campaign_start_date?: string;
     campaign_end_date?: string;
+    start_date?: string;
+    end_date?: string;
     campaign_owner_id?: number;
+    owner_name?: string;
     tasks_total?: number;
     tasks_completed?: number;
     kpi_score?: number;
+    sub_campaigns?: string | string[];
+    description?: string;
+    progress?: number;
+    project_name?: string;
+    brand_name?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface Task {
@@ -424,14 +479,22 @@ export interface Task {
     completed_at?: string;
     priority?: 'High' | 'Medium' | 'Low' | 'high' | 'medium' | 'low';
     task_type?: string;
+    campaign_type?: string;
     sub_campaign?: string;
     progress_stage?: string;
     qc_stage?: string;
     rework_count?: number;
     repo_link_count?: number;
+    repo_links?: string;
+    estimated_hours?: number;
+    tags?: string;
     created_by?: number;
     created_at?: string;
     updated_at?: string;
+    // Joined fields
+    project_name?: string;
+    campaign_name?: string;
+    assignee_name?: string;
 }
 
 export interface Notification {
@@ -450,22 +513,28 @@ export interface Notification {
 
 export interface OnPageSeoAudit {
     id: number;
+    url: string;
     service_id?: number;
     sub_service_id?: number;
     error_type: string;
     error_category: 'Content' | 'Technical' | 'Meta' | 'Links' | 'Images' | 'Schema';
-    severity: 'High' | 'Medium' | 'Low';
+    severity: 'Critical' | 'High' | 'Medium' | 'Low';
     issue_description: string;
     current_value?: string;
     recommended_value?: string;
     detected_at?: string;
     linked_campaign_id?: number;
-    status: 'open' | 'in_progress' | 'resolved' | 'ignored';
+    status: 'Open' | 'In Progress' | 'Resolved' | 'Ignored';
     resolved_at?: string;
     resolution_notes?: string;
+    assigned_to_id?: number;
     created_by?: number;
     created_at?: string;
     updated_at?: string;
+    // Joined fields
+    service_name?: string;
+    sub_service_name?: string;
+    assigned_to_name?: string;
 }
 
 export interface UrlError {
@@ -512,17 +581,28 @@ export interface SmmPost {
     id: number;
     title: string;
     smm_type: string;
+    content_type?: string;
     primary_platform: string;
     smm_status: string;
-    schedule_date: string;
+    schedule_date?: string;
+    schedule_time?: string;
     caption: string;
+    hashtags?: string;
+    asset_url?: string;
+    asset_count?: number;
     brand_id?: number;
-    assets_summary?: string;
+    service_id?: number;
+    sub_service_id?: number;
+    campaign_id?: number;
+    keywords?: string;
+    assigned_to_id?: number;
+    // Joined fields
     service_name?: string;
     sub_service_name?: string;
-    assigned_to_id?: number;
+    campaign_name?: string;
     assigned_to_name?: string;
     created_at?: string;
+    updated_at?: string;
 }
 
 export interface AssetCategory {

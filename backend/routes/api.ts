@@ -66,6 +66,8 @@ router.post('/auth/verify-otp', authController.verifyOtp as any);
 
 // --- Dashboard & Notifications ---
 router.get('/dashboard/stats', dashboardController.getDashboardStats);
+router.get('/dashboard/upcoming-tasks', dashboardController.getUpcomingTasks);
+router.get('/dashboard/recent-activity', dashboardController.getRecentActivity);
 router.get('/notifications', notificationController.getNotifications);
 router.post('/notifications', notificationController.createNotification);
 router.put('/notifications/:id/read', notificationController.markAsRead);

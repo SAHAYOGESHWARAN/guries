@@ -5,11 +5,16 @@ import { getSocket } from '../socket';
 
 export const getCampaigns = async (req: any, res: any) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM campaigns ORDER BY created_at DESC'
-        );
+        const result = await pool.query(`
+            SELECT c.*, 
+                u.name as owner_name
+            FROM campaigns c
+            LEFT JOIN users u ON c.campaign_owner_id = u.id
+            ORDER BY c.created_at DESC
+        `);
         res.status(200).json(result.rows);
     } catch (error: any) {
+        console.error('Error fetching campaigns:', error);
         res.status(500).json({ error: 'Failed to fetch campaigns' });
     }
 };
@@ -28,44 +33,61 @@ export const getCampaignById = async (req: any, res: any) => {
 };
 
 export const createCampaign = async (req: any, res: any) => {
-    const { 
-        project_id, brand_id, campaign_name, campaign_type, target_url, 
+    const {
+        project_id, brand_id, campaign_name, campaign_type, target_url,
         backlinks_planned, campaign_start_date, campaign_end_date, campaign_owner_id,
-        status
+        status, campaign_status, sub_campaigns, description, linked_service_ids,
+        tasks_total, tasks_completed, kpi_score
     } = req.body;
-    
+
     try {
         const query = `
             INSERT INTO campaigns (
-                project_id, brand_id, campaign_name, campaign_type, target_url, 
-                backlinks_planned, campaign_start_date, campaign_end_date, campaign_owner_id, status,
-                created_at, backlinks_completed, tasks_completed, tasks_total, kpi_score
+                campaign_name, campaign_type, status, description,
+                campaign_start_date, campaign_end_date, campaign_owner_id,
+                sub_campaigns, linked_service_ids, target_url,
+                project_id, brand_id, backlinks_planned, backlinks_completed,
+                tasks_completed, tasks_total, kpi_score, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), 0, 0, 0, 0)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0, $14, $15, $16, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *;
         `;
         const values = [
-            project_id, brand_id, campaign_name, campaign_type, target_url, 
-            backlinks_planned || 0, campaign_start_date, campaign_end_date, campaign_owner_id, status || 'planning'
+            campaign_name,
+            campaign_type || 'Content',
+            status || campaign_status || 'planning',
+            description || null,
+            campaign_start_date || null,
+            campaign_end_date || null,
+            campaign_owner_id || null,
+            sub_campaigns || null,
+            linked_service_ids ? JSON.stringify(linked_service_ids) : null,
+            target_url || null,
+            project_id || null,
+            brand_id || null,
+            backlinks_planned || 0,
+            tasks_completed || 0,
+            tasks_total || 0,
+            kpi_score || 0
         ];
-        
+
         const result = await pool.query(query, values);
         const newCampaign = result.rows[0];
         getSocket().emit('campaign_created', newCampaign);
         res.status(201).json(newCampaign);
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to create campaign' });
+        console.error('Error creating campaign:', error);
+        res.status(500).json({ error: 'Failed to create campaign', details: error.message });
     }
 };
 
 export const updateCampaign = async (req: any, res: any) => {
     const { id } = req.params;
-    const { 
+    const {
         campaign_name, status, backlinks_completed, kpi_score, linked_service_ids,
         tasks_completed, tasks_total
     } = req.body;
-    
+
     try {
         const result = await pool.query(
             `UPDATE campaigns SET 
@@ -78,12 +100,12 @@ export const updateCampaign = async (req: any, res: any) => {
                 tasks_total = COALESCE($7, tasks_total)
             WHERE id = $8 RETURNING *`,
             [
-                campaign_name, status, backlinks_completed, kpi_score, 
-                JSON.stringify(linked_service_ids), tasks_completed, tasks_total, 
+                campaign_name, status, backlinks_completed, kpi_score,
+                JSON.stringify(linked_service_ids), tasks_completed, tasks_total,
                 id
             ]
         );
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
@@ -99,16 +121,16 @@ export const updateCampaign = async (req: any, res: any) => {
 // Pull working copy from Service Master into Campaign
 export const pullServiceWorkingCopy = async (req: any, res: any) => {
     const { campaignId, serviceId } = req.params;
-    
+
     try {
         // Get service from master
         const serviceResult = await pool.query('SELECT * FROM services WHERE id = $1', [serviceId]);
         if (serviceResult.rows.length === 0) {
             return res.status(404).json({ error: 'Service not found' });
         }
-        
+
         const service = serviceResult.rows[0];
-        
+
         // Create working copy in content_repository (Asset) linked to campaign
         const workingCopy = await pool.query(
             `INSERT INTO content_repository (
@@ -158,7 +180,7 @@ export const pullServiceWorkingCopy = async (req: any, res: any) => {
                 service.canonical_url
             ]
         );
-        
+
         res.status(201).json({
             message: 'Working copy created',
             workingCopy: workingCopy.rows[0],
@@ -173,28 +195,28 @@ export const pullServiceWorkingCopy = async (req: any, res: any) => {
 // Approve and push Campaign changes back to Service Master
 export const approveAndUpdateServiceMaster = async (req: any, res: any) => {
     const { campaignId, assetId, serviceId } = req.body;
-    
+
     try {
         // Get working copy (asset) from campaign
         const assetResult = await pool.query(
             'SELECT * FROM content_repository WHERE id = $1 AND linked_campaign_id = $2',
             [assetId, campaignId]
         );
-        
+
         if (assetResult.rows.length === 0) {
             return res.status(404).json({ error: 'Working copy not found in this campaign' });
         }
-        
+
         const workingCopy = assetResult.rows[0];
-        
+
         // Verify QC passed (status should be 'qc_passed' or 'published')
         if (!['qc_passed', 'published'].includes(workingCopy.status)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Working copy must pass QC before updating Service Master',
                 currentStatus: workingCopy.status
             });
         }
-        
+
         // Update Service Master with approved content
         const updateResult = await pool.query(
             `UPDATE services SET
@@ -255,23 +277,23 @@ export const approveAndUpdateServiceMaster = async (req: any, res: any) => {
                 serviceId
             ]
         );
-        
+
         if (updateResult.rows.length === 0) {
             return res.status(404).json({ error: 'Service not found' });
         }
-        
+
         const updatedService = updateResult.rows[0];
-        
+
         // Mark working copy as published/merged
         await pool.query(
             'UPDATE content_repository SET status = $1 WHERE id = $2',
             ['published', assetId]
         );
-        
+
         // Emit socket events
         getSocket().emit('service_updated', updatedService);
         getSocket().emit('content_updated', { id: assetId, status: 'published' });
-        
+
         res.status(200).json({
             message: 'Service Master updated successfully',
             service: updatedService,

@@ -5,7 +5,20 @@ import { getSocket } from '../socket';
 
 export const getSmmPosts = async (req: any, res: any) => {
     try {
-        const result = await pool.query('SELECT * FROM smm_posts ORDER BY created_at DESC'); 
+        const result = await pool.query(`
+            SELECT 
+                sp.*,
+                s.service_name,
+                ss.sub_service_name,
+                c.campaign_name,
+                u.name as assigned_to_name
+            FROM smm_posts sp
+            LEFT JOIN services s ON sp.service_id = s.id
+            LEFT JOIN sub_services ss ON sp.sub_service_id = ss.id
+            LEFT JOIN campaigns c ON sp.campaign_id = c.id
+            LEFT JOIN users u ON sp.assigned_to_id = u.id
+            ORDER BY sp.schedule_date DESC, sp.created_at DESC
+        `);
         res.status(200).json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -13,50 +26,75 @@ export const getSmmPosts = async (req: any, res: any) => {
 };
 
 export const createSmmPost = async (req: any, res: any) => {
-    const { 
-        brand_id, title, smm_type, primary_platform, smm_status, 
-        schedule_date, caption, assets_summary, service_name, 
-        sub_service_name, assigned_to_id, assigned_to_name 
+    const {
+        title, smm_type, content_type, primary_platform, smm_status,
+        schedule_date, schedule_time, caption, hashtags, asset_url, asset_count,
+        brand_id, service_id, sub_service_id, campaign_id, keywords, assigned_to_id
     } = req.body;
-    
+
     try {
         const result = await pool.query(
             `INSERT INTO smm_posts (
-                brand_id, title, smm_type, primary_platform, smm_status, 
-                schedule_date, caption, assets_summary, service_name, 
-                sub_service_name, assigned_to_id, assigned_to_name, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()) RETURNING *`,
+                title, smm_type, content_type, primary_platform, smm_status, 
+                schedule_date, schedule_time, caption, hashtags, asset_url, asset_count,
+                brand_id, service_id, sub_service_id, campaign_id, keywords, assigned_to_id,
+                created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, datetime('now'), datetime('now')) RETURNING *`,
             [
-                brand_id, title, smm_type, primary_platform, smm_status, 
-                schedule_date, caption, assets_summary, service_name, 
-                sub_service_name, assigned_to_id, assigned_to_name
+                title, smm_type || 'Image Post', content_type, primary_platform || 'LinkedIn',
+                smm_status || 'Draft', schedule_date || null, schedule_time || null,
+                caption, hashtags || null, asset_url || null, asset_count || 0,
+                brand_id || null, service_id || null, sub_service_id || null,
+                campaign_id || null, keywords || null, assigned_to_id || null
             ]
         );
-        
+
         const newPost = result.rows[0];
         getSocket().emit('smm_post_created', newPost);
         res.status(201).json(newPost);
     } catch (error: any) {
-        console.error(error);
+        console.error('Create SMM post error:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
 export const updateSmmPost = async (req: any, res: any) => {
     const { id } = req.params;
-    const { smm_status, caption, schedule_date, assets_summary } = req.body;
-    
+    const {
+        title, smm_type, content_type, primary_platform, smm_status,
+        schedule_date, schedule_time, caption, hashtags, asset_url, asset_count,
+        brand_id, service_id, sub_service_id, campaign_id, keywords, assigned_to_id
+    } = req.body;
+
     try {
         const result = await pool.query(
             `UPDATE smm_posts SET 
-                smm_status = COALESCE($1, smm_status), 
-                caption = COALESCE($2, caption), 
-                schedule_date = COALESCE($3, schedule_date),
-                assets_summary = COALESCE($4, assets_summary)
-            WHERE id = $5 RETURNING *`,
-            [smm_status, caption, schedule_date, assets_summary, id]
+                title = COALESCE($1, title),
+                smm_type = COALESCE($2, smm_type),
+                content_type = COALESCE($3, content_type),
+                primary_platform = COALESCE($4, primary_platform),
+                smm_status = COALESCE($5, smm_status), 
+                schedule_date = COALESCE($6, schedule_date),
+                schedule_time = COALESCE($7, schedule_time),
+                caption = COALESCE($8, caption),
+                hashtags = COALESCE($9, hashtags),
+                asset_url = COALESCE($10, asset_url),
+                asset_count = COALESCE($11, asset_count),
+                brand_id = COALESCE($12, brand_id),
+                service_id = COALESCE($13, service_id),
+                sub_service_id = COALESCE($14, sub_service_id),
+                campaign_id = COALESCE($15, campaign_id),
+                keywords = COALESCE($16, keywords),
+                assigned_to_id = COALESCE($17, assigned_to_id),
+                updated_at = datetime('now')
+            WHERE id = $18 RETURNING *`,
+            [
+                title, smm_type, content_type, primary_platform, smm_status,
+                schedule_date, schedule_time, caption, hashtags, asset_url, asset_count,
+                brand_id, service_id, sub_service_id, campaign_id, keywords, assigned_to_id, id
+            ]
         );
-        
+
         const updatedPost = result.rows[0];
         getSocket().emit('smm_post_updated', updatedPost);
         res.status(200).json(updatedPost);

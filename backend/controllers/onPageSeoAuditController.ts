@@ -1,4 +1,3 @@
-
 import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
@@ -10,11 +9,20 @@ export const getOnPageSeoAudits = async (req: any, res: any) => {
             SELECT 
                 a.*,
                 s.service_name,
-                ss.sub_service_name
+                ss.sub_service_name,
+                u.name as assigned_to_name
             FROM on_page_seo_audits a
             LEFT JOIN services s ON a.service_id = s.id
             LEFT JOIN sub_services ss ON a.sub_service_id = ss.id
-            ORDER BY a.detected_at DESC
+            LEFT JOIN users u ON a.assigned_to_id = u.id
+            ORDER BY 
+                CASE a.severity 
+                    WHEN 'Critical' THEN 1 
+                    WHEN 'High' THEN 2 
+                    WHEN 'Medium' THEN 3 
+                    WHEN 'Low' THEN 4 
+                END,
+                a.updated_at DESC
         `);
         res.status(200).json(result.rows);
     } catch (error: any) {
@@ -24,22 +32,22 @@ export const getOnPageSeoAudits = async (req: any, res: any) => {
 
 export const createOnPageSeoAudit = async (req: any, res: any) => {
     const {
-        service_id, sub_service_id, error_type, error_category, severity,
+        url, service_id, sub_service_id, error_type, error_category, severity,
         issue_description, current_value, recommended_value, linked_campaign_id,
-        status, created_by
+        status, assigned_to_id, created_by
     } = req.body;
 
     try {
         const result = await pool.query(
             `INSERT INTO on_page_seo_audits (
-                service_id, sub_service_id, error_type, error_category, severity,
+                url, service_id, sub_service_id, error_type, error_category, severity,
                 issue_description, current_value, recommended_value, linked_campaign_id,
-                status, created_by, detected_at, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()) RETURNING *`,
+                status, assigned_to_id, created_by, detected_at, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW(), NOW()) RETURNING *`,
             [
-                service_id || null, sub_service_id || null, error_type, error_category, severity || 'Medium',
+                url || null, service_id || null, sub_service_id || null, error_type, error_category, severity || 'Medium',
                 issue_description, current_value || null, recommended_value || null, linked_campaign_id || null,
-                status || 'open', created_by || null
+                status || 'Open', assigned_to_id || null, created_by || null
             ]
         );
         const newItem = result.rows[0];
@@ -53,9 +61,9 @@ export const createOnPageSeoAudit = async (req: any, res: any) => {
 export const updateOnPageSeoAudit = async (req: any, res: any) => {
     const { id } = req.params;
     const {
-        service_id, sub_service_id, error_type, error_category, severity,
+        url, service_id, sub_service_id, error_type, error_category, severity,
         issue_description, current_value, recommended_value, linked_campaign_id,
-        status, resolution_notes
+        status, assigned_to_id, resolution_notes
     } = req.body;
 
     try {
@@ -63,6 +71,7 @@ export const updateOnPageSeoAudit = async (req: any, res: any) => {
         const values: any[] = [];
         let paramIndex = 1;
 
+        if (url !== undefined) { updateFields.push(`url=$${paramIndex++}`); values.push(url); }
         if (service_id !== undefined) { updateFields.push(`service_id=$${paramIndex++}`); values.push(service_id); }
         if (sub_service_id !== undefined) { updateFields.push(`sub_service_id=$${paramIndex++}`); values.push(sub_service_id); }
         if (error_type !== undefined) { updateFields.push(`error_type=$${paramIndex++}`); values.push(error_type); }
@@ -72,10 +81,11 @@ export const updateOnPageSeoAudit = async (req: any, res: any) => {
         if (current_value !== undefined) { updateFields.push(`current_value=$${paramIndex++}`); values.push(current_value); }
         if (recommended_value !== undefined) { updateFields.push(`recommended_value=$${paramIndex++}`); values.push(recommended_value); }
         if (linked_campaign_id !== undefined) { updateFields.push(`linked_campaign_id=$${paramIndex++}`); values.push(linked_campaign_id); }
+        if (assigned_to_id !== undefined) { updateFields.push(`assigned_to_id=$${paramIndex++}`); values.push(assigned_to_id); }
         if (status !== undefined) {
             updateFields.push(`status=$${paramIndex++}`);
             values.push(status);
-            if (status === 'resolved') {
+            if (status === 'Resolved') {
                 updateFields.push(`resolved_at=NOW()`);
             }
         }
@@ -111,7 +121,12 @@ export const getAuditsByService = async (req: any, res: any) => {
     try {
         const { serviceId } = req.params;
         const result = await pool.query(
-            `SELECT * FROM on_page_seo_audits WHERE service_id = $1 ORDER BY detected_at DESC`,
+            `SELECT a.*, s.service_name, ss.sub_service_name, u.name as assigned_to_name
+             FROM on_page_seo_audits a
+             LEFT JOIN services s ON a.service_id = s.id
+             LEFT JOIN sub_services ss ON a.sub_service_id = ss.id
+             LEFT JOIN users u ON a.assigned_to_id = u.id
+             WHERE a.service_id = $1 ORDER BY a.detected_at DESC`,
             [serviceId]
         );
         res.status(200).json(result.rows);
@@ -125,7 +140,12 @@ export const getAuditsBySubService = async (req: any, res: any) => {
     try {
         const { subServiceId } = req.params;
         const result = await pool.query(
-            `SELECT * FROM on_page_seo_audits WHERE sub_service_id = $1 ORDER BY detected_at DESC`,
+            `SELECT a.*, s.service_name, ss.sub_service_name, u.name as assigned_to_name
+             FROM on_page_seo_audits a
+             LEFT JOIN services s ON a.service_id = s.id
+             LEFT JOIN sub_services ss ON a.sub_service_id = ss.id
+             LEFT JOIN users u ON a.assigned_to_id = u.id
+             WHERE a.sub_service_id = $1 ORDER BY a.detected_at DESC`,
             [subServiceId]
         );
         res.status(200).json(result.rows);
@@ -133,4 +153,3 @@ export const getAuditsBySubService = async (req: any, res: any) => {
         res.status(500).json({ error: error.message });
     }
 };
-

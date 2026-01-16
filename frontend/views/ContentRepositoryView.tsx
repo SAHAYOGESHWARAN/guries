@@ -1,32 +1,112 @@
 import React, { useState } from 'react';
-import Table from '../components/Table';
-import Modal from '../components/Modal';
 import { useData } from '../hooks/useData';
-import { getStatusBadge } from '../constants';
-import type { ContentRepositoryItem } from '../types';
+import { exportToCSV } from '../utils/csvHelper';
+import type { ContentRepositoryItem, User, Service, SubServiceItem } from '../types';
 
-const PIPELINE_STAGES = ['All', 'idea', 'outline', 'draft', 'qc_pending', 'qc_passed', 'published'];
+// Pipeline stages matching the design
+const PIPELINE_STAGES = [
+    { key: 'All', label: 'All' },
+    { key: 'idea', label: 'Idea' },
+    { key: 'outline', label: 'Outline' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'final_draft', label: 'Final Draft' },
+    { key: 'qc_pending', label: 'QC Pending' },
+    { key: 'qc_passed', label: 'QC Passed' },
+    { key: 'ready_for_graphics', label: 'Ready for Graphics' },
+    { key: 'ready_to_publish', label: 'Ready to Publish' },
+    { key: 'published', label: 'Published' },
+];
+
+const CONTENT_TYPES = ['Article', 'Blog', 'Service Page', 'SMM Caption', 'Whitepaper', 'Case Study'];
+const INDUSTRIES = ['Healthcare', 'Technology', 'Finance', 'Education', 'E-commerce', 'Manufacturing', 'Retail'];
+
+// Avatar component
+const Avatar: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
+    const initials = name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+    const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-violet-500'];
+    const bgColor = color || colors[(name?.length || 0) % colors.length];
+    return (
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${bgColor}`}>
+            {initials}
+        </div>
+    );
+};
+
+// Status Badge
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+    const config: Record<string, { bg: string; text: string; label: string }> = {
+        'idea': { bg: 'bg-slate-100', text: 'text-slate-600', label: 'Idea' },
+        'outline': { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Outline' },
+        'draft': { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Draft' },
+        'final_draft': { bg: 'bg-orange-50', text: 'text-orange-700', label: 'Final Draft' },
+        'qc_pending': { bg: 'bg-purple-50', text: 'text-purple-700', label: 'QC Pending' },
+        'qc_passed': { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'QC Passed' },
+        'ready_for_graphics': { bg: 'bg-pink-50', text: 'text-pink-700', label: 'Ready for Graphics' },
+        'ready_to_publish': { bg: 'bg-cyan-50', text: 'text-cyan-700', label: 'Ready to Publish' },
+        'published': { bg: 'bg-green-50', text: 'text-green-700', label: 'Published' },
+    };
+    const c = config[status?.toLowerCase()] || { bg: 'bg-slate-100', text: 'text-slate-600', label: status };
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${c.bg} ${c.text}`}>{c.label}</span>;
+};
+
+
+// Content Type Badge
+const ContentTypeBadge: React.FC<{ type: string }> = ({ type }) => {
+    const colors: Record<string, string> = {
+        'Article': 'bg-blue-100 text-blue-700',
+        'Blog': 'bg-indigo-100 text-indigo-700',
+        'Service Page': 'bg-emerald-100 text-emerald-700',
+        'SMM Caption': 'bg-pink-100 text-pink-700',
+        'Whitepaper': 'bg-violet-100 text-violet-700',
+        'Case Study': 'bg-amber-100 text-amber-700',
+    };
+    const colorClass = colors[type] || 'bg-slate-100 text-slate-600';
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>{type || '-'}</span>;
+};
+
+// QC Score Badge
+const QcScoreBadge: React.FC<{ score?: number }> = ({ score }) => {
+    if (!score && score !== 0) return <span className="text-xs text-slate-400">—</span>;
+    const getColor = () => {
+        if (score >= 90) return 'bg-emerald-100 text-emerald-700';
+        if (score >= 70) return 'bg-amber-100 text-amber-700';
+        return 'bg-red-100 text-red-700';
+    };
+    return <span className={`px-2 py-0.5 rounded text-xs font-bold ${getColor()}`}>{score}/100</span>;
+};
+
+// Keyword Tag
+const KeywordTag: React.FC<{ keyword: string; count?: number }> = ({ keyword, count }) => (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">
+        {keyword}
+        {count && <span className="text-indigo-400">+{count}</span>}
+    </span>
+);
 
 const ContentRepositoryView: React.FC = () => {
-    const { data: content, create: createContent, update: updateContent, remove: deleteContent } = useData<ContentRepositoryItem>('content');
+    const { data: content, create: createContent, update: updateContent, remove: deleteContent, refresh } = useData<ContentRepositoryItem>('content');
+    const { data: users } = useData<User>('users');
+    const { data: services } = useData<Service>('services');
+    const { data: subServices } = useData<SubServiceItem>('subServices');
 
-    const [viewMode, setViewMode] = useState<'list' | 'editor' | 'preview'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [activeStage, setActiveStage] = useState('All');
-    const [editingItem, setEditingItem] = useState<ContentRepositoryItem | null>(null);
-    const [previewItem, setPreviewItem] = useState<ContentRepositoryItem | null>(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
-    const [formData, setFormData] = useState<Partial<ContentRepositoryItem>>({
+    // Form state
+    const [formData, setFormData] = useState({
+        content_type: '',
         content_title_clean: '',
-        asset_type: 'blog',
+        linked_service_id: '',
+        linked_sub_service_id: '',
+        industry: '',
+        keywords: '',
+        assigned_to_id: '',
         status: 'idea',
-        h1: '',
-        body_content: '',
-        thumbnail_url: ''
+        auto_outline: false,
     });
-
-    const [uploadingFile, setUploadingFile] = useState(false);
-    const [dragActive, setDragActive] = useState(false);
 
     const getStageCount = (stage: string) => {
         if (stage === 'All') return content.length;
@@ -34,547 +114,435 @@ const ContentRepositoryView: React.FC = () => {
     };
 
     const filteredContent = content.filter(item => {
-        const matchesSearch = item.content_title_clean.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = item.content_title_clean?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStage = activeStage === 'All' || item.status === activeStage;
         return matchesSearch && matchesStage;
     });
 
-    const handleEdit = (item: ContentRepositoryItem) => {
-        setEditingItem(item);
-        setFormData(item);
-        setViewMode('editor');
-    };
-
-    const handleView = (item: ContentRepositoryItem) => {
-        setPreviewItem(item);
-        setViewMode('preview');
-    };
-
-    const handleDeleteContent = async (id: number) => {
-        if (confirm('Delete content?')) await deleteContent(id);
+    const handleCreate = async () => {
+        if (!formData.content_title_clean || !formData.content_type) {
+            alert('Please fill in required fields');
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const keywordsArray = formData.keywords.split(',').map(k => k.trim()).filter(k => k);
+            await createContent({
+                content_title_clean: formData.content_title_clean,
+                content_type: formData.content_type,
+                linked_service_id: formData.linked_service_id ? parseInt(formData.linked_service_id) : null,
+                linked_sub_service_id: formData.linked_sub_service_id ? parseInt(formData.linked_sub_service_id) : null,
+                industry: formData.industry || null,
+                keywords: keywordsArray,
+                assigned_to_id: formData.assigned_to_id ? parseInt(formData.assigned_to_id) : null,
+                status: formData.status,
+                asset_type: formData.content_type.toLowerCase().replace(' ', '_'),
+            } as any);
+            setShowCreateModal(false);
+            resetForm();
+            refresh();
+        } catch (error) {
+            console.error('Failed to create content:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const resetForm = () => {
         setFormData({
-            content_title_clean: '',
-            asset_type: 'blog',
-            status: 'idea',
-            h1: '',
-            body_content: '',
-            thumbnail_url: ''
+            content_type: '', content_title_clean: '', linked_service_id: '', linked_sub_service_id: '',
+            industry: '', keywords: '', assigned_to_id: '', status: 'idea', auto_outline: false,
         });
     };
 
-    const handleSave = async () => {
-        if (!formData.content_title_clean) {
-            alert('Please enter a title for the asset');
-            return;
-        }
-
-        const now = new Date().toISOString();
-        const payload = {
-            ...formData,
-            updated_at: now,
-            created_at: editingItem ? editingItem.created_at : now
-        };
-
-        if (editingItem) {
-            await updateContent(editingItem.id, payload);
-        } else {
-            await createContent(payload as any);
-        }
-        setViewMode('list');
-        setEditingItem(null);
-        resetForm();
+    const formatDate = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            processFile(file);
-        }
-    };
 
-    const handleDrag = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
-        } else if (e.type === "dragleave") {
-            setDragActive(false);
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            processFile(e.dataTransfer.files[0]);
-        }
-    };
-
-    const processFile = (file: File) => {
-        setUploadingFile(true);
-
-        // Simulate file upload (in real app, upload to server/cloud storage)
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const result = reader.result as string;
-
-            // Determine asset type from file
-            let assetType: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page' = 'article';
-            if (file.type.startsWith('image/')) assetType = 'graphic';
-            else if (file.type.startsWith('video/')) assetType = 'video';
-            else if (file.type === 'application/pdf') assetType = 'pdf';
-
-            // Set form data with file info
-            setFormData({
-                content_title_clean: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
-                asset_type: assetType,
-                status: 'draft',
-                h1: file.name.replace(/\.[^/.]+$/, ""),
-                body_content: `Uploaded file: ${file.name}\nSize: ${(file.size / 1024).toFixed(2)} KB\nType: ${file.type}`,
-                thumbnail_url: file.type.startsWith('image/') ? result : ''
-            });
-
-            setUploadingFile(false);
-            setViewMode('editor');
-        };
-
-        if (file.type.startsWith('image/')) {
-            reader.readAsDataURL(file);
-        } else {
-            reader.readAsText(file);
-        }
-    };
-
-    const getAssetTypeIcon = (type: string) => {
-        const icons: Record<string, string> = {
-            'blog': '📝',
-            'video': '🎥',
-            'pdf': '📄',
-            'image': '🖼️',
-            'document': '📋',
-            'infographic': '📊',
-            'case_study': '📖',
-            'whitepaper': '📑',
-            'ebook': '📚',
-            'webinar': '🎓',
-        };
-        return icons[type?.toLowerCase()] || '📦';
-    };
-
-    const getAssetTypeColor = (type: string) => {
-        const colors: Record<string, string> = {
-            'blog': 'bg-blue-500',
-            'video': 'bg-red-500',
-            'pdf': 'bg-orange-500',
-            'image': 'bg-green-500',
-            'document': 'bg-purple-500',
-            'infographic': 'bg-pink-500',
-            'case_study': 'bg-teal-500',
-            'whitepaper': 'bg-indigo-500',
-        };
-        return colors[type?.toLowerCase()] || 'bg-slate-500';
-    };
-
-    // PREVIEW MODAL
-    if (viewMode === 'preview' && previewItem) {
-        return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 text-white flex justify-between items-start">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className="text-3xl">{getAssetTypeIcon(previewItem.asset_type)}</span>
-                                <div>
-                                    <h2 className="text-xl font-bold">{previewItem.content_title_clean}</h2>
-                                    <p className="text-sm text-indigo-100 mt-1">Asset ID: {previewItem.id}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+    // Create Content Modal
+    const renderCreateModal = () => (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-200">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">Add Content Item</h2>
+                        <p className="text-sm text-slate-500">Create a new content piece in the repository</p>
                     </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        {/* Preview Image */}
-                        {previewItem.thumbnail_url && (
-                            <div className="rounded-xl overflow-hidden border-2 border-slate-200 shadow-lg">
-                                <img
-                                    src={previewItem.thumbnail_url}
-                                    alt={previewItem.content_title_clean}
-                                    className="w-full h-auto object-cover"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                />
-                            </div>
-                        )}
-
-                        {/* Meta Info */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                <div className="text-xs text-slate-500 uppercase font-bold mb-1">Type</div>
-                                <div className="text-sm font-bold text-slate-800 capitalize">{previewItem.asset_type?.replace(/_/g, ' ')}</div>
-                            </div>
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                <div className="text-xs text-slate-500 uppercase font-bold mb-1">Status</div>
-                                <div className="text-sm font-bold text-slate-800 capitalize">{previewItem.status?.replace(/_/g, ' ')}</div>
-                            </div>
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                <div className="text-xs text-slate-500 uppercase font-bold mb-1">QC Score</div>
-                                <div className={`text-sm font-bold ${previewItem.ai_qc_report?.score && previewItem.ai_qc_report.score >= 80 ? 'text-green-600' : 'text-yellow-600'}`}>
-                                    {previewItem.ai_qc_report?.score || 'N/A'}
-                                </div>
-                            </div>
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                <div className="text-xs text-slate-500 uppercase font-bold mb-1">Word Count</div>
-                                <div className="text-sm font-bold text-slate-800">{previewItem.word_count || 0}</div>
-                            </div>
-                        </div>
-
-                        {/* H1 */}
-                        {previewItem.h1 && (
-                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border-2 border-blue-200">
-                                <div className="text-xs text-blue-700 uppercase font-bold mb-2">H1 Heading</div>
-                                <h3 className="text-lg font-bold text-slate-900">{previewItem.h1}</h3>
-                            </div>
-                        )}
-
-                        {/* Body Content */}
-                        {previewItem.body_content && (
-                            <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-                                <div className="text-xs text-slate-500 uppercase font-bold mb-3">Content</div>
-                                <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
-                                    {previewItem.body_content}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="border-t border-slate-200 px-6 py-4 bg-slate-50 flex justify-between items-center">
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-white transition-colors"
-                        >
-                            Close
-                        </button>
-                        <button
-                            onClick={() => handleEdit(previewItem)}
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors"
-                        >
-                            Edit Asset
-                        </button>
-                    </div>
+                    <button onClick={() => { setShowCreateModal(false); resetForm(); }} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
-            </div>
-        );
-    }
 
-    // EDITOR VIEW
-    if (viewMode === 'editor') {
-        return (
-            <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
-                <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
-                    <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-slate-50/50 w-full flex-shrink-0">
-                        <h2 className="text-lg font-bold text-slate-800">{editingItem ? 'Edit Content' : 'New Content Asset'}</h2>
-                        <div className="flex gap-2">
-                            <button onClick={() => setViewMode('list')} className="px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-                            <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700">Save</button>
-                        </div>
+                {/* Content */}
+                <div className="p-6 overflow-y-auto max-h-[60vh] space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Content Type *</label>
+                        <select
+                            value={formData.content_type}
+                            onChange={(e) => setFormData({ ...formData, content_type: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                            <option value="">Select content type</option>
+                            {CONTENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-6 bg-slate-50 w-full">
-                        <div className="w-full space-y-6">
-                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm w-full space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4 w-full">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-2">Title</label>
-                                        <input type="text" value={formData.content_title_clean} onChange={(e) => setFormData({ ...formData, content_title_clean: e.target.value })} className="w-full p-2 border border-slate-300 rounded-md text-sm" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-2">Asset Type</label>
-                                        <select value={formData.asset_type} onChange={(e) => setFormData({ ...formData, asset_type: e.target.value as any })} className="w-full p-2 border border-slate-300 rounded-md text-sm">
-                                            <option value="article">Article</option>
-                                            <option value="blog">Blog</option>
-                                            <option value="video">Video</option>
-                                            <option value="graphic">Graphic</option>
-                                            <option value="pdf">PDF</option>
-                                            <option value="guide">Guide</option>
-                                            <option value="service_page">Service Page</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4 w-full">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-2">Status</label>
-                                        <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="w-full p-2 border border-slate-300 rounded-md text-sm">
-                                            {PIPELINE_STAGES.filter(s => s !== 'All').map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-2">Thumbnail URL</label>
-                                        <input type="text" value={formData.thumbnail_url || ''} onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })} placeholder="https://..." className="w-full p-2 border border-slate-300 rounded-md text-sm font-mono" />
-                                    </div>
-                                </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-xs font-bold text-gray-700 mb-2">H1 Header</label>
-                                    <input type="text" value={formData.h1} onChange={(e) => setFormData({ ...formData, h1: e.target.value })} className="w-full p-2 border border-slate-300 rounded-md text-sm" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-2">Body Content</label>
-                                    <textarea value={formData.body_content} onChange={(e) => setFormData({ ...formData, body_content: e.target.value })} className="w-full p-3 border border-slate-300 rounded-md h-64 font-mono text-sm leading-relaxed" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // LIST VIEW
-    return (
-        <div className="h-full flex flex-col w-full p-6 animate-fade-in overflow-hidden">
-            <div className="flex justify-between items-start flex-shrink-0 w-full mb-4">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">Assets</h1>
-                </div>
-                <div className="flex space-x-3">
-                    <label className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm flex items-center transition-colors cursor-pointer">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Title *</label>
                         <input
-                            type="file"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                            type="text"
+                            value={formData.content_title_clean}
+                            onChange={(e) => setFormData({ ...formData, content_title_clean: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Enter content title..."
                         />
-                        <span className="mr-1 text-base">📤</span> Upload File
-                    </label>
-                    <button onClick={() => { setEditingItem(null); resetForm(); setViewMode('editor'); }} className="bg-white text-indigo-600 border-2 border-indigo-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-50 shadow-sm flex items-center transition-colors">
-                        <span className="mr-1 text-base">+</span> Create Asset
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Service *</label>
+                        <select
+                            value={formData.linked_service_id}
+                            onChange={(e) => setFormData({ ...formData, linked_service_id: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                            <option value="">Select service</option>
+                            {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Sub-Service *</label>
+                        <select
+                            value={formData.linked_sub_service_id}
+                            onChange={(e) => setFormData({ ...formData, linked_sub_service_id: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                            <option value="">Select sub-service</option>
+                            {subServices.map(s => <option key={s.id} value={s.id}>{s.sub_service_name}</option>)}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Industry *</label>
+                        <select
+                            value={formData.industry}
+                            onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                            <option value="">Select industry</option>
+                            {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Keywords</label>
+                        <input
+                            type="text"
+                            value={formData.keywords}
+                            onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Enter keywords (comma separated)..."
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Separate multiple keywords with commas</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Writer Assigned</label>
+                        <select
+                            value={formData.assigned_to_id}
+                            onChange={(e) => setFormData({ ...formData, assigned_to_id: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                            <option value="">Select writer</option>
+                            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Initial Stage *</label>
+                        <select
+                            value={formData.status}
+                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                            {PIPELINE_STAGES.filter(s => s.key !== 'All').map(s => (
+                                <option key={s.key} value={s.key}>{s.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="bg-indigo-50 rounded-lg p-4 flex items-start gap-3">
+                        <input
+                            type="checkbox"
+                            checked={formData.auto_outline}
+                            onChange={(e) => setFormData({ ...formData, auto_outline: e.target.checked })}
+                            className="w-4 h-4 text-indigo-600 rounded border-slate-300 mt-0.5"
+                        />
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                <span className="font-medium text-indigo-900">Auto-create outline using AI</span>
+                            </div>
+                            <p className="text-xs text-indigo-700 mt-1">AI will generate a structured outline based on the content type and keywords</p>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500">* Required fields</p>
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
+                    <button
+                        onClick={() => { setShowCreateModal(false); resetForm(); }}
+                        className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleCreate}
+                        disabled={isSubmitting || !formData.content_title_clean || !formData.content_type}
+                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSubmitting ? 'Creating...' : 'Create Content Item'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+
+    return (
+        <div className="h-full flex flex-col w-full p-6 overflow-hidden bg-slate-50">
+            {showCreateModal && renderCreateModal()}
+
+            {/* Header */}
+            <div className="flex justify-between items-start mb-4">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900">Content Repository</h1>
+                            <p className="text-sm text-slate-500">Store, track, and manage all content pieces before campaign execution</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-white">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filters
+                    </button>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Content Item
                     </button>
                 </div>
             </div>
 
-            {/* Drag and Drop Upload Zone - Show when no content */}
-            {content.length === 0 && (
-                <div
-                    className={`mb-6 border-2 border-dashed rounded-2xl p-12 text-center transition-all ${dragActive
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50'
-                        }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                >
-                    <div className="flex flex-col items-center">
-                        <div className="bg-indigo-100 p-6 rounded-full mb-4">
-                            <svg className="w-12 h-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            {/* Search and Stage Tabs */}
+            <div className="mb-4 space-y-3">
+                <div className="relative max-w-md">
+                    <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                        placeholder="Search by title, content type, keyword, service, draft status..."
+                    />
+                </div>
+
+                {/* Stage Tabs */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                    {PIPELINE_STAGES.map(stage => (
+                        <button
+                            key={stage.key}
+                            onClick={() => setActiveStage(stage.key)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeStage === stage.key
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-slate-600 hover:bg-slate-100'
+                                }`}
+                        >
+                            {stage.label}
+                            <span className={`px-1.5 py-0.5 rounded-full text-xs ${activeStage === stage.key ? 'bg-indigo-200 text-indigo-800' : 'bg-slate-200 text-slate-600'
+                                }`}>
+                                {getStageCount(stage.key)}
+                            </span>
+                        </button>
+                    ))}
+                    <div className="flex-1" />
+                    <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
+                        <button
+                            onClick={() => setViewMode('table')}
+                            className={`p-2 rounded-lg ${viewMode === 'table' ? 'bg-slate-200 text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                             </svg>
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">Drop files here to upload</h3>
-                        <p className="text-sm text-slate-600 mb-4">or click the button above to browse</p>
-                        <p className="text-xs text-slate-500">Supports: Images, Videos, PDFs, Documents</p>
+                        </button>
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-slate-200 text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
-            )}
+            </div>
 
-            <div className="flex flex-col gap-4 flex-1 min-h-0 w-full">
-                <div className="flex-1 flex flex-col gap-3 min-w-0 w-full min-h-0">
-                    <div className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 w-full flex-shrink-0">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <input type="text" className="block w-full p-2 pl-10 text-sm text-slate-900 border-none focus:ring-0 placeholder-slate-400" placeholder="Search assets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1 flex overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 w-full flex-shrink-0">
-                        {PIPELINE_STAGES.map(stage => (
-                            <button key={stage} onClick={() => setActiveStage(stage)} className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap flex items-center space-x-2 ${activeStage === stage ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
-                                <span className="capitalize">{stage.replace(/_/g, ' ')}</span><span className={`px-1.5 py-0.5 rounded-full text-[9px] ${activeStage === stage ? 'bg-indigo-200 text-indigo-800' : 'bg-slate-100 text-slate-500'}`}>{getStageCount(stage)}</span>
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden w-full h-full">
-                        <div className="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs text-slate-700 font-medium flex items-center gap-2">
-                                    <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-bold">
-                                        {filteredContent.length}
-                                    </span>
-                                    <span>assets found</span>
-                                </p>
-                                {filteredContent.length > 0 && (
-                                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Click on any asset name or preview to view details</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex-1 overflow-hidden w-full h-full">
-                            <Table
-                                columns={[
-                                    {
-                                        header: 'Preview',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <div className="flex items-center justify-center py-2">
-                                                {item.thumbnail_url ? (
-                                                    <img
-                                                        src={item.thumbnail_url}
-                                                        alt={item.content_title_clean}
-                                                        className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-                                                        onClick={() => handleView(item)}
-                                                        onError={(e) => {
-                                                            const target = e.target as HTMLImageElement;
-                                                            target.style.display = 'none';
-                                                            const parent = target.parentElement;
-                                                            if (parent) {
-                                                                const fallback = document.createElement('div');
-                                                                fallback.className = `w-20 h-20 ${getAssetTypeColor(item.asset_type)} rounded-xl flex items-center justify-center text-3xl shadow-md cursor-pointer`;
-                                                                fallback.innerHTML = getAssetTypeIcon(item.asset_type);
-                                                                fallback.onclick = () => handleView(item);
-                                                                parent.appendChild(fallback);
-                                                            }
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div
-                                                        className={`w-20 h-20 ${getAssetTypeColor(item.asset_type)} rounded-xl flex items-center justify-center text-3xl shadow-md hover:shadow-lg transition-shadow cursor-pointer`}
-                                                        onClick={() => handleView(item)}
-                                                    >
-                                                        {getAssetTypeIcon(item.asset_type)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ),
-                                        className: "w-28 text-center"
-                                    },
-                                    {
-                                        header: 'Name',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <div className="group">
-                                                <div
-                                                    className="font-bold text-slate-900 text-sm hover:text-indigo-600 cursor-pointer transition-colors flex items-center gap-2"
-                                                    onClick={() => handleView(item)}
-                                                    title="Click to view details"
-                                                >
-                                                    <span className="line-clamp-2">{item.content_title_clean}</span>
-                                                    <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                    </svg>
-                                                </div>
-                                                <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                                                    <span className="font-mono">ID: {item.id}</span>
-                                                    {item.word_count && (
-                                                        <>
-                                                            <span>•</span>
-                                                            <span>{item.word_count} words</span>
-                                                        </>
+
+            {/* Table */}
+            <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto h-full">
+                    <table className="w-full min-w-[1200px]">
+                        <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                            <tr>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Title</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Content Type</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Stage</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Service/Sub-Service</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Keywords</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Word Count</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">QC Score</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Assigned To</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Updated At</th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredContent.length === 0 ? (
+                                <tr>
+                                    <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
+                                        <div className="flex flex-col items-center">
+                                            <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            <p className="text-sm font-medium">No content items found</p>
+                                            <p className="text-xs text-slate-400 mt-1">Create a new content item to get started</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredContent.map((item) => {
+                                    const assignee = users.find(u => u.id === item.assigned_to_id);
+                                    const service = services.find(s => s.id === item.linked_service_id);
+                                    const subService = subServices.find(s => s.id === item.linked_sub_service_id);
+                                    const keywords = item.keywords || item.focus_keywords || [];
+
+                                    return (
+                                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-slate-900 text-sm">{item.content_title_clean}</div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <ContentTypeBadge type={item.content_type || item.asset_type || ''} />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <StatusBadge status={item.status} />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="text-sm">
+                                                    <div className="text-slate-700">{item.service_name || service?.service_name || '-'}</div>
+                                                    {(item.sub_service_name || subService?.sub_service_name) && (
+                                                        <div className="text-xs text-slate-500">{item.sub_service_name || subService?.sub_service_name}</div>
                                                     )}
                                                 </div>
-                                            </div>
-                                        )
-                                    },
-                                    {
-                                        header: 'Type',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <span className={`inline-flex items-center gap-1 text-xs font-bold text-white capitalize px-3 py-1 rounded-full ${getAssetTypeColor(item.asset_type)}`}>
-                                                <span>{getAssetTypeIcon(item.asset_type)}</span>
-                                                {(item.asset_type || '').replace(/_/g, ' ')}
-                                            </span>
-                                        )
-                                    },
-                                    {
-                                        header: 'Status',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${item.status === 'published' ? 'bg-green-100 text-green-700 border border-green-300' :
-                                                item.status === 'qc_passed' ? 'bg-blue-100 text-blue-700 border border-blue-300' :
-                                                    item.status === 'draft' ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
-                                                        'bg-slate-100 text-slate-700 border border-slate-300'
-                                                }`}>
-                                                {item.status.replace(/_/g, ' ')}
-                                            </span>
-                                        )
-                                    },
-                                    {
-                                        header: 'Date',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <span className="text-xs text-slate-600">
-                                                {item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
-                                            </span>
-                                        )
-                                    },
-                                    {
-                                        header: 'Actions',
-                                        accessor: (item: ContentRepositoryItem) => (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => handleView(item)}
-                                                    className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-all group relative"
-                                                    title="View Details"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {keywords.length > 0 ? (
+                                                    <div className="flex items-center gap-1 flex-wrap">
+                                                        <KeywordTag keyword={keywords[0]} />
+                                                        {keywords.length > 1 && (
+                                                            <span className="text-xs text-indigo-600">+{keywords.length - 1}</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">
+                                                {item.word_count ? item.word_count.toLocaleString() : '—'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <QcScoreBadge score={item.qc_score || item.ai_qc_report?.score} />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {assignee || item.assigned_to_name ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar name={item.assigned_to_name || assignee?.name || ''} />
+                                                        <span className="text-sm text-slate-700">{item.assigned_to_name || assignee?.name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-slate-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-500">
+                                                {formatDate(item.updated_at || item.last_status_update_at)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-700">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                                     </svg>
-                                                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                                        View
-                                                    </span>
                                                 </button>
-                                                <button
-                                                    onClick={() => handleEdit(item)}
-                                                    className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all group relative"
-                                                    title="Edit Asset"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                                        Edit
-                                                    </span>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteContent(item.id)}
-                                                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all group relative"
-                                                    title="Delete Asset"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                                        Delete
-                                                    </span>
-                                                </button>
-                                            </div>
-                                        )
-                                    }
-                                ]}
-                                data={filteredContent}
-                                title=""
-                                emptyMessage={content.length === 0 ? "No assets yet. Upload your first file or create a new asset to get started!" : "No assets match your search criteria."}
-                            />
-                        </div>
-                    </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* AI-Powered Tools Section */}
+            <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <h3 className="font-semibold text-slate-900">AI-Powered Tools</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                        { name: 'Generate Topic Clusters', desc: 'Service Content Ideas' },
+                        { name: 'SEO Outline', desc: 'Auto H2/H3 Tags' },
+                        { name: 'Internal Linking', desc: 'Content Gaps' },
+                        { name: 'Compare Competitors', desc: 'Optimize Existing' },
+                    ].map((tool, idx) => (
+                        <button key={idx} className="text-left p-3 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                            <div className="text-sm font-medium text-slate-900">{tool.name}</div>
+                            <div className="text-xs text-slate-500">{tool.desc}</div>
+                        </button>
+                    ))}
                 </div>
             </div>
         </div>

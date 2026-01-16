@@ -15,6 +15,7 @@ const BacklinksView = React.lazy(() => import('./views/BacklinksView'));
 const UsersView = React.lazy(() => import('./views/UsersView'));
 const ProjectsView = React.lazy(() => import('./views/ProjectsView'));
 const ContentRepositoryView = React.lazy(() => import('./views/ContentRepositoryView'));
+const ServicePagesView = React.lazy(() => import('./views/ServicePagesView'));
 const SmmRepositoryView = React.lazy(() => import('./views/SmmRepositoryView'));
 const ProjectDetailView = React.lazy(() => import('./views/ProjectDetailView'));
 const CampaignDetailView = React.lazy(() => import('./views/CampaignDetailView'));
@@ -177,7 +178,7 @@ const App: React.FC = () => {
 
       // REPOSITORIES
       case 'content-repository': return <ContentRepositoryView />;
-      case 'service-pages': return <ServicesView />;
+      case 'service-pages': return <ServicePagesView />;
       case 'smm-posting': return <SmmRepositoryView />;
       case 'on-page-errors': return <OnPageErrorsView />;
       case 'backlink-submission': return <BacklinksView />;

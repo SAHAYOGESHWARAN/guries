@@ -681,6 +681,126 @@ export const initDatabase = () => {
         }
     };
 
+    // Add missing columns to projects table
+    addColumnIfNotExists('projects', 'brand_id', 'INTEGER');
+    addColumnIfNotExists('projects', 'linked_service_id', 'INTEGER');
+    addColumnIfNotExists('projects', 'priority', 'TEXT DEFAULT "Medium"');
+    addColumnIfNotExists('projects', 'sub_services', 'TEXT');
+    addColumnIfNotExists('projects', 'outcome_kpis', 'TEXT');
+    addColumnIfNotExists('projects', 'expected_outcome', 'TEXT');
+    addColumnIfNotExists('projects', 'team_members', 'TEXT');
+    addColumnIfNotExists('projects', 'weekly_report', 'INTEGER DEFAULT 1');
+    addColumnIfNotExists('projects', 'progress', 'INTEGER DEFAULT 0');
+
+    // Add missing columns to campaigns table
+    addColumnIfNotExists('campaigns', 'project_id', 'INTEGER');
+    addColumnIfNotExists('campaigns', 'brand_id', 'INTEGER');
+    addColumnIfNotExists('campaigns', 'target_url', 'TEXT');
+    addColumnIfNotExists('campaigns', 'backlinks_planned', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('campaigns', 'backlinks_completed', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('campaigns', 'sub_campaigns', 'TEXT');
+    addColumnIfNotExists('campaigns', 'linked_service_ids', 'TEXT');
+    addColumnIfNotExists('campaigns', 'progress', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('campaigns', 'campaign_start_date', 'DATE');
+    addColumnIfNotExists('campaigns', 'campaign_end_date', 'DATE');
+    addColumnIfNotExists('campaigns', 'campaign_owner_id', 'INTEGER');
+    addColumnIfNotExists('campaigns', 'tasks_total', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('campaigns', 'tasks_completed', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('campaigns', 'kpi_score', 'INTEGER DEFAULT 0');
+
+    // Add missing columns to tasks table
+    addColumnIfNotExists('tasks', 'campaign_id', 'INTEGER');
+    addColumnIfNotExists('tasks', 'campaign_type', 'TEXT');
+    addColumnIfNotExists('tasks', 'sub_campaign', 'TEXT');
+    addColumnIfNotExists('tasks', 'progress_stage', 'TEXT DEFAULT "Not Started"');
+    addColumnIfNotExists('tasks', 'qc_stage', 'TEXT DEFAULT "Pending"');
+    addColumnIfNotExists('tasks', 'rework_count', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('tasks', 'repo_link_count', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('tasks', 'repo_links', 'TEXT');
+    addColumnIfNotExists('tasks', 'estimated_hours', 'INTEGER');
+    addColumnIfNotExists('tasks', 'tags', 'TEXT');
+    addColumnIfNotExists('tasks', 'primary_owner_id', 'INTEGER');
+
+    // Add missing columns to content_repository table
+    addColumnIfNotExists('content_repository', 'content_type', 'TEXT');
+    addColumnIfNotExists('content_repository', 'linked_service_id', 'INTEGER');
+    addColumnIfNotExists('content_repository', 'linked_sub_service_id', 'INTEGER');
+    addColumnIfNotExists('content_repository', 'industry', 'TEXT');
+    addColumnIfNotExists('content_repository', 'keywords', 'TEXT');
+    addColumnIfNotExists('content_repository', 'word_count', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('content_repository', 'qc_score', 'INTEGER');
+
+    // Create service_pages table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS service_pages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            page_title TEXT NOT NULL,
+            url TEXT,
+            url_slug TEXT,
+            page_type TEXT DEFAULT 'Service Page',
+            service_id INTEGER,
+            sub_service_id INTEGER,
+            industry TEXT,
+            target_keyword TEXT,
+            primary_keyword TEXT,
+            seo_score INTEGER DEFAULT 0,
+            audit_score INTEGER DEFAULT 0,
+            last_audit TEXT,
+            status TEXT DEFAULT 'Draft',
+            meta_description TEXT,
+            writer_id INTEGER,
+            seo_id INTEGER,
+            developer_id INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Create smm_posts table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS smm_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            smm_type TEXT DEFAULT 'Image Post',
+            content_type TEXT,
+            primary_platform TEXT DEFAULT 'LinkedIn',
+            smm_status TEXT DEFAULT 'Draft',
+            schedule_date DATE,
+            schedule_time TEXT,
+            caption TEXT,
+            hashtags TEXT,
+            asset_url TEXT,
+            asset_count INTEGER DEFAULT 0,
+            brand_id INTEGER,
+            service_id INTEGER,
+            sub_service_id INTEGER,
+            campaign_id INTEGER,
+            keywords TEXT,
+            assigned_to_id INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Add missing columns to smm_posts table
+    addColumnIfNotExists('smm_posts', 'title', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'smm_type', 'TEXT DEFAULT "Image Post"');
+    addColumnIfNotExists('smm_posts', 'content_type', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'primary_platform', 'TEXT DEFAULT "LinkedIn"');
+    addColumnIfNotExists('smm_posts', 'smm_status', 'TEXT DEFAULT "Draft"');
+    addColumnIfNotExists('smm_posts', 'schedule_date', 'DATE');
+    addColumnIfNotExists('smm_posts', 'schedule_time', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'caption', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'hashtags', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'asset_url', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'asset_count', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('smm_posts', 'brand_id', 'INTEGER');
+    addColumnIfNotExists('smm_posts', 'service_id', 'INTEGER');
+    addColumnIfNotExists('smm_posts', 'sub_service_id', 'INTEGER');
+    addColumnIfNotExists('smm_posts', 'campaign_id', 'INTEGER');
+    addColumnIfNotExists('smm_posts', 'keywords', 'TEXT');
+    addColumnIfNotExists('smm_posts', 'assigned_to_id', 'INTEGER');
+
     // Add missing columns to assets table
     addColumnIfNotExists('assets', 'content_type', 'TEXT');
     addColumnIfNotExists('assets', 'dimensions', 'TEXT');
@@ -703,6 +823,39 @@ export const initDatabase = () => {
     addColumnIfNotExists('users', 'department', 'TEXT');
     addColumnIfNotExists('users', 'country', 'TEXT');
     addColumnIfNotExists('users', 'last_login', 'DATETIME');
+
+    // Create on_page_seo_audits table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS on_page_seo_audits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            service_id INTEGER,
+            sub_service_id INTEGER,
+            error_type TEXT NOT NULL,
+            error_category TEXT DEFAULT 'Technical',
+            severity TEXT DEFAULT 'Medium',
+            issue_description TEXT,
+            current_value TEXT,
+            recommended_value TEXT,
+            detected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            linked_campaign_id INTEGER,
+            status TEXT DEFAULT 'Open',
+            resolved_at DATETIME,
+            resolution_notes TEXT,
+            assigned_to_id INTEGER,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (service_id) REFERENCES services(id),
+            FOREIGN KEY (sub_service_id) REFERENCES sub_services(id),
+            FOREIGN KEY (assigned_to_id) REFERENCES users(id)
+        )
+    `);
+
+    // Add missing columns to on_page_seo_audits table
+    addColumnIfNotExists('on_page_seo_audits', 'url', 'TEXT');
+    addColumnIfNotExists('on_page_seo_audits', 'assigned_to_id', 'INTEGER');
+    addColumnIfNotExists('on_page_seo_audits', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 
     // Ensure admin user has password set (SHA256 hash of 'admin123')
     const adminPasswordHash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
