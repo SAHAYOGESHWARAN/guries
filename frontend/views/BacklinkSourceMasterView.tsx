@@ -15,7 +15,7 @@ import { BacklinkSource } from '../types';
 
 const BacklinkSourceMasterView: React.FC = () => {
     const { backlinkSources, loading, error, createBacklinkSource, updateBacklinkSource, deleteBacklinkSource } = useData();
-    
+
     const [openModal, setOpenModal] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -46,7 +46,7 @@ const BacklinkSourceMasterView: React.FC = () => {
 
     const filteredSources = backlinkSources.filter(source => {
         const matchesSearch = source.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            source.backlink_url.toLowerCase().includes(searchTerm.toLowerCase());
+            source.backlink_url.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = !filterCategory || source.backlink_category === filterCategory;
         const matchesPricing = !filterPricing || source.pricing === filterPricing;
         const matchesStatus = !filterStatus || source.status === filterStatus;
@@ -107,33 +107,24 @@ const BacklinkSourceMasterView: React.FC = () => {
         }
     };
 
-    const getDAScoredColor = (score: number) => {
-        if (score >= 70) return '#4caf50'; // Green
-        if (score >= 40) return '#ff9800'; // Orange
-        return '#f44336'; // Red
+    const getPricingBadge = (pricing: string) => {
+        return pricing === 'Free' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
     };
 
-    const getSpamScoreColor = (score: number) => {
-        if (score <= 10) return '#4caf50'; // Green
-        if (score <= 30) return '#ff9
-            ? 'bg-green-100 text-green-800'
-            : 'bg-orange-100 text-orange-800';
+    const getStatusBadge = (status: string) => {
+        const statusColors: { [key: string]: string } = {
+            active: 'bg-green-100 text-green-800',
+            inactive: 'bg-gray-100 text-gray-800',
+            blacklisted: 'bg-red-100 text-red-800',
+            test: 'bg-yellow-100 text-yellow-800',
+            trusted: 'bg-blue-100 text-blue-800',
+            avoid: 'bg-orange-100 text-orange-800'
+        };
+        return <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[status] || 'bg-gray-100'}`}>{status}</span>;
     };
 
-    const getScoreColor = (score: number, isSpam: boolean = false) => {
-        if (isSpam) {
-            // Red for spam score (higher is worse)
-            if (score < 20) return 'bg-green-100';
-            if (score < 40) return 'bg-yellow-100';
-            if (score < 60) return 'bg-orange-100';
-            return 'bg-red-100';
-        } else {
-            // Green for DA score (higher is better)
-            if (score >= 60) return 'bg-green-100';
-            if (score >= 40) return 'bg-yellow-100';
-            if (score >= 20) return 'bg-orange-100';
-            return 'bg-red-100';
-        }
+    const handleEdit = (source: BacklinkSource) => {
+        handleOpenModal(source);
     };
 
     const columns = [
@@ -208,41 +199,28 @@ const BacklinkSourceMasterView: React.FC = () => {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <select
-                        value={filters.category}
-                        onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
                         className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2"
                     >
-                        <option>All Categories</option>
-                        <option>Directory</option>
-                        <option>Guest Post</option>
-                        <option>Forum</option>
-                        <option>Blog Comment</option>
-                        <option>Press Release</option>
-                        <option>Social Bookmark</option>
-                        <option>Resource Page</option>
-                        <option>Broken Link</option>
+                        <option value="">All Categories</option>
+                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                     <select
-                        value={filters.pricing}
-                        onChange={(e) => setFilters({ ...filters, pricing: e.target.value })}
+                        value={filterPricing}
+                        onChange={(e) => setFilterPricing(e.target.value)}
                         className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2"
                     >
-                        <option>All Pricing</option>
-                        <option>Free</option>
-                        <option>Paid</option>
+                        <option value="">All Pricing</option>
+                        {pricingOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                     <select
-                        value={filters.status}
-                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
                         className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2"
                     >
-                        <option>All Status</option>
-                        <option>active</option>
-                        <option>inactive</option>
-                        <option>blacklisted</option>
-                        <option>test</option>
-                        <option>trusted</option>
-                        <option>avoid</option>
+                        <option value="">All Status</option>
+                        {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                 </div>
 
@@ -251,37 +229,11 @@ const BacklinkSourceMasterView: React.FC = () => {
                         type="search"
                         className="block flex-1 md:w-64 p-2.5 text-sm border border-gray-300 rounded-lg bg-gray-50"
                         placeholder="Search by domain..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept=".csv"
-                        style={{ display: 'none' }}
-                    />
-                    <button onClick={handleImportClick} className="text-slate-600 hover:text-indigo-600 border border-slate-300 px-3 py-2 rounded-lg text-sm font-medium">Import</button>
-                    <button onClick={handleExport} className="text-slate-600 hover:text-indigo-600 border border-slate-300 px-3 py-2 rounded-lg text-sm font-medium">Export</button>
                     <button
-                        onClick={() => {
-                            setEditingItem(null);
-                            setFormData({
-                                domain: '',
-                                backlink_url: '',
-                                backlink_category: 'Directory',
-                                niche_industry: '',
-                                da_score: 0,
-                                spam_score: 0,
-                                pricing: 'Free',
-                                country: '',
-                                username: '',
-                                password: '',
-                                credentials_notes: '',
-                                status: 'active'
-                            });
-                            setIsModalOpen(true);
-                        }}
+                        onClick={() => handleOpenModal()}
                         className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700 shadow-sm transition-colors flex items-center whitespace-nowrap"
                     >
                         + Add Source
@@ -289,174 +241,166 @@ const BacklinkSourceMasterView: React.FC = () => {
                 </div>
             </div>
 
-            <Table columns={columns} data={filteredData} title={`Backlink Sources (${filteredData.length})`} />
+            {/* Data Table */}
+            {loading && <div className="text-center py-8">Loading...</div>}
+            {error && <Alert severity="error">{error}</Alert>}
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Backlink Source" : "Add New Backlink Source"}>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {/* Basic Information */}
-                    <div className="border-b pb-4">
-                        <h3 className="font-semibold text-slate-700 mb-3">Basic Information</h3>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Domain *</label>
-                            <input
-                                type="text"
-                                value={formData.domain}
-                                onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                placeholder="e.g., example.com"
-                            />
-                        </div>
+            {!loading && !error && (
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f3f4f6' }}>
+                                <TableCell>Domain</TableCell>
+                                <TableCell>Backlink URL</TableCell>
+                                <TableCell>Category</TableCell>
+                                <TableCell>DA Score</TableCell>
+                                <TableCell>Spam Score</TableCell>
+                                <TableCell>Pricing</TableCell>
+                                <TableCell>Country</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {paginatedSources.map((source) => (
+                                <TableRow key={source.id} hover>
+                                    <TableCell className="font-bold">{source.domain}</TableCell>
+                                    <TableCell className="text-sm truncate max-w-xs">{source.backlink_url}</TableCell>
+                                    <TableCell>{source.backlink_category}</TableCell>
+                                    <TableCell>{source.da_score}</TableCell>
+                                    <TableCell>{source.spam_score}</TableCell>
+                                    <TableCell>{getPricingBadge(source.pricing || 'Free')}</TableCell>
+                                    <TableCell>{source.country}</TableCell>
+                                    <TableCell>{getStatusBadge(source.status || 'active')}</TableCell>
+                                    <TableCell>
+                                        <IconButton size="small" onClick={() => handleEdit(source)} title="Edit">
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton size="small" onClick={() => handleDelete(source.id)} title="Delete">
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={filteredSources.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={(e, newPage) => setPage(newPage)}
+                        onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+                    />
+                </TableContainer>
+            )}
 
-                        <div className="mt-3">
-                            <label className="block text-sm font-medium text-gray-700">Backlink URL *</label>
-                            <input
-                                type="text"
-                                value={formData.backlink_url}
-                                onChange={(e) => setFormData({ ...formData, backlink_url: e.target.value })}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                placeholder="e.g., https://example.com/directory"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mt-3">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Category *</label>
-                                <select value={formData.backlink_category} onChange={(e) => setFormData({ ...formData, backlink_category: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                                    <option>Directory</option>
-                                    <option>Guest Post</option>
-                                    <option>Forum</option>
-                                    <option>Blog Comment</option>
-                                    <option>Press Release</option>
-                                    <option>Social Bookmark</option>
-                                    <option>Resource Page</option>
-                                    <option>Broken Link</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Niche Industry</label>
-                                <input
-                                    type="text"
-                                    value={formData.niche_industry}
-                                    onChange={(e) => setFormData({ ...formData, niche_industry: e.target.value })}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="e.g., Technology, Finance"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Scores & Metrics */}
-                    <div className="border-b pb-4">
-                        <h3 className="font-semibold text-slate-700 mb-3">Scores & Metrics</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">DA Score (0-100)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={formData.da_score}
-                                    onChange={(e) => setFormData({ ...formData, da_score: parseInt(e.target.value) || 0 })}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="e.g., 45"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Spam Score (0-100)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={formData.spam_score}
-                                    onChange={(e) => setFormData({ ...formData, spam_score: parseInt(e.target.value) || 0 })}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="e.g., 15"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pricing & Location */}
-                    <div className="border-b pb-4">
-                        <h3 className="font-semibold text-slate-700 mb-3">Pricing & Location</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Pricing</label>
-                                <select value={formData.pricing} onChange={(e) => setFormData({ ...formData, pricing: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                                    <option>Free</option>
-                                    <option>Paid</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Country</label>
-                                <input
-                                    type="text"
-                                    value={formData.country}
-                                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="e.g., USA, India"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Credentials */}
-                    <div className="border-b pb-4">
-                        <h3 className="font-semibold text-slate-700 mb-3">Credentials</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Username</label>
-                                <input
-                                    type="text"
-                                    value={formData.username}
-                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="Username"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Password</label>
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="Password"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-3">
-                            <label className="block text-sm font-medium text-gray-700">Credentials Notes</label>
-                            <textarea
-                                value={formData.credentials_notes}
-                                onChange={(e) => setFormData({ ...formData, credentials_notes: e.target.value })}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                placeholder="Additional notes about credentials or access"
-                                rows={2}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Status</label>
-                        <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="blacklisted">Blacklisted</option>
-                            <option value="test">Test</option>
-                            <option value="trusted">Trusted</option>
-                            <option value="avoid">Avoid</option>
-                        </select>
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-4 border-t">
-                        <button onClick={() => setIsModalOpen(false)} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50">Cancel</button>
-                        <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save Source</button>
-                    </div>
-                </div>
-            </Modal>
+            {/* Modal Dialog */}
+            <Dialog open={openModal} onClose={handleCloseModal} maxWidth="sm" fullWidth>
+                <DialogTitle>{editingId ? 'Edit Backlink Source' : 'Add New Backlink Source'}</DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+                        <TextField
+                            label="Domain"
+                            value={formData.domain || ''}
+                            onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
+                            fullWidth
+                            required
+                        />
+                        <TextField
+                            label="Backlink URL"
+                            value={formData.backlink_url || ''}
+                            onChange={(e) => setFormData({ ...formData, backlink_url: e.target.value })}
+                            fullWidth
+                            required
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Category</InputLabel>
+                            <Select
+                                value={formData.backlink_category || ''}
+                                onChange={(e) => setFormData({ ...formData, backlink_category: e.target.value })}
+                                label="Category"
+                            >
+                                {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Niche Industry"
+                            value={formData.niche_industry || ''}
+                            onChange={(e) => setFormData({ ...formData, niche_industry: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="DA Score"
+                            type="number"
+                            inputProps={{ min: 0, max: 100 }}
+                            value={formData.da_score || 0}
+                            onChange={(e) => setFormData({ ...formData, da_score: parseInt(e.target.value) || 0 })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Spam Score"
+                            type="number"
+                            inputProps={{ min: 0, max: 100 }}
+                            value={formData.spam_score || 0}
+                            onChange={(e) => setFormData({ ...formData, spam_score: parseInt(e.target.value) || 0 })}
+                            fullWidth
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Pricing</InputLabel>
+                            <Select
+                                value={formData.pricing || 'Free'}
+                                onChange={(e) => setFormData({ ...formData, pricing: e.target.value as any })}
+                                label="Pricing"
+                            >
+                                {pricingOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Country"
+                            value={formData.country || ''}
+                            onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Username"
+                            value={formData.username || ''}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Password"
+                            type="password"
+                            value={formData.password || ''}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Credentials Notes"
+                            value={formData.credentials_notes || ''}
+                            onChange={(e) => setFormData({ ...formData, credentials_notes: e.target.value })}
+                            fullWidth
+                            multiline
+                            rows={2}
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={formData.status || 'active'}
+                                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                                label="Status"
+                            >
+                                {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseModal}>Cancel</Button>
+                    <Button onClick={handleSave} variant="contained">Save</Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };

@@ -353,7 +353,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
                 smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
                 submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
                 workflow_log, version_history, linking_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59) RETURNING *`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60) RETURNING *`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,

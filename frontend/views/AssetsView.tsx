@@ -69,6 +69,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         version: true,
         uploadedAt: true,
         usageCount: true,
+        currentlyWorking: true,
         user: true,
         actions: true
     });
@@ -1229,26 +1230,26 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Render form fields based on application type
     const renderFormFields = () => (
         <div className="max-w-4xl mx-auto">
-            {/* Workflow Stage Banner - Shows when asset is moved to CW/GD/WD */}
+            {/* Workflow Stage Banner - Shows when asset is moved to CW/GD/WD - ALWAYS AT TOP */}
             {(newAsset.workflow_stage === 'Moved to CW' || newAsset.workflow_stage === 'Moved to GD' || newAsset.workflow_stage === 'Moved to WD') && (
-                <div className={`mb-4 p-4 rounded-xl border-2 flex items-center gap-3 ${newAsset.workflow_stage === 'Moved to CW' ? 'bg-purple-50 border-purple-300 text-purple-800' :
-                    newAsset.workflow_stage === 'Moved to GD' ? 'bg-pink-50 border-pink-300 text-pink-800' :
-                        'bg-cyan-50 border-cyan-300 text-cyan-800'
+                <div className={`mb-6 p-5 rounded-xl border-2 flex items-center gap-4 shadow-md ${newAsset.workflow_stage === 'Moved to CW' ? 'bg-purple-50 border-purple-400 text-purple-900' :
+                    newAsset.workflow_stage === 'Moved to GD' ? 'bg-pink-50 border-pink-400 text-pink-900' :
+                        'bg-cyan-50 border-cyan-400 text-cyan-900'
                     }`}>
-                    <span className="text-2xl">
+                    <span className="text-3xl flex-shrink-0">
                         {newAsset.workflow_stage === 'Moved to CW' ? '✍️' :
                             newAsset.workflow_stage === 'Moved to GD' ? '🎨' : '💻'}
                     </span>
-                    <div>
-                        <p className="font-semibold">
+                    <div className="flex-1">
+                        <p className="font-bold text-lg">
                             {newAsset.workflow_stage === 'Moved to CW' ? 'CW is working on this asset' :
                                 newAsset.workflow_stage === 'Moved to GD' ? 'GD is working on this asset' :
                                     'WD is working on this asset'}
                         </p>
-                        <p className="text-sm opacity-80">
-                            {newAsset.workflow_stage === 'Moved to CW' ? 'Content Writing team is currently editing this asset' :
-                                newAsset.workflow_stage === 'Moved to GD' ? 'Graphic Design team is currently working on this asset' :
-                                    'Web Development team is currently working on this asset'}
+                        <p className="text-sm opacity-90 mt-1">
+                            {newAsset.workflow_stage === 'Moved to CW' ? 'Content Writing team is currently editing this asset. Please do not make changes until they complete their work.' :
+                                newAsset.workflow_stage === 'Moved to GD' ? 'Graphic Design team is currently working on this asset. Please do not make changes until they complete their work.' :
+                                    'Web Development team is currently working on this asset. Please do not make changes until they complete their work.'}
                         </p>
                     </div>
                 </div>
@@ -6646,6 +6647,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                         {visibleColumns.version && <th className="w-16 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>}
                                                         {visibleColumns.uploadedAt && <th className="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded At</th>}
                                                         {visibleColumns.usageCount && <th className="w-20 px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>}
+                                                        {visibleColumns.currentlyWorking && <th className="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currently Working</th>}
                                                         {visibleColumns.user && <th className="w-28 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Designer</th>}
                                                         {visibleColumns.actions && <th className="w-20 px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                                                     </tr>
@@ -6663,6 +6665,24 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             const linkedTask = linkedTaskId ? tasks.find(t => t.id === linkedTaskId) : null;
                                                             const designerId = asset.designed_by || asset.submitted_by || asset.created_by;
                                                             const designer = designerId ? usersMap.get(designerId) : undefined;
+
+                                                            // Determine who is currently working on the asset based on workflow_stage
+                                                            let currentlyWorkingUser: User | undefined;
+                                                            if (asset.workflow_stage === 'Moved to CW') {
+                                                                // Content Writer - typically the designer or creator
+                                                                currentlyWorkingUser = designer;
+                                                            } else if (asset.workflow_stage === 'Moved to GD') {
+                                                                // Graphic Designer - typically the designer
+                                                                currentlyWorkingUser = designer;
+                                                            } else if (asset.workflow_stage === 'Moved to WD') {
+                                                                // Web Developer - typically the designer
+                                                                currentlyWorkingUser = designer;
+                                                            } else if (asset.workflow_stage === 'Sent to QC') {
+                                                                // QC Reviewer
+                                                                const qcReviewerId = asset.qc_reviewer_id;
+                                                                currentlyWorkingUser = qcReviewerId ? usersMap.get(qcReviewerId) : undefined;
+                                                            }
+
                                                             const uploadedAt = asset.created_at || asset.date;
                                                             const formattedUploadDate = uploadedAt ? new Date(uploadedAt).toLocaleDateString('en-CA') : '-';
                                                             const isSelected = selectedAssetIds.has(asset.id);
@@ -6751,6 +6771,18 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                             {usageCount}
                                                                         </span>
                                                                     </td>}
+                                                                    {visibleColumns.currentlyWorking && <td className="px-2 py-3">
+                                                                        {currentlyWorkingUser ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center" title={currentlyWorkingUser.name}>
+                                                                                    <span className="text-xs text-white font-medium">{currentlyWorkingUser.name?.charAt(0).toUpperCase() || '?'}</span>
+                                                                                </div>
+                                                                                <span className="text-sm text-gray-700 truncate">{currentlyWorkingUser.name}</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-sm text-gray-400">-</span>
+                                                                        )}
+                                                                    </td>}
                                                                     {visibleColumns.user && <td className="px-2 py-3">
                                                                         {designer ? (
                                                                             <div className="flex items-center gap-2">
@@ -6777,7 +6809,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                             );
                                                         }) : (
                                                             <tr>
-                                                                <td colSpan={14} className="px-6 py-16 text-center">
+                                                                <td colSpan={15} className="px-6 py-16 text-center">
                                                                     <div className="flex flex-col items-center justify-center text-gray-400">
                                                                         <svg className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
