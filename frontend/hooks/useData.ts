@@ -29,7 +29,6 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     submissions: { endpoint: 'submissions', event: 'submission' },
     okrs: { endpoint: 'okrs', event: 'okr' },
     competitors: { endpoint: 'competitors', event: 'competitor' },
-    goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
     competitorBacklinks: { endpoint: 'competitor-backlinks', event: 'competitor_backlink' },
     urlErrors: { endpoint: 'url-errors', event: 'url_error' },
     onPageSeoAudits: { endpoint: 'on-page-seo-audits', event: 'on_page_seo_audit' },
