@@ -892,6 +892,41 @@ npm run build
 NODE_OPTIONS=--max-old-space-size=4096 npm start
 ```
 
+### Emotion/MUI Build Error (Vercel Deployment)
+
+**Error**: "CacheProvider" is not exported by "@emotion/react"
+
+**Solution**:
+1. Ensure frontend/package.json has these dependencies:
+   ```json
+   "@emotion/cache": "^11.11.0",
+   "@emotion/react": "^11.11.1",
+   "@emotion/styled": "^11.11.0",
+   "@mui/material": "^5.14.0"
+   ```
+
+2. Clean and reinstall:
+   ```bash
+   cd frontend
+   rm -rf node_modules package-lock.json
+   npm install
+   npm run build
+   ```
+
+3. Deploy:
+   ```bash
+   vercel --prod
+   ```
+
+**Or use the deployment script**:
+```bash
+# Linux/Mac
+bash deploy-fix.sh
+
+# Windows
+deploy-fix.bat
+```
+
 ### Debug Mode
 
 ```bash

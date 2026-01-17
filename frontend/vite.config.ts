@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
             alias: {
                 '@': path.resolve(__dirname),
             },
+            dedupe: ['react', 'react-dom', '@emotion/react', '@emotion/styled'],
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.API_KEY),
@@ -47,6 +48,9 @@ export default defineConfig(({ mode }) => {
                 output: {
                     manualChunks: (id) => {
                         if (id.includes('node_modules')) {
+                            if (id.includes('@mui') || id.includes('@emotion')) {
+                                return 'mui-vendor';
+                            }
                             if (id.includes('react') || id.includes('react-dom')) {
                                 return 'react-vendor';
                             }
