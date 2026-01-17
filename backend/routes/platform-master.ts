@@ -38,7 +38,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
         const platform = db.prepare(`
       SELECT * FROM platform_master WHERE id = ?
-    `).get(id);
+    `).get(id) as any;
 
         if (!platform) {
             return res.status(404).json({ error: 'Platform not found' });
@@ -82,7 +82,7 @@ router.get('/:id', (req: Request, res: Response) => {
     `).all(id);
 
         res.json({
-            ...platform,
+            ...(platform as Record<string, any>),
             contentTypes,
             assetTypes,
             recommendedSizes,

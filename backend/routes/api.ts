@@ -73,6 +73,7 @@ import employeeScorecardRoutes from './employee-scorecard';
 import employeeComparisonRoutes from './employee-comparison';
 import aiEvaluationEngineRoutes from './ai-evaluation-engine';
 import rewardPenaltyAutomationRoutes from './reward-penalty-automation';
+import aiTaskAllocationRoutes from './ai-task-allocation';
 import * as assetUsageController from '../controllers/assetUsageController';
 import * as seoAssetController from '../controllers/seoAssetController';
 
@@ -572,5 +573,8 @@ router.put('/dashboards/rewards-penalties/approvals/:id', rewardPenaltyControlle
 router.get('/dashboards/workload-prediction', workloadPredictionController.getWorkloadPrediction);
 router.post('/dashboards/workload-prediction/implement-suggestion', workloadPredictionController.implementAllocationSuggestion);
 router.get('/dashboards/workload-prediction/capacity-forecast', workloadPredictionController.getCapacityForecast);
+
+// AI Task Allocation Suggestions
+router.use('/workload-allocation', aiTaskAllocationRoutes);
 
 export default router;

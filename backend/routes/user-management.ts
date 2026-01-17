@@ -50,7 +50,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
         const user = db.prepare(`
       SELECT * FROM users_management WHERE id = ?
-    `).get(id);
+    `).get(id) as any;
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -64,7 +64,7 @@ router.get('/:id', (req: Request, res: Response) => {
     `).all(id);
 
         res.json({
-            ...user,
+            ...(user as Record<string, any>),
             permissions
         });
     } catch (error) {

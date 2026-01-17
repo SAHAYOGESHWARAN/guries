@@ -25,7 +25,7 @@ router.get('/:employeeId', (req: Request, res: Response) => {
 
         const scorecard = db.prepare(`
       SELECT * FROM employee_scorecards WHERE employee_id = ?
-    `).get(employeeId);
+    `).get(employeeId) as any;
 
         if (!scorecard) {
             return res.status(404).json({ error: 'Employee scorecard not found' });
@@ -63,7 +63,7 @@ router.get('/:employeeId', (req: Request, res: Response) => {
     `).all(employeeId);
 
         res.json({
-            ...scorecard,
+            ...(scorecard as Record<string, any>),
             kpiContribution,
             qcHistory,
             attendance,

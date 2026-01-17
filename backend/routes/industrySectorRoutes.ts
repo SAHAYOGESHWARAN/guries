@@ -66,7 +66,7 @@ router.get('/master/industries', (req, res) => {
             SELECT DISTINCT industry FROM industry_sectors 
             WHERE status != 'deleted'
             ORDER BY industry
-        `).all();
+        `).all() as any[];
         db.close();
         res.json(industries.map(i => i.industry));
     } catch (error) {
@@ -84,7 +84,7 @@ router.get('/master/sectors/:industry', (req, res) => {
             SELECT DISTINCT sector FROM industry_sectors 
             WHERE industry = ? AND status != 'deleted'
             ORDER BY sector
-        `).all(industry);
+        `).all(industry) as any[];
         db.close();
         res.json(sectors.map(s => s.sector));
     } catch (error) {
@@ -102,7 +102,7 @@ router.get('/master/applications/:industry/:sector', (req, res) => {
             SELECT DISTINCT application FROM industry_sectors 
             WHERE industry = ? AND sector = ? AND status != 'deleted'
             ORDER BY application
-        `).all(industry, sector);
+        `).all(industry, sector) as any[];
         db.close();
         res.json(applications.map(a => a.application));
     } catch (error) {
@@ -119,7 +119,7 @@ router.get('/master/countries', (req, res) => {
             SELECT DISTINCT country FROM industry_sectors 
             WHERE status != 'deleted'
             ORDER BY country
-        `).all();
+        `).all() as any[];
         db.close();
         res.json(countries.map(c => c.country));
     } catch (error) {

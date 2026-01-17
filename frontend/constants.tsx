@@ -123,6 +123,7 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'ai-evaluation-dashboard', name: '🤖 AI Evaluation Engine', icon: <SparkIcon /> },
             { id: 'reward-penalty-dashboard', name: '🏆 Reward & Penalty', icon: <AnalyticsIcon /> },
             { id: 'workload-prediction-dashboard', name: '📈 Workload Prediction', icon: <AnalyticsIcon /> },
+            { id: 'ai-task-allocation', name: '💡 AI Task Allocation', icon: <SparkIcon /> },
         ]
     },
     {

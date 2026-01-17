@@ -25,7 +25,7 @@ router.get('/reports/:reportId', (req: Request, res: Response) => {
 
         const report = db.prepare(`
       SELECT * FROM ai_evaluation_reports WHERE report_id = ?
-    `).get(reportId);
+    `).get(reportId) as any;
 
         if (!report) {
             return res.status(404).json({ error: 'Report not found' });
@@ -65,7 +65,7 @@ router.get('/reports/:reportId', (req: Request, res: Response) => {
     `).all(reportId);
 
         res.json({
-            ...report,
+            ...(report as Record<string, any>),
             dataSources,
             performanceScores,
             riskFactors,

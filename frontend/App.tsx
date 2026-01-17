@@ -63,6 +63,7 @@ const AIEvaluationEngineView = React.lazy(() => import('./views/AIEvaluationEngi
 const RewardPenaltyAutomationView = React.lazy(() => import('./views/RewardPenaltyAutomationView'));
 const RewardPenaltyDashboard = React.lazy(() => import('./views/RewardPenaltyDashboard'));
 const WorkloadPredictionDashboard = React.lazy(() => import('./views/WorkloadPredictionDashboard'));
+const AITaskAllocationSuggestionsView = React.lazy(() => import('./views/AITaskAllocationSuggestionsView'));
 
 const IntegrationsView = React.lazy(() => import('./views/IntegrationsView'));
 const DeveloperNotesView = React.lazy(() => import('./views/DeveloperNotesView'));
@@ -254,6 +255,7 @@ const App: React.FC = () => {
       case 'ai-evaluation-dashboard': return <AIEvaluationDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction-dashboard': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
+      case 'ai-task-allocation': return <AITaskAllocationSuggestionsView onNavigate={handleNavigate} />;
       case 'reward-penalty': return <RewardPenaltyAutomationView />;
       case 'reward-penalty-dashboard': return <RewardPenaltyDashboard onNavigate={handleNavigate} />;
       case 'users': return <UsersView />;

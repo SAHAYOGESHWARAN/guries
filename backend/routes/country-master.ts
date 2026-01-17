@@ -212,7 +212,7 @@ router.get('/list/regions', (req: Request, res: Response) => {
         const regions = db.prepare(`
       SELECT DISTINCT region FROM country_master
       ORDER BY region
-    `).all();
+    `).all() as any[];
 
         res.json(regions.map(r => r.region));
     } catch (error) {

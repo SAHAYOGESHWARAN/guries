@@ -51,7 +51,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
         const checklist = db.prepare(`
       SELECT * FROM audit_checklists WHERE id = ?
-    `).get(id);
+    `).get(id) as any;
 
         if (!checklist) {
             return res.status(404).json({ error: 'Checklist not found' });
@@ -83,7 +83,7 @@ router.get('/:id', (req: Request, res: Response) => {
     `).all(id);
 
         res.json({
-            ...checklist,
+            ...(checklist as Record<string, any>),
             items,
             modules: modules.map((m: any) => m.module_name),
             campaigns,

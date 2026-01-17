@@ -248,7 +248,7 @@ router.get('/list/categories', (req: Request, res: Response) => {
         const categories = db.prepare(`
       SELECT DISTINCT category FROM seo_error_type_master
       ORDER BY category
-    `).all();
+    `).all() as any[];
 
         res.json(categories.map(c => c.category));
     } catch (error) {

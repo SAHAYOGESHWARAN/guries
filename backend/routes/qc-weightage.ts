@@ -39,7 +39,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
         const config = db.prepare(`
       SELECT * FROM qc_weightage_configs WHERE id = ?
-    `).get(id);
+    `).get(id) as any;
 
         if (!config) {
             return res.status(404).json({ error: 'QC weightage config not found' });
@@ -62,7 +62,7 @@ router.get('/:id', (req: Request, res: Response) => {
     `).all(id);
 
         res.json({
-            ...config,
+            ...(config as Record<string, any>),
             items
         });
     } catch (error) {
@@ -307,7 +307,7 @@ router.post('/:checklistId/usage', (req: Request, res: Response) => {
         const existing = db.prepare(`
       SELECT id FROM qc_checklist_usage
       WHERE checklist_id = ? AND asset_type = ? AND usage_context = ?
-    `).get(checklistId, asset_type, usage_context || null);
+    `).get(checklistId, asset_type, usage_context || null) as any;
 
         if (existing) {
             // Update existing

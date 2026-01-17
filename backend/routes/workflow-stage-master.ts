@@ -37,7 +37,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
         const workflow = db.prepare(`
       SELECT * FROM workflow_master_new WHERE id = ?
-    `).get(id);
+    `).get(id) as any;
 
         if (!workflow) {
             return res.status(404).json({ error: 'Workflow not found' });
@@ -50,7 +50,7 @@ router.get('/:id', (req: Request, res: Response) => {
     `).all(id);
 
         res.json({
-            ...workflow,
+            ...(workflow as Record<string, any>),
             stages
         });
     } catch (error) {
