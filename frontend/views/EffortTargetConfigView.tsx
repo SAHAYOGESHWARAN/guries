@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
@@ -9,25 +8,32 @@ import type { EffortTarget } from '../types';
 
 const EffortTargetConfigView: React.FC = () => {
     const { data: effortTargets, create, update, remove } = useData<EffortTarget>('effortTargets');
-    
-    const [filters, setFilters] = useState({ cycle: 'Monthly', department: 'All', role: 'All' });
+
+    const [filters, setFilters] = useState({ department: 'All', status: 'All' });
     const [searchQuery, setSearchQuery] = useState('');
-    
-    // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<EffortTarget | null>(null);
     const [formData, setFormData] = useState<Partial<EffortTarget>>({
-        role: '', category: '', metric: '', monthly: 0, weekly: 0, daily: 0, weightage: '0%', rules: '', status: 'active'
+        department: '',
+        role: '',
+        kpi_category: '',
+        effort_metric: '',
+        monthly_target: 0,
+        weekly_target: 0,
+        daily_target: 0,
+        max_capacity: 0,
+        weightage_percent: 0,
+        status: 'Draft'
     });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const filteredData = effortTargets.filter(item => {
-        const matchesSearch = item.role.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              item.metric.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = filters.role === 'All' || item.role === filters.role;
-        const matchesDept = filters.department === 'All' || item.category === filters.department;
-        return matchesSearch && matchesRole && matchesDept;
+        const matchesSearch = item.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.effort_metric.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = filters.status === 'All' || item.status === filters.status;
+        const matchesDept = filters.department === 'All' || item.department === filters.department;
+        return matchesSearch && matchesStatus && matchesDept;
     });
 
     const handleEdit = (item: EffortTarget) => {
@@ -44,13 +50,24 @@ const EffortTargetConfigView: React.FC = () => {
 
     const handleSave = async () => {
         if (editingItem) {
-            await update(editingItem.id, { ...formData, updated: new Date().toISOString().split('T')[0] });
+            await update(editingItem.id, formData);
         } else {
-            await create({ ...formData, updated: new Date().toISOString().split('T')[0] } as any);
+            await create(formData as any);
         }
         setIsModalOpen(false);
         setEditingItem(null);
-        setFormData({ role: '', category: '', metric: '', monthly: 0, weekly: 0, daily: 0, weightage: '0%', rules: '', status: 'active' });
+        setFormData({
+            department: '',
+            role: '',
+            kpi_category: '',
+            effort_metric: '',
+            monthly_target: 0,
+            weekly_target: 0,
+            daily_target: 0,
+            max_capacity: 0,
+            weightage_percent: 0,
+            status: 'Draft'
+        });
     };
 
     const handleExport = () => {
@@ -67,11 +84,8 @@ const EffortTargetConfigView: React.FC = () => {
                 const parsedData = await parseCSV(e.target.files[0]);
                 let count = 0;
                 for (const item of parsedData) {
-                    if (item.role && item.metric) {
-                        await create({
-                            ...item,
-                            updated: new Date().toISOString().split('T')[0]
-                        } as any);
+                    if (item.role && item.effort_metric) {
+                        await create(item as any);
                         count++;
                     }
                 }
@@ -85,25 +99,26 @@ const EffortTargetConfigView: React.FC = () => {
 
     const columns = [
         { header: 'Role', accessor: 'role' as keyof EffortTarget, className: 'font-bold text-slate-700' },
-        { header: 'KPI Category', accessor: 'category' as keyof EffortTarget },
-        { header: 'Effort Metric', accessor: 'metric' as keyof EffortTarget },
-        { header: 'Monthly Target', accessor: 'monthly' as keyof EffortTarget, className: 'text-right font-mono' },
-        { header: 'Weekly Target', accessor: 'weekly' as keyof EffortTarget, className: 'text-right font-mono text-slate-500' },
-        { header: 'Daily Target', accessor: 'daily' as keyof EffortTarget, className: 'text-right font-mono text-slate-500' },
-        { 
-            header: 'Weightage %', 
+        { header: 'Department', accessor: 'department' as keyof EffortTarget },
+        { header: 'KPI Category', accessor: 'kpi_category' as keyof EffortTarget },
+        { header: 'Effort Metric', accessor: 'effort_metric' as keyof EffortTarget },
+        { header: 'Monthly Target', accessor: 'monthly_target' as keyof EffortTarget, className: 'text-right font-mono' },
+        { header: 'Weekly Target', accessor: 'weekly_target' as keyof EffortTarget, className: 'text-right font-mono text-slate-500' },
+        { header: 'Daily Target', accessor: 'daily_target' as keyof EffortTarget, className: 'text-right font-mono text-slate-500' },
+        {
+            header: 'Weightage %',
             accessor: (item: EffortTarget) => {
-                const val = parseInt(item.weightage);
+                const val = item.weightage_percent;
                 let color = 'bg-blue-100 text-blue-800';
-                if(val >= 40) color = 'bg-purple-100 text-purple-800 font-bold';
-                else if(val < 25) color = 'bg-gray-100 text-gray-600';
-                
-                return <span className={`px-2 py-1 rounded text-xs ${color}`}>{item.weightage}</span>;
+                if (val >= 40) color = 'bg-purple-100 text-purple-800 font-bold';
+                else if (val < 25) color = 'bg-gray-100 text-gray-600';
+
+                return <span className={`px-2 py-1 rounded text-xs ${color}`}>{val}%</span>;
             }
         },
-        { header: 'Auto-Assign Rules', accessor: 'rules' as keyof EffortTarget, className: 'text-xs text-slate-500 italic' },
+        { header: 'Max Tasks/Day', accessor: 'max_tasks_per_day' as keyof EffortTarget, className: 'text-center' },
         { header: 'Status', accessor: (item: EffortTarget) => getStatusBadge(item.status) },
-        { header: 'Updated On', accessor: 'updated' as keyof EffortTarget, className: 'text-xs text-slate-400' },
+        { header: 'Updated', accessor: 'updated_at' as keyof EffortTarget, className: 'text-xs text-slate-400' },
         {
             header: 'Actions',
             accessor: (item: EffortTarget) => (
@@ -138,42 +153,68 @@ const EffortTargetConfigView: React.FC = () => {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cycle Type</label>
-                        <select 
-                            value={filters.cycle}
-                            onChange={(e) => setFilters({...filters, cycle: e.target.value})}
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Department</label>
+                        <select
+                            value={filters.department}
+                            onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+                            className="bg-slate-50 border border-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-40 p-2"
+                        >
+                            <option>All</option>
+                            <option>Content</option>
+                            <option>SEO</option>
+                            <option>SMM</option>
+                            <option>Development</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
+                        <select
+                            value={filters.status}
+                            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                             className="bg-slate-50 border border-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-32 p-2"
                         >
-                            <option>Monthly</option>
-                            <option>Quarterly</option>
-                            <option>Annually</option>
+                            <option>All</option>
+                            <option>Draft</option>
+                            <option>Active</option>
+                            <option>Inactive</option>
                         </select>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
-                        <input 
-                            type="search" 
-                            className="block w-full p-2.5 pl-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50" 
-                            placeholder="Search role or metric..." 
+                        <input
+                            type="search"
+                            className="block w-full p-2.5 pl-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50"
+                            placeholder="Search role or metric..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileChange} 
-                        accept=".csv" 
-                        style={{ display: 'none' }} 
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept=".csv"
+                        style={{ display: 'none' }}
                     />
                     <button onClick={handleImportClick} className="text-slate-600 hover:text-indigo-600 border border-slate-300 px-3 py-2 rounded-lg text-sm font-medium">Import</button>
                     <button onClick={handleExport} className="text-slate-600 hover:text-indigo-600 border border-slate-300 px-3 py-2 rounded-lg text-sm font-medium">Export</button>
-                    <button 
+                    <button
                         onClick={() => {
                             setEditingItem(null);
-                            setFormData({ role: '', category: '', metric: '', monthly: 0, weekly: 0, daily: 0, weightage: '0%', rules: '', status: 'active' });
+                            setFormData({
+                                department: '',
+                                role: '',
+                                kpi_category: '',
+                                effort_metric: '',
+                                monthly_target: 0,
+                                weekly_target: 0,
+                                daily_target: 0,
+                                max_capacity: 0,
+                                weightage_percent: 0,
+                                status: 'Draft'
+                            });
                             setIsModalOpen(true);
                         }}
                         className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700 shadow-sm transition-colors flex items-center whitespace-nowrap"
@@ -185,60 +226,69 @@ const EffortTargetConfigView: React.FC = () => {
 
             <Table columns={columns} data={filteredData} title="Active Targets" />
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Target" : "Add New Target"}>
-                <div className="space-y-4">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Effort Target" : "Add New Effort Target"}>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Role</label>
-                            <input type="text" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <label className="block text-sm font-medium text-gray-700">Department</label>
+                            <input type="text" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Category</label>
-                            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                                <option value="">Select...</option>
-                                <option value="Content">Content</option>
-                                <option value="SEO">SEO</option>
-                                <option value="SMM">SMM</option>
-                                <option value="Web">Web</option>
-                            </select>
+                            <label className="block text-sm font-medium text-gray-700">Role</label>
+                            <input type="text" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Metric</label>
-                        <input type="text" value={formData.metric} onChange={(e) => setFormData({...formData, metric: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">KPI Category</label>
+                            <input type="text" value={formData.kpi_category} onChange={(e) => setFormData({ ...formData, kpi_category: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Effort Metric</label>
+                            <input type="text" value={formData.effort_metric} onChange={(e) => setFormData({ ...formData, effort_metric: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Monthly</label>
-                            <input type="number" value={formData.monthly} onChange={(e) => setFormData({...formData, monthly: parseInt(e.target.value) || 0})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <label className="block text-sm font-medium text-gray-700">Monthly Target</label>
+                            <input type="number" value={formData.monthly_target} onChange={(e) => setFormData({ ...formData, monthly_target: parseInt(e.target.value) || 0 })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Weekly</label>
-                            <input type="number" value={formData.weekly} onChange={(e) => setFormData({...formData, weekly: parseInt(e.target.value) || 0})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <label className="block text-sm font-medium text-gray-700">Weekly Target</label>
+                            <input type="number" value={formData.weekly_target} onChange={(e) => setFormData({ ...formData, weekly_target: parseInt(e.target.value) || 0 })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Daily</label>
-                            <input type="number" value={formData.daily} onChange={(e) => setFormData({...formData, daily: parseInt(e.target.value) || 0})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <label className="block text-sm font-medium text-gray-700">Daily Target</label>
+                            <input type="number" value={formData.daily_target} onChange={(e) => setFormData({ ...formData, daily_target: parseInt(e.target.value) || 0 })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Weightage</label>
-                            <input type="text" value={formData.weightage} onChange={(e) => setFormData({...formData, weightage: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g. 40%" />
+                            <label className="block text-sm font-medium text-gray-700">Max Capacity</label>
+                            <input type="number" value={formData.max_capacity} onChange={(e) => setFormData({ ...formData, max_capacity: parseInt(e.target.value) || 0 })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Weightage %</label>
+                            <input type="number" value={formData.weightage_percent} onChange={(e) => setFormData({ ...formData, weightage_percent: parseFloat(e.target.value) || 0 })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Max Tasks/Day</label>
+                            <input type="number" value={formData.max_tasks_per_day} onChange={(e) => setFormData({ ...formData, max_tasks_per_day: parseInt(e.target.value) || 5 })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Status</label>
-                            <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                            <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="Draft">Draft</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Archived">Archived</option>
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Rules</label>
-                        <input type="text" value={formData.rules} onChange={(e) => setFormData({...formData, rules: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-                    </div>
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-end pt-4 gap-2">
+                        <button onClick={() => setIsModalOpen(false)} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50">Cancel</button>
                         <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button>
                     </div>
                 </div>

@@ -398,11 +398,40 @@ export const initDatabase = () => {
         CREATE TABLE IF NOT EXISTS keywords (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             keyword TEXT NOT NULL,
-            keyword_type TEXT,
+            keyword_intent TEXT NOT NULL,
+            keyword_type TEXT NOT NULL,
+            language TEXT DEFAULT 'English',
             search_volume INTEGER DEFAULT 0,
-            competition TEXT,
+            competition_score TEXT DEFAULT 'Medium',
+            mapped_service_id INTEGER,
             mapped_service TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            mapped_sub_service_id INTEGER,
+            mapped_sub_service TEXT,
+            status TEXT DEFAULT 'active',
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS backlink_sources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain TEXT NOT NULL,
+            backlink_url TEXT NOT NULL,
+            backlink_category TEXT NOT NULL,
+            niche_industry TEXT,
+            da_score INTEGER DEFAULT 0,
+            spam_score INTEGER DEFAULT 0,
+            pricing TEXT DEFAULT 'Free',
+            country TEXT,
+            username TEXT,
+            password TEXT,
+            credentials_notes TEXT,
+            status TEXT DEFAULT 'active',
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id)
         );
 
         INSERT OR IGNORE INTO analytics_daily_traffic (id, date, value, source) VALUES 
@@ -1051,6 +1080,327 @@ export const initDatabase = () => {
     addColumnIfNotExists('on_page_seo_audits', 'assigned_to_id', 'INTEGER');
     addColumnIfNotExists('on_page_seo_audits', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 
+    // Create okrs table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS okrs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            objective_title TEXT NOT NULL,
+            objective_type TEXT DEFAULT 'Department',
+            department TEXT,
+            owner_id INTEGER,
+            cycle TEXT DEFAULT 'Q1',
+            objective_description TEXT,
+            why_this_matters TEXT,
+            expected_outcome TEXT,
+            target_date DATE,
+            alignment TEXT,
+            parent_okr_id INTEGER,
+            key_results TEXT,
+            reviewer_id INTEGER,
+            review_notes TEXT,
+            evidence_links TEXT,
+            status TEXT DEFAULT 'Draft',
+            progress INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_id) REFERENCES users(id),
+            FOREIGN KEY (reviewer_id) REFERENCES users(id),
+            FOREIGN KEY (parent_okr_id) REFERENCES okrs(id)
+        )
+    `);
+
+    // Create gold_standards table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS gold_standards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            metric_name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            why_matters TEXT,
+            gold_standard_value TEXT NOT NULL,
+            acceptable_range_min TEXT,
+            acceptable_range_max TEXT,
+            unit TEXT,
+            source TEXT,
+            evidence_link TEXT,
+            file_upload TEXT,
+            additional_notes TEXT,
+            owner_id INTEGER,
+            reviewer_id INTEGER,
+            review_frequency TEXT DEFAULT 'Quarterly',
+            status TEXT DEFAULT 'Active',
+            next_review_date DATE,
+            governance_notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_id) REFERENCES users(id),
+            FOREIGN KEY (reviewer_id) REFERENCES users(id)
+        )
+    `);
+
+    // Create effort_targets table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS effort_targets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            department TEXT NOT NULL,
+            role TEXT NOT NULL,
+            kpi_category TEXT NOT NULL,
+            effort_metric TEXT NOT NULL,
+            effective_date DATE,
+            status TEXT DEFAULT 'Draft',
+            monthly_target INTEGER DEFAULT 0,
+            weekly_target INTEGER DEFAULT 0,
+            daily_target INTEGER DEFAULT 0,
+            max_capacity INTEGER DEFAULT 0,
+            min_completion_percent INTEGER DEFAULT 90,
+            weightage_percent REAL DEFAULT 0,
+            enable_ai_assignment INTEGER DEFAULT 0,
+            enable_load_balancing INTEGER DEFAULT 0,
+            enable_complexity_scoring INTEGER DEFAULT 0,
+            prevent_overload INTEGER DEFAULT 0,
+            reassign_if_target_not_met INTEGER DEFAULT 0,
+            max_tasks_per_day INTEGER DEFAULT 5,
+            max_tasks_per_campaign INTEGER DEFAULT 20,
+            allowed_rework_percent REAL DEFAULT 10,
+            delay_tolerance_percent REAL DEFAULT 15,
+            auto_assign_rules_summary TEXT,
+            validation_rules TEXT,
+            owner_id INTEGER,
+            reviewer_id INTEGER,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_id) REFERENCES users(id),
+            FOREIGN KEY (reviewer_id) REFERENCES users(id),
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+    `);
+
+    // Create performance_targets table if not exists
+    sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS performance_targets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            target_level TEXT NOT NULL,
+            brand_id INTEGER,
+            brand_name TEXT,
+            tutorials_india TEXT,
+            department_function TEXT NOT NULL,
+            applies_to TEXT,
+            kpi_name TEXT NOT NULL,
+            metric_type TEXT NOT NULL,
+            unit TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            examples TEXT,
+            baseline_value TEXT NOT NULL,
+            current_performance TEXT,
+            target_value TEXT NOT NULL,
+            desired_performance TEXT,
+            cycle_type TEXT DEFAULT 'Monthly',
+            period_from DATE,
+            period_to DATE,
+            tolerance_min TEXT,
+            tolerance_max TEXT,
+            gold_standard_metric_id INTEGER,
+            gold_standard_value TEXT,
+            competitor_benchmark TEXT,
+            your_target TEXT,
+            your_current TEXT,
+            competitor_current TEXT,
+            review_frequency TEXT DEFAULT 'Monthly',
+            auto_evaluate INTEGER DEFAULT 0,
+            data_source TEXT,
+            validation_rules TEXT,
+            auto_calculate_score INTEGER DEFAULT 0,
+            trigger_alert_70_percent INTEGER DEFAULT 0,
+            trigger_alert_110_percent INTEGER DEFAULT 0,
+            trigger_alert_downward_trend INTEGER DEFAULT 0,
+            use_in_okr_evaluation INTEGER DEFAULT 0,
+            use_in_employee_scorecards INTEGER DEFAULT 0,
+            use_in_project_health_score INTEGER DEFAULT 0,
+            use_in_dashboard_highlights INTEGER DEFAULT 0,
+            performance_scoring_logic TEXT,
+            achievement_calculation TEXT,
+            score_capping_logic TEXT,
+            status_achieved_green TEXT,
+            status_on_track_yellow TEXT,
+            status_off_track_red TEXT,
+            owner_id INTEGER,
+            owner_name TEXT,
+            reviewer_id INTEGER,
+            reviewer_name TEXT,
+            responsible_roles TEXT,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_id) REFERENCES users(id),
+            FOREIGN KEY (reviewer_id) REFERENCES users(id),
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+    `);
+
+    // Add missing columns to okrs table
+    addColumnIfNotExists('okrs', 'objective_title', 'TEXT NOT NULL');
+    addColumnIfNotExists('okrs', 'objective_type', 'TEXT DEFAULT "Department"');
+    addColumnIfNotExists('okrs', 'department', 'TEXT');
+    addColumnIfNotExists('okrs', 'owner_id', 'INTEGER');
+    addColumnIfNotExists('okrs', 'cycle', 'TEXT DEFAULT "Q1"');
+    addColumnIfNotExists('okrs', 'objective_description', 'TEXT');
+    addColumnIfNotExists('okrs', 'why_this_matters', 'TEXT');
+    addColumnIfNotExists('okrs', 'expected_outcome', 'TEXT');
+    addColumnIfNotExists('okrs', 'target_date', 'DATE');
+    addColumnIfNotExists('okrs', 'alignment', 'TEXT');
+    addColumnIfNotExists('okrs', 'parent_okr_id', 'INTEGER');
+    addColumnIfNotExists('okrs', 'key_results', 'TEXT');
+    addColumnIfNotExists('okrs', 'reviewer_id', 'INTEGER');
+    addColumnIfNotExists('okrs', 'review_notes', 'TEXT');
+    addColumnIfNotExists('okrs', 'evidence_links', 'TEXT');
+    addColumnIfNotExists('okrs', 'status', 'TEXT DEFAULT "Draft"');
+    addColumnIfNotExists('okrs', 'progress', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('okrs', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('okrs', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('on_page_seo_audits', 'assigned_to_id', 'INTEGER');
+    addColumnIfNotExists('on_page_seo_audits', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Add missing columns to gold_standards table
+    addColumnIfNotExists('gold_standards', 'metric_name', 'TEXT NOT NULL');
+    addColumnIfNotExists('gold_standards', 'category', 'TEXT NOT NULL');
+    addColumnIfNotExists('gold_standards', 'description', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'why_matters', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'gold_standard_value', 'TEXT NOT NULL');
+    addColumnIfNotExists('gold_standards', 'acceptable_range_min', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'acceptable_range_max', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'unit', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'source', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'evidence_link', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'file_upload', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'additional_notes', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'owner_id', 'INTEGER');
+    addColumnIfNotExists('gold_standards', 'reviewer_id', 'INTEGER');
+    addColumnIfNotExists('gold_standards', 'review_frequency', 'TEXT DEFAULT "Quarterly"');
+    addColumnIfNotExists('gold_standards', 'status', 'TEXT DEFAULT "Active"');
+    addColumnIfNotExists('gold_standards', 'next_review_date', 'DATE');
+    addColumnIfNotExists('gold_standards', 'governance_notes', 'TEXT');
+    addColumnIfNotExists('gold_standards', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('gold_standards', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Add missing columns to effort_targets table
+    addColumnIfNotExists('effort_targets', 'department', 'TEXT NOT NULL');
+    addColumnIfNotExists('effort_targets', 'role', 'TEXT NOT NULL');
+    addColumnIfNotExists('effort_targets', 'kpi_category', 'TEXT NOT NULL');
+    addColumnIfNotExists('effort_targets', 'effort_metric', 'TEXT NOT NULL');
+    addColumnIfNotExists('effort_targets', 'effective_date', 'DATE');
+    addColumnIfNotExists('effort_targets', 'status', 'TEXT DEFAULT "Draft"');
+    addColumnIfNotExists('effort_targets', 'monthly_target', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'weekly_target', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'daily_target', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'max_capacity', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'min_completion_percent', 'INTEGER DEFAULT 90');
+    addColumnIfNotExists('effort_targets', 'weightage_percent', 'REAL DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'enable_ai_assignment', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'enable_load_balancing', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'enable_complexity_scoring', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'prevent_overload', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'reassign_if_target_not_met', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('effort_targets', 'max_tasks_per_day', 'INTEGER DEFAULT 5');
+    addColumnIfNotExists('effort_targets', 'max_tasks_per_campaign', 'INTEGER DEFAULT 20');
+    addColumnIfNotExists('effort_targets', 'allowed_rework_percent', 'REAL DEFAULT 10');
+    addColumnIfNotExists('effort_targets', 'delay_tolerance_percent', 'REAL DEFAULT 15');
+    addColumnIfNotExists('effort_targets', 'auto_assign_rules_summary', 'TEXT');
+    addColumnIfNotExists('effort_targets', 'validation_rules', 'TEXT');
+    addColumnIfNotExists('effort_targets', 'owner_id', 'INTEGER');
+    addColumnIfNotExists('effort_targets', 'reviewer_id', 'INTEGER');
+    addColumnIfNotExists('effort_targets', 'created_by', 'INTEGER');
+    addColumnIfNotExists('effort_targets', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('effort_targets', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Add missing columns to performance_targets table
+    addColumnIfNotExists('performance_targets', 'target_level', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'brand_id', 'INTEGER');
+    addColumnIfNotExists('performance_targets', 'brand_name', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'tutorials_india', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'department_function', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'applies_to', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'kpi_name', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'metric_type', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'unit', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'direction', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'examples', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'baseline_value', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'current_performance', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'target_value', 'TEXT NOT NULL');
+    addColumnIfNotExists('performance_targets', 'desired_performance', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'cycle_type', 'TEXT DEFAULT "Monthly"');
+    addColumnIfNotExists('performance_targets', 'period_from', 'DATE');
+    addColumnIfNotExists('performance_targets', 'period_to', 'DATE');
+    addColumnIfNotExists('performance_targets', 'tolerance_min', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'tolerance_max', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'gold_standard_metric_id', 'INTEGER');
+    addColumnIfNotExists('performance_targets', 'gold_standard_value', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'competitor_benchmark', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'your_target', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'your_current', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'competitor_current', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'review_frequency', 'TEXT DEFAULT "Monthly"');
+    addColumnIfNotExists('performance_targets', 'auto_evaluate', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'data_source', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'validation_rules', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'auto_calculate_score', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'trigger_alert_70_percent', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'trigger_alert_110_percent', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'trigger_alert_downward_trend', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'use_in_okr_evaluation', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'use_in_employee_scorecards', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'use_in_project_health_score', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'use_in_dashboard_highlights', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('performance_targets', 'performance_scoring_logic', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'achievement_calculation', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'score_capping_logic', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'status_achieved_green', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'status_on_track_yellow', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'status_off_track_red', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'owner_id', 'INTEGER');
+    addColumnIfNotExists('performance_targets', 'owner_name', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'reviewer_id', 'INTEGER');
+    addColumnIfNotExists('performance_targets', 'reviewer_name', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'responsible_roles', 'TEXT');
+    addColumnIfNotExists('performance_targets', 'created_by', 'INTEGER');
+    addColumnIfNotExists('performance_targets', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('performance_targets', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Add missing columns to keywords table
+    addColumnIfNotExists('keywords', 'keyword_intent', 'TEXT NOT NULL');
+    addColumnIfNotExists('keywords', 'keyword_type', 'TEXT NOT NULL');
+    addColumnIfNotExists('keywords', 'language', 'TEXT DEFAULT "English"');
+    addColumnIfNotExists('keywords', 'search_volume', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('keywords', 'competition_score', 'TEXT DEFAULT "Medium"');
+    addColumnIfNotExists('keywords', 'mapped_service_id', 'INTEGER');
+    addColumnIfNotExists('keywords', 'mapped_service', 'TEXT');
+    addColumnIfNotExists('keywords', 'mapped_sub_service_id', 'INTEGER');
+    addColumnIfNotExists('keywords', 'mapped_sub_service', 'TEXT');
+    addColumnIfNotExists('keywords', 'status', 'TEXT DEFAULT "active"');
+    addColumnIfNotExists('keywords', 'created_by', 'INTEGER');
+    addColumnIfNotExists('keywords', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('keywords', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('performance_targets', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('performance_targets', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+    // Add missing columns to backlink_sources table
+    addColumnIfNotExists('backlink_sources', 'domain', 'TEXT NOT NULL');
+    addColumnIfNotExists('backlink_sources', 'backlink_url', 'TEXT NOT NULL');
+    addColumnIfNotExists('backlink_sources', 'backlink_category', 'TEXT NOT NULL');
+    addColumnIfNotExists('backlink_sources', 'niche_industry', 'TEXT');
+    addColumnIfNotExists('backlink_sources', 'da_score', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('backlink_sources', 'spam_score', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists('backlink_sources', 'pricing', 'TEXT DEFAULT "Free"');
+    addColumnIfNotExists('backlink_sources', 'country', 'TEXT');
+    addColumnIfNotExists('backlink_sources', 'username', 'TEXT');
+    addColumnIfNotExists('backlink_sources', 'password', 'TEXT');
+    addColumnIfNotExists('backlink_sources', 'credentials_notes', 'TEXT');
+    addColumnIfNotExists('backlink_sources', 'status', 'TEXT DEFAULT "active"');
+    addColumnIfNotExists('backlink_sources', 'created_by', 'INTEGER');
+    addColumnIfNotExists('backlink_sources', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+    addColumnIfNotExists('backlink_sources', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
     // Ensure admin user has password set (SHA256 hash of 'admin123')
     const adminPasswordHash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
     try {
@@ -1067,6 +1417,8 @@ export const initDatabase = () => {
     } catch (e) {
         console.log('  Admin user setup skipped');
     }
+
+    console.log('✅ All database migrations completed');
 };
 
 // PostgreSQL-compatible pool interface

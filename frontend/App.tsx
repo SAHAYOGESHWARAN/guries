@@ -39,6 +39,7 @@ const AuditChecklistMasterView = React.lazy(() => import('./views/AuditChecklist
 const QcWeightageConfigView = React.lazy(() => import('./views/QcWeightageConfigView'));
 const PerformanceBenchmarkView = React.lazy(() => import('./views/PerformanceBenchmarkView'));
 const CompetitorBenchmarkMasterView = React.lazy(() => import('./views/CompetitorBenchmarkMasterView'));
+const BacklinkSourceMasterView = React.lazy(() => import('./views/BacklinkSourceMasterView'));
 const UxIssuesView = React.lazy(() => import('./views/UxIssuesView'));
 const TasksView = React.lazy(() => import('./views/TasksView'));
 const AssetsView = React.lazy(() => import('./views/AssetsView'));
@@ -48,6 +49,7 @@ const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView')
 const PromotionRepositoryView = React.lazy(() => import('./views/PromotionRepositoryView'));
 const CompetitorRepositoryView = React.lazy(() => import('./views/CompetitorRepositoryView'));
 const CompetitorBacklinksView = React.lazy(() => import('./views/CompetitorBacklinksView'));
+const OKRManagementView = React.lazy(() => import('./views/OKRManagementView'));
 // Removed - using EmployeeScorecardDashboard instead
 // Removed - using EmployeeComparisonDashboard instead
 // Master Dashboard Pack - All 8 Dashboards
@@ -57,6 +59,8 @@ const EmployeeScorecardDashboard = React.lazy(() => import('./views/EmployeeScor
 const EmployeeComparisonDashboard = React.lazy(() => import('./views/EmployeeComparisonDashboard'));
 const TeamLeaderDashboard = React.lazy(() => import('./views/TeamLeaderDashboard'));
 const AIEvaluationDashboard = React.lazy(() => import('./views/AIEvaluationDashboard'));
+const AIEvaluationEngineView = React.lazy(() => import('./views/AIEvaluationEngineView'));
+const RewardPenaltyAutomationView = React.lazy(() => import('./views/RewardPenaltyAutomationView'));
 const RewardPenaltyDashboard = React.lazy(() => import('./views/RewardPenaltyDashboard'));
 const WorkloadPredictionDashboard = React.lazy(() => import('./views/WorkloadPredictionDashboard'));
 
@@ -209,7 +213,7 @@ const App: React.FC = () => {
       case 'integrations': return <IntegrationsView />;
       case 'backend-source': return <DeveloperNotesView />;
       case 'settings': return <SettingsView onNavigate={handleNavigate} />;
-      case 'performance-benchmark': return <PerformanceBenchmarkView />;
+      case 'performance-benchmark': return <OKRManagementView />;
       case 'service-sub-service-master': return <ServiceMasterView />;
       case 'sub-service-master': return <SubServiceMasterView />;
       case 'keyword-master': return <KeywordsView />;
@@ -228,6 +232,7 @@ const App: React.FC = () => {
       case 'effort-target-config': return <EffortTargetConfigView />;
       case 'gold-standard-benchmark': return <GoldStandardBenchmarkView />;
       case 'competitor-benchmark-master': return <CompetitorBenchmarkMasterView />;
+      case 'backlink-source-master': return <BacklinkSourceMasterView />;
       case 'qc-dashboard': return <QcView />;
 
       // ANALYTICS & HR
@@ -245,11 +250,11 @@ const App: React.FC = () => {
       case 'employee-comparison-dashboard': return <EmployeeComparisonDashboard onNavigate={handleNavigate} />;
       case 'team-leader-dashboard': return <TeamLeaderDashboard onNavigate={handleNavigate} />;
       case 'team-leader-dashboard-new': return <TeamLeaderDashboard onNavigate={handleNavigate} />;
-      case 'ai-evaluation-engine': return <AIEvaluationDashboard onNavigate={handleNavigate} />;
+      case 'ai-evaluation-engine': return <AIEvaluationEngineView />;
       case 'ai-evaluation-dashboard': return <AIEvaluationDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction-dashboard': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
-      case 'reward-penalty': return <RewardPenaltyDashboard onNavigate={handleNavigate} />;
+      case 'reward-penalty': return <RewardPenaltyAutomationView />;
       case 'reward-penalty-dashboard': return <RewardPenaltyDashboard onNavigate={handleNavigate} />;
       case 'users': return <UsersView />;
       case 'my-profile': return <UserProfileView onNavigateBack={() => handleNavigate('dashboard')} />;

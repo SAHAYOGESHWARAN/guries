@@ -43,12 +43,18 @@ export interface Brand {
 export interface Keyword {
     id: number;
     keyword: string;
+    keyword_intent: string;
     keyword_type: string;
-    intent?: string;
+    language: string;
     search_volume: number;
-    competition?: string;
+    competition_score: string;
+    mapped_service_id?: number;
     mapped_service?: string;
-    status?: 'active' | 'deprecated';
+    mapped_sub_service_id?: number;
+    mapped_sub_service?: string;
+    status: 'active' | 'deprecated' | 'archived';
+    created_by?: number;
+    created_at?: string;
     updated_at?: string;
     usage_count?: number;
 }
@@ -56,12 +62,19 @@ export interface Keyword {
 export interface BacklinkSource {
     id: number;
     domain: string;
-    platform_type: string;
+    backlink_url: string;
+    backlink_category: string;
+    niche_industry?: string;
     da_score: number;
     spam_score: number;
+    pricing: 'Free' | 'Paid';
     country?: string;
-    pricing?: 'Free' | 'Paid';
-    status: 'active' | 'blacklisted' | 'test' | 'trusted' | 'avoid';
+    username?: string;
+    password?: string;
+    credentials_notes?: string;
+    status: 'active' | 'inactive' | 'blacklisted' | 'test' | 'trusted' | 'avoid';
+    created_by?: number;
+    created_at?: string;
     updated_at?: string;
 }
 
@@ -914,28 +927,154 @@ export interface TeamPerformance {
 
 export interface EffortTarget {
     id: number;
+    department: string;
     role: string;
-    category: string;
-    metric: string;
-    monthly: number;
-    weekly: number;
-    daily: number;
-    weightage: string;
-    rules: string;
-    status: string;
-    updated?: string;
+    kpi_category: string;
+    effort_metric: string;
+    effective_date: string;
+    status: 'Draft' | 'Active' | 'Inactive' | 'Archived';
+    monthly_target: number;
+    weekly_target: number;
+    daily_target: number;
+    max_capacity: number;
+    min_completion_percent: number;
+    weightage_percent: number;
+    enable_ai_assignment: boolean;
+    enable_load_balancing: boolean;
+    enable_complexity_scoring: boolean;
+    prevent_overload: boolean;
+    reassign_if_target_not_met: boolean;
+    max_tasks_per_day: number;
+    max_tasks_per_campaign: number;
+    allowed_rework_percent: number;
+    delay_tolerance_percent: number;
+    auto_assign_rules_summary: string;
+    validation_rules?: string[];
+    owner_id?: number;
+    owner_name?: string;
+    reviewer_id?: number;
+    reviewer_name?: string;
+    created_by?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface PerformanceTarget {
+    id: number;
+    target_level: string;
+    brand_id?: number;
+    brand_name?: string;
+    tutorials_india?: string;
+    department_function: string;
+    applies_to?: string;
+    kpi_name: string;
+    metric_type: string;
+    unit: string;
+    direction: string;
+    examples?: string;
+    baseline_value: string;
+    current_performance?: string;
+    target_value: string;
+    desired_performance?: string;
+    cycle_type?: string;
+    period_from?: string;
+    period_to?: string;
+    tolerance_min?: string;
+    tolerance_max?: string;
+    gold_standard_metric_id?: number;
+    gold_standard_value?: string;
+    competitor_benchmark?: string;
+    your_target?: string;
+    your_current?: string;
+    competitor_current?: string;
+    review_frequency?: string;
+    auto_evaluate?: boolean;
+    data_source?: string;
+    validation_rules?: string[];
+    auto_calculate_score?: boolean;
+    trigger_alert_70_percent?: boolean;
+    trigger_alert_110_percent?: boolean;
+    trigger_alert_downward_trend?: boolean;
+    use_in_okr_evaluation?: boolean;
+    use_in_employee_scorecards?: boolean;
+    use_in_project_health_score?: boolean;
+    use_in_dashboard_highlights?: boolean;
+    performance_scoring_logic?: string;
+    achievement_calculation?: string;
+    score_capping_logic?: string;
+    status_achieved_green?: string;
+    status_on_track_yellow?: string;
+    status_off_track_red?: string;
+    owner_id?: number;
+    owner_name?: string;
+    reviewer_id?: number;
+    reviewer_name?: string;
+    responsible_roles?: string;
+    created_by?: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface GoldStandardMetric {
     id: number;
     metric_name: string;
     category: string;
-    value: string;
-    range: string;
-    unit: string;
-    evidence: string;
-    status: string;
-    updated_on?: string;
+    description?: string;
+    why_matters?: string;
+    gold_standard_value: string;
+    acceptable_range_min?: string;
+    acceptable_range_max?: string;
+    unit?: string;
+    source?: string;
+    evidence_link?: string;
+    file_upload?: string;
+    additional_notes?: string;
+    owner_id?: number;
+    owner_name?: string;
+    reviewer_id?: number;
+    reviewer_name?: string;
+    review_frequency?: string;
+    status?: string;
+    next_review_date?: string;
+    governance_notes?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface GoldStandardItem {
+    id: number;
+    // Tab 1: Metric Details
+    metric_name: string;
+    category: string;
+    description?: string;
+    why_matters?: string;
+
+    // Tab 2: Standard Values
+    gold_standard_value: string;
+    acceptable_range_min?: string;
+    acceptable_range_max?: string;
+    unit?: string;
+    benchmark_tips?: string;
+
+    // Tab 3: Benchmark Evidence
+    source?: string;
+    evidence_link?: string;
+    file_upload?: string;
+    additional_notes?: string;
+
+    // Tab 4: Ownership & Governance
+    owner_id?: number;
+    owner_name?: string;
+    reviewer_id?: number;
+    reviewer_name?: string;
+    review_frequency?: string;
+    status: 'Active' | 'Inactive' | 'Draft' | 'Archived';
+    next_review_date?: string;
+    governance_notes?: string;
+
+    // Metadata
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface IndustrySectorItem {
@@ -944,7 +1083,10 @@ export interface IndustrySectorItem {
     sector: string;
     application: string;
     country: string;
+    description?: string;
     status: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface ContentTypeItem {
@@ -952,9 +1094,19 @@ export interface ContentTypeItem {
     content_type: string;
     category: string;
     description: string;
-    default_attributes: string[];
+    default_wordcount_min?: number;
+    default_wordcount_max?: number;
+    default_graphic_requirements?: string; // JSON string
+    default_qc_checklist?: string; // JSON string
+    default_attributes?: string[];
+    seo_focus_keywords_required?: number;
+    social_media_applicable?: number;
+    estimated_creation_hours?: number;
+    content_owner_role?: string;
     use_in_campaigns?: number;
     status: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface PersonaMasterItem {
@@ -1087,14 +1239,56 @@ export interface CompetitorBenchmarkItem {
 
 export interface OKRItem {
     id: number;
-    objective: string;
-    type: 'Company' | 'Department' | 'Individual';
-    cycle: string;
-    owner: string;
-    alignment: string;
-    progress: number;
-    status: string;
+    // Objective Details
+    objective_title: string;
+    objective_type?: 'Company' | 'Department' | 'Individual' | string;
+    department?: string;
+    owner_id?: number;
+    owner_name?: string;
+    cycle?: string;
+    objective_description?: string;
+    why_this_matters?: string;
+    expected_outcome?: string;
+    target_date?: string;
+    alignment?: string;
+    parent_okr_id?: number;
+    parent_okr_title?: string;
+
+    // Key Results
+    key_results?: KeyResult[];
+
+    // Governance & Review
+    reviewer_id?: number;
+    reviewer_name?: string;
+    review_notes?: string;
+    evidence_links?: string[];
+
+    // Status & Progress
+    status?: 'Draft' | 'Active' | 'Completed' | 'On Hold' | 'Archived' | string;
+    progress?: number;
+
+    // Metadata
+    created_at?: string;
+    updated_at?: string;
     updated_on?: string;
+
+    // Legacy fields for backward compatibility
+    objective?: string;
+    type?: 'Company' | 'Department' | 'Individual' | string;
+}
+
+export interface KeyResult {
+    id?: number;
+    kr_title: string;
+    kpi_category?: string;
+    metric_name?: string;
+    baseline_value?: number | string;
+    target_value?: number | string;
+    unit?: string;
+    frequency?: 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly' | string;
+    kr_owner_id?: number;
+    kr_owner_name?: string;
+    status?: 'Draft' | 'Active' | 'Completed' | 'On Hold' | string;
 }
 
 export interface UxIssue {

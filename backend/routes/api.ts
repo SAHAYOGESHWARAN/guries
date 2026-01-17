@@ -5,11 +5,16 @@ import * as projectController from '../controllers/projectController';
 import * as analyticsController from '../controllers/analyticsController';
 import * as configController from '../controllers/configurationController';
 import * as brandController from '../controllers/brandController';
-import * as benchmarkController from '../controllers/benchmarkController';
+import * as effortTargetController from '../controllers/effortTargetController';
+import * as goldStandardController from '../controllers/goldStandardController';
+import * as performanceTargetController from '../controllers/performanceTargetController';
+import * as okrController from '../controllers/okrController';
 import * as competitorController from '../controllers/competitorController';
 import * as competitorBacklinkController from '../controllers/competitorBacklinkController';
 import * as serviceController from '../controllers/serviceController';
 import * as resourceController from '../controllers/resourceController';
+import * as keywordController from '../controllers/keywordController';
+import * as backlinkSourceController from '../controllers/backlinkSourceController';
 import * as userController from '../controllers/userController';
 import * as teamController from '../controllers/teamController';
 import * as qcController from '../controllers/qcController';
@@ -54,6 +59,20 @@ import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
 import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
 import assetTypeMasterRoutes from './assetTypeMasterRoutes';
+import industrySectorRoutes from './industrySectorRoutes';
+import platformRoutes from './platformRoutes';
+import platformMasterRoutes from './platform-master';
+import countryMasterRoutes from './country-master';
+import seoErrorTypeMasterRoutes from './seo-error-type-master';
+import workflowStageMasterRoutes from './workflow-stage-master';
+import userManagementRoutes from './user-management';
+import auditChecklistRoutes from './audit-checklist';
+import qcWeightageRoutes from './qc-weightage';
+import analyticsDashboardRoutes from './analytics-dashboard';
+import employeeScorecardRoutes from './employee-scorecard';
+import employeeComparisonRoutes from './employee-comparison';
+import aiEvaluationEngineRoutes from './ai-evaluation-engine';
+import rewardPenaltyAutomationRoutes from './reward-penalty-automation';
 import * as assetUsageController from '../controllers/assetUsageController';
 import * as seoAssetController from '../controllers/seoAssetController';
 
@@ -120,6 +139,46 @@ router.use('/asset-category-master', assetCategoryMasterRoutes);
 
 // --- Asset Type Master ---
 router.use('/asset-type-master', assetTypeMasterRoutes);
+
+// --- Industry / Sector Master ---
+router.use('/industry-sectors', industrySectorRoutes);
+
+// --- Platforms Master ---
+router.use('/platforms', platformRoutes);
+router.use('/platform-master', platformMasterRoutes);
+
+// --- Countries Master ---
+router.use('/country-master', countryMasterRoutes);
+
+// --- SEO Error Type Master ---
+router.use('/seo-error-type-master', seoErrorTypeMasterRoutes);
+
+// --- Workflow Stage Master ---
+router.use('/workflow-stage-master', workflowStageMasterRoutes);
+
+// --- User Management ---
+router.use('/user-management', userManagementRoutes);
+
+// --- Audit Checklist ---
+router.use('/audit-checklist', auditChecklistRoutes);
+
+// --- QC Weightage Configuration ---
+router.use('/qc-weightage', qcWeightageRoutes);
+
+// --- Analytics Dashboard ---
+router.use('/analytics-dashboard', analyticsDashboardRoutes);
+
+// --- Employee Scorecard ---
+router.use('/employee-scorecard', employeeScorecardRoutes);
+
+// --- Employee Comparison Dashboard ---
+router.use('/employee-comparison', employeeComparisonRoutes);
+
+// --- AI Evaluation Engine ---
+router.use('/ai-evaluation-engine', aiEvaluationEngineRoutes);
+
+// --- Reward & Penalty Automation ---
+router.use('/reward-penalty-automation', rewardPenaltyAutomationRoutes);
 
 // Asset QC Workflow
 router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);
@@ -269,10 +328,10 @@ router.get('/on-page-seo-audits/service/:serviceId', onPageSeoAuditController.ge
 router.get('/on-page-seo-audits/sub-service/:subServiceId', onPageSeoAuditController.getAuditsBySubService);
 
 // --- Benchmarks & Competitors ---
-router.get('/okrs', benchmarkController.getOkrs);
-router.post('/okrs', benchmarkController.createOkr);
-router.put('/okrs/:id', benchmarkController.updateOkr);
-router.delete('/okrs/:id', benchmarkController.deleteOkr);
+router.get('/okrs', okrController.getOKRs);
+router.post('/okrs', okrController.createOKR);
+router.put('/okrs/:id', okrController.updateOKR);
+router.delete('/okrs/:id', okrController.deleteOKR);
 
 router.get('/competitors', competitorController.getCompetitors);
 router.post('/competitors', competitorController.createCompetitor);
@@ -284,15 +343,20 @@ router.post('/competitor-backlinks', competitorBacklinkController.createCompetit
 router.put('/competitor-backlinks/:id', competitorBacklinkController.updateCompetitorBacklink);
 router.delete('/competitor-backlinks/:id', competitorBacklinkController.deleteCompetitorBacklink);
 
-router.get('/gold-standards', benchmarkController.getGoldStandards);
-router.post('/gold-standards', benchmarkController.createGoldStandard);
-router.put('/gold-standards/:id', benchmarkController.updateGoldStandard);
-router.delete('/gold-standards/:id', benchmarkController.deleteGoldStandard);
+router.get('/gold-standards', goldStandardController.getGoldStandards);
+router.post('/gold-standards', goldStandardController.createGoldStandard);
+router.put('/gold-standards/:id', goldStandardController.updateGoldStandard);
+router.delete('/gold-standards/:id', goldStandardController.deleteGoldStandard);
 
-router.get('/effort-targets', benchmarkController.getEffortTargets);
-router.post('/effort-targets', benchmarkController.createEffortTarget);
-router.put('/effort-targets/:id', benchmarkController.updateEffortTarget);
-router.delete('/effort-targets/:id', benchmarkController.deleteEffortTarget);
+router.get('/effort-targets', effortTargetController.getEffortTargets);
+router.post('/effort-targets', effortTargetController.createEffortTarget);
+router.put('/effort-targets/:id', effortTargetController.updateEffortTarget);
+router.delete('/effort-targets/:id', effortTargetController.deleteEffortTarget);
+
+router.get('/performance-targets', performanceTargetController.getPerformanceTargets);
+router.post('/performance-targets', performanceTargetController.createPerformanceTarget);
+router.put('/performance-targets/:id', performanceTargetController.updatePerformanceTarget);
+router.delete('/performance-targets/:id', performanceTargetController.deletePerformanceTarget);
 
 // --- Personas & Forms ---
 router.get('/personas', personaController.getPersonas);
@@ -317,10 +381,15 @@ router.put('/sub-services/:id', serviceController.updateSubService);
 router.delete('/sub-services/:id', serviceController.deleteSubService);
 
 // --- Resources (Keywords, Backlinks) ---
-router.get('/keywords', resourceController.getKeywords);
-router.post('/keywords', resourceController.createKeyword);
-router.put('/keywords/:id', resourceController.updateKeyword);
-router.delete('/keywords/:id', resourceController.deleteKeyword);
+router.get('/keywords', keywordController.getKeywords);
+router.post('/keywords', keywordController.createKeyword);
+router.put('/keywords/:id', keywordController.updateKeyword);
+router.delete('/keywords/:id', keywordController.deleteKeyword);
+
+router.get('/backlink-sources', backlinkSourceController.getBacklinkSources);
+router.post('/backlink-sources', backlinkSourceController.createBacklinkSource);
+router.put('/backlink-sources/:id', backlinkSourceController.updateBacklinkSource);
+router.delete('/backlink-sources/:id', backlinkSourceController.deleteBacklinkSource);
 
 router.get('/backlinks', resourceController.getBacklinks);
 router.post('/backlinks', resourceController.createBacklink);
@@ -378,11 +447,6 @@ router.put('/qc-weightage-configs/:id', qcController.updateWeightageConfig);
 router.delete('/qc-weightage-configs/:id', qcController.deleteWeightageConfig);
 
 // --- Configuration Masters ---
-router.get('/industry-sectors', configController.getIndustries);
-router.post('/industry-sectors', configController.createIndustry);
-router.put('/industry-sectors/:id', configController.updateIndustry);
-router.delete('/industry-sectors/:id', configController.deleteIndustry);
-
 router.get('/content-types', configController.getContentTypes);
 router.post('/content-types', configController.createContentType);
 router.put('/content-types/:id', configController.updateContentType);

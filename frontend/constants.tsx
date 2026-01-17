@@ -87,6 +87,7 @@ export const NAV_ITEMS: NavSection[] = [
             { id: 'sub-service-master', name: 'Sub-Service Master', icon: <MasterIcon /> },
             { id: 'keyword-master', name: 'Keyword Master', icon: <KeywordIcon /> },
             { id: 'backlink-master', name: 'Backlink Master', icon: <LinkIcon /> },
+            { id: 'backlink-source-master', name: 'Backlink Source Master', icon: <LinkIcon /> },
             { id: 'industry-sector-master', name: 'Industry / Sector Master', icon: <MasterIcon /> },
             { id: 'content-type-master', name: 'Content Type Master', icon: <MasterIcon /> },
             { id: 'asset-type-master', name: 'Asset Type Master', icon: <MasterIcon /> },

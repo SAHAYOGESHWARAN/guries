@@ -24,10 +24,12 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     subServices: { endpoint: 'sub-services', event: 'sub_service' },
     servicePages: { endpoint: 'service-pages', event: 'service_page' },
     keywords: { endpoint: 'keywords', event: 'keyword' },
+    backlinkSources: { endpoint: 'backlink-sources', event: 'backlink_source' },
     backlinks: { endpoint: 'backlinks', event: 'backlink' },
     submissions: { endpoint: 'submissions', event: 'submission' },
     okrs: { endpoint: 'okrs', event: 'okr' },
     competitors: { endpoint: 'competitors', event: 'competitor' },
+    goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
     competitorBacklinks: { endpoint: 'competitor-backlinks', event: 'competitor_backlink' },
     urlErrors: { endpoint: 'url-errors', event: 'url_error' },
     onPageSeoAudits: { endpoint: 'on-page-seo-audits', event: 'on_page_seo_audit' },
@@ -36,8 +38,8 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     qc: { endpoint: 'qc-runs', event: 'qc_run' },
     // Read-only view or filtered
     promotionItems: { endpoint: 'promotion-items', event: 'promotion_item' },
-    // Configs & Masters
     effortTargets: { endpoint: 'effort-targets', event: 'effort_target' },
+    performanceTargets: { endpoint: 'performance-targets', event: 'performance_target' },
     goldStandards: { endpoint: 'gold-standards', event: 'gold_standard' },
     industrySectors: { endpoint: 'industry-sectors', event: 'industry_sector' },
     contentTypes: { endpoint: 'content-types', event: 'content_type' },
