@@ -377,6 +377,7 @@ router.put('/services/:id', serviceController.updateService);
 router.delete('/services/:id', serviceController.deleteService);
 
 router.get('/sub-services', serviceController.getSubServices);
+router.get('/sub-services/parent/:parentServiceId', serviceController.getSubServicesByParent);
 router.post('/sub-services', serviceController.createSubService);
 router.put('/sub-services/:id', serviceController.updateSubService);
 router.delete('/sub-services/:id', serviceController.deleteSubService);

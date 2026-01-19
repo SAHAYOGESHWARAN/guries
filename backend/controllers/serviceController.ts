@@ -68,6 +68,21 @@ export const getServices = async (req: any, res: any) => {
     }
 };
 
+// Get sub-services by parent service ID
+export const getSubServicesByParent = async (req: any, res: any) => {
+    try {
+        const { parentServiceId } = req.params;
+        const result = await pool.query(
+            'SELECT * FROM sub_services WHERE parent_service_id = ? ORDER BY id ASC',
+            [parentServiceId]
+        );
+        const parsedRows = result.rows.map(parseSubServiceRow);
+        res.status(200).json(parsedRows);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const createService = async (req: any, res: any) => {
     // Full destructuring of all 9 blocks
     const {

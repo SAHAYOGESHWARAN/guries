@@ -126,11 +126,12 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
         'Domain Authority'
     ];
 
-    const subServiceOptions = [
-        'Blog Writing', 'Technical SEO', 'On-Page SEO',
-        'Link Building', 'Instagram Marketing', 'Facebook Marketing',
-        'UI/UX Design', 'Frontend Development', 'Backend Development'
-    ];
+    // Filter sub-services based on selected parent service
+    const filteredSubServices = React.useMemo(() => {
+        if (!formData.linked_service_id) return [];
+        const parentServiceId = parseInt(formData.linked_service_id);
+        return subServices.filter(ss => ss.parent_service_id === parentServiceId);
+    }, [formData.linked_service_id, subServices]);
 
     const filteredProjects = projects.filter(project =>
         (project.project_name || project.name || '').toLowerCase().includes(searchQuery.toLowerCase())
@@ -293,19 +294,29 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">Sub-Service</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {subServiceOptions.map(service => (
-                                        <label key={service} className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.selected_sub_services.includes(service)}
-                                                onChange={() => toggleSubService(service)}
-                                                className="w-4 h-4 text-indigo-600 rounded border-slate-300"
-                                            />
-                                            <span className="text-sm text-slate-700">{service}</span>
-                                        </label>
-                                    ))}
-                                </div>
+                                {!formData.linked_service_id ? (
+                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                                        Please select a Linked Service first to see available sub-services
+                                    </div>
+                                ) : filteredSubServices.length === 0 ? (
+                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">
+                                        No sub-services available for the selected service
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {filteredSubServices.map(service => (
+                                            <label key={service.id} className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.selected_sub_services.includes(service.sub_service_name)}
+                                                    onChange={() => toggleSubService(service.sub_service_name)}
+                                                    className="w-4 h-4 text-indigo-600 rounded border-slate-300"
+                                                />
+                                                <span className="text-sm text-slate-700">{service.sub_service_name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div>
