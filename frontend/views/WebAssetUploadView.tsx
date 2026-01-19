@@ -56,7 +56,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(null);
     const [linkedProjectId, setLinkedProjectId] = useState<number | null>(null);
     const [linkedServiceId, setLinkedServiceId] = useState<number | null>(null);
-    const [linkedSubServiceId, setLinkedSubServiceId] = useState<number | null>(null);
+    const [linkedSubServiceIds, setLinkedSubServiceIds] = useState<number[]>([]);
     const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
     const [filteredSubServices, setFilteredSubServices] = useState<SubServiceItem[]>([]);
 
@@ -128,7 +128,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                 setLinkedCampaignId(existing.linked_campaign_id || null);
                 setLinkedProjectId(existing.linked_project_id || null);
                 setLinkedServiceId(existing.linked_service_id || null);
-                setLinkedSubServiceId(existing.linked_sub_service_id || null);
+                setLinkedSubServiceIds(existing.linked_sub_service_ids || []);
                 setContentKeywords(existing.content_keywords || []);
                 setSeoKeywords(existing.seo_keywords || []);
                 setWorkflowStage(existing.workflow_stage || 'In Progress');
@@ -288,7 +288,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                 ...formData, name: formData.web_title || formData.name || 'Untitled Asset', application_type: 'web',
                 linked_repository_item_id: linkedRepositoryId, linked_task_id: linkedTaskId,
                 linked_campaign_id: linkedCampaignId, linked_project_id: linkedProjectId,
-                linked_service_id: linkedServiceId, linked_sub_service_id: linkedSubServiceId,
+                linked_service_id: linkedServiceId, linked_sub_service_ids: linkedSubServiceIds,
                 keywords: [...contentKeywords, ...seoKeywords], content_keywords: contentKeywords, seo_keywords: seoKeywords,
                 web_h3_tags: h3Tags.filter(t => t.trim()), designed_by: designedBy, published_by: publishedBy, verified_by: verifiedBy,
                 created_by: currentUser?.id, workflow_stage: finalWorkflowStage, status: finalStatus, qc_status: finalQcStatus,
@@ -394,21 +394,52 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                                 {/* Row 2: Service & Sub-Service */}
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Service</label>
-                                    <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }} disabled={servicesLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                                    <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceIds([]); }} disabled={servicesLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
                                         <option value="">Select Service...</option>
                                         {services.map(service => (<option key={service.id} value={service.id}>{service.service_name}</option>))}
                                     </select>
                                     {servicesLoading && <p className="text-xs text-slate-400 mt-1">Loading services...</p>}
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Sub-Service</label>
-                                    <select value={linkedSubServiceId || ''} onChange={e => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={subServicesLoading || !linkedServiceId} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all disabled:bg-slate-100 disabled:cursor-not-allowed">
-                                        <option value="">Select Sub-Service...</option>
-                                        {filteredSubServices.map(subService => (<option key={subService.id} value={subService.id}>{subService.sub_service_name}</option>))}
-                                    </select>
-                                    {!linkedServiceId && <p className="text-xs text-slate-400 mt-1">Select a service first</p>}
-                                    {subServicesLoading && linkedServiceId && <p className="text-xs text-slate-400 mt-1">Loading sub-services...</p>}
-                                </div>
+                                {/* Sub-Service Checkboxes - Only shown when service is selected */}
+                                {linkedServiceId && (
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-3">Sub-Services</label>
+                                        {subServicesLoading ? (
+                                            <p className="text-xs text-slate-400">Loading sub-services...</p>
+                                        ) : filteredSubServices.length === 0 ? (
+                                            <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl">No sub-services available for this service</p>
+                                        ) : (
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {filteredSubServices.map(subService => (
+                                                    <label key={subService.id} className="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-all group">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={linkedSubServiceIds.includes(subService.id)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setLinkedSubServiceIds([...linkedSubServiceIds, subService.id]);
+                                                                } else {
+                                                                    setLinkedSubServiceIds(linkedSubServiceIds.filter(id => id !== subService.id));
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+                                                        />
+                                                        <span className="text-xs font-medium text-slate-700 group-hover:text-blue-700 transition-colors">{subService.sub_service_name}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {linkedSubServiceIds.length > 0 && (
+                                            <p className="text-xs text-blue-600 mt-2 font-medium">Selected: {linkedSubServiceIds.length} sub-service(s)</p>
+                                        )}
+                                    </div>
+                                )}
+                                {!linkedServiceId && (
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">Sub-Services</label>
+                                        <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl">Select a service first to see available sub-services</p>
+                                    </div>
+                                )}
                                 {/* Row 3: Repository & Task */}
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Repository</label>

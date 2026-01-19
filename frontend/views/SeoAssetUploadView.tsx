@@ -83,7 +83,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(null);
     const [linkedProjectId, setLinkedProjectId] = useState<number | null>(null);
     const [linkedServiceId, setLinkedServiceId] = useState<number | null>(null);
-    const [linkedSubServiceId, setLinkedSubServiceId] = useState<number | null>(null);
+    const [linkedSubServiceIds, setLinkedSubServiceIds] = useState<number[]>([]);
     const [linkedRepositoryId, setLinkedRepositoryId] = useState<number | null>(null);
 
     // ========== STEP 3: Asset Classification ==========
@@ -201,7 +201,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                 setLinkedCampaignId(asset.linked_campaign_id || null);
                 setLinkedProjectId(asset.linked_project_id || null);
                 setLinkedServiceId(asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]) || null);
-                setLinkedSubServiceId(asset.linked_sub_service_id || (asset.linked_sub_service_ids && asset.linked_sub_service_ids[0]) || null);
+                setLinkedSubServiceIds(asset.linked_sub_service_ids || []);
                 setLinkedRepositoryId(asset.linked_repository_item_id || null);
                 setAssetType(asset.type || asset.asset_type || '');
                 setAssetCategory(asset.asset_category || '');
@@ -218,7 +218,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     setLinkedCampaignId(fullAsset.linked_campaign_id || null);
                     setLinkedProjectId(fullAsset.linked_project_id || null);
                     setLinkedServiceId(fullAsset.linked_service_id || (fullAsset.linked_service_ids && fullAsset.linked_service_ids[0]) || null);
-                    setLinkedSubServiceId(fullAsset.linked_sub_service_id || (fullAsset.linked_sub_service_ids && fullAsset.linked_sub_service_ids[0]) || null);
+                    setLinkedSubServiceIds(fullAsset.linked_sub_service_ids || []);
                     setLinkedRepositoryId(fullAsset.linked_repository_item_id || null);
                     if (fullAsset.type || fullAsset.asset_type) setAssetType(fullAsset.type || fullAsset.asset_type);
                     if (fullAsset.asset_category) setAssetCategory(fullAsset.asset_category);
@@ -242,7 +242,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         setLinkedCampaignId(null);
         setLinkedProjectId(null);
         setLinkedServiceId(null);
-        setLinkedSubServiceId(null);
+        setLinkedSubServiceIds([]);
         setLinkedRepositoryId(null);
     };
 
@@ -256,7 +256,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
         setLinkedCampaignId(null);
         setLinkedProjectId(null);
         setLinkedServiceId(null);
-        setLinkedSubServiceId(null);
+        setLinkedSubServiceIds([]);
         setLinkedRepositoryId(null);
     };
 
@@ -274,7 +274,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         setLinkedCampaignId(data.linked_campaign_id || null);
                         setLinkedProjectId(data.linked_project_id || null);
                         setLinkedServiceId(data.linked_service_id || null);
-                        setLinkedSubServiceId(data.linked_sub_service_id || null);
+                        setLinkedSubServiceIds(data.linked_sub_service_ids || []);
                         setLinkedRepositoryId(data.linked_repository_item_id || null);
                         setAssetType(data.asset_type || data.type || '');
                         setSeoTitle(data.seo_title || data.name || '');
@@ -474,7 +474,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
             linked_campaign_id: linkedCampaignId,
             linked_project_id: linkedProjectId,
             linked_service_id: linkedServiceId,
-            linked_sub_service_id: linkedSubServiceId,
+            linked_sub_service_ids: linkedSubServiceIds,
             linked_repository_item_id: linkedRepositoryId,
             asset_type: assetType,
             asset_category: assetCategory,
@@ -791,7 +791,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                                         {linkedServiceId ? services.find(s => s.id === linkedServiceId)?.service_name || `Service #${linkedServiceId}` : <span className="text-slate-400">Not linked</span>}
                                     </div>
                                 ) : (
-                                    <select value={linkedServiceId || ''} onChange={(e) => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceId(null); }}
+                                    <select value={linkedServiceId || ''} onChange={(e) => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceIds([]); }}
                                         className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
                                         <option value="">Select Service...</option>
                                         {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
@@ -800,19 +800,52 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">
-                                    Linked Sub-Service
-                                    {linkedFieldsReadOnly && linkedSubServiceId && <span className="text-green-500 ml-1">✓</span>}
+                                    Linked Sub-Services
+                                    {linkedFieldsReadOnly && linkedSubServiceIds.length > 0 && <span className="text-green-500 ml-1">✓</span>}
                                 </label>
                                 {linkedFieldsReadOnly ? (
-                                    <div className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm flex items-center text-slate-700">
-                                        {linkedSubServiceId ? subServices.find(ss => ss.id === linkedSubServiceId)?.sub_service_name || `Sub-Service #${linkedSubServiceId}` : <span className="text-slate-400">Not linked</span>}
+                                    <div className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-700">
+                                        {linkedSubServiceIds.length > 0 ? (
+                                            <div className="flex flex-wrap gap-2">
+                                                {linkedSubServiceIds.map(id => (
+                                                    <span key={id} className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                                                        {subServices.find(ss => ss.id === id)?.sub_service_name || `Sub-Service #${id}`}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-400">Not linked</span>
+                                        )}
                                     </div>
                                 ) : (
-                                    <select value={linkedSubServiceId || ''} onChange={(e) => setLinkedSubServiceId(e.target.value ? Number(e.target.value) : null)} disabled={!sectionsEnabled || !linkedServiceId}
-                                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ">
-                                        <option value="">{linkedServiceId ? 'Select Sub-Service...' : 'Select a service first'}</option>
-                                        {filteredSubServices.map(ss => <option key={ss.id} value={ss.id}>{ss.sub_service_name}</option>)}
-                                    </select>
+                                    <div className="space-y-2">
+                                        {!linkedServiceId ? (
+                                            <p className="text-xs text-slate-400 bg-slate-50 p-2 rounded">Select a service first</p>
+                                        ) : filteredSubServices.length === 0 ? (
+                                            <p className="text-xs text-slate-400 bg-slate-50 p-2 rounded">No sub-services available</p>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {filteredSubServices.map(ss => (
+                                                    <label key={ss.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded hover:bg-blue-50 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={linkedSubServiceIds.includes(ss.id)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setLinkedSubServiceIds([...linkedSubServiceIds, ss.id]);
+                                                                } else {
+                                                                    setLinkedSubServiceIds(linkedSubServiceIds.filter(id => id !== ss.id));
+                                                                }
+                                                            }}
+                                                            disabled={!sectionsEnabled}
+                                                            className="w-4 h-4 text-blue-600 rounded"
+                                                        />
+                                                        <span className="text-xs text-slate-700">{ss.sub_service_name}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                             <div>
