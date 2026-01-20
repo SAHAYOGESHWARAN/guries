@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
+import crypto from 'crypto';
 
 // Initialize Upstash Redis client
 const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '';
@@ -510,10 +511,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(403).json({ error: 'User deactivated' });
             }
 
-            // For deployed version, accept admin123 for admin@example.com or any password for demo
-            const isValidPassword = (email.toLowerCase() === 'admin@example.com' && password === 'admin123') ||
-                user.password_hash === password ||
-                !user.password_hash; // Allow login if no password set (demo mode)
+            // Verify password using SHA256; require a stored password_hash
+            const hashedInput = crypto.createHash('sha256').update(String(password)).digest('hex');
+            const isValidPassword = !!user.password_hash && user.password_hash === hashedInput;
 
             if (!isValidPassword) {
                 return res.status(401).json({ error: 'Invalid credentials' });
