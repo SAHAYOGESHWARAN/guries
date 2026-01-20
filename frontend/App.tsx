@@ -117,6 +117,25 @@ const App: React.FC = () => {
 
   // Clear any existing session on mount - always require fresh login
   useEffect(() => {
+    // Seed admin user to localStorage if not exists
+    const existingUsers = localStorage.getItem('users');
+    let users = existingUsers ? JSON.parse(existingUsers) : [];
+
+    const adminExists = users.some((u: any) => u.email === 'admin@example.com');
+    if (!adminExists) {
+      users.push({
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@example.com',
+        role: 'admin',
+        status: 'active',
+        department: 'Administration',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      });
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
     setIsAuthenticated(false);

@@ -405,9 +405,9 @@ export const validateLogin = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'Account pending approval. Please wait for an administrator to activate your account.' });
         }
 
-        // Verify password
+        // Verify password: require stored password_hash and exact match
         const hashedPassword = hashPassword(password);
-        if (user.password_hash && user.password_hash !== hashedPassword) {
+        if (!user.password_hash || user.password_hash !== hashedPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
