@@ -294,14 +294,18 @@ const TasksView: React.FC = () => {
                                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
                         </div>
-                        value={formData.priority}
-                        onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
-                    >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                    </select>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                            <select
+                                value={formData.priority}
+                                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                            >
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
@@ -360,7 +364,7 @@ const TasksView: React.FC = () => {
         </div>
 
 
-                {/* Footer */ }
+                {/* Footer */}
     <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
         <button
             onClick={() => { setShowCreateModal(false); resetForm(); }}
@@ -376,8 +380,8 @@ const TasksView: React.FC = () => {
             {isSubmitting ? 'Creating...' : 'Create Task'}
         </button>
     </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 
 return (
