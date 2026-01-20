@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Tooltip from '../components/Tooltip';
 import CircularScore from '../components/CircularScore';
+import WorkflowStageBanner from '../components/WorkflowStageBanner';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import type { AssetLibraryItem, Service, SubServiceItem, User, Task, Campaign, Project } from '../types';
@@ -197,6 +198,11 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onNavigateBa
                         </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Workflow Stage Banner */}
+            <div className="px-6 pt-4">
+                <WorkflowStageBanner workflowStage={asset.workflow_stage} />
             </div>
 
             {/* Tabs */}

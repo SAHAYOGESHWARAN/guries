@@ -61,22 +61,78 @@ export const deleteIndustry = (req: any, res: any) => deleteMaster('industry_sec
 // --- Content Types ---
 export const getContentTypes = (req: any, res: any) => getMaster('content_types', res);
 export const createContentType = async (req: any, res: any) => {
-    const { content_type, category, description, default_attributes, status } = req.body;
+    const {
+        content_type,
+        category,
+        description,
+        default_wordcount_min,
+        default_wordcount_max,
+        default_graphic_requirements,
+        default_qc_checklist,
+        seo_focus_keywords_required,
+        social_media_applicable,
+        estimated_creation_hours,
+        content_owner_role,
+        use_in_campaigns,
+        status
+    } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO content_types (content_type, category, description, default_attributes, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [content_type, category, description, default_attributes, status]
+            `INSERT INTO content_types (
+                content_type, category, description,
+                default_wordcount_min, default_wordcount_max,
+                default_graphic_requirements, default_qc_checklist,
+                seo_focus_keywords_required, social_media_applicable,
+                estimated_creation_hours, content_owner_role,
+                use_in_campaigns, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+            [
+                content_type, category, description,
+                default_wordcount_min || 500, default_wordcount_max || 2000,
+                default_graphic_requirements, default_qc_checklist,
+                seo_focus_keywords_required || 1, social_media_applicable || 1,
+                estimated_creation_hours || 4, content_owner_role,
+                use_in_campaigns || 1, status || 'active'
+            ]
         );
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
 export const updateContentType = async (req: any, res: any) => {
     const { id } = req.params;
-    const { content_type, category, description, default_attributes, status } = req.body;
+    const {
+        content_type,
+        category,
+        description,
+        default_wordcount_min,
+        default_wordcount_max,
+        default_graphic_requirements,
+        default_qc_checklist,
+        seo_focus_keywords_required,
+        social_media_applicable,
+        estimated_creation_hours,
+        content_owner_role,
+        use_in_campaigns,
+        status
+    } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE content_types SET content_type=$1, category=$2, description=$3, default_attributes=$4, status=$5 WHERE id=$6 RETURNING *',
-            [content_type, category, description, default_attributes, status, id]
+            `UPDATE content_types SET
+                content_type=$1, category=$2, description=$3,
+                default_wordcount_min=$4, default_wordcount_max=$5,
+                default_graphic_requirements=$6, default_qc_checklist=$7,
+                seo_focus_keywords_required=$8, social_media_applicable=$9,
+                estimated_creation_hours=$10, content_owner_role=$11,
+                use_in_campaigns=$12, status=$13
+            WHERE id=$14 RETURNING *`,
+            [
+                content_type, category, description,
+                default_wordcount_min, default_wordcount_max,
+                default_graphic_requirements, default_qc_checklist,
+                seo_focus_keywords_required, social_media_applicable,
+                estimated_creation_hours, content_owner_role,
+                use_in_campaigns, status, id
+            ]
         );
         res.status(200).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }

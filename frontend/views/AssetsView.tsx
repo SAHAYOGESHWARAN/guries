@@ -2,6 +2,7 @@
 import Table from '../components/Table';
 import MarkdownEditor from '../components/MarkdownEditor';
 import CircularScore from '../components/CircularScore';
+import WorkflowStageBanner from '../components/WorkflowStageBanner';
 import AssetCategoryMasterModal from '../components/AssetCategoryMasterModal';
 import AssetTypeMasterModal from '../components/AssetTypeMasterModal';
 import UploadAssetPopup from '../components/UploadAssetPopup';
@@ -1126,29 +1127,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const renderFormFields = () => (
         <div className="max-w-4xl mx-auto">
             {/* Workflow Stage Banner - Shows when asset is moved to CW/GD/WD - ALWAYS AT TOP */}
-            {(newAsset.workflow_stage === 'Moved to CW' || newAsset.workflow_stage === 'Moved to GD' || newAsset.workflow_stage === 'Moved to WD') && (
-                <div className={`mb-6 p-5 rounded-xl border-2 flex items-center gap-4 shadow-md ${newAsset.workflow_stage === 'Moved to CW' ? 'bg-purple-50 border-purple-400 text-purple-900' :
-                    newAsset.workflow_stage === 'Moved to GD' ? 'bg-pink-50 border-pink-400 text-pink-900' :
-                        'bg-cyan-50 border-cyan-400 text-cyan-900'
-                    }`}>
-                    <span className="text-3xl flex-shrink-0">
-                        {newAsset.workflow_stage === 'Moved to CW' ? '✍️' :
-                            newAsset.workflow_stage === 'Moved to GD' ? '🎨' : '💻'}
-                    </span>
-                    <div className="flex-1">
-                        <p className="font-bold text-lg">
-                            {newAsset.workflow_stage === 'Moved to CW' ? 'CW is working on this asset' :
-                                newAsset.workflow_stage === 'Moved to GD' ? 'GD is working on this asset' :
-                                    'WD is working on this asset'}
-                        </p>
-                        <p className="text-sm opacity-90 mt-1">
-                            {newAsset.workflow_stage === 'Moved to CW' ? 'Content Writing team is currently editing this asset. Please do not make changes until they complete their work.' :
-                                newAsset.workflow_stage === 'Moved to GD' ? 'Graphic Design team is currently working on this asset. Please do not make changes until they complete their work.' :
-                                    'Web Development team is currently working on this asset. Please do not make changes until they complete their work.'}
-                        </p>
-                    </div>
-                </div>
-            )}
+            <WorkflowStageBanner workflowStage={newAsset.workflow_stage} />
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex items-center gap-4 mb-6">

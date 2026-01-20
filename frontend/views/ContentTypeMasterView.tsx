@@ -3,6 +3,9 @@ import { useData } from '../hooks/useData';
 import type { ContentTypeItem } from '../types';
 import { ChevronDown, Plus, Edit2, Trash2, Download, Search, X, Eye, EyeOff } from 'lucide-react';
 
+const CATEGORIES = ['Blog', 'Pillar', 'Landing Page', 'Case Study', 'Whitepaper', 'Guide', 'Article', 'Tutorial', 'News', 'Product', 'Service', 'Other'];
+const CONTENT_OWNER_ROLES = ['Content Writer', 'Designer', 'Developer', 'SEO Specialist', 'Manager', 'Other'];
+
 const ContentTypeMasterView: React.FC = () => {
     const { data: items, create, update, remove, loading } = useData<ContentTypeItem>('content-types');
 
@@ -28,8 +31,8 @@ const ContentTypeMasterView: React.FC = () => {
         status: 'active'
     });
 
-    // Get unique categories
-    const categories = useMemo(() => [...new Set(items.map(i => i.category))].sort(), [items]);
+    // Get unique categories from items
+    const uniqueCategories = useMemo(() => [...new Set(items.map(i => i.category))].filter(Boolean).sort(), [items]);
 
     // Filter data
     const filteredData = useMemo(() => {
@@ -188,7 +191,7 @@ const ContentTypeMasterView: React.FC = () => {
                         className="px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                     >
                         <option value="">All Categories</option>
-                        {categories.map(cat => (
+                        {CATEGORIES.map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                         ))}
                     </select>
@@ -261,8 +264,8 @@ const ContentTypeMasterView: React.FC = () => {
                                             <td className="px-6 py-4 text-sm text-slate-700">{item.content_owner_role || '-'}</td>
                                             <td className="px-6 py-4 text-sm">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'active'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-slate-100 text-slate-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-slate-100 text-slate-800'
                                                     }`}>
                                                     {item.status === 'active' ? '✓ Active' : 'Inactive'}
                                                 </span>
@@ -379,13 +382,16 @@ const ContentTypeMasterView: React.FC = () => {
                                         <label className="block text-sm font-medium text-slate-700 mb-1">
                                             Category <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={formData.category || ''}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            placeholder="e.g., Editorial, Core, Supporting"
-                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
+                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        >
+                                            <option value="">Select a category...</option>
+                                            {CATEGORIES.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
@@ -454,13 +460,16 @@ const ContentTypeMasterView: React.FC = () => {
                                         <label className="block text-sm font-medium text-slate-700 mb-1">
                                             Content Owner Role
                                         </label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={formData.content_owner_role || ''}
                                             onChange={(e) => setFormData({ ...formData, content_owner_role: e.target.value })}
-                                            placeholder="e.g., Content Writer, Designer"
-                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
+                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        >
+                                            <option value="">Select a role...</option>
+                                            {CONTENT_OWNER_ROLES.map(role => (
+                                                <option key={role} value={role}>{role}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>

@@ -3,6 +3,35 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
+// Helper function to generate service code
+const generateServiceCode = (serviceName: string, serviceId?: number): string => {
+    // Format: SVC-XXXX (e.g., SVC-0001, SVC-0002)
+    // Or use initials: WD-001 for Web Development
+    const initials = serviceName
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 3);
+
+    const timestamp = Date.now().toString().slice(-4);
+    return `${initials}-${timestamp}`;
+};
+
+// Helper function to generate sub-service code
+const generateSubServiceCode = (subServiceName: string, parentServiceCode?: string): string => {
+    // Format: PARENT-XXXX (e.g., WD-0001, WD-0002)
+    const initials = subServiceName
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+
+    const timestamp = Date.now().toString().slice(-3);
+    return `${initials}-${timestamp}`;
+};
+
 // Helper function to parse JSON fields for services
 const parseServiceRow = (row: any) => {
     const jsonArrayFields = [
@@ -140,6 +169,9 @@ export const createService = async (req: any, res: any) => {
     }
 
     try {
+        // AUTO-GENERATE: Service Code if not provided
+        const finalServiceCode = service_code || generateServiceCode(service_name);
+
         const result = await pool.query(
             `INSERT INTO services (
                 service_name, service_code, slug, full_url, menu_heading, short_tagline, service_description, 
@@ -165,7 +197,7 @@ export const createService = async (req: any, res: any) => {
                 $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91, $92, $93, $94, $95
             ) RETURNING *`,
             [
-                service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
+                service_name, finalServiceCode, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids || []), JSON.stringify(country_ids || []), language, status,
                 show_in_main_menu || false, show_in_footer_menu || false, menu_group, menu_position || 0, breadcrumb_label, normalizedParentMenuSection,
                 include_in_xml_sitemap || true, sitemap_priority || 0.8, sitemap_changefreq || 'monthly',
@@ -358,9 +390,12 @@ export const createSubService = async (req: any, res: any) => {
     }
 
     try {
+        // AUTO-GENERATE: Sub-Service Code if not provided
+        const sub_service_code = req.body.sub_service_code || generateSubServiceCode(sub_service_name);
+
         const result = await pool.query(
             `INSERT INTO sub_services (
-                sub_service_name, parent_service_id, slug, full_url, description, status,
+                sub_service_name, sub_service_code, parent_service_id, slug, full_url, description, status,
                 menu_heading, short_tagline, language, industry_ids, country_ids,
                 h1, h2_list, h3_list, h4_list, h5_list, body_content,
                 word_count, reading_time_minutes,
@@ -374,10 +409,10 @@ export const createSubService = async (req: any, res: any) => {
                 brand_id, content_owner_id, created_by, created_at, updated_by, version_number, change_log_link,
                 assets_linked, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, NOW()
             ) RETURNING *`,
             [
-                sub_service_name, parent_service_id, slug, computedUrl, description, status,
+                sub_service_name, sub_service_code, parent_service_id, slug, computedUrl, description, status,
                 menu_heading, short_tagline, language || 'en', JSON.stringify(industry_ids || []), JSON.stringify(country_ids || []),
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), JSON.stringify(h4_list || []), JSON.stringify(h5_list || []), body_content,
                 word_count || 0, reading_time_minutes || 0,
@@ -432,6 +467,9 @@ export const updateSubService = async (req: any, res: any) => {
         meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
         // SMM
         og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+        linkedin_title, linkedin_description, linkedin_image_url,
+        facebook_title, facebook_description, facebook_image_url,
+        instagram_title, instagram_description, instagram_image_url,
         // Navigation
         menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
         // Strategic

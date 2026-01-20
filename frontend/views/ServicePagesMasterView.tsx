@@ -554,6 +554,7 @@ const ServicePagesMasterView: React.FC<ServicePagesMasterViewProps> = ({ onNavig
                     <thead className="bg-slate-100 sticky top-0">
                         <tr>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200">Service Page</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200">Service Code</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200">Parent Service</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200">URL</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200">Status</th>
@@ -565,6 +566,11 @@ const ServicePagesMasterView: React.FC<ServicePagesMasterViewProps> = ({ onNavig
                         {filteredData.map((item) => (
                             <tr key={item.id} className="border-b border-slate-200 hover:bg-slate-50 transition-colors">
                                 <td className="px-6 py-4 text-sm text-slate-900 font-medium">{item.sub_service_name}</td>
+                                <td className="px-6 py-4 text-sm">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                        {item.sub_service_code || '-'}
+                                    </span>
+                                </td>
                                 <td className="px-6 py-4 text-sm text-slate-600">{services.find(s => s.id === item.parent_service_id)?.service_name || '-'}</td>
                                 <td className="px-6 py-4 text-sm text-slate-600">{item.full_url || '-'}</td>
                                 <td className="px-6 py-4 text-sm">{getStatusBadge(item.status)}</td>
