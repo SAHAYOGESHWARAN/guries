@@ -228,9 +228,12 @@ const ContentRepositoryView: React.FC = () => {
                             value={formData.linked_sub_service_id}
                             onChange={(e) => setFormData({ ...formData, linked_sub_service_id: e.target.value })}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                            disabled={!formData.linked_service_id}
                         >
                             <option value="">Select sub-service</option>
-                            {subServices.map(s => <option key={s.id} value={s.id}>{s.sub_service_name}</option>)}
+                            {subServices
+                                .filter(ss => !formData.linked_service_id || Number(ss.parent_service_id) === Number(formData.linked_service_id))
+                                .map(s => <option key={s.id} value={s.id}>{s.sub_service_name}</option>)}
                         </select>
                     </div>
 
