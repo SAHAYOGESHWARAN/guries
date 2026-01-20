@@ -691,132 +691,20 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const handleEdit = useCallback((e: React.MouseEvent, asset: AssetLibraryItem) => {
         e.stopPropagation();
-        setEditingAsset(asset);
-        setSelectedApplicationType(asset.application_type as any);
-        setNewAsset({
-            // Basic Asset Information
-            name: asset.name,
-            type: asset.type,
-            repository: asset.repository,
-            status: asset.status,
-            asset_category: asset.asset_category,
-            content_type: asset.content_type,
-            mapped_to: asset.mapped_to,
-            workflow_stage: asset.workflow_stage,
-            qc_status: asset.qc_status,
-
-            // Scores
-            qc_score: asset.qc_score,
-            seo_score: asset.seo_score,
-            grammar_score: asset.grammar_score,
-
-            // File Information
-            file_url: asset.file_url,
-            thumbnail_url: asset.thumbnail_url,
-            file_size: asset.file_size,
-            file_type: asset.file_type,
-            dimensions: asset.dimensions,
-
-            // Service/Sub-Service Linking
-            linked_service_ids: asset.linked_service_ids || [],
-            linked_sub_service_ids: asset.linked_sub_service_ids || [],
-            linked_service_id: asset.linked_service_id,
-            linked_sub_service_id: asset.linked_sub_service_id,
-
-            // Map Assets to Source Work fields
-            linked_task_id: asset.linked_task_id,
-            linked_task: asset.linked_task,
-            linked_campaign_id: asset.linked_campaign_id,
-            linked_project_id: asset.linked_project_id,
-            linked_repository_item_id: asset.linked_repository_item_id,
-
-            // User & Workflow fields
-            designed_by: asset.designed_by,
-            created_by: asset.created_by,
-            updated_by: asset.updated_by,
-            version_number: asset.version_number,
-
-            // Application Type
-            application_type: asset.application_type,
-
-            // Web Application Fields - All fields pre-populated
-            web_title: asset.web_title,
-            web_description: asset.web_description,
-            web_meta_description: asset.web_meta_description,
-            web_keywords: asset.web_keywords,
-            web_url: asset.web_url,
-            web_h1: asset.web_h1,
-            web_h2_1: asset.web_h2_1,
-            web_h2_2: asset.web_h2_2,
-            web_thumbnail: asset.web_thumbnail,
-            web_body_content: asset.web_body_content,
-            web_body_attachment: (asset as any).web_body_attachment,
-            web_body_attachment_name: (asset as any).web_body_attachment_name,
-
-            // SMM Application Fields - All fields pre-populated
-            smm_platform: asset.smm_platform,
-            smm_title: asset.smm_title,
-            smm_tag: asset.smm_tag,
-            smm_url: asset.smm_url,
-            smm_description: asset.smm_description,
-            smm_hashtags: asset.smm_hashtags,
-            smm_media_url: asset.smm_media_url,
-            smm_media_type: asset.smm_media_type,
-            smm_additional_pages: asset.smm_additional_pages || [],
-            smm_post_type: asset.smm_post_type,
-            smm_campaign_type: asset.smm_campaign_type,
-            smm_cta: asset.smm_cta,
-            smm_target_audience: asset.smm_target_audience,
-
-            // SEO Application Fields - All fields pre-populated
-            seo_title: asset.seo_title,
-            seo_target_url: asset.seo_target_url,
-            seo_keywords: asset.seo_keywords || [],
-            seo_focus_keyword: asset.seo_focus_keyword,
-            seo_content_type: asset.seo_content_type,
-            seo_meta_description: asset.seo_meta_description,
-            seo_content_description: asset.seo_content_description,
-            seo_h1: asset.seo_h1,
-            seo_h2_1: asset.seo_h2_1,
-            seo_h2_2: asset.seo_h2_2,
-            seo_content_body: asset.seo_content_body,
-
-            // Keywords
-            keywords: asset.keywords || []
-        });
-
-        // Set selected keywords for the UI
-        setSelectedKeywords(asset.keywords || []);
-
-        // Set markdown content for the editor (use appropriate content based on application type)
-        if (asset.application_type === 'seo') {
-            setMarkdownContent(asset.seo_content_body || asset.web_body_content || '');
+        if (!asset) return;
+        const appType = asset.application_type;
+        if (onNavigate) {
+            if (appType === 'web') onNavigate('web-asset-edit', asset.id);
+            else if (appType === 'seo') onNavigate('seo-asset-edit', asset.id);
+            else if (appType === 'smm') onNavigate('smm-asset-edit', asset.id);
+            else onNavigate('asset-edit', asset.id);
         } else {
-            setMarkdownContent(asset.web_body_content || '');
+            // Fallback for older code paths: open inline upload edit
+            setEditingAsset(asset);
+            setUploadStep('form-fields');
+            setViewMode('upload');
         }
-
-        // Set selected service and sub-services for the UI
-        const serviceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
-        if (serviceId) {
-            setSelectedServiceId(serviceId);
-        } else {
-            setSelectedServiceId(null);
-        }
-
-        const subServiceIds = asset.linked_sub_service_ids || (asset.linked_sub_service_id ? [asset.linked_sub_service_id] : []);
-        setSelectedSubServiceIds(subServiceIds);
-
-        // Set preview URL if available
-        if (asset.thumbnail_url || asset.file_url || asset.smm_media_url) {
-            setPreviewUrl(asset.thumbnail_url || asset.file_url || asset.smm_media_url || '');
-        } else {
-            setPreviewUrl('');
-        }
-
-        // Use the same upload form for editing - skip to form-fields step since we already know the application type
-        setUploadStep('form-fields');
-        setViewMode('upload');
-    }, []);
+    }, [onNavigate]);
 
     // Handle row click to show detailed view in side panel
     const handleRowClick = useCallback((asset: AssetLibraryItem) => {
@@ -1154,17 +1042,24 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
         {
             header: 'ACTIONS',
             accessor: (item: AssetLibraryItem) => (
-                <div className="flex justify-center">
+                <div className="flex justify-center gap-2">
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // Show dropdown menu
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-all"
-                        title="More actions"
+                        onClick={(e) => handleEdit(e, item)}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
+                        title="Edit asset"
                     >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={(e) => handleDelete(e, item.id, item.name)}
+                        disabled={deletingId === item.id}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all disabled:opacity-50"
+                        title="Delete asset"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                     </button>
                 </div>

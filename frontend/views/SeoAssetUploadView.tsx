@@ -86,13 +86,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const [linkedSubServiceIds, setLinkedSubServiceIds] = useState<number[]>([]);
     const [linkedRepositoryId, setLinkedRepositoryId] = useState<number | null>(null);
 
-    // ========== STEP 3: Asset Classification ==========
-    const [assetType, setAssetType] = useState('');
-    const [assetCategory, setAssetCategory] = useState('');
-    const [sector, setSector] = useState('');
-    const [industry, setIndustry] = useState('');
+    // ========== STEP 2: Asset Classification (REMOVED) ==========
+    // Asset Type, Category, Sector, Industry removed
 
-    // ========== STEP 4: SEO Metadata Fields & Anchor Text ==========
+    // ========== STEP 3: SEO Metadata Fields & Anchor Text ==========
     const [seoTitle, setSeoTitle] = useState('');
     const [metaTitle, setMetaTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -100,11 +97,11 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const [blogUrl, setBlogUrl] = useState('');
     const [anchorText, setAnchorText] = useState('');
 
-    // ========== STEP 5: Keywords ==========
+    // ========== STEP 4: Keywords ==========
     const [primaryKeywordId, setPrimaryKeywordId] = useState<number | null>(null);
     const [lsiKeywordIds, setLsiKeywordIds] = useState<number[]>([]);
 
-    // ========== STEP 6: Domain Type & Domain Addition ==========
+    // ========== STEP 5: Domain Type & Domain Addition ==========
     const [domainType, setDomainType] = useState('');
     const [selectedDomains, setSelectedDomains] = useState<DomainDetails[]>([]);
     const [showDomainDropdown, setShowDomainDropdown] = useState(false);
@@ -126,10 +123,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
     const [qaReviewDomainIndex, setQAReviewDomainIndex] = useState<number | null>(null);
     const [qaReviewVerdict, setQAReviewVerdict] = useState<'Pass' | 'Fail' | ''>('');
 
-    // ========== STEP 8: Blog Content (Conditional) ==========
+    // ========== STEP 7: Blog Content (Conditional) ==========
     const [blogContent, setBlogContent] = useState('');
 
-    // ========== STEP 9: Resource File Upload ==========
+    // ========== STEP 8: Resource File Upload ==========
     const [resourceFiles, setResourceFiles] = useState<File[]>([]);
     const [dragActive, setDragActive] = useState(false);
 
@@ -869,84 +866,13 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
 
-                    {/* ========== STEP 3: Asset Classification ========== */}
+                    {/* ========== STEP 3: SEO Metadata Fields & Anchor Text ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">3</div>
-                            <h3 className="text-base font-bold text-slate-800">Asset Classification</h3>
-                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">From Master Database</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Asset Type * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={assetType} onChange={(e) => setAssetType(e.target.value)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
-                                    <option value="">Select type...</option>
-                                    {activeAssetTypes.map(type => (
-                                        <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Asset Category * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
-                                    <option value="">Select category...</option>
-                                    {assetCategories.filter(cat => (cat as any).is_active !== false && (cat as any).status !== 'inactive').map(category => (
-                                        <option key={category.id} value={category.category_name}>{category.category_name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Sector * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={sector} onChange={(e) => setSector(e.target.value)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
-                                    <option value="">Select sector...</option>
-                                    {sectors.map((s: string, idx: number) => (
-                                        <option key={idx} value={s}>{s}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">Industry * <span className="text-slate-400 text-xs">(Master)</span></label>
-                                <select value={industry} onChange={(e) => setIndustry(e.target.value)}
-                                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 ">
-                                    <option value="">Select industry...</option>
-                                    {industries.map((ind: string, idx: number) => (
-                                        <option key={idx} value={ind}>{ind}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ========== STEP 4: SEO Metadata Fields & Anchor Text ========== */}
-                    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">4</div>
+                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">3</div>
                             <h3 className="text-base font-bold text-slate-800">SEO Metadata Fields & Anchor Text</h3>
                         </div>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                                        Title *
-                                    </label>
-                                    <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)}
-                                        placeholder="Enter SEO Title" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400  ${errors.seoTitle ? 'border-rose-500' : 'border-slate-200'}`} />
-                                    {errors.seoTitle && <p className="text-xs text-rose-500 mt-1">{errors.seoTitle}</p>}
-                                </div>
-                                <div>
-                                    <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
-                                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                                        Meta Title *
-                                    </label>
-                                    <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}
-                                        placeholder="Enter Meta Title" className={`w-full h-10 px-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400  ${errors.metaTitle ? 'border-rose-500' : 'border-slate-200'}`} />
-                                    {errors.metaTitle && <p className="text-xs text-rose-500 mt-1">{errors.metaTitle}</p>}
-                                </div>
-                            </div>
                             <div>
                                 <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600 mb-2">
                                     <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
@@ -981,10 +907,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
 
-                    {/* ========== STEP 5: Keywords ========== */}
+                    {/* ========== STEP 4: Keywords ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">5</div>
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">4</div>
                             <h3 className="text-base font-bold text-slate-800">Keywords</h3>
                             <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">From Keyword Master</span>
                         </div>
@@ -1061,10 +987,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     </div>
 
 
-                    {/* ========== STEP 6: Domain Type & Domain Addition ========== */}
+                    {/* ========== STEP 5: Domain Type & Domain Addition ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">6</div>
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">5</div>
                             <h3 className="text-base font-bold text-slate-800">Domain Type & Domain Addition</h3>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-medium rounded">From Backlink Master</span>
                         </div>
@@ -1441,12 +1367,12 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     )}
 
 
-                    {/* ========== STEP 8: Blog Posting - Content Editor (Conditional) ========== */}
+                    {/* ========== STEP 7: Blog Posting - Content Editor (Conditional) ========== */}
                     {
                         isBlogPosting && sectionsEnabled && (
                             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
+                                    <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">7</div>
                                     <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
                                     <span className="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">Conditional: Asset Type = Blog Posting</span>
                                 </div>
@@ -1468,7 +1394,7 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         !isBlogPosting && sectionsEnabled && (
                             <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm ${disabledSectionClass}`}>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
+                                    <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">7</div>
                                     <h3 className="text-base font-bold text-slate-800">Blog Posting - Content Editor</h3>
                                     <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Hidden: Asset Type ≠ Blog Posting</span>
                                 </div>
@@ -1477,10 +1403,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         )
                     }
 
-                    {/* ========== STEP 9: Resource File Upload ========== */}
+                    {/* ========== STEP 8: Resource File Upload ========== */}
                     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-sm `}>
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">9</div>
+                            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">8</div>
                             <h3 className="text-base font-bold text-slate-800">Resource File Upload</h3>
                         </div>
                         <p className="text-xs text-slate-500 mb-4">Multiple files allowed - Files linked to Asset ID and Asset Type</p>

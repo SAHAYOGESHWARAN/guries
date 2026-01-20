@@ -36,7 +36,7 @@ const SubServiceMasterView: React.FC = () => {
     const [brandFilter, setBrandFilter] = useState('All Brands');
     const [industryFilter, setIndustryFilter] = useState('All Industries');
     const [editingItem, setEditingItem] = useState<SubServiceItem | null>(null);
-    const [activeTab, setActiveTab] = useState<'GeneralInfo' | 'SubServiceManager' | 'SEOContent' | 'LinkedAssets'>('GeneralInfo');
+    const [activeTab, setActiveTab] = useState<'Overview' | 'Content' | 'SEO' | 'Assets'>('Overview');
     const [assetSearch, setAssetSearch] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
     const [copiedUrl, setCopiedUrl] = useState(false);
@@ -109,6 +109,20 @@ const SubServiceMasterView: React.FC = () => {
     // Temp inputs for arrays
     const [tempKeyword, setTempKeyword] = useState('');
     const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
+
+    // Load parent service from sessionStorage if coming from Service Master
+    const [selectedParentServiceName, setSelectedParentServiceName] = useState<string | null>(null);
+
+    useEffect(() => {
+        const selectedParentId = sessionStorage.getItem('selectedParentServiceId');
+        const selectedParentName = sessionStorage.getItem('selectedParentServiceName');
+        if (selectedParentId && !editingItem) {
+            const parentId = parseInt(selectedParentId);
+            setFormData((prev: any) => ({ ...prev, parent_service_id: parentId }));
+            setParentFilter(selectedParentName || 'All Parent Services');
+            setSelectedParentServiceName(selectedParentName || null);
+        }
+    }, []);
 
     // Get sub-services for the currently selected parent service
     const parentServiceSubServices = useMemo(() => {
@@ -224,7 +238,7 @@ const SubServiceMasterView: React.FC = () => {
             primary_cta_label: '',
             primary_cta_url: ''
         });
-        setActiveTab('GeneralInfo');
+        setActiveTab('Overview');
         setViewMode('form');
     };
 
@@ -256,7 +270,7 @@ const SubServiceMasterView: React.FC = () => {
             instagram_description: item.instagram_description || '',
             instagram_image_url: item.instagram_image_url || ''
         });
-        setActiveTab('GeneralInfo');
+        setActiveTab('Overview');
         setViewMode('view');
     };
 
@@ -288,7 +302,7 @@ const SubServiceMasterView: React.FC = () => {
             instagram_description: item.instagram_description || '',
             instagram_image_url: item.instagram_image_url || ''
         });
-        setActiveTab('GeneralInfo');
+        setActiveTab('Overview');
         setViewMode('form');
     };
 
@@ -597,10 +611,10 @@ const SubServiceMasterView: React.FC = () => {
     }, []);
 
     const tabs = [
-        { id: 'GeneralInfo', label: 'General Info', icon: '📋' },
-        { id: 'SubServiceManager', label: 'Sub-Service Manager', icon: '🔧' },
-        { id: 'SEOContent', label: 'SEO & Content', icon: '🔍' },
-        { id: 'LinkedAssets', label: 'Linked Assets & Insights', icon: '🔗' }
+        { id: 'Overview', label: 'Overview', icon: '📋' },
+        { id: 'Content', label: 'Content', icon: '📝' },
+        { id: 'SEO', label: 'SEO', icon: '🔍' },
+        { id: 'Assets', label: 'Assets', icon: '🔗' }
     ];
 
     // Define isViewMode at component level for consistent access
@@ -621,10 +635,10 @@ const SubServiceMasterView: React.FC = () => {
                     <div className="flex items-center gap-4">
                         <div>
                             <h2 className="text-xl font-bold text-slate-900">
-                                {isViewMode ? 'View Service Details' : (editingItem ? 'Edit Service' : 'Add New Service')}
+                                {isViewMode ? 'View Sub-Service Details' : (editingItem ? 'Edit Sub-Service' : 'Add New Sub-Service')}
                             </h2>
                             <p className="text-sm text-slate-500 mt-1">
-                                {isViewMode ? 'View complete service information and configuration' : 'Create a new service with complete SEO and content configuration'}
+                                {isViewMode ? 'View complete sub-service information and configuration' : 'Create a new sub-service under a parent service with complete SEO and content configuration'}
                             </p>
                         </div>
                     </div>
@@ -655,9 +669,20 @@ const SubServiceMasterView: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
                     <div className="max-w-7xl mx-auto space-y-8 pb-20">
 
-                        {/* --- TAB: GENERAL INFO --- */}
-                        {activeTab === 'GeneralInfo' && (
+                        {/* --- TAB: OVERVIEW --- */}
+                        {activeTab === 'Overview' && (
                             <div className="space-y-10">
+                                {/* Warning if no parent service selected */}
+                                {!formData.parent_service_id && (
+                                    <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 flex items-start gap-4">
+                                        <div className="text-3xl flex-shrink-0">⚠️</div>
+                                        <div>
+                                            <h4 className="font-bold text-amber-900 mb-1">Parent Service Required</h4>
+                                            <p className="text-sm text-amber-800">Select a parent service first. Sub-services must belong to a parent service and cannot exist independently.</p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* 1. SUB-SERVICE IDENTITY CARD */}
                                 <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                                     <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white overflow-hidden">
@@ -1043,9 +1068,9 @@ const SubServiceMasterView: React.FC = () => {
         )
     }
 
-    {/* --- TAB: SUB-SERVICE MANAGER --- */ }
+    {/* --- TAB: CONTENT --- */ }
     {
-        activeTab === 'SubServiceManager' && (
+        activeTab === 'Content' && (
             <div className="space-y-8">
                 {/* Parent Service Selection Info */}
                 {(!formData.parent_service_id || formData.parent_service_id === 0) ? (
@@ -1135,9 +1160,9 @@ const SubServiceMasterView: React.FC = () => {
         )
     }
 
-    {/* --- TAB: SEO & CONTENT --- */ }
+    {/* --- TAB: SEO --- */ }
     {
-        activeTab === 'SEOContent' && (
+        activeTab === 'SEO' && (
             <div className="space-y-8">
                 {/* Missing SEO Components Warning */}
                 {showMissingSeoWarning && checkSeoCompleteness().length > 0 && (
@@ -1620,9 +1645,9 @@ const SubServiceMasterView: React.FC = () => {
         )
     }
 
-    {/* --- TAB: LINKED ASSETS & INSIGHTS --- */ }
+    {/* --- TAB: ASSETS --- */ }
     {
-        activeTab === 'LinkedAssets' && (
+        activeTab === 'Assets' && (
             <div className="space-y-8">
                 {/* Linked Insights Section */}
                 <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden">
@@ -1838,8 +1863,39 @@ const SubServiceMasterView: React.FC = () => {
         <div className="space-y-6 animate-fade-in w-full h-full overflow-y-auto p-6 ui-surface">
             <div className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">Sub-Service Master</h1>
-                    <p className="text-slate-500 text-xs mt-0.5">Manage sub-services and their detailed configurations</p>
+                    <div className="flex items-center gap-3">
+                        {selectedParentServiceName && (
+                            <button
+                                onClick={() => {
+                                    sessionStorage.removeItem('selectedParentServiceId');
+                                    sessionStorage.removeItem('selectedParentServiceName');
+                                    setSelectedParentServiceName(null);
+                                    window.location.hash = '#service-master';
+                                }}
+                                className="text-indigo-600 hover:text-indigo-800 font-medium text-sm hover:underline flex items-center gap-1"
+                                title="Back to Service Master"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Back
+                            </button>
+                        )}
+                    </div>
+                    <h1 className="text-xl font-bold text-slate-800 tracking-tight mt-2">
+                        Sub-Service Master
+                        {selectedParentServiceName && (
+                            <span className="text-slate-500 font-normal text-sm ml-2">
+                                for {selectedParentServiceName}
+                            </span>
+                        )}
+                    </h1>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                        {selectedParentServiceName
+                            ? `Manage sub-services under ${selectedParentServiceName}`
+                            : 'Manage sub-services and their detailed configurations'
+                        }
+                    </p>
                 </div>
                 <div className="flex items-center space-x-3">
                     <button

@@ -2472,7 +2472,18 @@ Lists:
                         {
                             header: 'Sub-Services',
                             accessor: (item: Service) => (
-                                <span className="text-indigo-600 font-medium text-sm">{getSubServicesCount(item.id)}</span>
+                                <button
+                                    onClick={() => {
+                                        // Store selected service in sessionStorage for SubServiceMasterView
+                                        sessionStorage.setItem('selectedParentServiceId', String(item.id));
+                                        sessionStorage.setItem('selectedParentServiceName', item.service_name);
+                                        // Navigate to Sub-Service Master
+                                        window.location.hash = '#sub-service-master';
+                                    }}
+                                    className="text-indigo-600 hover:text-indigo-800 font-medium text-sm hover:underline cursor-pointer"
+                                >
+                                    {getSubServicesCount(item.id)} sub-services
+                                </button>
                             ),
                             className: "text-center"
                         },
@@ -2530,6 +2541,19 @@ Lists:
                             header: 'Actions',
                             accessor: (item: Service) => (
                                 <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            // Store selected service in sessionStorage for SubServiceMasterView
+                                            sessionStorage.setItem('selectedParentServiceId', String(item.id));
+                                            sessionStorage.setItem('selectedParentServiceName', item.service_name);
+                                            // Navigate to Sub-Service Master
+                                            window.location.hash = '#sub-service-master';
+                                        }}
+                                        className="text-slate-500 hover:text-indigo-600 font-medium text-xs"
+                                        title="Create a new sub-service for this service"
+                                    >
+                                        + Sub-Service
+                                    </button>
                                     <button onClick={() => handleEdit(item)} className="text-slate-500 hover:text-indigo-600 font-medium text-xs">Edit</button>
                                     <button onClick={() => handleDelete(item.id)} className="text-slate-500 hover:text-red-600 font-medium text-xs">Delete</button>
                                 </div>

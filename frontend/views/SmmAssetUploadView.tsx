@@ -192,31 +192,10 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                     </div>
 
-                    {/* Section 2: Asset Classification */}
+                    {/* Section 2: Platform & Content */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-9 h-9 bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-pink-400/30">2</div>
-                            <div><h3 className="text-sm font-bold text-slate-800">Asset Classification</h3><p className="text-xs text-slate-500">Define asset details</p></div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5"><span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Asset Name *</label>
-                                <input type="text" value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Enter asset name..." className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400" />
-                            </div>
-                            <div>
-                                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5"><span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Asset Type *</label>
-                                <select value={formData.type || ''} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400">
-                                    <option value="">Select Type...</option>
-                                    {SMM_ASSET_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Section 3: Platform & Content */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-9 h-9 bg-gradient-to-br from-fuchsia-400 to-fuchsia-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-fuchsia-400/30">3</div>
                             <div><h3 className="text-sm font-bold text-slate-800">Platform & Content Details</h3><p className="text-xs text-slate-500">Social media specifics</p></div>
                         </div>
                         <div className="space-y-4">
@@ -249,10 +228,10 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                     </div>
 
-                    {/* Section 4: Media Upload */}
+                    {/* Section 3: Media Upload */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-9 h-9 bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-400/30">4</div>
+                            <div className="w-9 h-9 bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-400/30">3</div>
                             <div><h3 className="text-sm font-bold text-slate-800">Media Upload</h3><p className="text-xs text-slate-500">Images, videos, graphics</p></div>
                         </div>
                         <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-purple-300 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -278,11 +257,11 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                     </div>
 
-                    {/* Section 5: AI Analysis */}
+                    {/* Section 4: AI Analysis */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-gradient-to-br from-rose-400 to-rose-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-rose-400/30">5</div>
+                                <div className="w-9 h-9 bg-gradient-to-br from-rose-400 to-rose-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-rose-400/30">4</div>
                                 <div><h3 className="text-sm font-bold text-slate-800">AI Analysis</h3><p className="text-xs text-slate-500">Content quality scores</p></div>
                             </div>
                             <button onClick={analyzeContent} disabled={isAnalyzing} className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl hover:from-rose-600 hover:to-pink-600 disabled:opacity-50">{isAnalyzing ? 'Analyzing...' : '🔍 Analyze'}</button>
@@ -299,10 +278,10 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
                         </div>
                     </div>
 
-                    {/* Section 6: Workflow */}
+                    {/* Section 5: Workflow */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-amber-400/30">6</div>
+                            <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-amber-400/30">5</div>
                             <div><h3 className="text-sm font-bold text-slate-800">Workflow & QC</h3><p className="text-xs text-slate-500">Track progress</p></div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">

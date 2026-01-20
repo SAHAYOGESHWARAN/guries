@@ -44,6 +44,7 @@ const UxIssuesView = React.lazy(() => import('./views/UxIssuesView'));
 const TasksView = React.lazy(() => import('./views/TasksView'));
 const AssetsView = React.lazy(() => import('./views/AssetsView'));
 const AssetDetailView = React.lazy(() => import('./views/AssetDetailView'));
+const AssetEditView = React.lazy(() => import('./views/AssetEditView'));
 const OnPageErrorsView = React.lazy(() => import('./views/OnPageErrorsView'));
 const ToxicBacklinksView = React.lazy(() => import('./views/ToxicBacklinksView'));
 const PromotionRepositoryView = React.lazy(() => import('./views/PromotionRepositoryView'));
@@ -162,7 +163,9 @@ const App: React.FC = () => {
       case 'tasks': return <TasksView />;
       case 'assets': return <AssetsView onNavigate={handleNavigate} />;
       case 'asset-detail':
-        return viewState.id ? <AssetDetailView assetId={Number(viewState.id)} onNavigateBack={() => handleNavigate('assets')} /> : <AssetsView onNavigate={handleNavigate} />;
+        return viewState.id ? <AssetDetailView assetId={Number(viewState.id)} onNavigateBack={() => handleNavigate('assets')} onNavigate={handleNavigate} /> : <AssetsView onNavigate={handleNavigate} />;
+      case 'asset-edit':
+        return viewState.id ? <AssetEditView assetId={Number(viewState.id)} onNavigate={handleNavigate} /> : <AssetsView onNavigate={handleNavigate} />;
       case 'asset-qc': return <AssetQCView onNavigate={handleNavigate} />;
       case 'admin-qc-review': return <AdminQCAssetReviewView onNavigate={handleNavigate} />;
       case 'web-asset-upload': return <WebAssetUploadView onNavigate={handleNavigate} />;

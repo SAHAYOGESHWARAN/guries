@@ -460,44 +460,11 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                             </div>
                         </div>
 
-                        {/* SECTION 2: Asset Classification (4.2) - Repository field REMOVED */}
+                        {/* SECTION 2: Content Details (4.3, 4.4, 4.5) */}
                         <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-indigo-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-indigo-400/30">2</div>
-                                <div><h3 className="text-sm font-bold text-slate-800">Asset Classification</h3><p className="text-xs text-slate-500">Define asset name and type (Repository field removed per spec)</p></div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5"><span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Asset Name *</label>
-                                    <input type="text" value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Enter asset name..." className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all" />
-                                </div>
-                                <div>
-                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5"><span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Asset Type *</label>
-                                    <select value={formData.type || ''} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all">
-                                        <option value="">Select Type...</option>
-                                        {WEB_ASSET_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* SECTION 3: Content Details (4.3, 4.4, 4.5) */}
-                        <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-9 h-9 bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-400/30">3</div>
-                                <div><h3 className="text-sm font-bold text-slate-800">Content Details</h3><p className="text-xs text-slate-500">Title, Meta Description, Keywords, Headings & Body Content</p></div>
-                            </div>
-
-                            {/* Title & URL (4.3) */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5"><span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Title *</label>
-                                    <input type="text" value={formData.web_title || ''} onChange={e => setFormData({ ...formData, web_title: e.target.value, name: e.target.value || formData.name })} placeholder="Enter page title..." className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">URL</label>
-                                    <input type="text" value={formData.web_url || ''} onChange={e => setFormData({ ...formData, web_url: e.target.value })} placeholder="https://example.com/page" className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all" />
-                                </div>
+                                <div><h3 className="text-sm font-bold text-slate-800">Content Details</h3><p className="text-xs text-slate-500">Meta Description, Keywords, Headings & Body Content</p></div>
                             </div>
 
                             {/* Meta Description (4.3) */}
@@ -597,7 +564,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                             </div>
                         </div>
 
-                        {/* SECTION 4: Resource Upload (4.7) */}
+                        {/* SECTION 3: Resource Upload (4.7) */}
                         <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-amber-400/30">4</div>
@@ -630,10 +597,10 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                             )}
                         </div>
 
-                        {/* SECTION 5: Designer & Workflow (4.8, 4.9, 4.10) */}
+                        {/* SECTION 4: Designer & Workflow (4.8, 4.9, 4.10) */}
                         <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-9 h-9 bg-gradient-to-br from-pink-400 to-rose-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-pink-400/30">5</div>
+                                <div className="w-9 h-9 bg-gradient-to-br from-pink-400 to-rose-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-pink-400/30">4</div>
                                 <div><h3 className="text-sm font-bold text-slate-800">Designer & Workflow</h3><p className="text-xs text-slate-500">Assign team members and set workflow status</p></div>
                             </div>
 
@@ -684,10 +651,10 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                             <p className="text-xs text-slate-400 mt-3 italic">Note: Workflow Stage and QC Status are separate but linked states per document specification.</p>
                         </div>
 
-                        {/* SECTION 6: Versioning (4.11) */}
+                        {/* SECTION 5: Versioning (4.11) */}
                         <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm mb-6">
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-400/30">6</div>
+                                <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-400/30">5</div>
                                 <div><h3 className="text-sm font-bold text-slate-800">Versioning</h3><p className="text-xs text-slate-500">Version history and tracking - previous versions retrievable</p></div>
                             </div>
                             <div className="flex items-center gap-4 mb-4">
