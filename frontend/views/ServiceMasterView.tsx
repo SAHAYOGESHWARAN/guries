@@ -4,6 +4,8 @@ import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
 import ServiceAssetLinker from '../components/ServiceAssetLinker';
+import LinkedInsightsSelector from '../components/LinkedInsightsSelector';
+import LinkedAssetsSelector from '../components/LinkedAssetsSelector';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
@@ -65,6 +67,8 @@ const ServiceMasterView: React.FC = () => {
         include_in_xml_sitemap: true,
         industry_ids: [], country_ids: [],
         linked_campaign_ids: [],
+        linked_insights_ids: [],
+        linked_assets_ids: [],
         h1: '', h2_list: [], h3_list: [], h4_list: [], h5_list: [], body_content: '',
         internal_links: [], external_links: [], image_alt_texts: [],
         word_count: 0, reading_time_minutes: 0,
@@ -254,6 +258,8 @@ const ServiceMasterView: React.FC = () => {
             industry_ids: item.industry_ids || [],
             country_ids: item.country_ids || [],
             linked_campaign_ids: item.linked_campaign_ids || [],
+            linked_insights_ids: item.linked_insights_ids || [],
+            linked_assets_ids: item.linked_assets_ids || [],
             faq_content: item.faq_content || [],
             internal_links: item.internal_links || [],
             external_links: item.external_links || [],
@@ -2070,6 +2076,44 @@ Lists:
                             </div>
                         )}
 
+                        {/* --- TAB: LINKING --- */}
+                        {activeTab === 'Linking' && (
+                            <div className="space-y-10">
+                                <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">🔗</span>
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
+                                                <h3 className="text-2xl font-bold">Linking Configuration</h3>
+                                            </div>
+                                            <p className="text-purple-100 text-sm">Link insights and assets to this service</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-10 space-y-8">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            <div>
+                                                <LinkedInsightsSelector
+                                                    contentTypes={availableContentTypes}
+                                                    selectedIds={formData.linked_insights_ids || []}
+                                                    onSelectionChange={(ids) => setFormData({ ...formData, linked_insights_ids: ids })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <LinkedAssetsSelector
+                                                    assets={libraryAssets}
+                                                    selectedIds={formData.linked_assets_ids || []}
+                                                    onSelectionChange={(ids) => setFormData({ ...formData, linked_assets_ids: ids })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* --- TAB: GOVERNANCE --- */}
                         {activeTab === 'Governance' && (
@@ -2490,14 +2534,18 @@ Lists:
                         {
                             header: 'Linked Assets',
                             accessor: (item: Service) => (
-                                <span className="text-indigo-600 font-medium text-sm">{getLinkedAssetsCount(item.id)}</span>
+                                <span className="text-indigo-600 font-medium text-sm">
+                                    {(item.linked_assets_ids?.length || 0) + getLinkedAssetsCount(item.id)}
+                                </span>
                             ),
                             className: "text-center"
                         },
                         {
                             header: 'Linked Insights',
                             accessor: (item: Service) => (
-                                <span className="text-indigo-600 font-medium text-sm">{getKeywordUsageCount(item.id)}</span>
+                                <span className="text-indigo-600 font-medium text-sm">
+                                    {item.linked_insights_ids?.length || 0}
+                                </span>
                             ),
                             className: "text-center"
                         },

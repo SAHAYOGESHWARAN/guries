@@ -178,6 +178,8 @@ export const initDatabase = () => {
             brand_id INTEGER,
             business_unit TEXT,
             content_owner_id INTEGER,
+            linked_insights_ids TEXT,
+            linked_assets_ids TEXT,
             created_by INTEGER,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_by INTEGER,
@@ -453,7 +455,7 @@ export const initDatabase = () => {
         (3, 'Landing', 'Landing page content type'),
         (4, 'Blog', 'Blog content type');
 
-        INSERT OR IGNORE INTO keywords (id, keyword, keyword_type, search_volume, competition) VALUES 
+        INSERT OR IGNORE INTO keywords (id, keyword, keyword_type, search_volume, competition_score) VALUES 
         (1, 'sample keyword', 'primary', 1000, 'medium');
 
         CREATE TABLE IF NOT EXISTS asset_qc_reviews (

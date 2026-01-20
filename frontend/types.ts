@@ -222,6 +222,8 @@ export interface Service {
     featured_asset_id?: number;
     asset_count?: number;
     knowledge_topic_id?: number;
+    linked_insights_ids?: number[];
+    linked_assets_ids?: number[];
 
     // Legacy/Compat fields
     health_score?: number;
