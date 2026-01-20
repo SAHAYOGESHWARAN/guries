@@ -67,12 +67,6 @@ const SubServiceMasterView: React.FC = () => {
     const [schemaJson, setSchemaJson] = useState('');
     const [showMissingSeoWarning, setShowMissingSeoWarning] = useState(true);
 
-    // Sub-services management state
-    const [subServicesList, setSubServicesList] = useState([
-        { id: 1, name: 'On-Page SEO', slug: 'on-page-seo', keywords: 'on-page, seo optimization', status: 'active' },
-        { id: 2, name: 'Off-Page SEO', slug: 'off-page-seo', keywords: 'backlinks, link building', status: 'active' }
-    ]);
-
     // Form State
     const [formData, setFormData] = useState<any>({
         sub_service_name: '',
@@ -115,6 +109,14 @@ const SubServiceMasterView: React.FC = () => {
     // Temp inputs for arrays
     const [tempKeyword, setTempKeyword] = useState('');
     const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
+
+    // Get sub-services for the currently selected parent service
+    const parentServiceSubServices = useMemo(() => {
+        if (!formData.parent_service_id || formData.parent_service_id === 0) {
+            return [];
+        }
+        return subServices.filter(ss => ss.parent_service_id === formData.parent_service_id);
+    }, [subServices, formData.parent_service_id]);
 
     const availableContentTypes = contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
 
@@ -1045,91 +1047,90 @@ const SubServiceMasterView: React.FC = () => {
     {
         activeTab === 'SubServiceManager' && (
             <div className="space-y-8">
-                {/* Sub-Services Table */}
-                <div className="bg-gradient-to-br from-cyan-50 via-blue-50 to-slate-50 rounded-2xl border-2 border-cyan-200 shadow-lg overflow-hidden">
-                    <div className="relative bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-6 text-white">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔧</span>
-                                <div>
-                                    <h3 className="text-xl font-bold">Sub-Services ({subServicesList.length})</h3>
-                                    <p className="text-cyan-100 text-sm">Manage and organize sub-services</p>
+                {/* Parent Service Selection Info */}
+                {(!formData.parent_service_id || formData.parent_service_id === 0) ? (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                 </div>
                             </div>
-                            <button className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
-                                <span className="text-lg">+</span>
-                                Add Sub-Service
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="p-8">
-                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-slate-50 border-b border-slate-200">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Slug</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Keywords</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-slate-200">
-                                        {subServicesList.map((subService, index) => (
-                                            <tr key={subService.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="font-medium text-sm text-slate-900">{subService.name}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-slate-600 font-mono">{subService.slug}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm text-slate-600">{subService.keywords}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-full ${subService.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                        {subService.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <button className="text-indigo-600 hover:text-indigo-900 font-medium">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button className="text-red-600 hover:text-red-900 font-medium">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-200">
-                            <div className="text-sm text-slate-600">
-                                {subServicesList.length} sub-services configured
-                            </div>
-                            <div className="flex gap-3">
-                                <button className="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                                    Save as Draft
-                                </button>
-                                <button className="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-colors">
-                                    Create Service
-                                </button>
+                            <div>
+                                <h4 className="font-bold text-amber-900">Select Parent Service First</h4>
+                                <p className="text-amber-800 text-sm mt-1">Please select a parent service in the General Info tab to view and manage its sub-services.</p>
                             </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <>
+                        {/* Sub-Services Table */}
+                        <div className="bg-gradient-to-br from-cyan-50 via-blue-50 to-slate-50 rounded-2xl border-2 border-cyan-200 shadow-lg overflow-hidden">
+                            <div className="relative bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-6 text-white">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <span className="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔧</span>
+                                        <div>
+                                            <h3 className="text-xl font-bold">Sub-Services ({parentServiceSubServices.length})</h3>
+                                            <p className="text-cyan-100 text-sm">Mapped to: <span className="font-semibold">{services.find(s => s.id === formData.parent_service_id)?.service_name || 'Unknown'}</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8">
+                                {parentServiceSubServices.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <div className="text-slate-400 text-lg mb-2">📭</div>
+                                        <p className="text-slate-600 font-medium">No sub-services mapped to this parent service yet</p>
+                                        <p className="text-slate-500 text-sm mt-1">Create sub-services from the main Sub-Services Master page</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full">
+                                                <thead className="bg-slate-50 border-b border-slate-200">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Name</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Slug</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Description</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Content Type</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-slate-200">
+                                                    {parentServiceSubServices.map((subService) => (
+                                                        <tr key={subService.id} className="hover:bg-slate-50 transition-colors">
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="font-medium text-sm text-slate-900">{subService.sub_service_name}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="text-sm text-slate-600 font-mono">{subService.slug}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-sm text-slate-600 truncate">{subService.description || '-'}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                {getStatusBadge(subService.status)}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                                    {subService.content_type || 'Cluster'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         )
     }
