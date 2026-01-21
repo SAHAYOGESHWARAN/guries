@@ -12,6 +12,8 @@ const LinkedInsightsSelector: React.FC<LinkedInsightsSelectorProps> = ({
     selectedIds,
     onSelectionChange
 }) => {
+    // Allow tests to use global vi
+    // no-op here; kept for future extensibility
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredContentTypes = useMemo(() => {

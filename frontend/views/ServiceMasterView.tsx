@@ -1809,8 +1809,21 @@ Lists:
                         {/* --- TAB: SMM --- */}
                         {activeTab === 'SMM' && (
                             <div className="space-y-10">
-                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    <div className="p-6">
+                                <div className="bg-gradient-to-br from-pink-50 via-rose-50 to-slate-50 rounded-2xl border-2 border-pink-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                    <div className="relative bg-gradient-to-r from-pink-600 to-rose-600 px-8 py-10 text-white overflow-hidden">
+                                        <div className="absolute top-0 right-0 opacity-10">
+                                            <span className="text-9xl">📢</span>
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📱</span>
+                                                <h3 className="text-2xl font-bold">Social Media Metadata</h3>
+                                            </div>
+                                            <p className="text-pink-100 text-sm">Configure social media sharing and platform-specific metadata</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-10">
                                         <SocialMetaForm formData={formData} setFormData={setFormData} />
                                     </div>
                                 </div>
@@ -2131,45 +2144,6 @@ Lists:
                                                         />
                                                     </div>
                                                 </Tooltip>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- TAB: LINKING --- */}
-                        {activeTab === 'Linking' && (
-                            <div className="space-y-10">
-                                <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-10 text-white overflow-hidden">
-                                        <div className="absolute top-0 right-0 opacity-10">
-                                            <span className="text-9xl">🔗</span>
-                                        </div>
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">🔗</span>
-                                                <h3 className="text-2xl font-bold">Linking Configuration</h3>
-                                            </div>
-                                            <p className="text-purple-100 text-sm">Link insights and assets to this service</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-10 space-y-8">
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                            <div>
-                                                <LinkedInsightsSelector
-                                                    contentTypes={availableContentTypes}
-                                                    selectedIds={formData.linked_insights_ids || []}
-                                                    onSelectionChange={(ids) => setFormData({ ...formData, linked_insights_ids: ids })}
-                                                />
-                                            </div>
-                                            <div>
-                                                <LinkedAssetsSelector
-                                                    assets={libraryAssets}
-                                                    selectedIds={formData.linked_assets_ids || []}
-                                                    onSelectionChange={(ids) => setFormData({ ...formData, linked_assets_ids: ids })}
-                                                />
                                             </div>
                                         </div>
                                     </div>

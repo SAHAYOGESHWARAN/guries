@@ -3,7 +3,7 @@ import { useData } from '../hooks/useData';
 import type { ContentTypeItem } from '../types';
 import { ChevronDown, Plus, Edit2, Trash2, Download, Search, X, Eye, EyeOff } from 'lucide-react';
 
-const CATEGORIES = ['Blog', 'Pillar', 'Landing Page', 'Case Study', 'Whitepaper', 'Guide', 'Article', 'Tutorial', 'News', 'Product', 'Service', 'Other'];
+const CATEGORIES = ['Editorial', 'Core', 'Blog', 'Pillar', 'Landing Page', 'Case Study', 'Whitepaper', 'Guide', 'Article', 'Tutorial', 'News', 'Product', 'Service', 'Other'];
 const CONTENT_OWNER_ROLES = ['Content Writer', 'Designer', 'Developer', 'SEO Specialist', 'Manager', 'Other'];
 
 const ContentTypeMasterView: React.FC = () => {

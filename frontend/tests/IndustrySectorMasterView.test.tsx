@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import IndustrySectorMasterView from '../views/IndustrySectorMasterView';
 import * as useDataModule from '../hooks/useData';
@@ -67,10 +67,11 @@ describe('IndustrySectorMasterView', () => {
 
         render(<IndustrySectorMasterView />);
 
-        expect(screen.getByText('Technology')).toBeInTheDocument();
-        expect(screen.getByText('Healthcare')).toBeInTheDocument();
-        expect(screen.getByText('SaaS Platforms')).toBeInTheDocument();
-        expect(screen.getByText('Drug Manufacturing')).toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Technology')).toBeInTheDocument();
+        expect(within(table).getByText('Healthcare')).toBeInTheDocument();
+        expect(within(table).getByText('SaaS Platforms')).toBeInTheDocument();
+        expect(within(table).getByText('Drug Manufacturing')).toBeInTheDocument();
     });
 
     it('filters data by search query', async () => {
@@ -88,8 +89,9 @@ describe('IndustrySectorMasterView', () => {
         const searchInput = screen.getByPlaceholderText(/Search industries/);
         await userEvent.type(searchInput, 'Healthcare');
 
-        expect(screen.getByText('Healthcare')).toBeInTheDocument();
-        expect(screen.queryByText('Technology')).not.toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Healthcare')).toBeInTheDocument();
+        expect(within(table).queryByText('Technology')).not.toBeInTheDocument();
     });
 
     it('filters data by industry', async () => {
@@ -106,9 +108,9 @@ describe('IndustrySectorMasterView', () => {
 
         const industrySelect = screen.getAllByDisplayValue('All Industries')[0];
         await userEvent.selectOptions(industrySelect, 'Technology');
-
-        expect(screen.getByText('Technology')).toBeInTheDocument();
-        expect(screen.queryByText('Healthcare')).not.toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Technology')).toBeInTheDocument();
+        expect(within(table).queryByText('Healthcare')).not.toBeInTheDocument();
     });
 
     it('filters data by country', async () => {
@@ -125,9 +127,9 @@ describe('IndustrySectorMasterView', () => {
 
         const countrySelect = screen.getAllByDisplayValue('All Countries')[0];
         await userEvent.selectOptions(countrySelect, 'United Kingdom');
-
-        expect(screen.getByText('Healthcare')).toBeInTheDocument();
-        expect(screen.queryByText('Technology')).not.toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Healthcare')).toBeInTheDocument();
+        expect(within(table).queryByText('Technology')).not.toBeInTheDocument();
     });
 
     it('opens modal when Add Industry button is clicked', async () => {

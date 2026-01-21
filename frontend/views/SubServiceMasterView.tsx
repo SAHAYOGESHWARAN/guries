@@ -3,6 +3,8 @@ import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
 import ServiceAssetLinker from '../components/ServiceAssetLinker';
+import LinkedInsightsSelector from '../components/LinkedInsightsSelector';
+import LinkedAssetsSelector from '../components/LinkedAssetsSelector';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
@@ -15,6 +17,19 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
   { id: 3, content_type: 'Landing', category: 'Conversion', description: 'Campaign landing page', default_attributes: [], status: 'active' },
   { id: 4, content_type: 'Blog', category: 'Editorial', description: 'Blog article', default_attributes: [], status: 'active' }
 ];
+
+// Helper function to generate sub-service code from sub-service name
+const generateSubServiceCode = (subServiceName: string): string => {
+  if (!subServiceName || subServiceName.trim() === '') return '';
+  const initials = subServiceName
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 3);
+  const timestamp = Date.now().toString().slice(-4);
+  return `${initials}-${timestamp}`;
+};
 
 const SubServiceMasterView: React.FC = () => {
   const { data: subServices = [], create, update, remove, refresh: refreshSubServices, loading } = useData<SubServiceItem>('subServices');
@@ -40,167 +55,71 @@ const SubServiceMasterView: React.FC = () => {
   const [assetSearch, setAssetSearch] = useState('');
   const [repositoryFilter, setRepositoryFilter] = useState('All');
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  {/* --- TAB: LINKED ASSETS & INSIGHTS --- */ }
+  {
+    activeTab === 'Linking' && (
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 gap-6">
+          <LinkedInsightsSelector
+            contentTypes={availableContentTypes}
+            selectedIds={(formData.linked_insights_ids as number[]) || []}
+            onSelectionChange={(ids) => setFormData((prev: any) => ({ ...prev, linked_insights_ids: ids }))}
+          />
 
-  // Insights management state
-  const [linkedInsights, setLinkedInsights] = useState([
-    { id: 1, title: 'Blog: SEO Best Practices', type: 'Blog', priority: 1, status: 'Ready' },
-    { id: 2, title: 'Whitepaper: Content Strategy', type: 'Whitepaper', priority: 2, status: 'Ready' },
-    { id: 3, title: 'Case Study: E-commerce Success', type: 'Case Study', priority: 3, status: 'Draft' },
-    { id: 4, title: 'Video: SEO Tutorial', type: 'Video', priority: 4, status: 'Ready' }
-  ]);
-  const [selectedInsights, setSelectedInsights] = useState([1, 2]); // IDs of selected insights
+          <div>
+            <ServiceAssetLinker
+              linkedAssets={linkedLibraryAssets}
+              availableAssets={availableLibraryAssets}
+              assetSearch={assetSearch}
+              setAssetSearch={setAssetSearch}
+              onToggle={handleToggleLibraryLink}
+              totalAssets={libraryAssets.length}
+              repositoryFilter={repositoryFilter}
+              setRepositoryFilter={setRepositoryFilter}
+              allAssets={libraryAssets}
+            />
 
-  // Promotional readiness state
-  const [contentReady, setContentReady] = useState(true);
-  const [assetsReady, setAssetsReady] = useState(true);
-  const [seoScore, setSeoScore] = useState(75);
+            <div className="mt-6">
+              <LinkedAssetsSelector
+                assets={libraryAssets}
+                selectedIds={(formData.linked_assets_ids as number[]) || []}
+                onSelectionChange={(ids) => setFormData((prev: any) => ({ ...prev, linked_assets_ids: ids }))}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  // SEO Content state
-  const [h2Headings, setH2Headings] = useState<string[]>([]);
-  const [h3Headings, setH3Headings] = useState<string[]>([]);
-  const [tempH2, setTempH2] = useState('');
-  const [tempH3, setTempH3] = useState('');
-  const [ogImageFile, setOgImageFile] = useState<File | null>(null);
-  const [ogImagePreview, setOgImagePreview] = useState<string>('');
-  const [schemaType, setSchemaType] = useState('Service');
-  const [schemaJson, setSchemaJson] = useState('');
-  const [showMissingSeoWarning, setShowMissingSeoWarning] = useState(true);
-
-  // Sub-services management state
-  const [subServicesList, setSubServicesList] = useState([
-    { id: 1, name: 'On-Page SEO', slug: 'on-page-seo', keywords: 'on-page, seo optimization', status: 'active' },
-    { id: 2, name: 'Off-Page SEO', slug: 'off-page-seo', keywords: 'backlinks, link building', status: 'active' }
-  ]);
-
-  // Form State
-  const [formData, setFormData] = useState<any>({
-    sub_service_name: '',
-    parent_service_id: 0,
-    sub_service_code: '',
-    slug: '',
-    full_url: '',
-    description: '',
-    status: 'Draft',
-    language: 'en',
-    content_type: 'Cluster',
-    buyer_journey_stage: 'Consideration',
-    h1: '',
-    meta_title: '',
-    meta_description: '',
-    focus_keywords: [],
-    secondary_keywords: [],
-    og_title: '',
-    og_description: '',
-    og_image_url: '',
-    og_type: 'website',
-    twitter_title: '',
-    twitter_description: '',
-    twitter_image_url: '',
-    linkedin_title: '',
-    linkedin_description: '',
-    linkedin_image_url: '',
-    facebook_title: '',
-    facebook_description: '',
-    facebook_image_url: '',
-    instagram_title: '',
-    instagram_description: '',
-    instagram_image_url: '',
-    brand_id: 0,
-    content_owner_id: 0,
-    primary_cta_label: '',
-    primary_cta_url: ''
-  });
-
-  // Temp inputs for arrays
-  const [tempKeyword, setTempKeyword] = useState('');
-  const [tempSecondaryKeyword, setTempSecondaryKeyword] = useState('');
-
-  const availableContentTypes = contentTypes.length ? contentTypes : FALLBACK_CONTENT_TYPES;
-
-  const filteredData = subServices.filter(item => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    const matchesSearch = !normalizedQuery || [
-      item.sub_service_name,
-      item.sub_service_code,
-      item.slug,
-      item.description,
-      item.h1,
-      item.meta_title,
-      item.meta_description
-    ].some(value => (value || '').toLowerCase().includes(normalizedQuery));
-
-    const parentName = services.find(s => s.id === item.parent_service_id)?.service_name || '';
-    const matchesParent = parentFilter === 'All Parent Services' || parentName === parentFilter;
-    const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
-    const matchesContentType = contentTypeFilter === 'All Types' || item.content_type === contentTypeFilter;
-
-    // Brand filter based on parent service's brand
-    const parentService = services.find(s => s.id === item.parent_service_id);
-    const parentBrand = parentService?.brand_id ? brands.find(b => b.id === parentService.brand_id)?.name : null;
-    const matchesBrand = brandFilter === 'All Brands' || parentBrand === brandFilter;
-
-    // Industry filter based on parent service's industry_ids
-    const parentIndustryIds = parentService?.industry_ids || [];
-    const matchesIndustry = industryFilter === 'All Industries' ||
-      (Array.isArray(parentIndustryIds) && parentIndustryIds.some(industryId => {
-        const industry = industrySectors.find(ind => ind.id === parseInt(industryId));
-        return industry?.industry === industryFilter;
-      }));
-
-    return matchesSearch && matchesParent && matchesStatus && matchesContentType && matchesBrand && matchesIndustry;
-  });
-
-  // Linked and Available Assets from Asset Library
-  const linkedLibraryAssets = useMemo(() => {
-    if (!editingItem) return [];
-    return libraryAssets.filter(a => {
-      const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
-      return links.map(String).includes(String(editingItem.id));
-    });
-  }, [libraryAssets, editingItem]);
-
-  const availableLibraryAssets = useMemo(() => {
-    if (!editingItem) return [];
-    const searchLower = assetSearch.toLowerCase().trim();
-    return libraryAssets
-      .filter(a => {
-        // Check if asset is not already linked
-        const links = Array.isArray(a.linked_sub_service_ids) ? a.linked_sub_service_ids : [];
-        const isLinked = links.map(String).includes(String(editingItem.id));
-        if (isLinked) return false;
-
-        // Check repository filter
-        if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;
-
-        // Check if asset matches search query (if any)
-        if (!searchLower) return true;
-        const name = (a.name || '').toLowerCase();
-        const assetType = (a.type || '').toLowerCase();
-        const repository = (a.repository || '').toLowerCase();
-        return name.includes(searchLower) || assetType.includes(searchLower) || repository.includes(searchLower);
-      })
-      .slice(0, 20); // Limit to show 20 results
-  }, [libraryAssets, editingItem, assetSearch, repositoryFilter]);
-
-  const handleCreateClick = () => {
+  const handleAdd = () => {
     setEditingItem(null);
     setFormData({
       sub_service_name: '',
-      parent_service_id: 0,
       sub_service_code: '',
       slug: '',
       full_url: '',
-      description: '',
       status: 'Draft',
-      language: 'en',
+      parent_service_id: 0,
       content_type: 'Cluster',
       buyer_journey_stage: 'Consideration',
       h1: '',
+      h2_list: [],
+      h3_list: [],
+      h4_list: [],
+      h5_list: [],
+      body_content: '',
+      internal_links: [],
+      external_links: [],
+      image_alt_texts: [],
+      word_count: 0,
+      reading_time_minutes: 0,
       meta_title: '',
       meta_description: '',
       focus_keywords: [],
       secondary_keywords: [],
+      seo_score: 0,
+      ranking_summary: '',
       og_title: '',
       og_description: '',
       og_image_url: '',
@@ -217,10 +136,54 @@ const SubServiceMasterView: React.FC = () => {
       instagram_title: '',
       instagram_description: '',
       instagram_image_url: '',
+      social_meta: {
+        linkedin: { title: '', description: '', image_url: '' },
+        facebook: { title: '', description: '', image_url: '' },
+        instagram: { title: '', description: '', image_url: '' }
+      },
       brand_id: 0,
+      business_unit: '',
       content_owner_id: 0,
+      created_by: undefined,
+      updated_by: undefined,
+      version_number: 1,
+      change_log_link: '',
+      show_in_main_menu: false,
+      show_in_footer_menu: false,
+      menu_group: '',
+      menu_position: 0,
+      parent_menu_section: '',
+      include_in_xml_sitemap: true,
+      sitemap_priority: 0.8,
+      sitemap_changefreq: 'monthly',
+      primary_persona_id: undefined,
+      secondary_persona_ids: [],
+      target_segment_notes: '',
       primary_cta_label: '',
-      primary_cta_url: ''
+      primary_cta_url: '',
+      form_id: undefined,
+      linked_campaign_ids: [],
+      schema_type_id: '',
+      robots_index: 'index',
+      robots_follow: 'follow',
+      robots_custom: '',
+      canonical_url: '',
+      redirect_from_urls: [],
+      hreflang_group_id: undefined,
+      core_web_vitals_status: 'Good',
+      tech_seo_status: 'Ok',
+      faq_section_enabled: false,
+      faq_content: [],
+      has_subservices: false,
+      subservice_count: 0,
+      featured_asset_id: undefined,
+      asset_count: 0,
+      knowledge_topic_id: undefined,
+      linked_insights_ids: [],
+      linked_assets_ids: [],
+      linked_campaign_ids: [],
+      industry_ids: [],
+      country_ids: []
     });
     setActiveTab('Core');
     setViewMode('form');
@@ -230,13 +193,25 @@ const SubServiceMasterView: React.FC = () => {
     setEditingItem(item);
     setFormData({
       ...item,
+      // Content & SEO
+      h1: item.h1 || '',
+      h2_list: item.h2_list || [],
+      h3_list: item.h3_list || [],
+      h4_list: item.h4_list || [],
+      h5_list: item.h5_list || [],
+      body_content: item.body_content || '',
+      internal_links: item.internal_links || [],
+      external_links: item.external_links || [],
+      image_alt_texts: item.image_alt_texts || [],
+      word_count: item.word_count || 0,
+      reading_time_minutes: item.reading_time_minutes || 0,
+      meta_title: item.meta_title || '',
+      meta_description: item.meta_description || '',
       focus_keywords: item.focus_keywords || [],
       secondary_keywords: item.secondary_keywords || [],
-      content_type: item.content_type || 'Cluster',
-      buyer_journey_stage: item.buyer_journey_stage || 'Consideration',
-      h1: item.h1 || '',
-      primary_cta_label: item.primary_cta_label || '',
-      primary_cta_url: item.primary_cta_url || '',
+      seo_score: item.seo_score || 0,
+
+      // Social
       og_type: item.og_type || 'website',
       og_title: item.og_title || '',
       og_description: item.og_description || '',
@@ -252,7 +227,60 @@ const SubServiceMasterView: React.FC = () => {
       facebook_image_url: item.facebook_image_url || '',
       instagram_title: item.instagram_title || '',
       instagram_description: item.instagram_description || '',
-      instagram_image_url: item.instagram_image_url || ''
+      instagram_image_url: item.instagram_image_url || '',
+      social_meta: item.social_meta || { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } },
+
+      // Ownership & navigation
+      brand_id: item.brand_id || 0,
+      business_unit: item.business_unit || '',
+      content_owner_id: item.content_owner_id || 0,
+      version_number: item.version_number || 1,
+      change_log_link: item.change_log_link || '',
+      show_in_main_menu: item.show_in_main_menu || false,
+      show_in_footer_menu: item.show_in_footer_menu || false,
+      menu_group: item.menu_group || '',
+      menu_position: item.menu_position || 0,
+      parent_menu_section: item.parent_menu_section || '',
+      include_in_xml_sitemap: typeof item.include_in_xml_sitemap === 'boolean' ? item.include_in_xml_sitemap : true,
+      sitemap_priority: item.sitemap_priority || 0.8,
+      sitemap_changefreq: item.sitemap_changefreq || 'monthly',
+
+      // Strategic
+      content_type: item.content_type || 'Cluster',
+      buyer_journey_stage: item.buyer_journey_stage || 'Consideration',
+      primary_persona_id: item.primary_persona_id ?? undefined,
+      secondary_persona_ids: item.secondary_persona_ids || [],
+      target_segment_notes: item.target_segment_notes || '',
+      primary_cta_label: item.primary_cta_label || '',
+      primary_cta_url: item.primary_cta_url || '',
+      form_id: item.form_id ?? undefined,
+      linked_campaign_ids: item.linked_campaign_ids || [],
+
+      // Technical
+      schema_type_id: item.schema_type_id || '',
+      robots_index: item.robots_index || 'index',
+      robots_follow: item.robots_follow || 'follow',
+      robots_custom: item.robots_custom || '',
+      canonical_url: item.canonical_url || '',
+      redirect_from_urls: item.redirect_from_urls || [],
+      hreflang_group_id: item.hreflang_group_id ?? undefined,
+      core_web_vitals_status: item.core_web_vitals_status || 'Good',
+      tech_seo_status: item.tech_seo_status || 'Ok',
+      faq_section_enabled: item.faq_section_enabled || false,
+      faq_content: item.faq_content || [],
+
+      // Linking
+      has_subservices: item.has_subservices || false,
+      subservice_count: item.subservice_count || 0,
+      featured_asset_id: item.featured_asset_id ?? undefined,
+      asset_count: item.asset_count || 0,
+      knowledge_topic_id: item.knowledge_topic_id ?? undefined,
+      linked_insights_ids: item.linked_insights_ids || [],
+      linked_assets_ids: item.linked_assets_ids || [],
+
+      // Location / Industry
+      industry_ids: item.industry_ids || [],
+      country_ids: item.country_ids || []
     });
     setActiveTab('Core');
     setViewMode('view');
@@ -262,13 +290,25 @@ const SubServiceMasterView: React.FC = () => {
     setEditingItem(item);
     setFormData({
       ...item,
+      // Content & SEO
+      h1: item.h1 || '',
+      h2_list: item.h2_list || [],
+      h3_list: item.h3_list || [],
+      h4_list: item.h4_list || [],
+      h5_list: item.h5_list || [],
+      body_content: item.body_content || '',
+      internal_links: item.internal_links || [],
+      external_links: item.external_links || [],
+      image_alt_texts: item.image_alt_texts || [],
+      word_count: item.word_count || 0,
+      reading_time_minutes: item.reading_time_minutes || 0,
+      meta_title: item.meta_title || '',
+      meta_description: item.meta_description || '',
       focus_keywords: item.focus_keywords || [],
       secondary_keywords: item.secondary_keywords || [],
-      content_type: item.content_type || 'Cluster',
-      buyer_journey_stage: item.buyer_journey_stage || 'Consideration',
-      h1: item.h1 || '',
-      primary_cta_label: item.primary_cta_label || '',
-      primary_cta_url: item.primary_cta_url || '',
+      seo_score: item.seo_score || 0,
+
+      // Social
       og_type: item.og_type || 'website',
       og_title: item.og_title || '',
       og_description: item.og_description || '',
@@ -284,7 +324,60 @@ const SubServiceMasterView: React.FC = () => {
       facebook_image_url: item.facebook_image_url || '',
       instagram_title: item.instagram_title || '',
       instagram_description: item.instagram_description || '',
-      instagram_image_url: item.instagram_image_url || ''
+      instagram_image_url: item.instagram_image_url || '',
+      social_meta: item.social_meta || { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } },
+
+      // Ownership & navigation
+      brand_id: item.brand_id || 0,
+      business_unit: item.business_unit || '',
+      content_owner_id: item.content_owner_id || 0,
+      version_number: item.version_number || 1,
+      change_log_link: item.change_log_link || '',
+      show_in_main_menu: item.show_in_main_menu || false,
+      show_in_footer_menu: item.show_in_footer_menu || false,
+      menu_group: item.menu_group || '',
+      menu_position: item.menu_position || 0,
+      parent_menu_section: item.parent_menu_section || '',
+      include_in_xml_sitemap: typeof item.include_in_xml_sitemap === 'boolean' ? item.include_in_xml_sitemap : true,
+      sitemap_priority: item.sitemap_priority || 0.8,
+      sitemap_changefreq: item.sitemap_changefreq || 'monthly',
+
+      // Strategic
+      content_type: item.content_type || 'Cluster',
+      buyer_journey_stage: item.buyer_journey_stage || 'Consideration',
+      primary_persona_id: item.primary_persona_id ?? undefined,
+      secondary_persona_ids: item.secondary_persona_ids || [],
+      target_segment_notes: item.target_segment_notes || '',
+      primary_cta_label: item.primary_cta_label || '',
+      primary_cta_url: item.primary_cta_url || '',
+      form_id: item.form_id ?? undefined,
+      linked_campaign_ids: item.linked_campaign_ids || [],
+
+      // Technical
+      schema_type_id: item.schema_type_id || '',
+      robots_index: item.robots_index || 'index',
+      robots_follow: item.robots_follow || 'follow',
+      robots_custom: item.robots_custom || '',
+      canonical_url: item.canonical_url || '',
+      redirect_from_urls: item.redirect_from_urls || [],
+      hreflang_group_id: item.hreflang_group_id ?? undefined,
+      core_web_vitals_status: item.core_web_vitals_status || 'Good',
+      tech_seo_status: item.tech_seo_status || 'Ok',
+      faq_section_enabled: item.faq_section_enabled || false,
+      faq_content: item.faq_content || [],
+
+      // Linking
+      has_subservices: item.has_subservices || false,
+      subservice_count: item.subservice_count || 0,
+      featured_asset_id: item.featured_asset_id ?? undefined,
+      asset_count: item.asset_count || 0,
+      knowledge_topic_id: item.knowledge_topic_id ?? undefined,
+      linked_insights_ids: item.linked_insights_ids || [],
+      linked_assets_ids: item.linked_assets_ids || [],
+
+      // Location / Industry
+      industry_ids: item.industry_ids || [],
+      country_ids: item.country_ids || []
     });
     setActiveTab('Core');
     setViewMode('form');
@@ -341,11 +434,46 @@ const SubServiceMasterView: React.FC = () => {
     setFormData((prev: any) => ({
       ...prev,
       parent_service_id: parentId,
-      // Inherit key fields from parent when available
+      // Inherit key fields from parent when available (full parity)
       brand_id: parent?.brand_id ?? prev.brand_id ?? 0,
+      business_unit: parent?.business_unit ?? prev.business_unit ?? '',
       content_owner_id: parent?.content_owner_id ?? prev.content_owner_id ?? 0,
       content_type: parent?.content_type ?? prev.content_type ?? 'Cluster',
       buyer_journey_stage: parent?.buyer_journey_stage ?? prev.buyer_journey_stage ?? 'Consideration',
+
+      // Navigation
+      show_in_main_menu: typeof parent?.show_in_main_menu === 'boolean' ? parent.show_in_main_menu : prev.show_in_main_menu ?? false,
+      show_in_footer_menu: typeof parent?.show_in_footer_menu === 'boolean' ? parent.show_in_footer_menu : prev.show_in_footer_menu ?? false,
+      menu_group: parent?.menu_group ?? prev.menu_group ?? '',
+      menu_position: parent?.menu_position ?? prev.menu_position ?? 0,
+      parent_menu_section: parent?.parent_menu_section ?? prev.parent_menu_section ?? '',
+      include_in_xml_sitemap: typeof parent?.include_in_xml_sitemap === 'boolean' ? parent.include_in_xml_sitemap : prev.include_in_xml_sitemap ?? true,
+      sitemap_priority: parent?.sitemap_priority ?? prev.sitemap_priority ?? 0.8,
+      sitemap_changefreq: parent?.sitemap_changefreq ?? prev.sitemap_changefreq ?? 'monthly',
+
+      // SEO / Content defaults
+      meta_title: parent?.meta_title ?? prev.meta_title ?? '',
+      meta_description: parent?.meta_description ?? prev.meta_description ?? '',
+      focus_keywords: parent?.focus_keywords ?? prev.focus_keywords ?? [],
+      secondary_keywords: parent?.secondary_keywords ?? prev.secondary_keywords ?? [],
+      h1: parent?.h1 ?? prev.h1 ?? '',
+      h2_list: parent?.h2_list ?? prev.h2_list ?? [],
+      h3_list: parent?.h3_list ?? prev.h3_list ?? [],
+
+      // Social defaults
+      social_meta: parent?.social_meta ?? prev.social_meta ?? prev.social_meta ?? { linkedin: { title: '', description: '', image_url: '' }, facebook: { title: '', description: '', image_url: '' }, instagram: { title: '', description: '', image_url: '' } },
+
+      // Technical defaults
+      robots_index: parent?.robots_index ?? prev.robots_index ?? 'index',
+      robots_follow: parent?.robots_follow ?? prev.robots_follow ?? 'follow',
+      canonical_url: parent?.canonical_url ?? prev.canonical_url ?? '',
+
+      // Linking & counts
+      linked_campaign_ids: parent?.linked_campaign_ids ?? prev.linked_campaign_ids ?? [],
+      linked_insights_ids: parent?.linked_insights_ids ?? prev.linked_insights_ids ?? [],
+      linked_assets_ids: parent?.linked_assets_ids ?? prev.linked_assets_ids ?? [],
+
+      // Location / Industry
       industry_ids: parent?.industry_ids ?? prev.industry_ids ?? [],
       country_ids: parent?.country_ids ?? prev.country_ids ?? []
     }));
@@ -734,8 +862,19 @@ const SubServiceMasterView: React.FC = () => {
                               value={formData.sub_service_name}
                               onChange={(e) => {
                                 const val = e.target.value;
-                                setFormData({ ...formData, sub_service_name: val });
-                                if (!editingItem && !formData.slug) handleSlugChange(val);
+                                const updates: any = { sub_service_name: val };
+
+                                // Auto-generate slug if creating new sub-service
+                                if (!editingItem && !formData.slug) {
+                                  updates.slug = val.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+                                }
+
+                                // Auto-generate sub-service code if creating new sub-service and code is empty
+                                if (!editingItem && !formData.sub_service_code) {
+                                  updates.sub_service_code = generateSubServiceCode(val);
+                                }
+
+                                setFormData({ ...formData, ...updates });
                               }}
                               disabled={isViewMode}
                               placeholder="Enter sub-service name..."
@@ -756,10 +895,16 @@ const SubServiceMasterView: React.FC = () => {
                             <input
                               type="text"
                               value={formData.sub_service_code}
-                              onChange={(e) => setFormData({ ...formData, sub_service_code: e.target.value })}
+                              onChange={(e) => {
+                                // Only allow editing if this is an existing sub-service
+                                if (editingItem) {
+                                  setFormData({ ...formData, sub_service_code: e.target.value });
+                                }
+                              }}
+                              readOnly={!editingItem}
                               disabled={isViewMode}
-                              className={getInputClasses("w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white")}
-                              placeholder="SUB-XXX"
+                              className={getInputClasses(`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!editingItem ? 'bg-blue-50 cursor-not-allowed' : 'bg-white'}`)}
+                              placeholder="Auto-generated"
                             />
                           </div>
                         </Tooltip>
@@ -1082,7 +1227,7 @@ const SubServiceMasterView: React.FC = () => {
                   <p className="text-cyan-100 text-sm">Manage and organize sub-services</p>
                 </div>
               </div>
-              <button className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+              <button onClick={handleAdd} className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
                 <span className="text-lg">+</span>
                 Add Sub-Service
               </button>

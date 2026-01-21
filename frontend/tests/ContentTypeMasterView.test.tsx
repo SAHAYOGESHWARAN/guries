@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ContentTypeMasterView from '../views/ContentTypeMasterView';
 import * as useDataModule from '../hooks/useData';
@@ -80,10 +80,11 @@ describe('ContentTypeMasterView', () => {
 
         render(<ContentTypeMasterView />);
 
-        expect(screen.getByText('Blog')).toBeInTheDocument();
-        expect(screen.getByText('Pillar')).toBeInTheDocument();
-        expect(screen.getByText('Editorial')).toBeInTheDocument();
-        expect(screen.getByText('Core')).toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Blog')).toBeInTheDocument();
+        expect(within(table).getByText('Pillar')).toBeInTheDocument();
+        expect(within(table).getByText('Editorial')).toBeInTheDocument();
+        expect(within(table).getByText('Core')).toBeInTheDocument();
     });
 
     it('displays word count range', () => {
@@ -133,8 +134,9 @@ describe('ContentTypeMasterView', () => {
         const searchInput = screen.getByPlaceholderText(/Search content types/);
         await userEvent.type(searchInput, 'Pillar');
 
-        expect(screen.getByText('Pillar')).toBeInTheDocument();
-        expect(screen.queryByText('Blog')).not.toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Pillar')).toBeInTheDocument();
+        expect(within(table).queryByText('Blog')).not.toBeInTheDocument();
     });
 
     it('filters data by category', async () => {
@@ -151,9 +153,9 @@ describe('ContentTypeMasterView', () => {
 
         const categorySelect = screen.getAllByDisplayValue('All Categories')[0];
         await userEvent.selectOptions(categorySelect, 'Core');
-
-        expect(screen.getByText('Pillar')).toBeInTheDocument();
-        expect(screen.queryByText('Blog')).not.toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('Pillar')).toBeInTheDocument();
+        expect(within(table).queryByText('Blog')).not.toBeInTheDocument();
     });
 
     it('opens modal when Add Content Type button is clicked', async () => {
