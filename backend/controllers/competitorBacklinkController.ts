@@ -16,7 +16,7 @@ export const createCompetitorBacklink = async (req: Request, res: Response) => {
     const { domain, da, competitor, us, opportunity_score, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO competitor_backlinks (domain, da, competitor, us, opportunity_score, status, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))',
+            "INSERT INTO competitor_backlinks (domain, da, competitor, us, opportunity_score, status, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
             [domain, da, competitor, us, opportunity_score, status || 'Identified']
         );
         const newItem = result.rows[0];
@@ -52,3 +52,6 @@ export const deleteCompetitorBacklink = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

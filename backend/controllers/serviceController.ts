@@ -15,7 +15,7 @@ const generateServiceCode = (serviceName: string, serviceId?: number): string =>
         .toUpperCase()
         .substring(0, 3);
 
-    const timestamp = Date.datetime('now').toString().slice(-4);
+    const timestamp = Date.now().toString().slice(-4);
     return `${initials}-${timestamp}`;
 };
 
@@ -29,7 +29,7 @@ const generateSubServiceCode = (subServiceName: string, parentServiceCode?: stri
         .toUpperCase()
         .substring(0, 2);
 
-    const timestamp = Date.datetime('now').toString().slice(-3);
+    const timestamp = Date.now().toString().slice(-3);
     return `${initials}-${timestamp}`;
 };
 
@@ -71,7 +71,7 @@ const parseServiceRow = (row: any) => {
 
 // Helper function to parse JSON fields for sub-services
 const parseSubServiceRow = (row: any) => {
-    const jsonArrayFields = ['industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content'];
+    const jsonArrayFields = ['industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content', 'internal_links', 'external_links', 'image_alt_texts', 'secondary_persona_ids', 'linked_campaign_ids', 'linked_insights_ids', 'linked_assets_ids'];
     const jsonObjectFields = ['social_meta'];
 
     const parsed = { ...row };
@@ -613,3 +613,6 @@ export const deleteSubService = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

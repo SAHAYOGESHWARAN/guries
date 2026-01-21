@@ -58,3 +58,4 @@ export const getDashboardMetrics = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch dashboard metrics', details: error.message });
     }
 };
+

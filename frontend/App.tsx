@@ -141,6 +141,23 @@ const App: React.FC = () => {
     setIsAuthenticated(false);
   }, []);
 
+  // Listen for hash changes from ServiceMasterView and other components
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // Remove '#'
+      if (hash) {
+        // Small delay to ensure sessionStorage is set before component renders
+        setTimeout(() => {
+          setViewState({ view: hash, id: null });
+          window.scrollTo(0, 0);
+        }, 50);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     setCurrentUser(null);

@@ -349,7 +349,7 @@ export const generateNewEvaluation = async (req: Request, res: Response) => {
         const { scope, parameters } = req.body;
 
         // Simulate AI evaluation generation
-        const evaluationId = Date.datetime('now');
+        const evaluationId = Date.now();
 
         res.json({
             success: true,
@@ -403,3 +403,6 @@ export const getEvaluationHistory = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
+
+

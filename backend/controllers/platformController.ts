@@ -247,3 +247,6 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to bulk update platforms' });
     }
 };
+
+
+

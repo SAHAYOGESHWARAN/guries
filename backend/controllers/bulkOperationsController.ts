@@ -254,3 +254,6 @@ function getTableName(entity: string): string | null {
 
     return mapping[entity] || null;
 }
+
+
+

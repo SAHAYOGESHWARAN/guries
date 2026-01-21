@@ -348,3 +348,4 @@ export const updateWorkflowStage = async (req: Request, res: Response) => {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
 export const deleteWorkflowStage = (req: any, res: any) => deleteMaster('workflow_stages', req.params.id, res);
+

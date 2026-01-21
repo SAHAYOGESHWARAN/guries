@@ -32,7 +32,7 @@ export const logAudit = async (req: Request, res: Response) => {
     const { target_type, target_id, score, violations } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO compliance_audits (target_type, target_id, score, violations, audited_at) VALUES (?, ?, ?, ?, datetime('now'))',
+            "INSERT INTO compliance_audits (target_type, target_id, score, violations, audited_at) VALUES (?, ?, ?, ?, datetime('now'))",
             [target_type, target_id, score, JSON.stringify(violations)]
         );
         const newAudit = result.rows[0];
@@ -52,3 +52,6 @@ export const getAudits = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

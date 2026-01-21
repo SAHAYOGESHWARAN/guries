@@ -240,45 +240,84 @@ export interface ServiceUrl {
 
 export interface SubServiceItem {
     id: number;
+
+    // A. Identity & Core Details
     sub_service_name: string;
     sub_service_code?: string;
     parent_service_id: number;
     slug: string;
     full_url: string;
     description: string;
-    status: 'Draft' | 'In Progress' | 'QC' | 'Approved' | 'Published' | 'Archived';
     language?: string;
+    status: 'Draft' | 'In Progress' | 'QC' | 'Approved' | 'Published' | 'Archived';
 
-    // Navigation
+    // B. Ownership & Governance
+    brand_id?: number;
+    business_unit?: string;
+    content_owner_id?: number;
+    created_by?: number;
+    updated_by?: number;
+    version_number?: number;
+    change_log_link?: string;
+
+    // C. Navigation
+    show_in_main_menu?: boolean;
+    show_in_footer_menu?: boolean;
+    menu_group?: string;
     menu_position?: number;
     breadcrumb_label?: string;
+    parent_menu_section?: string;
     include_in_xml_sitemap?: boolean;
     sitemap_priority?: number;
     sitemap_changefreq?: 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-    // Strategic
+    // D. Strategic Mapping
     content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page' | string;
+    category?: string;
     buyer_journey_stage?: 'Awareness' | 'Consideration' | 'Decision' | 'Retention' | string;
+    primary_persona_id?: number;
+    secondary_persona_ids?: number[];
+    target_segment_notes?: string;
     primary_cta_label?: string;
     primary_cta_url?: string;
+    form_id?: number;
+    linked_campaign_ids?: number[];
 
-    // Content Block
+    // E. Technical SEO
+    schema_type_id?: string;
+    robots_index?: 'index' | 'noindex';
+    robots_follow?: 'follow' | 'nofollow';
+    robots_custom?: string;
+    canonical_url?: string;
+    redirect_from_urls?: string[];
+    hreflang_group_id?: number;
+    core_web_vitals_status?: 'Good' | 'Needs Improvement' | 'Poor';
+    tech_seo_status?: 'Ok' | 'Warning' | 'Critical';
+    faq_section_enabled?: boolean;
+    faq_content?: FAQItem[];
+
+    // F. Content Block
     h1?: string;
     h2_list?: string[];
     h3_list?: string[];
+    h4_list?: string[];
+    h5_list?: string[];
     body_content?: string;
+    internal_links?: ServiceLink[];
+    external_links?: ServiceLink[];
+    image_alt_texts?: ServiceImage[];
+    word_count?: number;
+    reading_time_minutes?: number;
 
-    // SEO Block
+    // G. SEO Metadata
     meta_title?: string;
     meta_description?: string;
     focus_keywords?: string[];
     secondary_keywords?: string[];
-    schema_type_id?: string;
-    canonical_url?: string;
-    robots_index?: 'index' | 'noindex';
-    robots_follow?: 'follow' | 'nofollow';
+    seo_score?: number;
+    ranking_summary?: string;
 
-    // SMM Block
+    // H. SMM / Social Meta
     og_title?: string;
     og_description?: string;
     og_image_url?: string;
@@ -286,36 +325,38 @@ export interface SubServiceItem {
     twitter_title?: string;
     twitter_description?: string;
     twitter_image_url?: string;
-    // LinkedIn Platform
     linkedin_title?: string;
     linkedin_description?: string;
     linkedin_image_url?: string;
-    // Facebook Platform
     facebook_title?: string;
     facebook_description?: string;
     facebook_image_url?: string;
-    // Instagram Platform
     instagram_title?: string;
     instagram_description?: string;
     instagram_image_url?: string;
-    // Per-channel social meta
     social_meta?: {
         linkedin?: { title?: string; description?: string; image_url?: string };
         facebook?: { title?: string; description?: string; image_url?: string };
         instagram?: { title?: string; description?: string; image_url?: string };
     };
 
-    // Governance
-    brand_id?: number;
-    content_owner_id?: number;
+    // K. Linking
+    has_subservices?: boolean;
+    subservice_count?: number;
+    featured_asset_id?: number;
+    asset_count?: number;
+    knowledge_topic_id?: number;
+    linked_insights_ids?: number[];
+    linked_assets_ids?: number[];
+
+    // Timestamps
     created_at?: string;
     updated_at?: string;
-    created_by?: number;
-    updated_by?: number;
 
+    // Legacy/Compat
     assets_linked?: number;
-    keywords?: string[]; // compat
-    working_on_by?: string; // User/team currently working on this asset
+    keywords?: string[];
+    working_on_by?: string;
 }
 
 export interface ServicePageItem {

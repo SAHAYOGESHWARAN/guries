@@ -122,3 +122,6 @@ export const deleteAssetCategory = async (req: Request, res: Response) => {
         db.close();
     }
 };
+
+
+

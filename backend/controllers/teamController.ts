@@ -15,7 +15,7 @@ export const createTeam = async (req: Request, res: Response) => {
     const { name, lead_user_id, description } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO teams (name, lead_user_id, description, created_at) VALUES (?, ?, ?, datetime('now'))',
+            "INSERT INTO teams (name, lead_user_id, description, created_at) VALUES (?, ?, ?, datetime('now'))",
             [name, lead_user_id, description]
         );
         res.status(201).json(result.rows[0]);
@@ -46,3 +46,6 @@ export const deleteTeam = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

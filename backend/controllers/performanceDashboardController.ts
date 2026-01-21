@@ -374,7 +374,7 @@ export const getPerformanceDashboard = async (req: Request, res: Response) => {
                 category: 'Performance',
                 title: 'Bounce Rate Alert',
                 message: 'FRL bounce rate is 6.7% above target (58.7% vs 55.0%). Needs immediate attention.',
-                timestamp: new Date(Date.datetime('now') - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
                 severity: 'medium',
                 brand: 'FRL',
                 kpi: 'Bounce Rate',
@@ -395,7 +395,7 @@ export const getPerformanceDashboard = async (req: Request, res: Response) => {
                 category: 'Benchmark',
                 title: 'Gold Standard Gap',
                 message: 'Tutors India organic sessions are 12.8% below gold standard (52,300 vs 60,000).',
-                timestamp: new Date(Date.datetime('now') - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+                timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
                 severity: 'low',
                 brand: 'Tutors India',
                 kpi: 'Organic Sessions',
@@ -416,7 +416,7 @@ export const getPerformanceDashboard = async (req: Request, res: Response) => {
                 category: 'Competitive',
                 title: 'Competitor Threat',
                 message: 'Competitor Pubrica gained 30 new high-quality backlinks in the last 7 days—immediate risk to rankings!',
-                timestamp: new Date(Date.datetime('now') - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+                timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
                 severity: 'high',
                 brand: 'All Brands',
                 kpi: 'Backlinks',
@@ -437,7 +437,7 @@ export const getPerformanceDashboard = async (req: Request, res: Response) => {
                 category: 'Achievement',
                 title: 'Target Exceeded',
                 message: 'PepCreations social engagement rate exceeded target by 14.5% (4.8% vs 4.2%)!',
-                timestamp: new Date(Date.datetime('now') - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
+                timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
                 severity: 'low',
                 brand: 'PepCreations',
                 kpi: 'Social Engagement Rate',
@@ -458,7 +458,7 @@ export const getPerformanceDashboard = async (req: Request, res: Response) => {
                 category: 'Technical',
                 title: 'Performance Degradation',
                 message: 'Statswork page load time increased by 0.3s in the last 24 hours (2.1s to 2.4s).',
-                timestamp: new Date(Date.datetime('now') - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+                timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
                 severity: 'medium',
                 brand: 'Statswork',
                 kpi: 'Page Load Time',
@@ -637,3 +637,6 @@ export const exportPerformanceData = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
+
+

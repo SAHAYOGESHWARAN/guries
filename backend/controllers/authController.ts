@@ -28,7 +28,7 @@ export const sendOtp = async (req: Request, res: Response) => {
     try {
         // Generate a 6-digit OTP
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.datetime('now') + 5 * 60 * 1000).toISOString();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
         // Save to Database
         await pool.query(
@@ -80,3 +80,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Verification failed', details: error.message });
     }
 };
+
+
+

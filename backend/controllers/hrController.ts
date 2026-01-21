@@ -20,10 +20,10 @@ export const getWorkloadForecast = async (req: Request, res: Response) => {
             WHERE u.status = 'active'
             GROUP BY u.id, u.name, u.role
         `);
-        
+
         const formatted = result.rows.map((row: any) => ({
             userId: row.id,
-            initials: row.name.split(' ').map((n:string) => n[0]).join('').toUpperCase(),
+            initials: row.name.split(' ').map((n: string) => n[0]).join('').toUpperCase(),
             name: row.name,
             role: row.role,
             currentLoad: parseInt(row.current_load),
@@ -47,7 +47,7 @@ export const getRewardRecommendations = async (req: Request, res: Response) => {
             JOIN users u ON r.user_id = u.id
             ORDER BY r.created_at DESC
         `);
-        
+
         const formatted = result.rows.map((row: any) => ({
             id: row.id,
             userId: row.user_id,
@@ -73,10 +73,10 @@ export const updateRewardStatus = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            'UPDATE reward_recommendations SET status = ?, updated_at = datetime('now') WHERE id = ?',
+            "UPDATE reward_recommendations SET status = ?, updated_at = datetime('now') WHERE id = ?",
             [status, id]
         );
-        
+
         if (result.rows.length === 0) return res.status(404).json({ error: 'Reward not found' });
 
         const updatedReward = result.rows[0];
@@ -102,12 +102,12 @@ export const getEmployeeRankings = async (req: Request, res: Response) => {
             WHERE u.status = 'active'
         `;
         const result = await pool.query(query);
-        
+
         const rankings = result.rows.map((u: any, idx: number) => {
-            const baseScore = 70 + (parseInt(u.tasks_completed || 0) * 2); 
-            
+            const baseScore = 70 + (parseInt(u.tasks_completed || 0) * 2);
+
             return {
-                rank: 0, 
+                rank: 0,
                 id: u.id,
                 name: u.name,
                 role: u.role,
@@ -130,7 +130,7 @@ export const getEmployeeRankings = async (req: Request, res: Response) => {
 export const getEmployeeSkills = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM employee_skills ORDER BY score DESC');
-        res.status(200).json(result.rows.map((r:any) => ({
+        res.status(200).json(result.rows.map((r: any) => ({
             name: r.skill_name,
             score: r.score,
             category: r.category
@@ -148,3 +148,6 @@ export const getEmployeeAchievements = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

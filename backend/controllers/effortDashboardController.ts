@@ -280,3 +280,4 @@ export const getWorkloadPrediction = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+

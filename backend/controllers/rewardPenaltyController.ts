@@ -307,7 +307,7 @@ export const createAutomationRule = async (req: Request, res: Response) => {
         const { name, condition, action, status } = req.body;
 
         const newRule = {
-            id: Date.datetime('now'),
+            id: Date.now(),
             name,
             condition,
             action,
@@ -347,3 +347,6 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
+
+

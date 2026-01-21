@@ -16,7 +16,7 @@ export const createUser = async (req: Request, res: Response) => {
     const { name, email, role, department, country, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO users (name, email, role, department, country, status, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))',
+            "INSERT INTO users (name, email, role, department, country, status, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
             [name, email, role, department, country, status]
         );
         const newUser = result.rows[0];
@@ -68,7 +68,7 @@ export const createRole = async (req: Request, res: Response) => {
     const { role_name, permissions, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO roles (role_name, permissions, status, created_at) VALUES (?, ?, ?, datetime('now'))',
+            "INSERT INTO roles (role_name, permissions, status, created_at) VALUES (?, ?, ?, datetime('now'))",
             [role_name, JSON.stringify(permissions || {}), status || 'Active']
         );
         const newRole = result.rows[0];
@@ -104,3 +104,6 @@ export const deleteRole = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

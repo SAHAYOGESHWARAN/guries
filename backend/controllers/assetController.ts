@@ -1,5 +1,6 @@
 
 import { Request, Response } from 'express';
+import { pool } from '../config/db-sqlite';
 import { query, execute, queryOne } from '../utils/dbHelper';
 import { validateRequired, sanitizeObject, throwIfErrors } from '../utils/validation';
 import { getSocket } from '../socket';
@@ -70,7 +71,7 @@ export const updateAsset = async (req: Request, res: Response) => {
             sanitized.name || null,
             usage_status || null,
             repository || null,
-            '' || null,
+            null,
             sanitized.type || null,
             JSON.stringify(social_meta || {}) || null,
             id
@@ -126,74 +127,62 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 a.updated_at,
                 a.linked_service_ids,
                 a.linked_sub_service_ids,
-                a.linked_task_id
+                a.linked_task_id,
+                a.linked_campaign_id,
+                a.linked_project_id,
+                a.linked_service_id,
+                a.linked_sub_service_id,
+                a.linked_repository_item_id,
+                a.application_type,
+                a.keywords,
+                a.content_keywords,
+                a.seo_keywords,
+                a.seo_score,
+                a.grammar_score,
+                a.ai_plagiarism_score,
+                a.qc_score,
+                a.qc_checklist_items,
+                a.submitted_by,
+                a.submitted_at,
+                a.qc_reviewer_id,
+                a.qc_reviewed_at,
+                a.qc_remarks,
+                a.linking_active,
+                a.rework_count,
+                a.version_number,
+                a.version_history,
+                a.designed_by,
+                a.published_by,
+                a.verified_by,
+                a.published_at,
+                a.created_by,
+                a.updated_by,
+                a.web_title,
+                a.web_description,
+                a.web_meta_description,
+                a.web_keywords,
+                a.web_url,
+                a.web_h1,
+                a.web_h2_1,
+                a.web_h2_2,
+                a.web_h3_tags,
+                a.web_thumbnail,
+                a.web_body_content,
+                a.resource_files,
+                a.smm_platform,
+                a.smm_title,
+                a.smm_tag,
+                a.smm_url,
+                a.smm_description,
+                a.smm_hashtags,
+                a.smm_media_url,
+                a.smm_media_type,
+                COALESCE((SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id), 0) +
+                COALESCE((SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0) +
+                COALESCE((SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0) as usage_count
             FROM assets a
             ORDER BY a.created_at DESC
         `);
-        res.status(200).json(result.rows);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-};
-a.linked_campaign_id,
-    a.linked_project_id,
-    a.linked_service_id,
-    a.linked_sub_service_id,
-    a.linked_repository_item_id,
-    a.application_type,
-    a.keywords,
-    a.content_keywords,
-    a.seo_keywords,
-    a.seo_score,
-    a.grammar_score,
-    a.ai_plagiarism_score,
-    a.qc_score,
-    a.qc_checklist_items,
-    a.submitted_by,
-    a.submitted_at,
-    a.qc_reviewer_id,
-    a.qc_reviewed_at,
-    a.qc_remarks,
-    a.linking_active,
-    a.rework_count,
-    a.version_number,
-    a.version_history,
-    a.designed_by,
-    a.published_by,
-    a.verified_by,
-    a.published_at,
-    a.created_by,
-    a.updated_by,
-    a.web_title,
-    a.web_description,
-    a.web_meta_description,
-    a.web_keywords,
-    a.web_url,
-    a.web_h1,
-    a.web_h2_1,
-    a.web_h2_2,
-    a.web_h3_tags,
-    a.web_thumbnail,
-    a.web_body_content,
-    a.resource_files,
-    a.smm_platform,
-    a.smm_title,
-    a.smm_tag,
-    a.smm_url,
-    a.smm_description,
-    a.smm_hashtags,
-    a.smm_media_url,
-    a.smm_media_type,
-    COALESCE(
-        (SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id), 0
-                ) + COALESCE(
-            (SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0
-                ) + COALESCE(
-                (SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0
-                ) as usage_count
-            FROM assets a
-            ORDER BY a.created_at DESC
-    `);
 
         // Parse JSON arrays for linked IDs
         const parsed = result.rows.map(row => ({
@@ -423,7 +412,7 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             // Get the last inserted asset by name and created_at (since we just created it)
             const selectResult = await pool.query(
                 `SELECT * FROM assets WHERE asset_name = ? AND created_at >= ? ORDER BY id DESC LIMIT 1`,
-                [name, new Date(Date.datetime('now') - 5000).toISOString()] // Within last 5 seconds
+                [name, new Date(Date.now() - 5000).toISOString()] // Within last 5 seconds
             );
 
             if (!selectResult.rows || selectResult.rows.length === 0) {
@@ -994,7 +983,7 @@ status = ?,
             await pool.query(
                 `INSERT INTO qc_audit_log(asset_id, user_id, action, details, created_at)
 VALUES(?, ?, ?, ?, datetime('now'))`,
-                [id, qc_reviewer_id, `qc_${ qc_decision } `, JSON.stringify({
+                [id, qc_reviewer_id, `qc_${qc_decision} `, JSON.stringify({
                     qc_score: finalQcScore,
                     qc_remarks: qc_remarks,
                     checklist_completion: checklist_completion,
@@ -1222,3 +1211,6 @@ qc_score,
         res.status(500).json({ error: error.message || 'Failed to get QC reviews' });
     }
 };
+
+
+

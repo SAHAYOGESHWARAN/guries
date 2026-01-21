@@ -314,3 +314,6 @@ export const deleteCampaign = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Delete failed' });
     }
 };
+
+
+

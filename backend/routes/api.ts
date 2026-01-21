@@ -1,5 +1,5 @@
 
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as campaignController from '../controllers/campaignController';
 import * as projectController from '../controllers/projectController';
 import * as analyticsController from '../controllers/analyticsController';
@@ -80,6 +80,12 @@ import * as bulkOperationsController from '../controllers/bulkOperationsControll
 
 const router = Router();
 
+// Async handler wrapper for Express routes
+const asyncHandler = (fn: (req: any, res: any, next?: any) => Promise<any>) =>
+    (req: any, res: any, next: any) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };
+
 // --- System & Auth ---
 router.get('/system/stats', systemController.getSystemStats);
 router.post('/auth/send-otp', authController.sendOtp as any);
@@ -124,11 +130,11 @@ router.put('/assets/:id', assetController.updateAsset);
 router.delete('/assets/:id', assetController.deleteAsset);
 
 // --- Asset Library ---
-router.get('/assetLibrary', assetController.getAssetLibrary);
-router.get('/assetLibrary/:id', assetController.getAssetLibraryItem);
-router.post('/assetLibrary', assetController.createAssetLibraryItem);
-router.put('/assetLibrary/:id', assetController.updateAssetLibraryItem);
-router.delete('/assetLibrary/:id', assetController.deleteAssetLibraryItem);
+router.get('/assetLibrary', asyncHandler(assetController.getAssetLibrary));
+router.get('/assetLibrary/:id', asyncHandler(assetController.getAssetLibraryItem));
+router.post('/assetLibrary', asyncHandler(assetController.createAssetLibraryItem));
+router.put('/assetLibrary/:id', asyncHandler(assetController.updateAssetLibraryItem));
+router.delete('/assetLibrary/:id', asyncHandler(assetController.deleteAssetLibraryItem));
 
 // --- Asset Categories ---
 router.use('/asset-categories', assetCategoryRoutes);
@@ -183,38 +189,34 @@ router.use('/ai-evaluation-engine', aiEvaluationEngineRoutes);
 router.use('/reward-penalty-automation', rewardPenaltyAutomationRoutes);
 
 // Asset QC Workflow
-router.post('/assetLibrary/:id/submit-qc', assetController.submitAssetForQC);
-router.get('/assetLibrary/qc/pending', assetController.getAssetsForQC);
+router.post('/assetLibrary/:id/submit-qc', asyncHandler(assetController.submitAssetForQC));
+router.get('/assetLibrary/qc/pending', asyncHandler(assetController.getAssetsForQC));
 // QC Review - Admin only (permission enforced at both middleware and controller level)
-router.post('/assetLibrary/:id/qc-review', assetController.reviewAsset);
-router.post('/assetLibrary/ai-scores', assetController.generateAIScores);
+router.post('/assetLibrary/:id/qc-review', asyncHandler(assetController.reviewAsset));
+router.post('/assetLibrary/ai-scores', asyncHandler(assetController.generateAIScores));
 
 // Admin QC Asset Review - Admin only endpoints
-router.get('/admin/qc/assets', requireAdmin, assetController.getAssetsForQC);
-router.get('/admin/qc/audit-log', requireAdmin, async (req, res) => {
+router.get('/admin/qc/assets', requireAdmin, asyncHandler(assetController.getAssetsForQC));
+router.get('/admin/qc/audit-log', requireAdmin, asyncHandler(async (req, res) => {
     // Get QC audit log for admin review
-    try {
-        const { pool } = require('../config/db-sqlite');
-        const result = await pool.query(`
-            SELECT qal.*, u.name as reviewer_name, a.asset_name 
-            FROM qc_audit_log qal
-            LEFT JOIN users u ON qal.user_id = u.id
-            LEFT JOIN assets a ON qal.asset_id = a.id
-            ORDER BY qal.created_at DESC
-            LIMIT 100
-        `);
-        res.status(200).json(result.rows);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
+    const { pool } = require('../config/db-sqlite');
+    const result = await pool.query(`
+        SELECT qal.*, u.name as reviewer_name, a.asset_name 
+        FROM qc_audit_log qal
+        LEFT JOIN users u ON qal.user_id = u.id
+        LEFT JOIN assets a ON qal.asset_id = a.id
+        ORDER BY qal.created_at DESC
+        LIMIT 100
+    `);
+    res.status(200).json(result.rows);
+}));
 
 // User actions during QC review stage
-router.put('/assetLibrary/:id/qc-edit', assetController.editAssetInQC);
-router.delete('/assetLibrary/:id/qc-delete', assetController.deleteAssetInQC);
+router.put('/assetLibrary/:id/qc-edit', asyncHandler(assetController.editAssetInQC));
+router.delete('/assetLibrary/:id/qc-delete', asyncHandler(assetController.deleteAssetInQC));
 
 // Get QC reviews for an asset (for side panel display)
-router.get('/assetLibrary/:id/qc-reviews', assetController.getAssetQCReviews);
+router.get('/assetLibrary/:id/qc-reviews', asyncHandler(assetController.getAssetQCReviews));
 
 // --- SEO Asset Module (12-Step Workflow) ---
 // SEO Asset Master Data Endpoints (must come before parameterized routes)
@@ -361,15 +363,15 @@ router.put('/performance-targets/:id', performanceTargetController.updatePerform
 router.delete('/performance-targets/:id', performanceTargetController.deletePerformanceTarget);
 
 // --- Personas & Forms ---
-router.get('/personas', personaController.getPersonas);
-router.post('/personas', personaController.createPersona);
-router.put('/personas/:id', personaController.updatePersona);
-router.delete('/personas/:id', personaController.deletePersona);
+router.get('/personas', asyncHandler(personaController.getPersonas));
+router.post('/personas', asyncHandler(personaController.createPersona));
+router.put('/personas/:id', asyncHandler(personaController.updatePersona));
+router.delete('/personas/:id', asyncHandler(personaController.deletePersona));
 
-router.get('/forms', formController.getForms);
-router.post('/forms', formController.createForm);
-router.put('/forms/:id', formController.updateForm);
-router.delete('/forms/:id', formController.deleteForm);
+router.get('/forms', asyncHandler(formController.getForms));
+router.post('/forms', asyncHandler(formController.createForm));
+router.put('/forms/:id', asyncHandler(formController.updateForm));
+router.delete('/forms/:id', asyncHandler(formController.deleteForm));
 
 // --- Services Master ---
 router.get('/services', serviceController.getServices);

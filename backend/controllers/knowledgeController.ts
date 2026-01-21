@@ -15,7 +15,7 @@ export const createArticle = async (req: Request, res: Response) => {
     const { title, content, category, tags, language, author_id, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO knowledge_articles (title, content, category, tags, language, author_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))',
+            "INSERT INTO knowledge_articles (title, content, category, tags, language, author_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
             [title, content, category, JSON.stringify(tags), language, author_id, status || 'draft']
         );
         res.status(201).json(result.rows[0]);
@@ -53,3 +53,6 @@ export const deleteArticle = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

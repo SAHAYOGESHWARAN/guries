@@ -255,7 +255,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         const hashedPassword = hashPassword(newPassword);
 
         const result = await pool.query(
-            'UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ? RETURNING id, name, email',
+            'UPDATE users SET password_hash = ?, updated_at = datetime(\'now\') WHERE id = ? RETURNING id, name, email',
             [hashedPassword, id]
         );
 
@@ -351,7 +351,7 @@ export const toggleEmployeeStatus = async (req: Request, res: Response) => {
         const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
         const result = await pool.query(
-            'UPDATE users SET status = ?, updated_at = datetime('now') WHERE id = ?',
+            'UPDATE users SET status = ?, updated_at = datetime(\'now\') WHERE id = ?',
             [newStatus, id]
         );
 
@@ -413,7 +413,7 @@ export const validateLogin = async (req: Request, res: Response) => {
 
         // Update last login
         await pool.query(
-            'UPDATE users SET last_login = datetime('now') WHERE id = ?',
+            'UPDATE users SET last_login = datetime(\'now\') WHERE id = ?',
             [user.id]
         );
 
@@ -556,3 +556,6 @@ export const rejectRegistration = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

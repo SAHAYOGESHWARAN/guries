@@ -17,7 +17,7 @@ export const createEmail = async (req: Request, res: Response) => {
     const { subject, recipient, status, scheduled_at, template_id } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO emails (subject, recipient, status, scheduled_at, template_id, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))',
+            'INSERT INTO emails (subject, recipient, status, scheduled_at, template_id, created_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
             [subject, recipient, status || 'draft', scheduled_at, template_id]
         );
         res.status(201).json(result.rows[0]);
@@ -63,7 +63,7 @@ export const logCall = async (req: Request, res: Response) => {
     const { agent_id, customer_phone, duration, sentiment, recording_url, summary } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO call_logs (agent_id, customer_phone, duration, sentiment, recording_url, summary, start_time) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))',
+            "INSERT INTO call_logs (agent_id, customer_phone, duration, sentiment, recording_url, summary, start_time) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
             [agent_id, customer_phone, duration, sentiment, recording_url, summary]
         );
         const newCall = result.rows[0];
@@ -73,3 +73,6 @@ export const logCall = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+

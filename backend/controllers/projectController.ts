@@ -80,7 +80,7 @@ export const createProject = async (req: Request, res: Response) => {
         `;
         const values = [
             project_name,
-            project_code || `PRJ-${Date.datetime('now')}`,
+            project_code || `PRJ-${Date.now()}`,
             description || null,
             status || 'Planned',
             start_date || null,
@@ -169,3 +169,6 @@ export const deleteProject = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Delete failed', details: error.message });
     }
 };
+
+
+
