@@ -124,7 +124,7 @@ export const createService = async (req: any, res: any) => {
         breadcrumb_label, parent_menu_section, include_in_xml_sitemap,
         sitemap_priority, sitemap_changefreq,
         // Strategic
-        content_type, buyer_journey_stage, primary_persona_id, secondary_persona_ids,
+        content_type, category, buyer_journey_stage, primary_persona_id, secondary_persona_ids,
         target_segment_notes, primary_cta_label, primary_cta_url, form_id, linked_campaign_ids,
         // Content
         h1, h2_list, h3_list, h4_list, h5_list, body_content,
@@ -180,7 +180,7 @@ export const createService = async (req: any, res: any) => {
                 industry_ids, country_ids, language, status,
                 show_in_main_menu, show_in_footer_menu, menu_group, menu_position, breadcrumb_label, parent_menu_section, 
                 include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
-                content_type, buyer_journey_stage, primary_persona_id, secondary_persona_ids, target_segment_notes,
+                content_type, category, buyer_journey_stage, primary_persona_id, secondary_persona_ids, target_segment_notes,
                 primary_cta_label, primary_cta_url, form_id, linked_campaign_ids,
                 h1, h2_list, h3_list, h4_list, h5_list, body_content, internal_links, external_links, image_alt_texts, 
                 word_count, reading_time_minutes,
@@ -195,16 +195,16 @@ export const createService = async (req: any, res: any) => {
                 linked_insights_ids, linked_assets_ids,
                 brand_id, business_unit, content_owner_id, created_by, created_at, updated_by, updated_at, version_number, change_log_link
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, 
-                $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
-                $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+                $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
+                $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91, $92
             ) RETURNING *`,
             [
                 service_name, finalServiceCode, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids || []), JSON.stringify(country_ids || []), language, status,
                 show_in_main_menu || false, show_in_footer_menu || false, menu_group, menu_position || 0, breadcrumb_label, normalizedParentMenuSection,
                 include_in_xml_sitemap || true, sitemap_priority || 0.8, sitemap_changefreq || 'monthly',
-                content_type, buyer_journey_stage, primary_persona_id, JSON.stringify(secondary_persona_ids || []), target_segment_notes,
+                content_type, category, buyer_journey_stage, primary_persona_id, JSON.stringify(secondary_persona_ids || []), target_segment_notes,
                 primary_cta_label, primary_cta_url, form_id, JSON.stringify(linked_campaign_ids || []),
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), JSON.stringify(h4_list || []), JSON.stringify(h5_list || []), body_content,
                 JSON.stringify(internal_links || []), JSON.stringify(external_links || []), JSON.stringify(image_alt_texts || []), word_count || 0, reading_time_minutes || 0,
@@ -238,7 +238,7 @@ export const updateService = async (req: any, res: any) => {
         show_in_main_menu, show_in_footer_menu, menu_group, menu_position,
         breadcrumb_label, parent_menu_section, include_in_xml_sitemap,
         sitemap_priority, sitemap_changefreq,
-        content_type, buyer_journey_stage, primary_persona_id, secondary_persona_ids,
+        content_type, category, buyer_journey_stage, primary_persona_id, secondary_persona_ids,
         target_segment_notes, primary_cta_label, primary_cta_url, form_id, linked_campaign_ids,
         h1, h2_list, h3_list, h4_list, h5_list, body_content,
         internal_links, external_links, image_alt_texts, word_count, reading_time_minutes,
@@ -289,35 +289,35 @@ export const updateService = async (req: any, res: any) => {
                 show_in_main_menu=COALESCE($12, show_in_main_menu), show_in_footer_menu=COALESCE($13, show_in_footer_menu), menu_group=COALESCE($14, menu_group),
                 menu_position=COALESCE($15, menu_position), breadcrumb_label=COALESCE($16, breadcrumb_label), parent_menu_section=COALESCE($17, parent_menu_section),
                 include_in_xml_sitemap=COALESCE($18, include_in_xml_sitemap), sitemap_priority=COALESCE($19, sitemap_priority), sitemap_changefreq=COALESCE($20, sitemap_changefreq),
-                content_type=COALESCE($21, content_type), buyer_journey_stage=COALESCE($22, buyer_journey_stage), primary_persona_id=COALESCE($23, primary_persona_id),
-                secondary_persona_ids=COALESCE($24, secondary_persona_ids), target_segment_notes=COALESCE($25, target_segment_notes), primary_cta_label=COALESCE($26, primary_cta_label),
-                primary_cta_url=COALESCE($27, primary_cta_url), form_id=COALESCE($28, form_id), linked_campaign_ids=COALESCE($29, linked_campaign_ids),
-                h1=COALESCE($30, h1), h2_list=COALESCE($31, h2_list), h3_list=COALESCE($32, h3_list), h4_list=COALESCE($33, h4_list), h5_list=COALESCE($34, h5_list),
-                body_content=COALESCE($35, body_content), internal_links=COALESCE($36, internal_links), external_links=COALESCE($37, external_links),
-                image_alt_texts=COALESCE($38, image_alt_texts), word_count=COALESCE($39, word_count), reading_time_minutes=COALESCE($40, reading_time_minutes),
-                meta_title=COALESCE($41, meta_title), meta_description=COALESCE($42, meta_description), focus_keywords=COALESCE($43, focus_keywords),
-                secondary_keywords=COALESCE($44, secondary_keywords), seo_score=COALESCE($45, seo_score), ranking_summary=COALESCE($46, ranking_summary),
-                og_title=COALESCE($47, og_title), og_description=COALESCE($48, og_description), og_image_url=COALESCE($49, og_image_url),
-                og_type=COALESCE($50, og_type), twitter_title=COALESCE($51, twitter_title), twitter_description=COALESCE($52, twitter_description), twitter_image_url=COALESCE($53, twitter_image_url),
-                linkedin_title=COALESCE($54, linkedin_title), linkedin_description=COALESCE($55, linkedin_description), linkedin_image_url=COALESCE($56, linkedin_image_url),
-                facebook_title=COALESCE($57, facebook_title), facebook_description=COALESCE($58, facebook_description), facebook_image_url=COALESCE($59, facebook_image_url),
-                instagram_title=COALESCE($60, instagram_title), instagram_description=COALESCE($61, instagram_description), instagram_image_url=COALESCE($62, instagram_image_url),
-                schema_type_id=COALESCE($63, schema_type_id), robots_index=COALESCE($64, robots_index), robots_follow=COALESCE($65, robots_follow),
-                robots_custom=COALESCE($66, robots_custom), canonical_url=COALESCE($67, canonical_url), redirect_from_urls=COALESCE($68, redirect_from_urls),
-                hreflang_group_id=COALESCE($69, hreflang_group_id), core_web_vitals_status=COALESCE($70, core_web_vitals_status), tech_seo_status=COALESCE($71, tech_seo_status),
-                faq_section_enabled=COALESCE($72, faq_section_enabled), faq_content=COALESCE($73, faq_content), has_subservices=COALESCE($74, has_subservices),
-                subservice_count=COALESCE($75, subservice_count), primary_subservice_id=COALESCE($76, primary_subservice_id), featured_asset_id=COALESCE($77, featured_asset_id),
-                asset_count=COALESCE($78, asset_count), knowledge_topic_id=COALESCE($79, knowledge_topic_id), linked_insights_ids=COALESCE($80, linked_insights_ids),
-                linked_assets_ids=COALESCE($81, linked_assets_ids), brand_id=COALESCE($82, brand_id),
-                business_unit=COALESCE($83, business_unit), content_owner_id=COALESCE($84, content_owner_id), updated_by=$85,
-                     version_number=$86, change_log_link=COALESCE($87, change_log_link), updated_at=$88, social_meta=COALESCE($89, social_meta)
-                 WHERE id=$90 RETURNING *`,
+                content_type=COALESCE($21, content_type), category=COALESCE($22, category), buyer_journey_stage=COALESCE($23, buyer_journey_stage), primary_persona_id=COALESCE($24, primary_persona_id),
+                secondary_persona_ids=COALESCE($25, secondary_persona_ids), target_segment_notes=COALESCE($26, target_segment_notes), primary_cta_label=COALESCE($27, primary_cta_label),
+                primary_cta_url=COALESCE($28, primary_cta_url), form_id=COALESCE($29, form_id), linked_campaign_ids=COALESCE($30, linked_campaign_ids),
+                h1=COALESCE($31, h1), h2_list=COALESCE($32, h2_list), h3_list=COALESCE($33, h3_list), h4_list=COALESCE($34, h4_list), h5_list=COALESCE($35, h5_list),
+                body_content=COALESCE($36, body_content), internal_links=COALESCE($37, internal_links), external_links=COALESCE($38, external_links),
+                image_alt_texts=COALESCE($39, image_alt_texts), word_count=COALESCE($40, word_count), reading_time_minutes=COALESCE($41, reading_time_minutes),
+                meta_title=COALESCE($42, meta_title), meta_description=COALESCE($43, meta_description), focus_keywords=COALESCE($44, focus_keywords),
+                secondary_keywords=COALESCE($45, secondary_keywords), seo_score=COALESCE($46, seo_score), ranking_summary=COALESCE($47, ranking_summary),
+                og_title=COALESCE($48, og_title), og_description=COALESCE($49, og_description), og_image_url=COALESCE($50, og_image_url),
+                og_type=COALESCE($51, og_type), twitter_title=COALESCE($52, twitter_title), twitter_description=COALESCE($53, twitter_description), twitter_image_url=COALESCE($54, twitter_image_url),
+                linkedin_title=COALESCE($55, linkedin_title), linkedin_description=COALESCE($56, linkedin_description), linkedin_image_url=COALESCE($57, linkedin_image_url),
+                facebook_title=COALESCE($58, facebook_title), facebook_description=COALESCE($59, facebook_description), facebook_image_url=COALESCE($60, facebook_image_url),
+                instagram_title=COALESCE($61, instagram_title), instagram_description=COALESCE($62, instagram_description), instagram_image_url=COALESCE($63, instagram_image_url),
+                schema_type_id=COALESCE($64, schema_type_id), robots_index=COALESCE($65, robots_index), robots_follow=COALESCE($66, robots_follow),
+                robots_custom=COALESCE($67, robots_custom), canonical_url=COALESCE($68, canonical_url), redirect_from_urls=COALESCE($69, redirect_from_urls),
+                hreflang_group_id=COALESCE($70, hreflang_group_id), core_web_vitals_status=COALESCE($71, core_web_vitals_status), tech_seo_status=COALESCE($72, tech_seo_status),
+                faq_section_enabled=COALESCE($73, faq_section_enabled), faq_content=COALESCE($74, faq_content), has_subservices=COALESCE($75, has_subservices),
+                subservice_count=COALESCE($76, subservice_count), primary_subservice_id=COALESCE($77, primary_subservice_id), featured_asset_id=COALESCE($78, featured_asset_id),
+                asset_count=COALESCE($79, asset_count), knowledge_topic_id=COALESCE($80, knowledge_topic_id), linked_insights_ids=COALESCE($81, linked_insights_ids),
+                linked_assets_ids=COALESCE($82, linked_assets_ids), brand_id=COALESCE($83, brand_id),
+                business_unit=COALESCE($84, business_unit), content_owner_id=COALESCE($85, content_owner_id), updated_by=$86,
+                     version_number=$87, change_log_link=COALESCE($88, change_log_link), updated_at=$89, social_meta=COALESCE($90, social_meta)
+                 WHERE id=$91 RETURNING *`,
             [
                 service_name, service_code, slug, computedUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids), JSON.stringify(country_ids), language, status,
                 show_in_main_menu, show_in_footer_menu, menu_group, menu_position, breadcrumb_label, normalizedParentMenuSection,
                 include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
-                content_type, buyer_journey_stage, primary_persona_id, JSON.stringify(secondary_persona_ids), target_segment_notes,
+                content_type, category, buyer_journey_stage, primary_persona_id, JSON.stringify(secondary_persona_ids), target_segment_notes,
                 primary_cta_label, primary_cta_url, form_id, JSON.stringify(linked_campaign_ids),
                 h1, JSON.stringify(h2_list), JSON.stringify(h3_list), JSON.stringify(h4_list), JSON.stringify(h5_list), body_content,
                 JSON.stringify(internal_links), JSON.stringify(external_links), JSON.stringify(image_alt_texts), word_count, reading_time_minutes,
@@ -374,6 +374,9 @@ export const createSubService = async (req: any, res: any) => {
         meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
         // SMM
         og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+        linkedin_title, linkedin_description, linkedin_image_url,
+        facebook_title, facebook_description, facebook_image_url,
+        instagram_title, instagram_description, instagram_image_url,
         // Navigation
         menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
         // Strategic
@@ -382,9 +385,11 @@ export const createSubService = async (req: any, res: any) => {
         robots_index, robots_follow, robots_custom, canonical_url, schema_type_id,
         redirect_from_urls, hreflang_group_id, core_web_vitals_status, tech_seo_status,
         faq_section_enabled, faq_content,
+        // Linking
+        linked_insights_ids, linked_assets_ids,
         // Governance
         brand_id, content_owner_id, created_by, created_at, updated_by, version_number, change_log_link,
-        social_meta, assets_linked
+        social_meta, assets_linked, working_on_by
     } = req.body;
 
     // URL normalization - ensure it follows parent service pattern
@@ -407,15 +412,19 @@ export const createSubService = async (req: any, res: any) => {
                 word_count, reading_time_minutes,
                 meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+                linkedin_title, linkedin_description, linkedin_image_url,
+                facebook_title, facebook_description, facebook_image_url,
+                instagram_title, instagram_description, instagram_image_url,
                 menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
                 content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
                 robots_index, robots_follow, robots_custom, canonical_url, schema_type_id,
                 redirect_from_urls, hreflang_group_id, core_web_vitals_status, tech_seo_status,
                 faq_section_enabled, faq_content,
+                linked_insights_ids, linked_assets_ids,
                 brand_id, content_owner_id, created_by, created_at, updated_by, version_number, change_log_link,
-                assets_linked, updated_at
+                social_meta, assets_linked, working_on_by, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, NOW()
             ) RETURNING *`,
             [
                 sub_service_name, sub_service_code, parent_service_id, slug, computedUrl, description, status,
@@ -424,13 +433,17 @@ export const createSubService = async (req: any, res: any) => {
                 word_count || 0, reading_time_minutes || 0,
                 meta_title, meta_description, JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
                 og_title, og_description, og_image_url, og_type || 'website', twitter_title, twitter_description, twitter_image_url,
+                linkedin_title, linkedin_description, linkedin_image_url,
+                facebook_title, facebook_description, facebook_image_url,
+                instagram_title, instagram_description, instagram_image_url,
                 menu_position || 0, breadcrumb_label, include_in_xml_sitemap ?? true, sitemap_priority || 0.8, sitemap_changefreq || 'monthly',
                 content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
                 robots_index || 'index', robots_follow || 'follow', robots_custom, canonical_url, schema_type_id || 'Service',
                 JSON.stringify(redirect_from_urls || []), hreflang_group_id, core_web_vitals_status, tech_seo_status,
                 faq_section_enabled || false, JSON.stringify(faq_content || []),
+                JSON.stringify(linked_insights_ids || []), JSON.stringify(linked_assets_ids || []),
                 brand_id || 0, content_owner_id || 0, created_by || null, created_at || null, updated_by || null, version_number || 1, change_log_link,
-                JSON.stringify(social_meta || {}), assets_linked || 0, null
+                JSON.stringify(social_meta || {}), assets_linked || 0, working_on_by || null
             ]
         );
 
@@ -484,9 +497,11 @@ export const updateSubService = async (req: any, res: any) => {
         robots_index, robots_follow, robots_custom, canonical_url, schema_type_id,
         redirect_from_urls, hreflang_group_id, core_web_vitals_status, tech_seo_status,
         faq_section_enabled, faq_content,
+        // Linking
+        linked_insights_ids, linked_assets_ids,
         // Governance
         brand_id, content_owner_id, updated_by, version_number, change_log_link,
-        social_meta, assets_linked
+        social_meta, assets_linked, working_on_by
     } = req.body;
 
     // URL normalization
@@ -497,6 +512,19 @@ export const updateSubService = async (req: any, res: any) => {
         if (!computedUrl.startsWith(`/services/${parentSlug}/`)) {
             computedUrl = `/services/${parentSlug}/${slug || ''}`;
         }
+    }
+
+    // AUTO-GENERATE: Updated timestamp and auto-increment version
+    const generatedUpdatedAt = new Date().toISOString();
+    const generatedUpdatedBy = updated_by || 1;
+    let newVersionNumber = version_number || 1;
+    try {
+        const versionResult = await pool.query('SELECT version_number FROM sub_services WHERE id = $1', [id]);
+        if (versionResult.rows.length > 0 && versionResult.rows[0].version_number) {
+            newVersionNumber = (versionResult.rows[0].version_number || 1) + 1;
+        }
+    } catch (e) {
+        console.warn('Could not fetch current version, using provided or default');
     }
 
     try {
@@ -512,20 +540,24 @@ export const updateSubService = async (req: any, res: any) => {
                 secondary_keywords=COALESCE($23, secondary_keywords), seo_score=COALESCE($24, seo_score), ranking_summary=COALESCE($25, ranking_summary),
                 og_title=COALESCE($26, og_title), og_description=COALESCE($27, og_description), og_image_url=COALESCE($28, og_image_url),
                 og_type=COALESCE($29, og_type), twitter_title=COALESCE($30, twitter_title), twitter_description=COALESCE($31, twitter_description),
-                twitter_image_url=COALESCE($32, twitter_image_url),
-                menu_position=COALESCE($33, menu_position), breadcrumb_label=COALESCE($34, breadcrumb_label),
-                include_in_xml_sitemap=COALESCE($35, include_in_xml_sitemap), sitemap_priority=COALESCE($36, sitemap_priority), sitemap_changefreq=COALESCE($37, sitemap_changefreq),
-                content_type=COALESCE($38, content_type), buyer_journey_stage=COALESCE($39, buyer_journey_stage),
-                primary_cta_label=COALESCE($40, primary_cta_label), primary_cta_url=COALESCE($41, primary_cta_url),
-                robots_index=COALESCE($42, robots_index), robots_follow=COALESCE($43, robots_follow), robots_custom=COALESCE($44, robots_custom),
-                canonical_url=COALESCE($45, canonical_url), schema_type_id=COALESCE($46, schema_type_id),
-                redirect_from_urls=COALESCE($47, redirect_from_urls), hreflang_group_id=COALESCE($48, hreflang_group_id),
-                core_web_vitals_status=COALESCE($49, core_web_vitals_status), tech_seo_status=COALESCE($50, tech_seo_status),
-                faq_section_enabled=COALESCE($51, faq_section_enabled), faq_content=COALESCE($52, faq_content),
-                brand_id=COALESCE($53, brand_id), content_owner_id=COALESCE($54, content_owner_id),
-                updated_by=COALESCE($55, updated_by), version_number=COALESCE($56, version_number), change_log_link=COALESCE($57, change_log_link),
-                social_meta=COALESCE($58, social_meta), assets_linked=COALESCE($59, assets_linked), updated_at=NOW() 
-            WHERE id=$60 RETURNING *`,
+                twitter_image_url=COALESCE($32, twitter_image_url), linkedin_title=COALESCE($33, linkedin_title), linkedin_description=COALESCE($34, linkedin_description),
+                linkedin_image_url=COALESCE($35, linkedin_image_url), facebook_title=COALESCE($36, facebook_title), facebook_description=COALESCE($37, facebook_description),
+                facebook_image_url=COALESCE($38, facebook_image_url), instagram_title=COALESCE($39, instagram_title), instagram_description=COALESCE($40, instagram_description),
+                instagram_image_url=COALESCE($41, instagram_image_url),
+                menu_position=COALESCE($42, menu_position), breadcrumb_label=COALESCE($43, breadcrumb_label),
+                include_in_xml_sitemap=COALESCE($44, include_in_xml_sitemap), sitemap_priority=COALESCE($45, sitemap_priority), sitemap_changefreq=COALESCE($46, sitemap_changefreq),
+                content_type=COALESCE($47, content_type), buyer_journey_stage=COALESCE($48, buyer_journey_stage),
+                primary_cta_label=COALESCE($49, primary_cta_label), primary_cta_url=COALESCE($50, primary_cta_url),
+                robots_index=COALESCE($51, robots_index), robots_follow=COALESCE($52, robots_follow), robots_custom=COALESCE($53, robots_custom),
+                canonical_url=COALESCE($54, canonical_url), schema_type_id=COALESCE($55, schema_type_id),
+                redirect_from_urls=COALESCE($56, redirect_from_urls), hreflang_group_id=COALESCE($57, hreflang_group_id),
+                core_web_vitals_status=COALESCE($58, core_web_vitals_status), tech_seo_status=COALESCE($59, tech_seo_status),
+                faq_section_enabled=COALESCE($60, faq_section_enabled), faq_content=COALESCE($61, faq_content),
+                linked_insights_ids=COALESCE($62, linked_insights_ids), linked_assets_ids=COALESCE($63, linked_assets_ids),
+                brand_id=COALESCE($64, brand_id), content_owner_id=COALESCE($65, content_owner_id),
+                updated_by=$66, version_number=$67, change_log_link=COALESCE($68, change_log_link),
+                social_meta=COALESCE($69, social_meta), assets_linked=COALESCE($70, assets_linked), working_on_by=COALESCE($71, working_on_by), updated_at=$72
+            WHERE id=$73 RETURNING *`,
             [
                 sub_service_name, parent_service_id, slug, computedUrl, description, status,
                 menu_heading, short_tagline, language, JSON.stringify(industry_ids), JSON.stringify(country_ids),
@@ -533,13 +565,16 @@ export const updateSubService = async (req: any, res: any) => {
                 word_count, reading_time_minutes,
                 meta_title, meta_description, JSON.stringify(focus_keywords), JSON.stringify(secondary_keywords), seo_score, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
+                linkedin_title, linkedin_description, linkedin_image_url, facebook_title, facebook_description, facebook_image_url,
+                instagram_title, instagram_description, instagram_image_url,
                 menu_position, breadcrumb_label, include_in_xml_sitemap, sitemap_priority, sitemap_changefreq,
                 content_type, buyer_journey_stage, primary_cta_label, primary_cta_url,
                 robots_index, robots_follow, robots_custom, canonical_url, schema_type_id,
                 JSON.stringify(redirect_from_urls), hreflang_group_id, core_web_vitals_status, tech_seo_status,
                 faq_section_enabled, JSON.stringify(faq_content),
-                brand_id, content_owner_id, updated_by, version_number, change_log_link,
-                JSON.stringify(social_meta || {}), assets_linked,
+                JSON.stringify(linked_insights_ids || []), JSON.stringify(linked_assets_ids || []),
+                brand_id, content_owner_id, generatedUpdatedBy, newVersionNumber, change_log_link,
+                JSON.stringify(social_meta || {}), assets_linked, working_on_by || null, generatedUpdatedAt,
                 id
             ]
         );

@@ -6,8 +6,19 @@ let aiInstance: GoogleGenAI | null = null;
 
 const getAiInstance = (): GoogleGenAI => {
     if (!aiInstance) {
-        // STRICT REQUIREMENT: Use process.env.API_KEY directly
-        aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // Get API key from environment - support both VITE_ prefix and direct env vars
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY ||
+            process.env.VITE_GEMINI_API_KEY ||
+            process.env.API_KEY;
+
+        if (!apiKey) {
+            throw new Error(
+                'Gemini API key not found. Please set VITE_GEMINI_API_KEY in your environment variables. ' +
+                'Get your key from: https://aistudio.google.com/app/apikeys'
+            );
+        }
+
+        aiInstance = new GoogleGenAI({ apiKey });
     }
     return aiInstance;
 }
@@ -28,10 +39,10 @@ export interface AiOptions {
 export async function runQuery(prompt: string, options: AiOptions = {}) {
     try {
         const ai = getAiInstance();
-        
+
         // Model Selection Logic
         let model = options.model || 'gemini-2.5-flash';
-        
+
         // Override model for specific features if not explicitly set
         if (options.thinking) model = 'gemini-3-pro-preview';
         else if (options.video || options.image) model = 'gemini-3-pro-preview';
@@ -39,7 +50,7 @@ export async function runQuery(prompt: string, options: AiOptions = {}) {
 
         // Build Config
         const config: any = {};
-        
+
         // Tools
         const tools: any[] = [];
         if (options.useSearch) tools.push({ googleSearch: {} });
@@ -63,7 +74,7 @@ export async function runQuery(prompt: string, options: AiOptions = {}) {
                 }
             });
         }
-        
+
         // Execute
         const result = await ai.models.generateContent({
             model: model,
@@ -97,7 +108,7 @@ export async function generateImage(prompt: string, aspectRatio: string = "1:1")
                 outputMimeType: 'image/jpeg'
             }
         });
-        
+
         const base64 = response.generatedImages?.[0]?.image?.imageBytes;
         return base64 ? `data:image/jpeg;base64,${base64}` : null;
     } catch (error) {

@@ -21,6 +21,19 @@ const FALLBACK_CONTENT_TYPES: ContentTypeItem[] = [
     { id: 6, content_type: 'Sales Page', category: 'Conversion', description: 'Bottom-funnel page', default_attributes: [], status: 'active' }
 ];
 
+// Helper function to generate service code from service name
+const generateServiceCode = (serviceName: string): string => {
+    if (!serviceName || serviceName.trim() === '') return '';
+    const initials = serviceName
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 3);
+    const timestamp = Date.now().toString().slice(-4);
+    return `${initials}-${timestamp}`;
+};
+
 const ServiceMasterView: React.FC = () => {
     const { data: services = [], create, update, remove, refresh: refreshServices } = useData<Service>('services');
     const { data: subServices = [] } = useData<any>('subServices');
@@ -87,6 +100,7 @@ const ServiceMasterView: React.FC = () => {
         sitemap_priority: 0.8, sitemap_changefreq: 'monthly',
         faq_section_enabled: false, faq_content: [],
         content_type: 'Pillar',
+        category: '',
         buyer_journey_stage: 'Awareness',
         target_segment_notes: '',
         primary_persona_id: undefined,
@@ -235,7 +249,8 @@ const ServiceMasterView: React.FC = () => {
     // Handlers
     const handleCreateClick = () => {
         setEditingItem(null);
-        setFormData(createInitialFormState());
+        const initialState = createInitialFormState();
+        setFormData(initialState);
         setActiveTab('Core');
         setViewMode('form');
     };
@@ -594,8 +609,20 @@ const ServiceMasterView: React.FC = () => {
                                                             type="text"
                                                             value={formData.service_name}
                                                             onChange={(e) => {
-                                                                setFormData({ ...formData, service_name: e.target.value });
-                                                                if (!editingItem && !formData.slug) handleSlugChange(e.target.value);
+                                                                const newName = e.target.value;
+                                                                const updates: Partial<Service> = { service_name: newName };
+
+                                                                // Auto-generate slug if creating new service
+                                                                if (!editingItem && !formData.slug) {
+                                                                    handleSlugChange(newName);
+                                                                }
+
+                                                                // Auto-generate service code if creating new service and code is empty
+                                                                if (!editingItem && !formData.service_code) {
+                                                                    updates.service_code = generateServiceCode(newName);
+                                                                }
+
+                                                                setFormData({ ...formData, ...updates });
                                                             }}
                                                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white placeholder:text-slate-400"
                                                             placeholder="Enter service name"
@@ -612,9 +639,16 @@ const ServiceMasterView: React.FC = () => {
                                                         <input
                                                             type="text"
                                                             value={formData.service_code}
-                                                            onChange={(e) => setFormData({ ...formData, service_code: e.target.value })}
-                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white placeholder:text-slate-400"
-                                                            placeholder="SRV-XXX"
+                                                            onChange={(e) => {
+                                                                // Only allow editing if this is an existing service
+                                                                if (editingItem) {
+                                                                    setFormData({ ...formData, service_code: e.target.value });
+                                                                }
+                                                            }}
+                                                            readOnly={!editingItem}
+                                                            className={`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder:text-slate-400 ${!editingItem ? 'bg-purple-50 cursor-not-allowed' : 'bg-white'
+                                                                }`}
+                                                            placeholder="Auto-generated"
                                                         />
                                                     </div>
                                                 </Tooltip>
@@ -1158,7 +1192,15 @@ const ServiceMasterView: React.FC = () => {
                                     <Tooltip content="Defines the editorial structure of the page (Linked to Content Type Master).">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Content Type</label>
-                                            <select value={formData.content_type || ''} onChange={(e) => setFormData({ ...formData, content_type: e.target.value as any })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
+                                            <select value={formData.content_type || ''} onChange={(e) => {
+                                                const selectedType = e.target.value;
+                                                const selectedContentType = availableContentTypes.find(ct => ct.content_type === selectedType);
+                                                setFormData({
+                                                    ...formData,
+                                                    content_type: selectedType as any,
+                                                    category: selectedContentType?.category || ''
+                                                });
+                                            }} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
                                                 <option value="" disabled>Select content type...</option>
                                                 {availableContentTypes.map(ct => (
                                                     <option key={ct.id} value={ct.content_type}>{ct.content_type}</option>
@@ -1169,6 +1211,26 @@ const ServiceMasterView: React.FC = () => {
                                             </select>
                                         </div>
                                     </Tooltip>
+                                    <Tooltip content="Category associated with the selected content type.">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Category</label>
+                                            <select value={formData.category || ''} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full p-3 border border-slate-300 rounded-lg text-sm bg-white">
+                                                <option value="" disabled>Select category...</option>
+                                                {formData.content_type && availableContentTypes
+                                                    .filter(ct => ct.content_type === formData.content_type)
+                                                    .map(ct => (
+                                                        <option key={ct.id} value={ct.category}>{ct.category}</option>
+                                                    ))
+                                                }
+                                                {formData.category && !availableContentTypes.some(ct => ct.category === formData.category && ct.content_type === formData.content_type) && (
+                                                    <option value={formData.category}>{formData.category}</option>
+                                                )}
+                                            </select>
+                                        </div>
+                                    </Tooltip>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <Tooltip content="Target stage in the customer funnel.">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Buyer Journey Stage</label>

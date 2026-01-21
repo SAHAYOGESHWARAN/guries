@@ -145,6 +145,7 @@ export interface Service {
 
     // D. Strategic Mapping
     content_type?: 'Pillar' | 'Cluster' | 'Landing' | 'Blog' | 'Case Study' | 'Sales Page';
+    category?: string;
     buyer_journey_stage?: 'Awareness' | 'Consideration' | 'Decision' | 'Retention';
     primary_persona_id?: number;
     secondary_persona_ids?: number[];
@@ -314,6 +315,7 @@ export interface SubServiceItem {
 
     assets_linked?: number;
     keywords?: string[]; // compat
+    working_on_by?: string; // User/team currently working on this asset
 }
 
 export interface ServicePageItem {
