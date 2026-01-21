@@ -386,7 +386,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (fullPath === 'assetLibrary' || fullPath.startsWith('assetLibrary')) return handleAssetLibrary(req, res, fullPath, method);
         if (fullPath === 'users' || fullPath.startsWith('users')) return handleCRUD(req, res, 'users', fullPath, method);
         if (fullPath === 'services' || fullPath.startsWith('services')) return handleCRUD(req, res, 'services', fullPath, method);
-        if (fullPath === 'sub-services' || fullPath.startsWith('sub-services')) return handleCRUD(req, res, 'subServices', fullPath, method);
+        if (fullPath === 'sub-services' || fullPath.startsWith('sub-services')) return handleSubServices(req, res, fullPath, method);
         if (fullPath === 'tasks' || fullPath.startsWith('tasks')) return handleCRUD(req, res, 'tasks', fullPath, method);
         if (fullPath === 'campaigns' || fullPath.startsWith('campaigns')) return handleCRUD(req, res, 'campaigns', fullPath, method);
         if (fullPath === 'projects' || fullPath.startsWith('projects')) return handleCRUD(req, res, 'projects', fullPath, method);
@@ -687,6 +687,115 @@ async function handleAssetLibrary(req: VercelRequest, res: VercelResponse, fullP
             await saveCollection('assets', assets);
             console.log(`[AssetLibrary] Deleted asset ${id}, remaining: ${assets.length}`);
             return res.status(204).send('');
+        default:
+            return res.status(405).json({ error: 'Method not allowed' });
+    }
+}
+
+// Specialized handler for sub-services to keep parent service counters in sync
+async function handleSubServices(req: VercelRequest, res: VercelResponse, fullPath: string, method: string) {
+    const pathParts = fullPath.split('/');
+    const id = pathParts.length > 1 && !isNaN(parseInt(pathParts[1])) ? parseInt(pathParts[1]) : null;
+    let subServices = await getCollection('subServices');
+    let services = await getCollection('services');
+
+    // Support endpoint: GET sub-services/parent/:parentServiceId
+    if (method === 'GET' && pathParts[1] === 'parent' && pathParts[2]) {
+        const parentId = parseInt(pathParts[2]);
+        return res.status(200).json(subServices.filter((s: any) => s.parent_service_id === parentId));
+    }
+
+    switch (method) {
+        case 'GET':
+            if (id) {
+                const item = subServices.find((i: any) => i.id === id);
+                return item ? res.status(200).json(item) : res.status(404).json({ error: 'Not found' });
+            }
+            return res.status(200).json(subServices);
+
+        case 'POST': {
+            const newId = await getNextId('subServices');
+            const newItem = { ...req.body, id: newId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+            subServices.push(newItem);
+            await saveCollection('subServices', subServices);
+
+            // Update parent service counters
+            const parentId = newItem.parent_service_id;
+            if (parentId) {
+                const svcIndex = services.findIndex((s: any) => s.id === parentId);
+                if (svcIndex !== -1) {
+                    const svc = services[svcIndex];
+                    const currentCount = svc.subservice_count || 0;
+                    services[svcIndex] = { ...svc, subservice_count: currentCount + 1, has_subservices: true, updated_at: new Date().toISOString() };
+                    await saveCollection('services', services);
+                }
+            }
+
+            return res.status(201).json(newItem);
+        }
+
+        case 'PUT': {
+            if (!id) return res.status(400).json({ error: 'ID required' });
+            const updateIndex = subServices.findIndex((i: any) => i.id === id);
+            if (updateIndex === -1) return res.status(404).json({ error: 'Not found' });
+
+            const existing = subServices[updateIndex];
+            const updatedItem = { ...existing, ...req.body, id: id, updated_at: new Date().toISOString() };
+            subServices[updateIndex] = updatedItem;
+            await saveCollection('subServices', subServices);
+
+            // If parent changed, update old and new parent counters
+            const oldParent = existing.parent_service_id;
+            const newParent = updatedItem.parent_service_id;
+            if (oldParent !== newParent) {
+                // Decrement old parent
+                if (oldParent) {
+                    const oldIndex = services.findIndex((s: any) => s.id === oldParent);
+                    if (oldIndex !== -1) {
+                        const oldService = services[oldIndex];
+                        const newCount = Math.max(0, (oldService.subservice_count || 1) - 1);
+                        services[oldIndex] = { ...oldService, subservice_count: newCount, has_subservices: newCount > 0, updated_at: new Date().toISOString() };
+                    }
+                }
+
+                // Increment new parent
+                if (newParent) {
+                    const newIndex = services.findIndex((s: any) => s.id === newParent);
+                    if (newIndex !== -1) {
+                        const newService = services[newIndex];
+                        const newCount = (newService.subservice_count || 0) + 1;
+                        services[newIndex] = { ...newService, subservice_count: newCount, has_subservices: true, updated_at: new Date().toISOString() };
+                    }
+                }
+
+                await saveCollection('services', services);
+            }
+
+            return res.status(200).json(updatedItem);
+        }
+
+        case 'DELETE': {
+            if (!id) return res.status(400).json({ error: 'ID required' });
+            const deleteIndex = subServices.findIndex((i: any) => i.id === id);
+            if (deleteIndex === -1) return res.status(404).json({ error: 'Not found' });
+            const removed = subServices.splice(deleteIndex, 1)[0];
+            await saveCollection('subServices', subServices);
+
+            // Update parent counters
+            const parentId = removed.parent_service_id;
+            if (parentId) {
+                const svcIndex = services.findIndex((s: any) => s.id === parentId);
+                if (svcIndex !== -1) {
+                    const svc = services[svcIndex];
+                    const newCount = Math.max(0, (svc.subservice_count || 1) - 1);
+                    services[svcIndex] = { ...svc, subservice_count: newCount, has_subservices: newCount > 0, updated_at: new Date().toISOString() };
+                    await saveCollection('services', services);
+                }
+            }
+
+            return res.status(204).send('');
+        }
+
         default:
             return res.status(405).json({ error: 'Method not allowed' });
     }

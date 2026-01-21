@@ -278,6 +278,9 @@ export interface SubServiceItem {
     primary_persona_id?: number;
     secondary_persona_ids?: number[];
     target_segment_notes?: string;
+    strategic_notes?: string;
+    industry_ids?: string[];
+    country_ids?: string[];
     primary_cta_label?: string;
     primary_cta_url?: string;
     form_id?: number;
