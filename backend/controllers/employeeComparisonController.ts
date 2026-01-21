@@ -24,7 +24,7 @@ export const getEmployeeComparison = async (req: Request, res: Response) => {
             ],
             improvement: '+5.1% from last month',
             streak: 3, // months as top performer
-            totalRewards: '$600',
+            totalRewards: '?',
             lastUpdated: new Date().toISOString(),
             performanceMetrics: {
                 consistency: 96.8,

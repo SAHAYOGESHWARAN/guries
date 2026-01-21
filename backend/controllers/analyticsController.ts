@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 
-export const getTrafficData = async (req: any, res: any) => {
+export const getTrafficData = async (req: Request, res: Response) => {
     try {
         // Fetch last 30 days of traffic from real DB table
         const result = await pool.query(`
@@ -28,7 +28,7 @@ export const getTrafficData = async (req: any, res: any) => {
     }
 };
 
-export const getKPISummary = async (req: any, res: any) => {
+export const getKPISummary = async (req: Request, res: Response) => {
     try {
         const activeCampaigns = await pool.query("SELECT COUNT(*) FROM campaigns WHERE status = 'active'");
         const completedTasks = await pool.query("SELECT COUNT(*) FROM tasks WHERE status = 'completed'");
@@ -49,7 +49,7 @@ export const getKPISummary = async (req: any, res: any) => {
     }
 };
 
-export const getDashboardMetrics = async (req: any, res: any) => {
+export const getDashboardMetrics = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM kpi_snapshots ORDER BY id ASC');
         // Return actual rows or empty array

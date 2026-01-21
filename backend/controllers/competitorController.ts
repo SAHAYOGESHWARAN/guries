@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getCompetitors = async (req: any, res: any) => {
+export const getCompetitors = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM competitor_benchmarks ORDER BY id DESC');
         // Parse JSON fields and normalize field names
@@ -21,7 +21,7 @@ export const getCompetitors = async (req: any, res: any) => {
     }
 };
 
-export const createCompetitor = async (req: any, res: any) => {
+export const createCompetitor = async (req: Request, res: Response) => {
     const {
         competitor_name, website_url, primary_country, industry, sector,
         services_offered, notes, status,
@@ -35,7 +35,7 @@ export const createCompetitor = async (req: any, res: any) => {
             `INSERT INTO competitor_benchmarks (
                 competitor_name, competitor_domain, industry, sector, region,
                 da, dr, monthly_traffic, total_keywords, backlinks, status, updated_on
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 competitor_name,
                 website_url || null,
@@ -74,7 +74,7 @@ export const createCompetitor = async (req: any, res: any) => {
     }
 };
 
-export const updateCompetitor = async (req: any, res: any) => {
+export const updateCompetitor = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         competitor_name, website_url, primary_country, industry, sector,
@@ -84,19 +84,19 @@ export const updateCompetitor = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE competitor_benchmarks SET
-                competitor_name=COALESCE($1, competitor_name),
-                competitor_domain=COALESCE($2, competitor_domain),
-                industry=COALESCE($3, industry),
-                sector=COALESCE($4, sector),
-                region=COALESCE($5, region),
-                da=COALESCE($6, da),
-                dr=COALESCE($7, dr),
-                monthly_traffic=COALESCE($8, monthly_traffic),
-                total_keywords=COALESCE($9, total_keywords),
-                backlinks=COALESCE($10, backlinks),
-                status=COALESCE($11, status),
-                updated_on=$12
-            WHERE id=$13 RETURNING *`,
+                competitor_name=COALESCE(?, competitor_name),
+                competitor_domain=COALESCE(?, competitor_domain),
+                industry=COALESCE(?, industry),
+                sector=COALESCE(?, sector),
+                region=COALESCE(?, region),
+                da=COALESCE(?, da),
+                dr=COALESCE(?, dr),
+                monthly_traffic=COALESCE(?, monthly_traffic),
+                total_keywords=COALESCE(?, total_keywords),
+                backlinks=COALESCE(?, backlinks),
+                status=COALESCE(?, status),
+                updated_on=?
+            WHERE id=?`,
             [
                 competitor_name,
                 website_url,
@@ -135,9 +135,9 @@ export const updateCompetitor = async (req: any, res: any) => {
     }
 };
 
-export const deleteCompetitor = async (req: any, res: any) => {
+export const deleteCompetitor = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM competitor_benchmarks WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM competitor_benchmarks WHERE id = ?', [req.params.id]);
         getSocket().emit('competitor_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

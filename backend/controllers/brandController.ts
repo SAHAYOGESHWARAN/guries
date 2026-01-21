@@ -27,7 +27,7 @@ export const createBrand = async (req: Request, res: Response) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
     try {
-        const result = await pool.query('INSERT INTO brands (name) VALUES ($1) RETURNING id, name', [name]);
+        const result = await pool.query('INSERT INTO brands (name) VALUES (?) RETURNING id, name', [name]);
         res.status(201).json(result.rows[0]);
     } catch (error: any) {
         if (error.code === '42P01' || /relation "brands" does not exist/i.test(error.message || '')) {
@@ -41,7 +41,7 @@ export const updateBrand = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name } = req.body;
     try {
-        const result = await pool.query('UPDATE brands SET name=$1 WHERE id=$2 RETURNING id, name', [name, id]);
+        const result = await pool.query('UPDATE brands SET name=? WHERE id=? RETURNING id, name', [name, id]);
         res.status(200).json(result.rows[0]);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -50,7 +50,7 @@ export const updateBrand = async (req: Request, res: Response) => {
 
 export const deleteBrand = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM brands WHERE id=$1', [req.params.id]);
+        await pool.query('DELETE FROM brands WHERE id=?', [req.params.id]);
         res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: error.message });

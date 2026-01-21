@@ -60,7 +60,7 @@ export const getSeoAssetById = async (req: Request, res: Response) => {
             LEFT JOIN users u1 ON a.created_by = u1.id
             LEFT JOIN users u2 ON a.verified_by = u2.id
             LEFT JOIN users u3 ON a.designed_by = u3.id
-            WHERE a.id = $1 AND a.application_type = 'seo'
+            WHERE a.id = ? AND a.application_type = 'seo'
         `, [id]);
 
         if (result.rows.length === 0) {
@@ -175,8 +175,7 @@ export const createSeoAsset = async (req: Request, res: Response) => {
                 resource_files, assigned_team_members,
                 created_by, verified_by, version_number, version_history, workflow_log,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
-            RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 name || seo_title,
                 asset_type || null,
@@ -281,7 +280,7 @@ export const updateSeoAsset = async (req: Request, res: Response) => {
 
     try {
         // Get current asset for version history
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'SEO Asset not found' });
         }
@@ -310,40 +309,39 @@ export const updateSeoAsset = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `UPDATE assets SET
-                asset_name = COALESCE($1, asset_name),
-                asset_type = COALESCE($2, asset_type),
-                asset_category = COALESCE($3, asset_category),
-                linked_task_id = COALESCE($4, linked_task_id),
-                linked_campaign_id = COALESCE($5, linked_campaign_id),
-                linked_project_id = COALESCE($6, linked_project_id),
-                linked_service_id = COALESCE($7, linked_service_id),
-                linked_sub_service_id = COALESCE($8, linked_sub_service_id),
-                linked_repository_item_id = COALESCE($9, linked_repository_item_id),
-                seo_title = COALESCE($10, seo_title),
-                seo_meta_title = COALESCE($11, seo_meta_title),
-                seo_description = COALESCE($12, seo_description),
-                seo_service_url = COALESCE($13, seo_service_url),
-                seo_blog_url = COALESCE($14, seo_blog_url),
-                seo_anchor_text = COALESCE($15, seo_anchor_text),
-                seo_primary_keyword_id = COALESCE($16, seo_primary_keyword_id),
-                seo_lsi_keywords = COALESCE($17, seo_lsi_keywords),
-                seo_domain_type = COALESCE($18, seo_domain_type),
-                seo_domains = COALESCE($19, seo_domains),
-                seo_blog_content = COALESCE($20, seo_blog_content),
-                seo_sector_id = COALESCE($21, seo_sector_id),
-                seo_industry_id = COALESCE($22, seo_industry_id),
-                resource_files = COALESCE($23, resource_files),
-                assigned_team_members = COALESCE($24, assigned_team_members),
-                verified_by = COALESCE($25, verified_by),
-                workflow_stage = COALESCE($26, workflow_stage),
-                qc_status = COALESCE($27, qc_status),
-                status = COALESCE($28, status),
-                version_number = $29,
-                version_history = $30,
-                updated_by = $31,
-                updated_at = $32
-            WHERE id = $33 AND application_type = 'seo'
-            RETURNING *`,
+                asset_name = COALESCE(?, asset_name),
+                asset_type = COALESCE(?, asset_type),
+                asset_category = COALESCE(?, asset_category),
+                linked_task_id = COALESCE(?, linked_task_id),
+                linked_campaign_id = COALESCE(?, linked_campaign_id),
+                linked_project_id = COALESCE(?, linked_project_id),
+                linked_service_id = COALESCE(?, linked_service_id),
+                linked_sub_service_id = COALESCE(?, linked_sub_service_id),
+                linked_repository_item_id = COALESCE(?, linked_repository_item_id),
+                seo_title = COALESCE(?, seo_title),
+                seo_meta_title = COALESCE(?, seo_meta_title),
+                seo_description = COALESCE(?, seo_description),
+                seo_service_url = COALESCE(?, seo_service_url),
+                seo_blog_url = COALESCE(?, seo_blog_url),
+                seo_anchor_text = COALESCE(?, seo_anchor_text),
+                seo_primary_keyword_id = COALESCE(?, seo_primary_keyword_id),
+                seo_lsi_keywords = COALESCE(?, seo_lsi_keywords),
+                seo_domain_type = COALESCE(?, seo_domain_type),
+                seo_domains = COALESCE(?, seo_domains),
+                seo_blog_content = COALESCE(?, seo_blog_content),
+                seo_sector_id = COALESCE(?, seo_sector_id),
+                seo_industry_id = COALESCE(?, seo_industry_id),
+                resource_files = COALESCE(?, resource_files),
+                assigned_team_members = COALESCE(?, assigned_team_members),
+                verified_by = COALESCE(?, verified_by),
+                workflow_stage = COALESCE(?, workflow_stage),
+                qc_status = COALESCE(?, qc_status),
+                status = COALESCE(?, status),
+                version_number = ?,
+                version_history = ?,
+                updated_by = ?,
+                updated_at = ?
+            WHERE id = ? AND application_type = 'seo'`,
             [
                 name || seo_title,
                 asset_type,
@@ -399,10 +397,10 @@ export const deleteSeoAsset = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         // Delete related records first
-        await pool.query('DELETE FROM seo_asset_domains WHERE seo_asset_id = $1', [id]);
+        await pool.query('DELETE FROM seo_asset_domains WHERE seo_asset_id = ?', [id]);
 
         const result = await pool.query(
-            'DELETE FROM assets WHERE id = $1 AND application_type = $2 RETURNING id',
+            'DELETE FROM assets WHERE id = ? AND application_type = ? RETURNING id',
             [id, 'seo']
         );
 
@@ -425,7 +423,7 @@ export const submitSeoAssetForQC = async (req: Request, res: Response) => {
 
     try {
         // Get current asset
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1 AND application_type = $2', [id, 'seo']);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ? AND application_type = ?', [id, 'seo']);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'SEO Asset not found' });
         }
@@ -489,13 +487,13 @@ export const submitSeoAssetForQC = async (req: Request, res: Response) => {
                 status = 'Pending QC Review',
                 workflow_stage = 'Sent to QC',
                 qc_status = 'QC Pending',
-                submitted_by = $1,
-                submitted_at = $2,
-                version_number = $3,
-                version_history = $4,
-                workflow_log = $5,
-                updated_at = $6
-            WHERE id = $7`,
+                submitted_by = ?,
+                submitted_at = ?,
+                version_number = ?,
+                version_history = ?,
+                workflow_log = ?,
+                updated_at = ?
+            WHERE id = ?`,
             [
                 submitted_by,
                 new Date().toISOString(),
@@ -507,7 +505,7 @@ export const submitSeoAssetForQC = async (req: Request, res: Response) => {
             ]
         );
 
-        const updatedResult = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
+        const updatedResult = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
         const updatedAsset = updatedResult.rows[0];
 
         getSocket().emit('seoAsset_submitted', updatedAsset);
@@ -524,7 +522,7 @@ export const reviewSeoAsset = async (req: Request, res: Response) => {
     const { qc_status, qc_remarks, qc_score, qc_reviewer_id } = req.body;
 
     try {
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1 AND application_type = $2', [id, 'seo']);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ? AND application_type = ?', [id, 'seo']);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'SEO Asset not found' });
         }
@@ -577,18 +575,18 @@ export const reviewSeoAsset = async (req: Request, res: Response) => {
 
             await pool.query(
                 `UPDATE assets SET
-                    qc_status = $1,
-                    qc_remarks = $2,
-                    qc_score = $3,
-                    qc_reviewer_id = $4,
-                    qc_reviewed_at = $5,
-                    workflow_stage = $6,
-                    status = $7,
-                    rework_count = $8,
-                    version_number = $9,
-                    version_history = $10,
-                    updated_at = $11
-                WHERE id = $12`,
+                    qc_status = ?,
+                    qc_remarks = ?,
+                    qc_score = ?,
+                    qc_reviewer_id = ?,
+                    qc_reviewed_at = ?,
+                    workflow_stage = ?,
+                    status = ?,
+                    rework_count = ?,
+                    version_number = ?,
+                    version_history = ?,
+                    updated_at = ?
+                WHERE id = ?`,
                 [
                     qc_status,
                     qc_remarks,
@@ -607,16 +605,16 @@ export const reviewSeoAsset = async (req: Request, res: Response) => {
         } else {
             await pool.query(
                 `UPDATE assets SET
-                    qc_status = $1,
-                    qc_remarks = $2,
-                    qc_score = $3,
-                    qc_reviewer_id = $4,
-                    qc_reviewed_at = $5,
-                    workflow_stage = $6,
-                    status = $7,
-                    linking_active = $8,
-                    updated_at = $9
-                WHERE id = $10`,
+                    qc_status = ?,
+                    qc_remarks = ?,
+                    qc_score = ?,
+                    qc_reviewer_id = ?,
+                    qc_reviewed_at = ?,
+                    workflow_stage = ?,
+                    status = ?,
+                    linking_active = ?,
+                    updated_at = ?
+                WHERE id = ?`,
                 [
                     qc_status,
                     qc_remarks,
@@ -635,11 +633,11 @@ export const reviewSeoAsset = async (req: Request, res: Response) => {
         // Create QC review record
         await pool.query(
             `INSERT INTO asset_qc_reviews (asset_id, qc_reviewer_id, qc_score, qc_remarks, qc_decision, reviewed_at, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [id, qc_reviewer_id, qc_score, qc_remarks, qc_status, new Date().toISOString(), new Date().toISOString()]
         );
 
-        const updatedResult = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
+        const updatedResult = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
         const updatedAsset = updatedResult.rows[0];
 
         getSocket().emit('seoAsset_reviewed', updatedAsset);
@@ -663,7 +661,7 @@ export const addSeoAssetDomain = async (req: Request, res: Response) => {
     try {
         // Validate domain from Backlink Master
         const backlinkCheck = await pool.query(
-            'SELECT * FROM backlink_sources WHERE source_url LIKE $1 OR source_name = $2',
+            'SELECT * FROM backlink_sources WHERE source_url LIKE ? OR source_name = ?',
             [`%${domain_name}%`, domain_name]
         );
 
@@ -688,8 +686,7 @@ export const addSeoAssetDomain = async (req: Request, res: Response) => {
                 seo_asset_id, domain_name, domain_type, url_posted,
                 seo_self_qc_status, qa_status, approval_status, display_status,
                 backlink_source_id, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 assetId,
                 domain_name,
@@ -721,7 +718,7 @@ export const getSeoAssetDomains = async (req: Request, res: Response) => {
             `SELECT sad.*, bs.domain_authority
              FROM seo_asset_domains sad
              LEFT JOIN backlink_sources bs ON sad.backlink_source_id = bs.id
-             WHERE sad.seo_asset_id = $1
+             WHERE sad.seo_asset_id = ?
              ORDER BY sad.created_at DESC`,
             [assetId]
         );
@@ -751,14 +748,13 @@ export const updateSeoAssetDomain = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `UPDATE seo_asset_domains SET
-                url_posted = COALESCE($1, url_posted),
-                seo_self_qc_status = COALESCE($2, seo_self_qc_status),
-                qa_status = COALESCE($3, qa_status),
-                approval_status = $4,
-                display_status = $4,
-                updated_at = $5
-            WHERE id = $6 AND seo_asset_id = $7
-            RETURNING *`,
+                url_posted = COALESCE(?, url_posted),
+                seo_self_qc_status = COALESCE(?, seo_self_qc_status),
+                qa_status = COALESCE(?, qa_status),
+                approval_status = ?,
+                display_status = ?,
+                updated_at = ?
+            WHERE id = ? AND seo_asset_id = ?`,
             [
                 url_posted,
                 seo_self_qc_status,
@@ -786,7 +782,7 @@ export const deleteSeoAssetDomain = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            'DELETE FROM seo_asset_domains WHERE id = $1 AND seo_asset_id = $2 RETURNING id',
+            'DELETE FROM seo_asset_domains WHERE id = ? AND seo_asset_id = ? RETURNING id',
             [domainId, assetId]
         );
 
@@ -889,7 +885,7 @@ export const getSeoAssetVersionHistory = async (req: Request, res: Response) => 
 
     try {
         const result = await pool.query(
-            'SELECT version_history, version_number FROM assets WHERE id = $1',
+            'SELECT version_history, version_number FROM assets WHERE id = ?',
             [id]
         );
 

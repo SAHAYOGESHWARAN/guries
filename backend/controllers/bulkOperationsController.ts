@@ -7,7 +7,7 @@ import { getSocket } from '../socket';
  * DELETE /api/v1/bulk/delete
  * Body: { entity: string, ids: number[] }
  */
-export const bulkDelete = async (req: any, res: any) => {
+export const bulkDelete = async (req: Request, res: Response) => {
     const { entity, ids } = req.body;
 
     if (!entity || !Array.isArray(ids) || ids.length === 0) {
@@ -35,7 +35,7 @@ export const bulkDelete = async (req: any, res: any) => {
  * PATCH /api/v1/bulk/update
  * Body: { entity: string, ids: number[], updates: object }
  */
-export const bulkUpdate = async (req: any, res: any) => {
+export const bulkUpdate = async (req: Request, res: Response) => {
     const { entity, ids, updates } = req.body;
 
     if (!entity || !Array.isArray(ids) || ids.length === 0 || !updates) {
@@ -54,7 +54,7 @@ export const bulkUpdate = async (req: any, res: any) => {
         const placeholders = ids.map((_, i) => `$${updateFields.length + i + 1}`).join(',');
 
         const result = await pool.query(
-            `UPDATE ${tableName} SET ${setClause}, updated_at=NOW() WHERE id IN (${placeholders}) RETURNING *`,
+            `UPDATE ${tableName} SET ${setClause}, updated_at=datetime('now') WHERE id IN (${placeholders})`,
             values
         );
 
@@ -70,7 +70,7 @@ export const bulkUpdate = async (req: any, res: any) => {
  * PATCH /api/v1/bulk/status
  * Body: { entity: string, ids: number[], status: string }
  */
-export const bulkStatusChange = async (req: any, res: any) => {
+export const bulkStatusChange = async (req: Request, res: Response) => {
     const { entity, ids, status } = req.body;
 
     if (!entity || !Array.isArray(ids) || ids.length === 0 || !status) {
@@ -85,7 +85,7 @@ export const bulkStatusChange = async (req: any, res: any) => {
 
         const placeholders = ids.map((_, i) => `$${i + 2}`).join(',');
         const result = await pool.query(
-            `UPDATE ${tableName} SET status=$1, updated_at=NOW() WHERE id IN (${placeholders}) RETURNING *`,
+            `UPDATE ${tableName} SET status=?, updated_at=datetime('now') WHERE id IN (${placeholders})`,
             [status, ...ids]
         );
 
@@ -101,7 +101,7 @@ export const bulkStatusChange = async (req: any, res: any) => {
  * PATCH /api/v1/bulk/assign
  * Body: { entity: string, ids: number[], userId: number, field: string }
  */
-export const bulkAssign = async (req: any, res: any) => {
+export const bulkAssign = async (req: Request, res: Response) => {
     const { entity, ids, userId, field = 'assigned_to_id' } = req.body;
 
     if (!entity || !Array.isArray(ids) || ids.length === 0 || !userId) {
@@ -116,7 +116,7 @@ export const bulkAssign = async (req: any, res: any) => {
 
         const placeholders = ids.map((_, i) => `$${i + 2}`).join(',');
         const result = await pool.query(
-            `UPDATE ${tableName} SET ${field}=$1, updated_at=NOW() WHERE id IN (${placeholders}) RETURNING *`,
+            `UPDATE ${tableName} SET ${field}=?, updated_at=datetime('now') WHERE id IN (${placeholders})`,
             [userId, ...ids]
         );
 
@@ -132,7 +132,7 @@ export const bulkAssign = async (req: any, res: any) => {
  * POST /api/v1/bulk/duplicate
  * Body: { entity: string, ids: number[] }
  */
-export const bulkDuplicate = async (req: any, res: any) => {
+export const bulkDuplicate = async (req: Request, res: Response) => {
     const { entity, ids } = req.body;
 
     if (!entity || !Array.isArray(ids) || ids.length === 0) {
@@ -160,7 +160,7 @@ export const bulkDuplicate = async (req: any, res: any) => {
             const valueList = columns.map((_, i) => `$${i + 1}`).join(', ');
 
             const result = await pool.query(
-                `INSERT INTO ${tableName} (${columnList}, created_at, updated_at) VALUES (${valueList}, NOW(), NOW()) RETURNING id`,
+                `INSERT INTO ${tableName} (${columnList}, created_at, updated_at) VALUES (${valueList}, datetime('now'), datetime('now')) RETURNING id`,
                 values
             );
 
@@ -181,7 +181,7 @@ export const bulkDuplicate = async (req: any, res: any) => {
  * POST /api/v1/bulk/export
  * Body: { entity: string, ids: number[], format: 'csv' | 'json' }
  */
-export const bulkExport = async (req: any, res: any) => {
+export const bulkExport = async (req: Request, res: Response) => {
     const { entity, ids, format = 'json' } = req.body;
 
     if (!entity || !Array.isArray(ids) || ids.length === 0) {

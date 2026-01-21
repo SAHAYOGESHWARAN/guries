@@ -21,7 +21,7 @@ const parseContentRow = (row: any) => {
     return parsed;
 };
 
-export const getContent = async (req: any, res: any) => {
+export const getContent = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -42,7 +42,7 @@ export const getContent = async (req: any, res: any) => {
     }
 };
 
-export const createContent = async (req: any, res: any) => {
+export const createContent = async (req: Request, res: Response) => {
     const {
         brand_id, content_title_clean, asset_type, status,
         asset_category, asset_format, slug, full_url,
@@ -70,17 +70,17 @@ export const createContent = async (req: any, res: any) => {
                 ai_qc_report, content_type, industry, keywords, word_count, qc_score,
                 last_status_update_at, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, 
-                $5, $6, $7, $8,
-                $9, $10,
-                $11, $12,
-                $13, $14, $15, $16,
-                $17, $18, $19,
-                $20, $21, $22, $23,
-                $24, $25, $26, $27, $28, $29,
-                $30, $31, $32, $33, $34, $35,
+                ?, ?, ?, ?, 
+                ?, ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?,
                 datetime('now'), datetime('now'), datetime('now')
-            ) RETURNING *`,
+            )`,
             [
                 brand_id, content_title_clean, asset_type, status || 'idea',
                 asset_category, asset_format, slug, full_url,
@@ -102,7 +102,7 @@ export const createContent = async (req: any, res: any) => {
     }
 };
 
-export const updateContent = async (req: any, res: any) => {
+export const updateContent = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         content_title_clean, status, asset_type,
@@ -119,42 +119,42 @@ export const updateContent = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE content_repository SET 
-                content_title_clean=COALESCE($1, content_title_clean), 
-                status=COALESCE($2, status), 
-                asset_type=COALESCE($3, asset_type),
-                asset_category=COALESCE($4, asset_category),
-                asset_format=COALESCE($5, asset_format),
-                slug=COALESCE($6, slug),
-                full_url=COALESCE($7, full_url),
-                linked_service_ids=COALESCE($8, linked_service_ids),
-                linked_sub_service_ids=COALESCE($9, linked_sub_service_ids),
-                linked_service_id=COALESCE($10, linked_service_id),
-                linked_sub_service_id=COALESCE($11, linked_sub_service_id),
-                h1=COALESCE($12, h1),
-                h2_list=COALESCE($13, h2_list),
-                h3_list=COALESCE($14, h3_list),
-                body_content=COALESCE($15, body_content),
-                meta_title=COALESCE($16, meta_title),
-                meta_description=COALESCE($17, meta_description),
-                focus_keywords=COALESCE($18, focus_keywords),
-                og_title=COALESCE($19, og_title),
-                og_description=COALESCE($20, og_description),
-                og_image_url=COALESCE($21, og_image_url),
-                social_meta=COALESCE($22, social_meta),
-                promotion_channels=COALESCE($23, promotion_channels),
-                thumbnail_url=COALESCE($24, thumbnail_url),
-                context=COALESCE($25, context),
-                campaign_name=COALESCE($26, campaign_name),
-                assigned_to_id=COALESCE($27, assigned_to_id),
-                ai_qc_report=COALESCE($28, ai_qc_report),
-                content_type=COALESCE($29, content_type),
-                industry=COALESCE($30, industry),
-                keywords=COALESCE($31, keywords),
-                word_count=COALESCE($32, word_count),
-                qc_score=COALESCE($33, qc_score),
+                content_title_clean=COALESCE(?, content_title_clean), 
+                status=COALESCE(?, status), 
+                asset_type=COALESCE(?, asset_type),
+                asset_category=COALESCE(?, asset_category),
+                asset_format=COALESCE(?, asset_format),
+                slug=COALESCE(?, slug),
+                full_url=COALESCE(?, full_url),
+                linked_service_ids=COALESCE(?, linked_service_ids),
+                linked_sub_service_ids=COALESCE(?, linked_sub_service_ids),
+                linked_service_id=COALESCE(?, linked_service_id),
+                linked_sub_service_id=COALESCE(?, linked_sub_service_id),
+                h1=COALESCE(?, h1),
+                h2_list=COALESCE(?, h2_list),
+                h3_list=COALESCE(?, h3_list),
+                body_content=COALESCE(?, body_content),
+                meta_title=COALESCE(?, meta_title),
+                meta_description=COALESCE(?, meta_description),
+                focus_keywords=COALESCE(?, focus_keywords),
+                og_title=COALESCE(?, og_title),
+                og_description=COALESCE(?, og_description),
+                og_image_url=COALESCE(?, og_image_url),
+                social_meta=COALESCE(?, social_meta),
+                promotion_channels=COALESCE(?, promotion_channels),
+                thumbnail_url=COALESCE(?, thumbnail_url),
+                context=COALESCE(?, context),
+                campaign_name=COALESCE(?, campaign_name),
+                assigned_to_id=COALESCE(?, assigned_to_id),
+                ai_qc_report=COALESCE(?, ai_qc_report),
+                content_type=COALESCE(?, content_type),
+                industry=COALESCE(?, industry),
+                keywords=COALESCE(?, keywords),
+                word_count=COALESCE(?, word_count),
+                qc_score=COALESCE(?, qc_score),
                 last_status_update_at=datetime('now'),
                 updated_at=datetime('now')
-            WHERE id=$34 RETURNING *`,
+            WHERE id=?`,
             [
                 content_title_clean, status, asset_type,
                 asset_category, asset_format, slug, full_url,
@@ -178,9 +178,9 @@ export const updateContent = async (req: any, res: any) => {
     }
 };
 
-export const deleteContent = async (req: any, res: any) => {
+export const deleteContent = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM content_repository WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM content_repository WHERE id = ?', [req.params.id]);
         getSocket().emit('content_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {
@@ -189,12 +189,12 @@ export const deleteContent = async (req: any, res: any) => {
 };
 
 // NEW: Create Working Copy (Draft) from Service Master
-export const createDraftFromService = async (req: any, res: any) => {
+export const createDraftFromService = async (req: Request, res: Response) => {
     const { service_id, campaign_id } = req.body;
 
     try {
         // 1. Get Service Data
-        const serviceResult = await pool.query('SELECT * FROM services WHERE id = $1', [service_id]);
+        const serviceResult = await pool.query('SELECT * FROM services WHERE id = ?', [service_id]);
         if (serviceResult.rows.length === 0) return res.status(404).json({ error: 'Service not found' });
         const service = serviceResult.rows[0];
 
@@ -208,13 +208,13 @@ export const createDraftFromService = async (req: any, res: any) => {
                 og_title, og_description, og_image_url,
                 created_at, last_status_update_at, brand_id
             ) VALUES (
-                $1, 'service_page', 'draft',
-                $2, $3, $4, $5,
-                $6, $7, $8, $9,
-                $10, $11, $12,
-                $13, $14, $15,
-                NOW(), NOW(), $16
-            ) RETURNING *`,
+                ?, 'service_page', 'draft',
+                ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?, ?,
+                datetime('now'), datetime('now'), ?
+            )`,
             [
                 `Draft: ${service.service_name}`, service.slug, service.full_url, JSON.stringify([service.id]), campaign_id,
                 service.h1, service.h2_list, service.h3_list, service.body_content,
@@ -234,12 +234,12 @@ export const createDraftFromService = async (req: any, res: any) => {
 };
 
 // NEW: Publish Content Asset to Service Master
-export const publishToService = async (req: any, res: any) => {
+export const publishToService = async (req: Request, res: Response) => {
     const { id } = req.params; // Content ID
 
     try {
         // 1. Get Content Data
-        const contentResult = await pool.query('SELECT * FROM content_repository WHERE id = $1', [id]);
+        const contentResult = await pool.query('SELECT * FROM content_repository WHERE id = ?', [id]);
         if (contentResult.rows.length === 0) return res.status(404).json({ error: 'Content not found' });
         const content = contentResult.rows[0];
 
@@ -252,11 +252,11 @@ export const publishToService = async (req: any, res: any) => {
         // 2. Update Service Master
         await pool.query(
             `UPDATE services SET 
-                h1=$1, h2_list=$2, h3_list=$3, body_content=$4,
-                meta_title=$5, meta_description=$6, focus_keywords=$7,
-                og_title=$8, og_description=$9, og_image_url=$10, social_meta=$11,
-                updated_at=NOW(), version_number = COALESCE(version_number, 1) + 1
-            WHERE id=$12`,
+                h1=?, h2_list=?, h3_list=?, body_content=?,
+                meta_title=?, meta_description=?, focus_keywords=?,
+                og_title=?, og_description=?, og_image_url=?, social_meta=?,
+                updated_at=datetime('now'), version_number = COALESCE(version_number, 1) + 1
+            WHERE id=?`,
             [
                 content.h1, content.h2_list, content.h3_list, content.body_content,
                 content.meta_title, content.meta_description, content.focus_keywords,
@@ -267,7 +267,7 @@ export const publishToService = async (req: any, res: any) => {
 
         // 3. Update Content Status to Published
         const updateResult = await pool.query(
-            `UPDATE content_repository SET status='published', last_status_update_at=NOW() WHERE id=$1 RETURNING *`,
+            `UPDATE content_repository SET status='published', last_status_update_at=datetime('now') WHERE id=?`,
             [id]
         );
 

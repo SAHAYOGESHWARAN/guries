@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getPromotionItems = async (req: any, res: any) => {
+export const getPromotionItems = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -31,7 +31,7 @@ export const getPromotionItems = async (req: any, res: any) => {
     }
 };
 
-export const createPromotionItem = async (req: any, res: any) => {
+export const createPromotionItem = async (req: Request, res: Response) => {
     const {
         title,
         subtitle,
@@ -53,7 +53,7 @@ export const createPromotionItem = async (req: any, res: any) => {
                 title, subtitle, content_type, promotion_types, campaign_id, service_id,
                 keywords, thumbnail_url, full_url, qc_status, published_date, created_by,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 title,
                 subtitle || null,
@@ -83,7 +83,7 @@ export const createPromotionItem = async (req: any, res: any) => {
             LEFT JOIN campaigns c ON pi.campaign_id = c.id
             LEFT JOIN services s ON pi.service_id = s.id
             LEFT JOIN users u ON pi.created_by = u.id
-            WHERE pi.id = $1
+            WHERE pi.id = ?
         `, [result.rows[0].id]);
 
         const item = {
@@ -100,7 +100,7 @@ export const createPromotionItem = async (req: any, res: any) => {
     }
 };
 
-export const updatePromotionItem = async (req: any, res: any) => {
+export const updatePromotionItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         title,
@@ -119,19 +119,19 @@ export const updatePromotionItem = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE promotion_items SET
-                title=COALESCE($1, title),
-                subtitle=COALESCE($2, subtitle),
-                content_type=COALESCE($3, content_type),
-                promotion_types=COALESCE($4, promotion_types),
-                campaign_id=COALESCE($5, campaign_id),
-                service_id=COALESCE($6, service_id),
-                keywords=COALESCE($7, keywords),
-                thumbnail_url=COALESCE($8, thumbnail_url),
-                full_url=COALESCE($9, full_url),
-                qc_status=COALESCE($10, qc_status),
-                published_date=COALESCE($11, published_date),
-                updated_at=$12
-            WHERE id=$13 RETURNING *`,
+                title=COALESCE(?, title),
+                subtitle=COALESCE(?, subtitle),
+                content_type=COALESCE(?, content_type),
+                promotion_types=COALESCE(?, promotion_types),
+                campaign_id=COALESCE(?, campaign_id),
+                service_id=COALESCE(?, service_id),
+                keywords=COALESCE(?, keywords),
+                thumbnail_url=COALESCE(?, thumbnail_url),
+                full_url=COALESCE(?, full_url),
+                qc_status=COALESCE(?, qc_status),
+                published_date=COALESCE(?, published_date),
+                updated_at=?
+            WHERE id=?`,
             [
                 title,
                 subtitle,
@@ -160,7 +160,7 @@ export const updatePromotionItem = async (req: any, res: any) => {
             LEFT JOIN campaigns c ON pi.campaign_id = c.id
             LEFT JOIN services s ON pi.service_id = s.id
             LEFT JOIN users u ON pi.created_by = u.id
-            WHERE pi.id = $1
+            WHERE pi.id = ?
         `, [id]);
 
         const item = {
@@ -177,9 +177,9 @@ export const updatePromotionItem = async (req: any, res: any) => {
     }
 };
 
-export const deletePromotionItem = async (req: any, res: any) => {
+export const deletePromotionItem = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM promotion_items WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM promotion_items WHERE id = ?', [req.params.id]);
         getSocket().emit('promotion_item_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

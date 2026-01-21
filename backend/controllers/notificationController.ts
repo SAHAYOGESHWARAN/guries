@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getNotifications = async (req: any, res: any) => {
+export const getNotifications = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT id, user_id, title, message, type, is_read as read, link, created_at FROM notifications ORDER BY created_at DESC LIMIT 50');
         // Map to consistent format
@@ -24,13 +24,13 @@ export const getNotifications = async (req: any, res: any) => {
     }
 };
 
-export const createNotification = async (req: any, res: any) => {
+export const createNotification = async (req: Request, res: Response) => {
     const { text, title, message, type, read, user_id } = req.body;
     try {
         const notificationTitle = title || 'Notification';
         const notificationMessage = message || text || '';
         const result = await pool.query(
-            'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES ($1, $2, $3, $4, $5, datetime(\'now\')) RETURNING *',
+            'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
             [user_id || null, notificationTitle, notificationMessage, type || 'info', read ? 1 : 0]
         );
         const newItem = {
@@ -45,11 +45,11 @@ export const createNotification = async (req: any, res: any) => {
     }
 };
 
-export const markAsRead = async (req: any, res: any) => {
+export const markAsRead = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            'UPDATE notifications SET is_read = 1 WHERE id = $1 RETURNING *',
+            'UPDATE notifications SET is_read = 1 WHERE id = ?',
             [id]
         );
         const updatedItem = {
@@ -63,7 +63,7 @@ export const markAsRead = async (req: any, res: any) => {
     }
 };
 
-export const markAllAsRead = async (req: any, res: any) => {
+export const markAllAsRead = async (req: Request, res: Response) => {
     try {
         await pool.query('UPDATE notifications SET is_read = 1 WHERE is_read = 0');
         getSocket().emit('notifications_all_read', {});
@@ -73,9 +73,9 @@ export const markAllAsRead = async (req: any, res: any) => {
     }
 };
 
-export const deleteNotification = async (req: any, res: any) => {
+export const deleteNotification = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM notifications WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM notifications WHERE id = ?', [req.params.id]);
         getSocket().emit('notification_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getGoldStandards = async (req: any, res: any) => {
+export const getGoldStandards = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -22,7 +22,7 @@ export const getGoldStandards = async (req: any, res: any) => {
     }
 };
 
-export const createGoldStandard = async (req: any, res: any) => {
+export const createGoldStandard = async (req: Request, res: Response) => {
     const {
         metric_name, category, description, why_matters, gold_standard_value,
         acceptable_range_min, acceptable_range_max, unit, source, evidence_link,
@@ -35,7 +35,7 @@ export const createGoldStandard = async (req: any, res: any) => {
                 metric_name, category, description, why_matters, gold_standard_value,
                 acceptable_range_min, acceptable_range_max, unit, source, evidence_link,
                 file_upload, additional_notes, owner_id, reviewer_id, review_frequency, status, next_review_date, governance_notes, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 metric_name,
                 category,
@@ -69,7 +69,7 @@ export const createGoldStandard = async (req: any, res: any) => {
             FROM gold_standards g
             LEFT JOIN users u ON g.owner_id = u.id
             LEFT JOIN users r ON g.reviewer_id = r.id
-            WHERE g.id = $1
+            WHERE g.id = ?
         `, [result.rows[0].id]);
 
         getSocket().emit('gold_standard_created', newItem.rows[0]);
@@ -80,7 +80,7 @@ export const createGoldStandard = async (req: any, res: any) => {
     }
 };
 
-export const updateGoldStandard = async (req: any, res: any) => {
+export const updateGoldStandard = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         metric_name, category, description, why_matters, gold_standard_value,
@@ -91,26 +91,26 @@ export const updateGoldStandard = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE gold_standards SET
-                metric_name=COALESCE($1, metric_name),
-                category=COALESCE($2, category),
-                description=COALESCE($3, description),
-                why_matters=COALESCE($4, why_matters),
-                gold_standard_value=COALESCE($5, gold_standard_value),
-                acceptable_range_min=COALESCE($6, acceptable_range_min),
-                acceptable_range_max=COALESCE($7, acceptable_range_max),
-                unit=COALESCE($8, unit),
-                source=COALESCE($9, source),
-                evidence_link=COALESCE($10, evidence_link),
-                file_upload=COALESCE($11, file_upload),
-                additional_notes=COALESCE($12, additional_notes),
-                owner_id=COALESCE($13, owner_id),
-                reviewer_id=COALESCE($14, reviewer_id),
-                review_frequency=COALESCE($15, review_frequency),
-                status=COALESCE($16, status),
-                next_review_date=COALESCE($17, next_review_date),
-                governance_notes=COALESCE($18, governance_notes),
-                updated_at=$19
-            WHERE id=$20 RETURNING *`,
+                metric_name=COALESCE(?, metric_name),
+                category=COALESCE(?, category),
+                description=COALESCE(?, description),
+                why_matters=COALESCE(?, why_matters),
+                gold_standard_value=COALESCE(?, gold_standard_value),
+                acceptable_range_min=COALESCE(?, acceptable_range_min),
+                acceptable_range_max=COALESCE(?, acceptable_range_max),
+                unit=COALESCE(?, unit),
+                source=COALESCE(?, source),
+                evidence_link=COALESCE(?, evidence_link),
+                file_upload=COALESCE(?, file_upload),
+                additional_notes=COALESCE(?, additional_notes),
+                owner_id=COALESCE(?, owner_id),
+                reviewer_id=COALESCE(?, reviewer_id),
+                review_frequency=COALESCE(?, review_frequency),
+                status=COALESCE(?, status),
+                next_review_date=COALESCE(?, next_review_date),
+                governance_notes=COALESCE(?, governance_notes),
+                updated_at=?
+            WHERE id=?`,
             [
                 metric_name, category, description, why_matters, gold_standard_value,
                 acceptable_range_min, acceptable_range_max, unit, source, evidence_link,
@@ -129,7 +129,7 @@ export const updateGoldStandard = async (req: any, res: any) => {
             FROM gold_standards g
             LEFT JOIN users u ON g.owner_id = u.id
             LEFT JOIN users r ON g.reviewer_id = r.id
-            WHERE g.id = $1
+            WHERE g.id = ?
         `, [id]);
 
         getSocket().emit('gold_standard_updated', updatedItem.rows[0]);
@@ -140,9 +140,9 @@ export const updateGoldStandard = async (req: any, res: any) => {
     }
 };
 
-export const deleteGoldStandard = async (req: any, res: any) => {
+export const deleteGoldStandard = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM gold_standards WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM gold_standards WHERE id = ?', [req.params.id]);
         getSocket().emit('gold_standard_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

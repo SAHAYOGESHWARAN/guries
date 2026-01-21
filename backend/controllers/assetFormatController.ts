@@ -110,7 +110,7 @@ export const updateAssetFormat = async (req: Request, res: Response) => {
                 description = COALESCE(?, description),
                 application_types = COALESCE(?, application_types),
                 status = COALESCE(?, status),
-                updated_at = CURRENT_TIMESTAMP
+                updated_at = datetime('now')
             WHERE id = ?
         `).run(
             format_name,
@@ -163,7 +163,7 @@ export const deleteAssetFormat = async (req: Request, res: Response) => {
         // Soft delete by setting status to 'inactive'
         const result = db.prepare(`
             UPDATE asset_format_master 
-            SET status = 'inactive', updated_at = CURRENT_TIMESTAMP
+            SET status = 'inactive', updated_at = datetime('now')
             WHERE id = ?
         `).run(id);
 

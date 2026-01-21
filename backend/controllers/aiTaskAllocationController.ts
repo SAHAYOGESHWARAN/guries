@@ -78,7 +78,7 @@ export const createTaskSuggestion = async (req: Request, res: Response) => {
         suggested_assignee_id, suggested_assignee_name, allocation_reason,
         confidence_score, status, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `).run(
             task_id,
             task_name,
@@ -109,7 +109,7 @@ export const acceptTaskSuggestion = async (req: Request, res: Response) => {
 
         db.prepare(`
       UPDATE task_allocation_suggestions
-      SET status = 'Accepted', assigned_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      SET status = 'Accepted', assigned_date = datetime('now'), updated_at = datetime('now')
       WHERE id = ?
     `).run(suggestionId);
 
@@ -127,7 +127,7 @@ export const rejectTaskSuggestion = async (req: Request, res: Response) => {
 
         db.prepare(`
       UPDATE task_allocation_suggestions
-      SET status = 'Rejected', updated_at = CURRENT_TIMESTAMP
+      SET status = 'Rejected', updated_at = datetime('now')
       WHERE id = ?
     `).run(suggestionId);
 
@@ -331,7 +331,7 @@ export const bulkCreateSuggestions = async (req: Request, res: Response) => {
         suggested_assignee_id, suggested_assignee_name, allocation_reason,
         confidence_score, status, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
 
         const results = [];

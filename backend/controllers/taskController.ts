@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getTasks = async (req: any, res: any) => {
+export const getTasks = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -29,7 +29,7 @@ export const getTasks = async (req: any, res: any) => {
     }
 };
 
-export const createTask = async (req: any, res: any) => {
+export const createTask = async (req: Request, res: Response) => {
     const {
         task_name, name, description, status, priority, assigned_to, project_id,
         campaign_id, due_date, campaign_type, sub_campaign, progress_stage,
@@ -45,7 +45,7 @@ export const createTask = async (req: any, res: any) => {
                 campaign_id, due_date, campaign_type, sub_campaign, progress_stage, 
                 qc_stage, estimated_hours, tags, repo_links, rework_count, repo_link_count,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, datetime('now'), datetime('now')) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
             [
                 taskName, description, status || 'pending', priority || 'Medium',
                 assigned_to || null, project_id || null, campaign_id || null, due_date || null,
@@ -64,7 +64,7 @@ export const createTask = async (req: any, res: any) => {
     }
 };
 
-export const updateTask = async (req: any, res: any) => {
+export const updateTask = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         task_name, name, description, status, priority, assigned_to, project_id,
@@ -77,25 +77,25 @@ export const updateTask = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE tasks SET 
-                task_name = COALESCE($1, task_name),
-                description = COALESCE($2, description),
-                status = COALESCE($3, status), 
-                priority = COALESCE($4, priority),
-                assigned_to = COALESCE($5, assigned_to),
-                project_id = COALESCE($6, project_id),
-                campaign_id = COALESCE($7, campaign_id),
-                due_date = COALESCE($8, due_date),
-                campaign_type = COALESCE($9, campaign_type),
-                sub_campaign = COALESCE($10, sub_campaign),
-                progress_stage = COALESCE($11, progress_stage), 
-                qc_stage = COALESCE($12, qc_stage),
-                rework_count = COALESCE($13, rework_count),
-                repo_link_count = COALESCE($14, repo_link_count),
-                estimated_hours = COALESCE($15, estimated_hours),
-                tags = COALESCE($16, tags),
-                repo_links = COALESCE($17, repo_links),
+                task_name = COALESCE(?, task_name),
+                description = COALESCE(?, description),
+                status = COALESCE(?, status), 
+                priority = COALESCE(?, priority),
+                assigned_to = COALESCE(?, assigned_to),
+                project_id = COALESCE(?, project_id),
+                campaign_id = COALESCE(?, campaign_id),
+                due_date = COALESCE(?, due_date),
+                campaign_type = COALESCE(?, campaign_type),
+                sub_campaign = COALESCE(?, sub_campaign),
+                progress_stage = COALESCE(?, progress_stage), 
+                qc_stage = COALESCE(?, qc_stage),
+                rework_count = COALESCE(?, rework_count),
+                repo_link_count = COALESCE(?, repo_link_count),
+                estimated_hours = COALESCE(?, estimated_hours),
+                tags = COALESCE(?, tags),
+                repo_links = COALESCE(?, repo_links),
                 updated_at = datetime('now')
-            WHERE id = $18 RETURNING *`,
+            WHERE id = ?`,
             [
                 taskName, description, status, priority, assigned_to, project_id,
                 campaign_id, due_date, campaign_type, sub_campaign, progress_stage,
@@ -115,10 +115,10 @@ export const updateTask = async (req: any, res: any) => {
     }
 };
 
-export const deleteTask = async (req: any, res: any) => {
+export const deleteTask = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
+        await pool.query('DELETE FROM tasks WHERE id = ?', [id]);
         getSocket().emit('task_deleted', { id });
         res.status(204).send();
     } catch (error: any) {

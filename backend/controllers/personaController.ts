@@ -10,12 +10,12 @@ export const getPersonas = async (_req: any, res: any) => {
     }
 };
 
-export const createPersona = async (req: any, res: any) => {
+export const createPersona = async (req: Request, res: Response) => {
     const { persona_name, segment, role, funnel_stage, description, status } = req.body;
     try {
         const result = await pool.query(
             `INSERT INTO personas (persona_name, segment, role, funnel_stage, description, status)
-             VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'Active')) RETURNING *`,
+             VALUES (?, ?, ?, ?, ?, COALESCE(?, 'Active'))`,
             [persona_name, segment, role, funnel_stage, description, status]
         );
         const newItem = result.rows[0];
@@ -26,20 +26,20 @@ export const createPersona = async (req: any, res: any) => {
     }
 };
 
-export const updatePersona = async (req: any, res: any) => {
+export const updatePersona = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { persona_name, segment, role, funnel_stage, description, status } = req.body;
     try {
         const result = await pool.query(
             `UPDATE personas SET
-                persona_name = COALESCE($1, persona_name),
-                segment = COALESCE($2, segment),
-                role = COALESCE($3, role),
-                funnel_stage = COALESCE($4, funnel_stage),
-                description = COALESCE($5, description),
-                status = COALESCE($6, status),
-                updated_at = NOW()
-            WHERE id = $7 RETURNING *`,
+                persona_name = COALESCE(?, persona_name),
+                segment = COALESCE(?, segment),
+                role = COALESCE(?, role),
+                funnel_stage = COALESCE(?, funnel_stage),
+                description = COALESCE(?, description),
+                status = COALESCE(?, status),
+                updated_at = datetime('now')
+            WHERE id = ?`,
             [persona_name, segment, role, funnel_stage, description, status, id]
         );
         const updatedItem = result.rows[0];
@@ -50,9 +50,9 @@ export const updatePersona = async (req: any, res: any) => {
     }
 };
 
-export const deletePersona = async (req: any, res: any) => {
+export const deletePersona = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM personas WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM personas WHERE id = ?', [req.params.id]);
         getSocket().emit('persona_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

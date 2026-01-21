@@ -210,7 +210,7 @@ export const getWorkloadPrediction = async (req: Request, res: Response) => {
                     'Consider outsourcing complex technical tasks',
                     'Implement knowledge sharing sessions'
                 ],
-                estimatedCost: '$8,000 - $12,000/month'
+                estimatedCost: '?,000 - ?,000/month'
             },
             {
                 id: 2,
@@ -226,7 +226,7 @@ export const getWorkloadPrediction = async (req: Request, res: Response) => {
                     'Optimize content creation processes',
                     'Consider freelance writers for peak periods'
                 ],
-                estimatedCost: '$6,000 - $10,000/month'
+                estimatedCost: '?,000 - ?,000/month'
             },
             {
                 id: 3,
@@ -242,7 +242,7 @@ export const getWorkloadPrediction = async (req: Request, res: Response) => {
                     'Partner with external development agency',
                     'Implement gradual technology migration'
                 ],
-                estimatedCost: '$3,000 - $5,000 for training'
+                estimatedCost: '?,000 - ?,000 for training'
             }
         ];
 

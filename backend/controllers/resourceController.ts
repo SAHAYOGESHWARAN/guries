@@ -6,7 +6,7 @@ import path from 'path';
 const dbPath = path.join(__dirname, '../mcc_db.sqlite');
 
 // --- Keywords ---
-export const getKeywords = async (req: any, res: any) => {
+export const getKeywords = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -26,7 +26,7 @@ export const getKeywords = async (req: any, res: any) => {
     }
 };
 
-export const createKeyword = async (req: any, res: any) => {
+export const createKeyword = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -52,7 +52,7 @@ export const createKeyword = async (req: any, res: any) => {
     }
 };
 
-export const updateKeyword = async (req: any, res: any) => {
+export const updateKeyword = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -84,7 +84,7 @@ export const updateKeyword = async (req: any, res: any) => {
     }
 };
 
-export const deleteKeyword = async (req: any, res: any) => {
+export const deleteKeyword = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -108,7 +108,7 @@ export const deleteKeyword = async (req: any, res: any) => {
 };
 
 // --- Backlinks ---
-export const getBacklinks = async (req: any, res: any) => {
+export const getBacklinks = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -125,7 +125,7 @@ export const getBacklinks = async (req: any, res: any) => {
     }
 };
 
-export const createBacklink = async (req: any, res: any) => {
+export const createBacklink = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -149,7 +149,7 @@ export const createBacklink = async (req: any, res: any) => {
     }
 };
 
-export const updateBacklink = async (req: any, res: any) => {
+export const updateBacklink = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
@@ -179,7 +179,7 @@ export const updateBacklink = async (req: any, res: any) => {
     }
 };
 
-export const deleteBacklink = async (req: any, res: any) => {
+export const deleteBacklink = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {

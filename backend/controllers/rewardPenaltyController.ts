@@ -11,35 +11,35 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
             {
                 tier: 'Tier 1 - Excellence Bonus',
                 criteria: 'Composite Score ≥ 95% for 2 consecutive months',
-                bonusAmount: '$500',
+                bonusAmount: '?',
                 eligibleEmployees: 1,
                 color: 'emerald'
             },
             {
                 tier: 'Tier 2 - Performance Bonus',
                 criteria: 'Composite Score ≥ 90% + Zero SLA misses',
-                bonusAmount: '$300',
+                bonusAmount: '?',
                 eligibleEmployees: 3,
                 color: 'blue'
             },
             {
                 tier: 'Tier 3 - Quality Bonus',
                 criteria: 'QC Score ≥ 95% for current month',
-                bonusAmount: '$200',
+                bonusAmount: '?',
                 eligibleEmployees: 2,
                 color: 'purple'
             },
             {
                 tier: 'Tier 4 - Innovation Bonus',
                 criteria: 'Process improvement suggestion implemented',
-                bonusAmount: '$150',
+                bonusAmount: '?',
                 eligibleEmployees: 1,
                 color: 'orange'
             },
             {
                 tier: 'Tier 5 - Mentorship Bonus',
                 criteria: 'Successfully mentored junior team member',
-                bonusAmount: '$100',
+                bonusAmount: '?',
                 eligibleEmployees: 2,
                 color: 'teal'
             }
@@ -60,11 +60,11 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
                     'Implemented new content template system'
                 ],
                 recommendedRewards: [
-                    { type: 'Tier 2 - Performance Bonus', amount: '$300', reason: 'Composite Score 94.2% + Zero SLA misses' },
-                    { type: 'Tier 3 - Quality Bonus', amount: '$200', reason: 'QC Score 96.5%' },
-                    { type: 'Tier 5 - Mentorship Bonus', amount: '$100', reason: 'Mentored 2 junior writers' }
+                    { type: 'Tier 2 - Performance Bonus', amount: '?', reason: 'Composite Score 94.2% + Zero SLA misses' },
+                    { type: 'Tier 3 - Quality Bonus', amount: '?', reason: 'QC Score 96.5%' },
+                    { type: 'Tier 5 - Mentorship Bonus', amount: '?', reason: 'Mentored 2 junior writers' }
                 ],
-                totalRecommendedAmount: '$600',
+                totalRecommendedAmount: '?',
                 status: 'pending-approval',
                 priority: 'high'
             },
@@ -81,10 +81,10 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
                     'Implemented automated testing framework'
                 ],
                 recommendedRewards: [
-                    { type: 'Tier 2 - Performance Bonus', amount: '$300', reason: 'Composite Score 91.7% + Zero SLA misses' },
-                    { type: 'Tier 4 - Innovation Bonus', amount: '$150', reason: 'Automated testing implementation' }
+                    { type: 'Tier 2 - Performance Bonus', amount: '?', reason: 'Composite Score 91.7% + Zero SLA misses' },
+                    { type: 'Tier 4 - Innovation Bonus', amount: '?', reason: 'Automated testing implementation' }
                 ],
-                totalRecommendedAmount: '$450',
+                totalRecommendedAmount: '?',
                 status: 'pending-approval',
                 priority: 'high'
             },
@@ -101,9 +101,9 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
                     'Maintained high-quality backlink profile'
                 ],
                 recommendedRewards: [
-                    { type: 'Tier 5 - Mentorship Bonus', amount: '$100', reason: 'Trained team on SEO tools' }
+                    { type: 'Tier 5 - Mentorship Bonus', amount: '?', reason: 'Trained team on SEO tools' }
                 ],
-                totalRecommendedAmount: '$100',
+                totalRecommendedAmount: '?',
                 status: 'pending-review',
                 priority: 'medium'
             }
@@ -234,7 +234,7 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
                 id: 1,
                 type: 'reward',
                 employeeName: 'Sarah Johnson',
-                amount: '$600',
+                amount: '?',
                 reason: 'Multiple bonus criteria met',
                 submittedBy: 'Team Leader',
                 submittedDate: '2024-12-11',
@@ -246,7 +246,7 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
                 id: 2,
                 type: 'reward',
                 employeeName: 'Lisa Rodriguez',
-                amount: '$450',
+                amount: '?',
                 reason: 'Performance and innovation bonuses',
                 submittedBy: 'Team Leader',
                 submittedDate: '2024-12-11',
@@ -271,7 +271,7 @@ export const getRewardsPenalties = async (req: Request, res: Response) => {
         // Summary Statistics
         const summaryStats = {
             totalRewardsThisMonth: 8,
-            totalRewardAmount: '$2,150',
+            totalRewardAmount: '?,150',
             totalPenaltiesThisMonth: 3,
             averagePerformanceScore: 86.2,
             topPerformersCount: 3,
@@ -307,7 +307,7 @@ export const createAutomationRule = async (req: Request, res: Response) => {
         const { name, condition, action, status } = req.body;
 
         const newRule = {
-            id: Date.now(),
+            id: Date.datetime('now'),
             name,
             condition,
             action,

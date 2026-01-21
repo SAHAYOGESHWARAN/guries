@@ -4,7 +4,7 @@ import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // Get calculated workload forecast based on active tasks
-export const getWorkloadForecast = async (req: any, res: any) => {
+export const getWorkloadForecast = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -39,7 +39,7 @@ export const getWorkloadForecast = async (req: any, res: any) => {
     }
 };
 
-export const getRewardRecommendations = async (req: any, res: any) => {
+export const getRewardRecommendations = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT r.*, u.name, u.role 
@@ -67,13 +67,13 @@ export const getRewardRecommendations = async (req: any, res: any) => {
     }
 };
 
-export const updateRewardStatus = async (req: any, res: any) => {
+export const updateRewardStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status } = req.body; // 'Approved' or 'Rejected'
 
     try {
         const result = await pool.query(
-            'UPDATE reward_recommendations SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+            'UPDATE reward_recommendations SET status = ?, updated_at = datetime('now') WHERE id = ?',
             [status, id]
         );
         
@@ -87,7 +87,7 @@ export const updateRewardStatus = async (req: any, res: any) => {
     }
 };
 
-export const getEmployeeRankings = async (req: any, res: any) => {
+export const getEmployeeRankings = async (req: Request, res: Response) => {
     try {
         // Complex query to aggregate performance data
         const query = `
@@ -127,7 +127,7 @@ export const getEmployeeRankings = async (req: any, res: any) => {
     }
 };
 
-export const getEmployeeSkills = async (req: any, res: any) => {
+export const getEmployeeSkills = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM employee_skills ORDER BY score DESC');
         res.status(200).json(result.rows.map((r:any) => ({
@@ -140,7 +140,7 @@ export const getEmployeeSkills = async (req: any, res: any) => {
     }
 };
 
-export const getEmployeeAchievements = async (req: any, res: any) => {
+export const getEmployeeAchievements = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM employee_achievements ORDER BY date_awarded DESC');
         res.status(200).json(result.rows);

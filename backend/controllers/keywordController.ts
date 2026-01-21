@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getKeywords = async (req: any, res: any) => {
+export const getKeywords = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT * FROM keywords
@@ -16,7 +16,7 @@ export const getKeywords = async (req: any, res: any) => {
     }
 };
 
-export const createKeyword = async (req: any, res: any) => {
+export const createKeyword = async (req: Request, res: Response) => {
     const {
         keyword, keyword_intent, keyword_type, language, search_volume,
         competition_score, mapped_service_id, mapped_service, mapped_sub_service_id,
@@ -29,7 +29,7 @@ export const createKeyword = async (req: any, res: any) => {
                 keyword, keyword_intent, keyword_type, language, search_volume,
                 competition_score, mapped_service_id, mapped_service, mapped_sub_service_id,
                 mapped_sub_service, status, created_by, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 keyword, keyword_intent, keyword_type, language || 'English', search_volume || 0,
                 competition_score || 'Medium', mapped_service_id || null, mapped_service || null,
@@ -47,7 +47,7 @@ export const createKeyword = async (req: any, res: any) => {
     }
 };
 
-export const updateKeyword = async (req: any, res: any) => {
+export const updateKeyword = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
 
@@ -61,7 +61,7 @@ export const updateKeyword = async (req: any, res: any) => {
         const values = fields.map(field => updates[field]);
 
         const result = await pool.query(
-            `UPDATE keywords SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2} RETURNING *`,
+            `UPDATE keywords SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2}`,
             [...values, new Date().toISOString(), id]
         );
 
@@ -74,9 +74,9 @@ export const updateKeyword = async (req: any, res: any) => {
     }
 };
 
-export const deleteKeyword = async (req: any, res: any) => {
+export const deleteKeyword = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM keywords WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM keywords WHERE id = ?', [req.params.id]);
         getSocket().emit('keyword_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

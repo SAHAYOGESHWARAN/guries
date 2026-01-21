@@ -10,12 +10,12 @@ export const getForms = async (_req: any, res: any) => {
     }
 };
 
-export const createForm = async (req: any, res: any) => {
+export const createForm = async (req: Request, res: Response) => {
     const { form_name, form_type, data_source, target_url, status, owner_id } = req.body;
     try {
         const result = await pool.query(
             `INSERT INTO forms (form_name, form_type, data_source, target_url, status, owner_id)
-             VALUES ($1, $2, $3, $4, COALESCE($5, 'Active'), $6) RETURNING *`,
+             VALUES (?, ?, ?, ?, COALESCE(?, 'Active'), ?)`,
             [form_name, form_type, data_source, target_url, status, owner_id]
         );
         const newItem = result.rows[0];
@@ -26,20 +26,20 @@ export const createForm = async (req: any, res: any) => {
     }
 };
 
-export const updateForm = async (req: any, res: any) => {
+export const updateForm = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { form_name, form_type, data_source, target_url, status, owner_id } = req.body;
     try {
         const result = await pool.query(
             `UPDATE forms SET
-                form_name = COALESCE($1, form_name),
-                form_type = COALESCE($2, form_type),
-                data_source = COALESCE($3, data_source),
-                target_url = COALESCE($4, target_url),
-                status = COALESCE($5, status),
-                owner_id = COALESCE($6, owner_id),
-                updated_at = NOW()
-             WHERE id = $7 RETURNING *`,
+                form_name = COALESCE(?, form_name),
+                form_type = COALESCE(?, form_type),
+                data_source = COALESCE(?, data_source),
+                target_url = COALESCE(?, target_url),
+                status = COALESCE(?, status),
+                owner_id = COALESCE(?, owner_id),
+                updated_at = datetime('now')
+             WHERE id = ?`,
             [form_name, form_type, data_source, target_url, status, owner_id, id]
         );
         const updatedItem = result.rows[0];
@@ -50,9 +50,9 @@ export const updateForm = async (req: any, res: any) => {
     }
 };
 
-export const deleteForm = async (req: any, res: any) => {
+export const deleteForm = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM forms WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM forms WHERE id = ?', [req.params.id]);
         getSocket().emit('form_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

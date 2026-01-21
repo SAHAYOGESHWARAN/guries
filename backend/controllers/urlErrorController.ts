@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getUrlErrors = async (req: any, res: any) => {
+export const getUrlErrors = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM url_errors ORDER BY updated_at DESC');
         res.status(200).json(result.rows);
@@ -12,7 +12,7 @@ export const getUrlErrors = async (req: any, res: any) => {
     }
 };
 
-export const createUrlError = async (req: any, res: any) => {
+export const createUrlError = async (req: Request, res: Response) => {
     const { 
         url, error_type, severity, description, 
         service_id, sub_service_id, linked_campaign_id,
@@ -27,7 +27,7 @@ export const createUrlError = async (req: any, res: any) => {
                 service_id, sub_service_id, linked_campaign_id,
                 service_name, sub_service_name, 
                 assigned_to_id, status, updated_at, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
             [
                 url, error_type, severity, description, 
                 service_id || 0, sub_service_id || 0, linked_campaign_id || 0,
@@ -44,7 +44,7 @@ export const createUrlError = async (req: any, res: any) => {
     }
 };
 
-export const updateUrlError = async (req: any, res: any) => {
+export const updateUrlError = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { 
         status, assigned_to_id, severity, description, resolution_notes,
@@ -54,18 +54,18 @@ export const updateUrlError = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE url_errors SET 
-                status=COALESCE($1, status), 
-                assigned_to_id=COALESCE($2, assigned_to_id), 
-                severity=COALESCE($3, severity), 
-                description=COALESCE($4, description),
-                resolution_notes=COALESCE($5, resolution_notes),
-                service_id=COALESCE($6, service_id),
-                sub_service_id=COALESCE($7, sub_service_id),
-                linked_campaign_id=COALESCE($8, linked_campaign_id),
-                service_name=COALESCE($9, service_name),
-                sub_service_name=COALESCE($10, sub_service_name),
-                updated_at=NOW() 
-            WHERE id=$11 RETURNING *`,
+                status=COALESCE(?, status), 
+                assigned_to_id=COALESCE(?, assigned_to_id), 
+                severity=COALESCE(?, severity), 
+                description=COALESCE(?, description),
+                resolution_notes=COALESCE(?, resolution_notes),
+                service_id=COALESCE(?, service_id),
+                sub_service_id=COALESCE(?, sub_service_id),
+                linked_campaign_id=COALESCE(?, linked_campaign_id),
+                service_name=COALESCE(?, service_name),
+                sub_service_name=COALESCE(?, sub_service_name),
+                updated_at=datetime('now') 
+            WHERE id=?`,
             [
                 status, assigned_to_id, severity, description, resolution_notes,
                 service_id, sub_service_id, linked_campaign_id, service_name, sub_service_name,
@@ -81,9 +81,9 @@ export const updateUrlError = async (req: any, res: any) => {
     }
 };
 
-export const deleteUrlError = async (req: any, res: any) => {
+export const deleteUrlError = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM url_errors WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM url_errors WHERE id = ?', [req.params.id]);
         getSocket().emit('url_error_deleted', { id: req.params.id }); // Real-time trigger
         res.status(204).send();
     } catch (error: any) {

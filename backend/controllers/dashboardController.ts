@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 
-export const getDashboardStats = async (req: any, res: any) => {
+export const getDashboardStats = async (req: Request, res: Response) => {
     try {
         // Run aggregations in parallel for performance
         const [
@@ -112,7 +112,7 @@ export const getDashboardStats = async (req: any, res: any) => {
 };
 
 // Get upcoming tasks for dashboard
-export const getUpcomingTasks = async (req: any, res: any) => {
+export const getUpcomingTasks = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT t.*, 
@@ -141,7 +141,7 @@ export const getUpcomingTasks = async (req: any, res: any) => {
 };
 
 // Get recent activity for dashboard
-export const getRecentActivity = async (req: any, res: any) => {
+export const getRecentActivity = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT n.*, u.name as user_name

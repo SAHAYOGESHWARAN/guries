@@ -159,7 +159,7 @@ export const updatePlatform = async (req: Request, res: Response) => {
                 recommended_size = COALESCE(?, recommended_size),
                 scheduling = COALESCE(?, scheduling),
                 status = COALESCE(?, status),
-                updated_at = CURRENT_TIMESTAMP
+                updated_at = datetime('now')
             WHERE id = ?
         `).run(
             platform_name ? platform_name.trim() : null,
@@ -206,7 +206,7 @@ export const deletePlatform = async (req: Request, res: Response) => {
         // Soft delete
         const result = db.prepare(`
             UPDATE platforms 
-            SET status = 'deleted', updated_at = CURRENT_TIMESTAMP
+            SET status = 'deleted', updated_at = datetime('now')
             WHERE id = ?
         `).run(id);
 
@@ -236,7 +236,7 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
 
         const result = db.prepare(`
             UPDATE platforms 
-            SET status = ?, updated_at = CURRENT_TIMESTAMP
+            SET status = ?, updated_at = datetime('now')
             WHERE id IN (${placeholders}) AND status != 'deleted'
         `).run(status.toLowerCase(), ...ids);
 

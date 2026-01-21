@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getCampaigns = async (req: any, res: any) => {
+export const getCampaigns = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT c.*, 
@@ -19,10 +19,10 @@ export const getCampaigns = async (req: any, res: any) => {
     }
 };
 
-export const getCampaignById = async (req: any, res: any) => {
+export const getCampaignById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('SELECT * FROM campaigns WHERE id = $1', [id]);
+        const result = await pool.query('SELECT * FROM campaigns WHERE id = ?', [id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
@@ -32,7 +32,7 @@ export const getCampaignById = async (req: any, res: any) => {
     }
 };
 
-export const createCampaign = async (req: any, res: any) => {
+export const createCampaign = async (req: Request, res: Response) => {
     const {
         project_id, brand_id, campaign_name, campaign_type, target_url,
         backlinks_planned, campaign_start_date, campaign_end_date, campaign_owner_id,
@@ -49,8 +49,7 @@ export const createCampaign = async (req: any, res: any) => {
                 project_id, brand_id, backlinks_planned, backlinks_completed,
                 tasks_completed, tasks_total, kpi_score, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0, $14, $15, $16, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            RETURNING *;
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, datetime('now'), datetime('now'));
         `;
         const values = [
             campaign_name,
@@ -81,7 +80,7 @@ export const createCampaign = async (req: any, res: any) => {
     }
 };
 
-export const updateCampaign = async (req: any, res: any) => {
+export const updateCampaign = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         campaign_name, status, backlinks_completed, kpi_score, linked_service_ids,
@@ -91,14 +90,14 @@ export const updateCampaign = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE campaigns SET 
-                campaign_name = COALESCE($1, campaign_name), 
-                status = COALESCE($2, status), 
-                backlinks_completed = COALESCE($3, backlinks_completed),
-                kpi_score = COALESCE($4, kpi_score),
-                linked_service_ids = COALESCE($5, linked_service_ids),
-                tasks_completed = COALESCE($6, tasks_completed),
-                tasks_total = COALESCE($7, tasks_total)
-            WHERE id = $8 RETURNING *`,
+                campaign_name = COALESCE(?, campaign_name), 
+                status = COALESCE(?, status), 
+                backlinks_completed = COALESCE(?, backlinks_completed),
+                kpi_score = COALESCE(?, kpi_score),
+                linked_service_ids = COALESCE(?, linked_service_ids),
+                tasks_completed = COALESCE(?, tasks_completed),
+                tasks_total = COALESCE(?, tasks_total)
+            WHERE id = ?`,
             [
                 campaign_name, status, backlinks_completed, kpi_score,
                 JSON.stringify(linked_service_ids), tasks_completed, tasks_total,
@@ -119,12 +118,12 @@ export const updateCampaign = async (req: any, res: any) => {
 };
 
 // Pull working copy from Service Master into Campaign
-export const pullServiceWorkingCopy = async (req: any, res: any) => {
+export const pullServiceWorkingCopy = async (req: Request, res: Response) => {
     const { campaignId, serviceId } = req.params;
 
     try {
         // Get service from master
-        const serviceResult = await pool.query('SELECT * FROM services WHERE id = $1', [serviceId]);
+        const serviceResult = await pool.query('SELECT * FROM services WHERE id = ?', [serviceId]);
         if (serviceResult.rows.length === 0) {
             return res.status(404).json({ error: 'Service not found' });
         }
@@ -143,18 +142,18 @@ export const pullServiceWorkingCopy = async (req: any, res: any) => {
                 schema_type_id, robots_index, robots_follow, canonical_url,
                 created_at, last_status_update_at
             ) VALUES (
-                $1, 'service_page', 'draft', $2, $3, $4, $5, $6,
-                $7, $8, $9, $10, $11, $12, $13, $14, $15,
-                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
-                $26, $27, $28, $29, NOW(), NOW()
-            ) RETURNING *`,
+                ?, 'service_page', 'draft', ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, datetime('now'), datetime('now')
+            )`,
             [
                 `Working Copy: ${service.service_name}`,
                 service.slug,
                 service.full_url,
                 JSON.stringify([serviceId]),
                 campaignId,
-                (await pool.query('SELECT campaign_name FROM campaigns WHERE id = $1', [campaignId])).rows[0]?.campaign_name || '',
+                (await pool.query('SELECT campaign_name FROM campaigns WHERE id = ?', [campaignId])).rows[0]?.campaign_name || '',
                 service.h1,
                 service.h2_list,
                 service.h3_list,
@@ -193,13 +192,13 @@ export const pullServiceWorkingCopy = async (req: any, res: any) => {
 };
 
 // Approve and push Campaign changes back to Service Master
-export const approveAndUpdateServiceMaster = async (req: any, res: any) => {
+export const approveAndUpdateServiceMaster = async (req: Request, res: Response) => {
     const { campaignId, assetId, serviceId } = req.body;
 
     try {
         // Get working copy (asset) from campaign
         const assetResult = await pool.query(
-            'SELECT * FROM content_repository WHERE id = $1 AND linked_campaign_id = $2',
+            'SELECT * FROM content_repository WHERE id = ? AND linked_campaign_id = ?',
             [assetId, campaignId]
         );
 
@@ -220,34 +219,34 @@ export const approveAndUpdateServiceMaster = async (req: any, res: any) => {
         // Update Service Master with approved content
         const updateResult = await pool.query(
             `UPDATE services SET
-                h1 = COALESCE($1, h1),
-                h2_list = COALESCE($2, h2_list),
-                h3_list = COALESCE($3, h3_list),
-                h4_list = COALESCE($4, h4_list),
-                h5_list = COALESCE($5, h5_list),
-                body_content = COALESCE($6, body_content),
-                internal_links = COALESCE($7, internal_links),
-                external_links = COALESCE($8, external_links),
-                image_alt_texts = COALESCE($9, image_alt_texts),
-                meta_title = COALESCE($10, meta_title),
-                meta_description = COALESCE($11, meta_description),
-                focus_keywords = COALESCE($12, focus_keywords),
-                secondary_keywords = COALESCE($13, secondary_keywords),
-                og_title = COALESCE($14, og_title),
-                og_description = COALESCE($15, og_description),
-                og_image_url = COALESCE($16, og_image_url),
-                twitter_title = COALESCE($17, twitter_title),
-                twitter_description = COALESCE($18, twitter_description),
-                twitter_image_url = COALESCE($19, twitter_image_url),
-                schema_type_id = COALESCE($20, schema_type_id),
-                robots_index = COALESCE($21, robots_index),
-                robots_follow = COALESCE($22, robots_follow),
-                canonical_url = COALESCE($23, canonical_url),
-                word_count = COALESCE($24, word_count),
-                reading_time_minutes = COALESCE($25, reading_time_minutes),
-                updated_at = NOW(),
+                h1 = COALESCE(?, h1),
+                h2_list = COALESCE(?, h2_list),
+                h3_list = COALESCE(?, h3_list),
+                h4_list = COALESCE(?, h4_list),
+                h5_list = COALESCE(?, h5_list),
+                body_content = COALESCE(?, body_content),
+                internal_links = COALESCE(?, internal_links),
+                external_links = COALESCE(?, external_links),
+                image_alt_texts = COALESCE(?, image_alt_texts),
+                meta_title = COALESCE(?, meta_title),
+                meta_description = COALESCE(?, meta_description),
+                focus_keywords = COALESCE(?, focus_keywords),
+                secondary_keywords = COALESCE(?, secondary_keywords),
+                og_title = COALESCE(?, og_title),
+                og_description = COALESCE(?, og_description),
+                og_image_url = COALESCE(?, og_image_url),
+                twitter_title = COALESCE(?, twitter_title),
+                twitter_description = COALESCE(?, twitter_description),
+                twitter_image_url = COALESCE(?, twitter_image_url),
+                schema_type_id = COALESCE(?, schema_type_id),
+                robots_index = COALESCE(?, robots_index),
+                robots_follow = COALESCE(?, robots_follow),
+                canonical_url = COALESCE(?, canonical_url),
+                word_count = COALESCE(?, word_count),
+                reading_time_minutes = COALESCE(?, reading_time_minutes),
+                updated_at = datetime('now'),
                 version_number = version_number + 1
-            WHERE id = $26 RETURNING *`,
+            WHERE id = ?`,
             [
                 workingCopy.h1,
                 workingCopy.h2_list,
@@ -286,7 +285,7 @@ export const approveAndUpdateServiceMaster = async (req: any, res: any) => {
 
         // Mark working copy as published/merged
         await pool.query(
-            'UPDATE content_repository SET status = $1 WHERE id = $2',
+            'UPDATE content_repository SET status = ? WHERE id = ?',
             ['published', assetId]
         );
 
@@ -305,10 +304,10 @@ export const approveAndUpdateServiceMaster = async (req: any, res: any) => {
     }
 };
 
-export const deleteCampaign = async (req: any, res: any) => {
+export const deleteCampaign = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM campaigns WHERE id = $1', [id]);
+        await pool.query('DELETE FROM campaigns WHERE id = ?', [id]);
         getSocket().emit('campaign_deleted', { id });
         res.status(204).send();
     } catch (error: any) {

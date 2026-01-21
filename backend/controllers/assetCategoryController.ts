@@ -70,7 +70,7 @@ export const updateAssetCategory = async (req: Request, res: Response) => {
             SET category_name = COALESCE(?, category_name),
                 description = COALESCE(?, description),
                 status = COALESCE(?, status),
-                updated_at = CURRENT_TIMESTAMP
+                updated_at = datetime('now')
             WHERE id = ?
         `).run(category_name, description, status, id);
 
@@ -106,7 +106,7 @@ export const deleteAssetCategory = async (req: Request, res: Response) => {
         // Soft delete by setting status to 'inactive'
         const result = db.prepare(`
             UPDATE asset_category_master 
-            SET status = 'inactive', updated_at = CURRENT_TIMESTAMP
+            SET status = 'inactive', updated_at = datetime('now')
             WHERE id = ?
         `).run(id);
 

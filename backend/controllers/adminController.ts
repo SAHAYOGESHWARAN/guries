@@ -24,7 +24,7 @@ const logAdminAction = async (
 
         await pool.query(
             `INSERT INTO admin_audit_log (admin_user_id, admin_user_email, action_type, target_user_id, target_user_email, action_details, ip_address, user_agent)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [adminUserId, adminUserEmail, actionType, targetUserId, targetUserEmail, JSON.stringify(actionDetails), ipAddress, userAgent]
         );
     } catch (error) {
@@ -159,7 +159,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 
     try {
         // Check for duplicate email
-        const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+        const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [email]);
         if (existingUser.rows.length > 0) {
             return res.status(409).json({ error: 'Email already exists' });
         }
@@ -169,7 +169,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `INSERT INTO users (name, email, password_hash, role, department, country, status, created_at, updated_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, 'active', NOW(), NOW()) RETURNING *`,
+             VALUES (?, ?, ?, ?, ?, ?, 'active', datetime('now'), datetime('now'))`,
             [name, email, hashedPassword, role || 'user', department || null, country || null]
         );
 
@@ -208,7 +208,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
     try {
         // Check for duplicate email (excluding current user)
         const existingUser = await pool.query(
-            'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id != $2',
+            'SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?',
             [email, id]
         );
         if (existingUser.rows.length > 0) {
@@ -217,8 +217,8 @@ export const updateEmployee = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `UPDATE users 
-             SET name = $1, email = $2, role = $3, department = $4, country = $5, status = COALESCE($6, status), updated_at = NOW()
-             WHERE id = $7 RETURNING *`,
+             SET name = ?, email = ?, role = ?, department = ?, country = ?, status = COALESCE(?, status), updated_at = datetime('now')
+             WHERE id = ?`,
             [name, email, role || 'user', department, country, status, id]
         );
 
@@ -255,7 +255,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         const hashedPassword = hashPassword(newPassword);
 
         const result = await pool.query(
-            'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email',
+            'UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ? RETURNING id, name, email',
             [hashedPassword, id]
         );
 
@@ -282,7 +282,7 @@ export const deactivateEmployee = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            "UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = $1 RETURNING *",
+            "UPDATE users SET status = 'inactive', updated_at = datetime('now') WHERE id = ?",
             [id]
         );
 
@@ -312,7 +312,7 @@ export const activateEmployee = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            "UPDATE users SET status = 'active', updated_at = NOW() WHERE id = $1 RETURNING *",
+            "UPDATE users SET status = 'active', updated_at = datetime('now') WHERE id = ?",
             [id]
         );
 
@@ -342,7 +342,7 @@ export const toggleEmployeeStatus = async (req: Request, res: Response) => {
 
     try {
         // Get current status
-        const currentResult = await pool.query('SELECT status, email, name FROM users WHERE id = $1', [id]);
+        const currentResult = await pool.query('SELECT status, email, name FROM users WHERE id = ?', [id]);
         if (currentResult.rows.length === 0) {
             return res.status(404).json({ error: 'Employee not found' });
         }
@@ -351,7 +351,7 @@ export const toggleEmployeeStatus = async (req: Request, res: Response) => {
         const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
         const result = await pool.query(
-            'UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+            'UPDATE users SET status = ?, updated_at = datetime('now') WHERE id = ?',
             [newStatus, id]
         );
 
@@ -385,7 +385,7 @@ export const validateLogin = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            'SELECT id, name, email, role, status, department, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+            'SELECT id, name, email, role, status, department, password_hash FROM users WHERE LOWER(email) = LOWER(?)',
             [email]
         );
 
@@ -413,7 +413,7 @@ export const validateLogin = async (req: Request, res: Response) => {
 
         // Update last login
         await pool.query(
-            'UPDATE users SET last_login = NOW() WHERE id = $1',
+            'UPDATE users SET last_login = datetime('now') WHERE id = ?',
             [user.id]
         );
 
@@ -440,12 +440,12 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 
     try {
         // Get user info before deletion for audit log
-        const userInfo = await pool.query('SELECT email, name FROM users WHERE id = $1', [id]);
+        const userInfo = await pool.query('SELECT email, name FROM users WHERE id = ?', [id]);
         const targetEmail = userInfo.rows[0]?.email || null;
         const targetName = userInfo.rows[0]?.name || null;
 
         if (hardDelete === 'true') {
-            await pool.query('DELETE FROM users WHERE id = $1', [id]);
+            await pool.query('DELETE FROM users WHERE id = ?', [id]);
 
             // Log admin action for audit trail
             const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;
@@ -457,7 +457,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
         } else {
             // Soft delete - just deactivate
             const result = await pool.query(
-                "UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = $1 RETURNING *",
+                "UPDATE users SET status = 'inactive', updated_at = datetime('now') WHERE id = ?",
                 [id]
             );
 
@@ -502,7 +502,7 @@ export const approveRegistration = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            `UPDATE users SET status = 'active', role = COALESCE($1, role), updated_at = NOW() WHERE id = $2 AND status = 'pending' RETURNING *`,
+            `UPDATE users SET status = 'active', role = COALESCE(?, role), updated_at = datetime('now') WHERE id = ? AND status = 'pending'`,
             [role || 'user', id]
         );
 
@@ -533,7 +533,7 @@ export const rejectRegistration = async (req: Request, res: Response) => {
 
     try {
         // Get user info before deletion
-        const userInfo = await pool.query('SELECT email, name FROM users WHERE id = $1 AND status = $2', [id, 'pending']);
+        const userInfo = await pool.query('SELECT email, name FROM users WHERE id = ? AND status = ?', [id, 'pending']);
         if (userInfo.rows.length === 0) {
             return res.status(404).json({ error: 'Pending registration not found' });
         }
@@ -542,7 +542,7 @@ export const rejectRegistration = async (req: Request, res: Response) => {
         const targetName = userInfo.rows[0].name;
 
         // Delete the pending registration
-        await pool.query('DELETE FROM users WHERE id = $1 AND status = $2', [id, 'pending']);
+        await pool.query('DELETE FROM users WHERE id = ? AND status = ?', [id, 'pending']);
 
         // Log admin action for audit trail
         const adminUserId = req.headers['x-user-id'] ? Number(req.headers['x-user-id']) : null;

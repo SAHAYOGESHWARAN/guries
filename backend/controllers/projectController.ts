@@ -3,7 +3,7 @@ import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // Get all projects with related data
-export const getProjects = async (req: any, res: any) => {
+export const getProjects = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT p.*, 
@@ -24,7 +24,7 @@ export const getProjects = async (req: any, res: any) => {
 };
 
 // Get single project with full details
-export const getProjectById = async (req: any, res: any) => {
+export const getProjectById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const result = await pool.query(`
@@ -34,7 +34,7 @@ export const getProjectById = async (req: any, res: any) => {
             FROM projects p
             LEFT JOIN users u ON p.owner_id = u.id
             LEFT JOIN brands b ON p.brand_id = b.id
-            WHERE p.id = $1
+            WHERE p.id = ?
         `, [id]);
 
         if (result.rows.length === 0) {
@@ -47,7 +47,7 @@ export const getProjectById = async (req: any, res: any) => {
 };
 
 // Create new project
-export const createProject = async (req: any, res: any) => {
+export const createProject = async (req: Request, res: Response) => {
     const {
         project_name,
         project_code,
@@ -76,12 +76,11 @@ export const createProject = async (req: any, res: any) => {
                 expected_outcome, team_members, weekly_report,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            RETURNING *;
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         `;
         const values = [
             project_name,
-            project_code || `PRJ-${Date.now()}`,
+            project_code || `PRJ-${Date.datetime('now')}`,
             description || null,
             status || 'Planned',
             start_date || null,
@@ -110,7 +109,7 @@ export const createProject = async (req: any, res: any) => {
 };
 
 // Update project
-export const updateProject = async (req: any, res: any) => {
+export const updateProject = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         project_name, description, status, start_date, end_date,
@@ -121,22 +120,22 @@ export const updateProject = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE projects SET 
-                project_name = COALESCE($1, project_name), 
-                description = COALESCE($2, description), 
-                status = COALESCE($3, status),
-                start_date = COALESCE($4, start_date),
-                end_date = COALESCE($5, end_date),
-                owner_id = COALESCE($6, owner_id),
-                brand_id = COALESCE($7, brand_id),
-                linked_service_id = COALESCE($8, linked_service_id),
-                priority = COALESCE($9, priority),
-                sub_services = COALESCE($10, sub_services),
-                outcome_kpis = COALESCE($11, outcome_kpis),
-                expected_outcome = COALESCE($12, expected_outcome),
-                team_members = COALESCE($13, team_members),
-                weekly_report = COALESCE($14, weekly_report),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $15 RETURNING *`,
+                project_name = COALESCE(?, project_name), 
+                description = COALESCE(?, description), 
+                status = COALESCE(?, status),
+                start_date = COALESCE(?, start_date),
+                end_date = COALESCE(?, end_date),
+                owner_id = COALESCE(?, owner_id),
+                brand_id = COALESCE(?, brand_id),
+                linked_service_id = COALESCE(?, linked_service_id),
+                priority = COALESCE(?, priority),
+                sub_services = COALESCE(?, sub_services),
+                outcome_kpis = COALESCE(?, outcome_kpis),
+                expected_outcome = COALESCE(?, expected_outcome),
+                team_members = COALESCE(?, team_members),
+                weekly_report = COALESCE(?, weekly_report),
+                updated_at = datetime('now')
+            WHERE id = ?`,
             [
                 project_name, description, status, start_date, end_date,
                 owner_id, brand_id, linked_service_id, priority,
@@ -160,10 +159,10 @@ export const updateProject = async (req: any, res: any) => {
 };
 
 // Delete project
-export const deleteProject = async (req: any, res: any) => {
+export const deleteProject = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+        await pool.query('DELETE FROM projects WHERE id = ?', [id]);
         getSocket().emit('project_deleted', { id });
         res.status(204).send();
     } catch (error: any) {

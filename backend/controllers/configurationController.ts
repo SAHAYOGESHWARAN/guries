@@ -15,7 +15,7 @@ const getMaster = async (table: string, res: any) => {
 
 const deleteMaster = async (table: string, id: string, res: any, eventName?: string) => {
     try {
-        await pool.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+        await pool.query(`DELETE FROM ${table} WHERE id = ?`, [id]);
 
         // Emit socket event if eventName provided
         if (eventName) {
@@ -35,22 +35,22 @@ const deleteMaster = async (table: string, id: string, res: any, eventName?: str
 
 // --- Industry / Sector ---
 export const getIndustries = (req: any, res: any) => getMaster('industry_sectors', res);
-export const createIndustry = async (req: any, res: any) => {
+export const createIndustry = async (req: Request, res: Response) => {
     const { industry, sector, application, country, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO industry_sectors (industry, sector, application, country, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            'INSERT INTO industry_sectors (industry, sector, application, country, status) VALUES (?, ?, ?, ?, ?)',
             [industry, sector, application, country, status]
         );
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
-export const updateIndustry = async (req: any, res: any) => {
+export const updateIndustry = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { industry, sector, application, country, status } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE industry_sectors SET industry=$1, sector=$2, application=$3, country=$4, status=$5 WHERE id=$6 RETURNING *',
+            'UPDATE industry_sectors SET industry=?, sector=?, application=?, country=?, status=? WHERE id=?',
             [industry, sector, application, country, status, id]
         );
         res.status(200).json(result.rows[0]);
@@ -60,7 +60,7 @@ export const deleteIndustry = (req: any, res: any) => deleteMaster('industry_sec
 
 // --- Content Types ---
 export const getContentTypes = (req: any, res: any) => getMaster('content_types', res);
-export const createContentType = async (req: any, res: any) => {
+export const createContentType = async (req: Request, res: Response) => {
     const {
         content_type,
         category,
@@ -85,7 +85,7 @@ export const createContentType = async (req: any, res: any) => {
                 seo_focus_keywords_required, social_media_applicable,
                 estimated_creation_hours, content_owner_role,
                 use_in_campaigns, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 content_type, category, description,
                 default_wordcount_min || 500, default_wordcount_max || 2000,
@@ -98,7 +98,7 @@ export const createContentType = async (req: any, res: any) => {
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
-export const updateContentType = async (req: any, res: any) => {
+export const updateContentType = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         content_type,
@@ -118,13 +118,13 @@ export const updateContentType = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE content_types SET
-                content_type=$1, category=$2, description=$3,
-                default_wordcount_min=$4, default_wordcount_max=$5,
-                default_graphic_requirements=$6, default_qc_checklist=$7,
-                seo_focus_keywords_required=$8, social_media_applicable=$9,
-                estimated_creation_hours=$10, content_owner_role=$11,
-                use_in_campaigns=$12, status=$13
-            WHERE id=$14 RETURNING *`,
+                content_type=?, category=?, description=?,
+                default_wordcount_min=?, default_wordcount_max=?,
+                default_graphic_requirements=?, default_qc_checklist=?,
+                seo_focus_keywords_required=?, social_media_applicable=?,
+                estimated_creation_hours=?, content_owner_role=?,
+                use_in_campaigns=?, status=?
+            WHERE id=?`,
             [
                 content_type, category, description,
                 default_wordcount_min, default_wordcount_max,
@@ -141,22 +141,22 @@ export const deleteContentType = (req: any, res: any) => deleteMaster('content_t
 
 // --- Asset Types ---
 export const getAssetTypes = (req: any, res: any) => getMaster('asset_types', res);
-export const createAssetType = async (req: any, res: any) => {
+export const createAssetType = async (req: Request, res: Response) => {
     const { asset_type, dimension, file_formats, description } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO asset_types (asset_type, dimension, file_formats, description) VALUES ($1, $2, $3, $4) RETURNING *',
+            'INSERT INTO asset_types (asset_type, dimension, file_formats, description) VALUES (?, ?, ?, ?)',
             [asset_type, dimension, file_formats, description]
         );
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
-export const updateAssetType = async (req: any, res: any) => {
+export const updateAssetType = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { asset_type, dimension, file_formats, description } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE asset_types SET asset_type=$1, dimension=$2, file_formats=$3, description=$4 WHERE id=$5 RETURNING *',
+            'UPDATE asset_types SET asset_type=?, dimension=?, file_formats=?, description=? WHERE id=?',
             [asset_type, dimension, file_formats, description, id]
         );
         res.status(200).json(result.rows[0]);
@@ -166,11 +166,11 @@ export const deleteAssetType = (req: any, res: any) => deleteMaster('asset_types
 
 // --- Asset Categories ---
 export const getAssetCategories = (req: any, res: any) => getMaster('asset_category_master', res);
-export const createAssetCategory = async (req: any, res: any) => {
+export const createAssetCategory = async (req: Request, res: Response) => {
     const { brand, category_name, word_count, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO asset_category_master (brand, category_name, word_count, status, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            'INSERT INTO asset_category_master (brand, category_name, word_count, status, updated_at) VALUES (?, ?, ?, ?, ?)',
             [brand, category_name, word_count || 0, status || 'active', new Date().toISOString()]
         );
 
@@ -191,12 +191,12 @@ export const createAssetCategory = async (req: any, res: any) => {
         res.status(500).json({ error: e.message });
     }
 };
-export const updateAssetCategory = async (req: any, res: any) => {
+export const updateAssetCategory = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { brand, category_name, word_count, status } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE asset_category_master SET brand=$1, category_name=$2, word_count=$3, status=$4, updated_at=$5 WHERE id=$6 RETURNING *',
+            'UPDATE asset_category_master SET brand=?, category_name=?, word_count=?, status=?, updated_at=? WHERE id=?',
             [brand, category_name, word_count, status, new Date().toISOString(), id]
         );
 
@@ -221,22 +221,22 @@ export const deleteAssetCategory = (req: any, res: any) => deleteMaster('asset_c
 
 // --- Platforms ---
 export const getPlatforms = (req: any, res: any) => getMaster('platforms', res);
-export const createPlatform = async (req: any, res: any) => {
+export const createPlatform = async (req: Request, res: Response) => {
     const { platform_name, recommended_size, scheduling, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO platforms (platform_name, recommended_size, scheduling, status) VALUES ($1, $2, $3, $4) RETURNING *',
+            'INSERT INTO platforms (platform_name, recommended_size, scheduling, status) VALUES (?, ?, ?, ?)',
             [platform_name, recommended_size, scheduling, status]
         );
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
-export const updatePlatform = async (req: any, res: any) => {
+export const updatePlatform = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { platform_name, recommended_size, scheduling, status } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE platforms SET platform_name=$1, recommended_size=$2, scheduling=$3, status=$4 WHERE id=$5 RETURNING *',
+            'UPDATE platforms SET platform_name=?, recommended_size=?, scheduling=?, status=? WHERE id=?',
             [platform_name, recommended_size, scheduling, status, id]
         );
         res.status(200).json(result.rows[0]);
@@ -246,11 +246,11 @@ export const deletePlatform = (req: any, res: any) => deleteMaster('platforms', 
 
 // --- Countries ---
 export const getCountries = (req: any, res: any) => getMaster('countries', res);
-export const createCountry = async (req: any, res: any) => {
+export const createCountry = async (req: Request, res: Response) => {
     const { country_name, code, region, has_backlinks, has_content, has_smm, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO countries (country_name, code, region, has_backlinks, has_content, has_smm, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            'INSERT INTO countries (country_name, code, region, has_backlinks, has_content, has_smm, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [country_name, code, region, has_backlinks, has_content, has_smm, status]
         );
 
@@ -271,12 +271,12 @@ export const createCountry = async (req: any, res: any) => {
         res.status(500).json({ error: e.message });
     }
 };
-export const updateCountry = async (req: any, res: any) => {
+export const updateCountry = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { country_name, code, region, has_backlinks, has_content, has_smm, status } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE countries SET country_name=$1, code=$2, region=$3, has_backlinks=$4, has_content=$5, has_smm=$6, status=$7 WHERE id=$8 RETURNING *',
+            'UPDATE countries SET country_name=?, code=?, region=?, has_backlinks=?, has_content=?, has_smm=?, status=? WHERE id=?',
             [country_name, code, region, has_backlinks, has_content, has_smm, status, id]
         );
 
@@ -301,22 +301,22 @@ export const deleteCountry = (req: any, res: any) => deleteMaster('countries', r
 
 // --- SEO Errors ---
 export const getSeoErrors = (req: any, res: any) => getMaster('seo_errors', res);
-export const createSeoError = async (req: any, res: any) => {
+export const createSeoError = async (req: Request, res: Response) => {
     const { error_type, category, severity, description, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO seo_errors (error_type, category, severity, description, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            'INSERT INTO seo_errors (error_type, category, severity, description, status) VALUES (?, ?, ?, ?, ?)',
             [error_type, category, severity, description, status]
         );
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
-export const updateSeoError = async (req: any, res: any) => {
+export const updateSeoError = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { error_type, category, severity, description, status } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE seo_errors SET error_type=$1, category=$2, severity=$3, description=$4, status=$5 WHERE id=$6 RETURNING *',
+            'UPDATE seo_errors SET error_type=?, category=?, severity=?, description=?, status=? WHERE id=?',
             [error_type, category, severity, description, status, id]
         );
         res.status(200).json(result.rows[0]);
@@ -326,22 +326,22 @@ export const deleteSeoError = (req: any, res: any) => deleteMaster('seo_errors',
 
 // --- Workflow Stages ---
 export const getWorkflowStages = (req: any, res: any) => getMaster('workflow_stages', res);
-export const createWorkflowStage = async (req: any, res: any) => {
+export const createWorkflowStage = async (req: Request, res: Response) => {
     const { workflow_name, stage_order, stage_label, color_tag, active_flag } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO workflow_stages (workflow_name, stage_order, stage_label, color_tag, active_flag) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            'INSERT INTO workflow_stages (workflow_name, stage_order, stage_label, color_tag, active_flag) VALUES (?, ?, ?, ?, ?)',
             [workflow_name, stage_order, stage_label, color_tag, active_flag]
         );
         res.status(201).json(result.rows[0]);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
 };
-export const updateWorkflowStage = async (req: any, res: any) => {
+export const updateWorkflowStage = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { workflow_name, stage_order, stage_label, color_tag, active_flag } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE workflow_stages SET workflow_name=$1, stage_order=$2, stage_label=$3, color_tag=$4, active_flag=$5 WHERE id=$6 RETURNING *',
+            'UPDATE workflow_stages SET workflow_name=?, stage_order=?, stage_label=?, color_tag=?, active_flag=? WHERE id=?',
             [workflow_name, stage_order, stage_label, color_tag, active_flag, id]
         );
         res.status(200).json(result.rows[0]);

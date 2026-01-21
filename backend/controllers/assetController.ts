@@ -1,29 +1,47 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db-sqlite';
+import { query, execute, queryOne } from '../utils/dbHelper';
+import { validateRequired, sanitizeObject, throwIfErrors } from '../utils/validation';
 import { getSocket } from '../socket';
 
-export const getAssets = async (req: any, res: any) => {
+export const getAssets = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT * FROM assets ORDER BY created_at DESC');
+        const result = query('SELECT * FROM assets ORDER BY created_at DESC');
         res.status(200).json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
 };
 
-export const createAsset = async (req: any, res: any) => {
+export const createAsset = async (req: Request, res: Response) => {
     const { name, type, repository, linked_task, owner_id, usage_status, social_meta } = req.body;
 
+    // Validate required fields
+    const errors = validateRequired(req.body, ['name', 'type']);
+    throwIfErrors(errors);
+
     try {
-        const result = await pool.query(
-            `INSERT INTO assets (
-                asset_name, asset_type, file_url, description, tags, social_meta, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
-            [name, type, repository, linked_task, owner_id, JSON.stringify(social_meta || {})]
+        const sanitized = sanitizeObject(req.body);
+
+        const sql = `INSERT INTO assets (
+            asset_name, asset_type, file_url, description, tags, social_meta, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
+
+        const result = execute(sql, [
+            sanitized.name,
+            sanitized.type,
+            repository,
+            '',
+            sanitized.repository,
+            JSON.stringify(social_meta || {})
+        ]);
+
+        // Fetch the created asset
+        const newAsset = queryOne(
+            'SELECT * FROM assets WHERE id = ?',
+            [result.lastID]
         );
 
-        const newAsset = result.rows[0];
         getSocket().emit('asset_created', newAsset);
         res.status(201).json(newAsset);
     } catch (error: any) {
@@ -31,28 +49,39 @@ export const createAsset = async (req: any, res: any) => {
     }
 };
 
-export const updateAsset = async (req: any, res: any) => {
+export const updateAsset = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, usage_status, linked_task, repository, type, social_meta } = req.body;
 
     try {
-        const result = await pool.query(
-            `UPDATE assets SET 
-                asset_name = COALESCE($1, asset_name), 
-                tags = COALESCE($2, tags), 
-                file_url = COALESCE($3, file_url),
-                description = COALESCE($4, description),
-                asset_type = COALESCE($5, asset_type),
-                social_meta = COALESCE($6, social_meta)
-            WHERE id = $7 RETURNING *`,
-            [name, usage_status, repository, linked_task, type, JSON.stringify(social_meta || {}), id]
-        );
+        const sanitized = sanitizeObject(req.body);
 
-        if (result.rows.length === 0) {
+        const sql = `UPDATE assets SET 
+            asset_name = COALESCE(?, asset_name), 
+            tags = COALESCE(?, tags), 
+            file_url = COALESCE(?, file_url),
+            description = COALESCE(?, description),
+            asset_type = COALESCE(?, asset_type),
+            social_meta = COALESCE(?, social_meta),
+            updated_at = datetime('now')
+        WHERE id = ?`;
+
+        execute(sql, [
+            sanitized.name || null,
+            usage_status || null,
+            repository || null,
+            '' || null,
+            sanitized.type || null,
+            JSON.stringify(social_meta || {}) || null,
+            id
+        ]);
+
+        const updatedAsset = queryOne('SELECT * FROM assets WHERE id = ?', [id]);
+
+        if (!updatedAsset) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
-        const updatedAsset = result.rows[0];
         getSocket().emit('asset_updated', updatedAsset);
         res.status(200).json(updatedAsset);
     } catch (error: any) {
@@ -60,10 +89,10 @@ export const updateAsset = async (req: any, res: any) => {
     }
 };
 
-export const deleteAsset = async (req: any, res: any) => {
+export const deleteAsset = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM assets WHERE id = $1', [id]);
+        execute('DELETE FROM assets WHERE id = ?', [id]);
         getSocket().emit('asset_deleted', { id });
         res.status(204).send();
     } catch (error: any) {
@@ -72,9 +101,9 @@ export const deleteAsset = async (req: any, res: any) => {
 };
 
 // Asset Library endpoints
-export const getAssetLibrary = async (req: any, res: any) => {
+export const getAssetLibrary = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query(`
+        const result = query(`
             SELECT 
                 a.id,
                 a.asset_name as name,
@@ -97,66 +126,74 @@ export const getAssetLibrary = async (req: any, res: any) => {
                 a.updated_at,
                 a.linked_service_ids,
                 a.linked_sub_service_ids,
-                a.linked_task_id,
-                a.linked_campaign_id,
-                a.linked_project_id,
-                a.linked_service_id,
-                a.linked_sub_service_id,
-                a.linked_repository_item_id,
-                a.application_type,
-                a.keywords,
-                a.content_keywords,
-                a.seo_keywords,
-                a.seo_score,
-                a.grammar_score,
-                a.ai_plagiarism_score,
-                a.qc_score,
-                a.qc_checklist_items,
-                a.submitted_by,
-                a.submitted_at,
-                a.qc_reviewer_id,
-                a.qc_reviewed_at,
-                a.qc_remarks,
-                a.linking_active,
-                a.rework_count,
-                a.version_number,
-                a.version_history,
-                a.designed_by,
-                a.published_by,
-                a.verified_by,
-                a.published_at,
-                a.created_by,
-                a.updated_by,
-                a.web_title,
-                a.web_description,
-                a.web_meta_description,
-                a.web_keywords,
-                a.web_url,
-                a.web_h1,
-                a.web_h2_1,
-                a.web_h2_2,
-                a.web_h3_tags,
-                a.web_thumbnail,
-                a.web_body_content,
-                a.resource_files,
-                a.smm_platform,
-                a.smm_title,
-                a.smm_tag,
-                a.smm_url,
-                a.smm_description,
-                a.smm_hashtags,
-                a.smm_media_url,
-                a.smm_media_type,
-                COALESCE(
-                    (SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id), 0
-                ) + COALESCE(
-                    (SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0
-                ) + COALESCE(
-                    (SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0
-                ) as usage_count
+                a.linked_task_id
             FROM assets a
             ORDER BY a.created_at DESC
         `);
+        res.status(200).json(result.rows);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+a.linked_campaign_id,
+    a.linked_project_id,
+    a.linked_service_id,
+    a.linked_sub_service_id,
+    a.linked_repository_item_id,
+    a.application_type,
+    a.keywords,
+    a.content_keywords,
+    a.seo_keywords,
+    a.seo_score,
+    a.grammar_score,
+    a.ai_plagiarism_score,
+    a.qc_score,
+    a.qc_checklist_items,
+    a.submitted_by,
+    a.submitted_at,
+    a.qc_reviewer_id,
+    a.qc_reviewed_at,
+    a.qc_remarks,
+    a.linking_active,
+    a.rework_count,
+    a.version_number,
+    a.version_history,
+    a.designed_by,
+    a.published_by,
+    a.verified_by,
+    a.published_at,
+    a.created_by,
+    a.updated_by,
+    a.web_title,
+    a.web_description,
+    a.web_meta_description,
+    a.web_keywords,
+    a.web_url,
+    a.web_h1,
+    a.web_h2_1,
+    a.web_h2_2,
+    a.web_h3_tags,
+    a.web_thumbnail,
+    a.web_body_content,
+    a.resource_files,
+    a.smm_platform,
+    a.smm_title,
+    a.smm_tag,
+    a.smm_url,
+    a.smm_description,
+    a.smm_hashtags,
+    a.smm_media_url,
+    a.smm_media_type,
+    COALESCE(
+        (SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id), 0
+                ) + COALESCE(
+            (SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0
+                ) + COALESCE(
+                (SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0
+                ) as usage_count
+            FROM assets a
+            ORDER BY a.created_at DESC
+    `);
 
         // Parse JSON arrays for linked IDs
         const parsed = result.rows.map(row => ({
@@ -181,83 +218,83 @@ export const getAssetLibrary = async (req: any, res: any) => {
     }
 };
 
-export const getAssetLibraryItem = async (req: any, res: any) => {
+export const getAssetLibraryItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const result = await pool.query(`
-            SELECT 
-                id,
-                asset_name as name,
-                asset_type as type,
-                asset_category,
-                asset_format,
-                content_type,
-                tags as repository,
-                usage_status,
-                status,
-                workflow_stage,
-                qc_status,
-                file_url,
-                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
-                file_size,
-                file_type,
-                created_at as date,
-                created_at,
-                updated_at,
-                linked_service_ids,
-                linked_sub_service_ids,
-                linked_task_id,
-                linked_campaign_id,
-                linked_project_id,
-                linked_service_id,
-                linked_sub_service_id,
-                linked_repository_item_id,
-                application_type,
-                keywords,
-                content_keywords,
-                seo_keywords,
-                seo_score,
-                grammar_score,
-                ai_plagiarism_score,
-                qc_score,
-                qc_checklist_items,
-                submitted_by,
-                submitted_at,
-                qc_reviewer_id,
-                qc_reviewed_at,
-                qc_remarks,
-                linking_active,
-                rework_count,
-                version_number,
-                version_history,
-                designed_by,
-                published_by,
-                verified_by,
-                published_at,
-                created_by,
-                web_title,
-                web_description,
-                web_meta_description,
-                web_keywords,
-                web_url,
-                web_h1,
-                web_h2_1,
-                web_h2_2,
-                web_h3_tags,
-                web_thumbnail,
-                web_body_content,
-                resource_files,
-                smm_platform,
-                smm_title,
-                smm_tag,
-                smm_url,
-                smm_description,
-                smm_hashtags,
-                smm_media_url,
-                smm_media_type
+SELECT
+id,
+    asset_name as name,
+    asset_type as type,
+    asset_category,
+    asset_format,
+    content_type,
+    tags as repository,
+    usage_status,
+    status,
+    workflow_stage,
+    qc_status,
+    file_url,
+    COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+    file_size,
+    file_type,
+    created_at as date,
+    created_at,
+    updated_at,
+    linked_service_ids,
+    linked_sub_service_ids,
+    linked_task_id,
+    linked_campaign_id,
+    linked_project_id,
+    linked_service_id,
+    linked_sub_service_id,
+    linked_repository_item_id,
+    application_type,
+    keywords,
+    content_keywords,
+    seo_keywords,
+    seo_score,
+    grammar_score,
+    ai_plagiarism_score,
+    qc_score,
+    qc_checklist_items,
+    submitted_by,
+    submitted_at,
+    qc_reviewer_id,
+    qc_reviewed_at,
+    qc_remarks,
+    linking_active,
+    rework_count,
+    version_number,
+    version_history,
+    designed_by,
+    published_by,
+    verified_by,
+    published_at,
+    created_by,
+    web_title,
+    web_description,
+    web_meta_description,
+    web_keywords,
+    web_url,
+    web_h1,
+    web_h2_1,
+    web_h2_2,
+    web_h3_tags,
+    web_thumbnail,
+    web_body_content,
+    resource_files,
+    smm_platform,
+    smm_title,
+    smm_tag,
+    smm_url,
+    smm_description,
+    smm_hashtags,
+    smm_media_url,
+    smm_media_type
             FROM assets 
-            WHERE id = $1
-        `, [id]);
+            WHERE id = ?
+    `, [id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
@@ -287,7 +324,7 @@ export const getAssetLibraryItem = async (req: any, res: any) => {
     }
 };
 
-export const createAssetLibraryItem = async (req: any, res: any) => {
+export const createAssetLibraryItem = async (req: Request, res: Response) => {
     const {
         name, type, repository, file_url, thumbnail_url, file_size, file_type, date,
         asset_category, asset_format, content_type, status, linked_service_ids, linked_sub_service_ids,
@@ -341,19 +378,19 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
         }];
 
         const result = await pool.query(
-            `INSERT INTO assets (
-                asset_name, asset_type, asset_category, asset_format, content_type, tags, status,
-                file_url, og_image_url, thumbnail_url, file_size, file_type,
-                linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
-                linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
-                designed_by, published_by, verified_by, version_number, created_at, created_by,
-                application_type, keywords, content_keywords, seo_keywords,
-                web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
-                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-                smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
-                submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
-                workflow_log, version_history, linking_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60) RETURNING *`,
+            `INSERT INTO assets(
+        asset_name, asset_type, asset_category, asset_format, content_type, tags, status,
+        file_url, og_image_url, thumbnail_url, file_size, file_type,
+        linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
+        linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
+        designed_by, published_by, verified_by, version_number, created_at, created_by,
+        application_type, keywords, content_keywords, seo_keywords,
+        web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
+        web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+        smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
+        submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
+        workflow_log, version_history, linking_active
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) `,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
@@ -385,8 +422,8 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
         if (!result.rows || result.rows.length === 0 || !result.rows[0]) {
             // Get the last inserted asset by name and created_at (since we just created it)
             const selectResult = await pool.query(
-                `SELECT * FROM assets WHERE asset_name = $1 AND created_at >= $2 ORDER BY id DESC LIMIT 1`,
-                [name, new Date(Date.now() - 5000).toISOString()] // Within last 5 seconds
+                `SELECT * FROM assets WHERE asset_name = ? AND created_at >= ? ORDER BY id DESC LIMIT 1`,
+                [name, new Date(Date.datetime('now') - 5000).toISOString()] // Within last 5 seconds
             );
 
             if (!selectResult.rows || selectResult.rows.length === 0) {
@@ -422,7 +459,7 @@ export const createAssetLibraryItem = async (req: any, res: any) => {
     }
 };
 
-export const updateAssetLibraryItem = async (req: any, res: any) => {
+export const updateAssetLibraryItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         name, type, repository, file_url, thumbnail_url, linked_service_ids, linked_sub_service_ids,
@@ -442,99 +479,99 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
 
     try {
         const result = await pool.query(
-            `UPDATE assets SET 
-                asset_name = COALESCE($1, asset_name), 
-                asset_type = COALESCE($2, asset_type),
-                asset_category = COALESCE($3, asset_category),
-                asset_format = COALESCE($4, asset_format),
-                content_type = COALESCE($5, content_type),
-                tags = COALESCE($6, tags),
-                usage_status = COALESCE($7, usage_status),
-                status = COALESCE($8, status),
-                file_url = COALESCE($9, file_url),
-                og_image_url = COALESCE($10, og_image_url),
-                thumbnail_url = COALESCE($11, thumbnail_url),
-                linked_service_ids = COALESCE($12, linked_service_ids),
-                linked_sub_service_ids = COALESCE($13, linked_sub_service_ids),
-                keywords = COALESCE($14, keywords),
-                seo_score = COALESCE($15, seo_score),
-                grammar_score = COALESCE($16, grammar_score),
-                application_type = COALESCE($17, application_type),
-                web_title = COALESCE($18, web_title),
-                web_description = COALESCE($19, web_description),
-                web_meta_description = COALESCE($20, web_meta_description),
-                web_keywords = COALESCE($21, web_keywords),
-                web_url = COALESCE($22, web_url),
-                web_h1 = COALESCE($23, web_h1),
-                web_h2_1 = COALESCE($24, web_h2_1),
-                web_h2_2 = COALESCE($25, web_h2_2),
-                web_thumbnail = COALESCE($26, web_thumbnail),
-                web_body_content = COALESCE($27, web_body_content),
-                smm_platform = COALESCE($28, smm_platform),
-                smm_title = COALESCE($29, smm_title),
-                smm_tag = COALESCE($30, smm_tag),
-                smm_url = COALESCE($31, smm_url),
-                smm_description = COALESCE($32, smm_description),
-                smm_hashtags = COALESCE($33, smm_hashtags),
-                smm_media_url = COALESCE($34, smm_media_url),
-                smm_media_type = COALESCE($35, smm_media_type),
-                linked_task_id = COALESCE($36, linked_task_id),
-                linked_campaign_id = COALESCE($37, linked_campaign_id),
-                linked_project_id = COALESCE($38, linked_project_id),
-                linked_service_id = COALESCE($39, linked_service_id),
-                linked_sub_service_id = COALESCE($40, linked_sub_service_id),
-                linked_repository_item_id = COALESCE($41, linked_repository_item_id),
-                designed_by = COALESCE($42, designed_by),
-                version_number = COALESCE($43, version_number),
-                published_by = COALESCE($44, published_by),
-                verified_by = COALESCE($45, verified_by),
-                workflow_stage = COALESCE($46, workflow_stage),
-                qc_status = COALESCE($47, qc_status),
-                content_keywords = COALESCE($48, content_keywords),
-                seo_keywords = COALESCE($49, seo_keywords),
-                ai_plagiarism_score = COALESCE($50, ai_plagiarism_score),
-                web_h3_tags = COALESCE($51, web_h3_tags),
-                resource_files = COALESCE($52, resource_files),
-                version_history = COALESCE($53, version_history),
-                updated_by = COALESCE($54, updated_by),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $55 RETURNING 
-                id,
-                asset_name as name,
-                asset_type as type,
-                asset_category,
-                asset_format,
-                content_type,
-                tags as repository,
-                usage_status,
-                status,
-                workflow_stage,
-                qc_status,
-                file_url,
-                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
-                file_size,
-                file_type,
-                created_at as date,
-                created_at,
-                updated_at,
-                linked_service_ids,
-                linked_sub_service_ids,
-                linked_task_id,
-                linked_campaign_id,
-                linked_project_id,
-                linked_service_id,
-                linked_sub_service_id,
-                linked_repository_item_id,
-                keywords, content_keywords, seo_keywords,
-                seo_score, grammar_score, ai_plagiarism_score,
-                qc_score, qc_checklist_items,
-                application_type,
-                web_title, web_description, web_meta_description, web_keywords, web_url, 
-                web_h1, web_h2_1, web_h2_2, web_h3_tags, web_thumbnail, web_body_content,
-                smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
-                submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active, 
-                rework_count, version_number, version_history, resource_files,
-                designed_by, published_by, verified_by, created_by, updated_by`,
+            `UPDATE assets SET
+asset_name = COALESCE(?, asset_name),
+    asset_type = COALESCE(?, asset_type),
+    asset_category = COALESCE(?, asset_category),
+    asset_format = COALESCE(?, asset_format),
+    content_type = COALESCE(?, content_type),
+    tags = COALESCE(?, tags),
+    usage_status = COALESCE(?, usage_status),
+    status = COALESCE(?, status),
+    file_url = COALESCE(?, file_url),
+    og_image_url = COALESCE(?, og_image_url),
+    thumbnail_url = COALESCE(?, thumbnail_url),
+    linked_service_ids = COALESCE(?, linked_service_ids),
+    linked_sub_service_ids = COALESCE(?, linked_sub_service_ids),
+    keywords = COALESCE(?, keywords),
+    seo_score = COALESCE(?, seo_score),
+    grammar_score = COALESCE(?, grammar_score),
+    application_type = COALESCE(?, application_type),
+    web_title = COALESCE(?, web_title),
+    web_description = COALESCE(?, web_description),
+    web_meta_description = COALESCE(?, web_meta_description),
+    web_keywords = COALESCE(?, web_keywords),
+    web_url = COALESCE(?, web_url),
+    web_h1 = COALESCE(?, web_h1),
+    web_h2_1 = COALESCE(?, web_h2_1),
+    web_h2_2 = COALESCE(?, web_h2_2),
+    web_thumbnail = COALESCE(?, web_thumbnail),
+    web_body_content = COALESCE(?, web_body_content),
+    smm_platform = COALESCE(?, smm_platform),
+    smm_title = COALESCE(?, smm_title),
+    smm_tag = COALESCE(?, smm_tag),
+    smm_url = COALESCE(?, smm_url),
+    smm_description = COALESCE(?, smm_description),
+    smm_hashtags = COALESCE(?, smm_hashtags),
+    smm_media_url = COALESCE(?, smm_media_url),
+    smm_media_type = COALESCE(?, smm_media_type),
+    linked_task_id = COALESCE(?, linked_task_id),
+    linked_campaign_id = COALESCE(?, linked_campaign_id),
+    linked_project_id = COALESCE(?, linked_project_id),
+    linked_service_id = COALESCE(?, linked_service_id),
+    linked_sub_service_id = COALESCE(?, linked_sub_service_id),
+    linked_repository_item_id = COALESCE(?, linked_repository_item_id),
+    designed_by = COALESCE(?, designed_by),
+    version_number = COALESCE(?, version_number),
+    published_by = COALESCE(?, published_by),
+    verified_by = COALESCE(?, verified_by),
+    workflow_stage = COALESCE(?, workflow_stage),
+    qc_status = COALESCE(?, qc_status),
+    content_keywords = COALESCE(?, content_keywords),
+    seo_keywords = COALESCE(?, seo_keywords),
+    ai_plagiarism_score = COALESCE(?, ai_plagiarism_score),
+    web_h3_tags = COALESCE(?, web_h3_tags),
+    resource_files = COALESCE(?, resource_files),
+    version_history = COALESCE(?, version_history),
+    updated_by = COALESCE(?, updated_by),
+    updated_at = datetime('now')
+            WHERE id = ? RETURNING
+id,
+    asset_name as name,
+    asset_type as type,
+    asset_category,
+    asset_format,
+    content_type,
+    tags as repository,
+    usage_status,
+    status,
+    workflow_stage,
+    qc_status,
+    file_url,
+    COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+    file_size,
+    file_type,
+    created_at as date,
+    created_at,
+    updated_at,
+    linked_service_ids,
+    linked_sub_service_ids,
+    linked_task_id,
+    linked_campaign_id,
+    linked_project_id,
+    linked_service_id,
+    linked_sub_service_id,
+    linked_repository_item_id,
+    keywords, content_keywords, seo_keywords,
+    seo_score, grammar_score, ai_plagiarism_score,
+    qc_score, qc_checklist_items,
+    application_type,
+    web_title, web_description, web_meta_description, web_keywords, web_url,
+    web_h1, web_h2_1, web_h2_2, web_h3_tags, web_thumbnail, web_body_content,
+    smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags, smm_media_url, smm_media_type,
+    submitted_by, submitted_at, qc_reviewer_id, qc_reviewed_at, qc_remarks, linking_active,
+    rework_count, version_number, version_history, resource_files,
+    designed_by, published_by, verified_by, created_by, updated_by`,
             [
                 name, type, asset_category, asset_format, content_type || null, repository, usage_status, status,
                 file_url, thumbnail_url, thumbnail_url,
@@ -592,7 +629,7 @@ export const updateAssetLibraryItem = async (req: any, res: any) => {
     }
 };
 
-export const deleteAssetLibraryItem = async (req: any, res: any) => {
+export const deleteAssetLibraryItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     const numericId = parseInt(id, 10);
 
@@ -602,24 +639,24 @@ export const deleteAssetLibraryItem = async (req: any, res: any) => {
 
     try {
         // Check if asset exists first
-        const existingAsset = await pool.query('SELECT id FROM assets WHERE id = $1', [numericId]);
+        const existingAsset = await pool.query('SELECT id FROM assets WHERE id = ?', [numericId]);
         if (existingAsset.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
         // Delete related records first to avoid foreign key constraint errors
-        await pool.query('DELETE FROM service_asset_links WHERE asset_id = $1', [numericId]);
-        await pool.query('DELETE FROM subservice_asset_links WHERE asset_id = $1', [numericId]);
-        await pool.query('DELETE FROM asset_qc_reviews WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM service_asset_links WHERE asset_id = ?', [numericId]);
+        await pool.query('DELETE FROM subservice_asset_links WHERE asset_id = ?', [numericId]);
+        await pool.query('DELETE FROM asset_qc_reviews WHERE asset_id = ?', [numericId]);
 
         // Delete from usage tracking tables (these have ON DELETE CASCADE but being explicit)
-        await pool.query('DELETE FROM asset_website_usage WHERE asset_id = $1', [numericId]);
-        await pool.query('DELETE FROM asset_social_media_usage WHERE asset_id = $1', [numericId]);
-        await pool.query('DELETE FROM asset_backlink_usage WHERE asset_id = $1', [numericId]);
-        await pool.query('DELETE FROM asset_engagement_metrics WHERE asset_id = $1', [numericId]);
+        await pool.query('DELETE FROM asset_website_usage WHERE asset_id = ?', [numericId]);
+        await pool.query('DELETE FROM asset_social_media_usage WHERE asset_id = ?', [numericId]);
+        await pool.query('DELETE FROM asset_backlink_usage WHERE asset_id = ?', [numericId]);
+        await pool.query('DELETE FROM asset_engagement_metrics WHERE asset_id = ?', [numericId]);
 
         // Now delete the asset itself
-        await pool.query('DELETE FROM assets WHERE id = $1', [numericId]);
+        await pool.query('DELETE FROM assets WHERE id = ?', [numericId]);
         getSocket().emit('assetLibrary_deleted', { id: numericId });
         res.status(204).send();
     } catch (error: any) {
@@ -629,13 +666,13 @@ export const deleteAssetLibraryItem = async (req: any, res: any) => {
 };
 
 // Submit asset for QC approval
-export const submitAssetForQC = async (req: any, res: any) => {
+export const submitAssetForQC = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { seo_score, grammar_score, submitted_by, rework_count } = req.body;
 
     try {
         // Get current asset data
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -659,26 +696,26 @@ export const submitAssetForQC = async (req: any, res: any) => {
         });
 
         await pool.query(
-            `UPDATE assets SET 
-                status = 'Pending QC Review',
-                seo_score = COALESCE($1, seo_score),
-                grammar_score = COALESCE($2, grammar_score),
-                submitted_by = $3,
-                submitted_at = datetime('now'),
-                workflow_log = $4,
-                rework_count = $5,
-                updated_at = datetime('now')
-            WHERE id = $6`,
+            `UPDATE assets SET
+status = 'Pending QC Review',
+    seo_score = COALESCE(?, seo_score),
+    grammar_score = COALESCE(?, grammar_score),
+    submitted_by = ?,
+    submitted_at = datetime('now'),
+    workflow_log = ?,
+    rework_count = ?,
+    updated_at = datetime('now')
+            WHERE id = ?`,
             [seo_score || null, grammar_score || null, submitted_by, JSON.stringify(workflowLog), newReworkCount, id]
         );
 
         // Get the updated asset
-        const result = await pool.query('SELECT id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = $1', [id]);
+        const result = await pool.query('SELECT id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = ?', [id]);
 
         // Create notification for admins about new QC submission
         try {
             await pool.query(
-                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES ($1, $2, $3, $4, $5, datetime(\'now\'))',
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
                 [null, 'New QC Submission', `Asset "${assetData.asset_name}" has been submitted for QC review.`, 'info', 0]
             );
             getSocket().emit('notification_created', {
@@ -700,45 +737,45 @@ export const submitAssetForQC = async (req: any, res: any) => {
 };
 
 // Get assets pending QC review
-export const getAssetsForQC = async (req: any, res: any) => {
+export const getAssetsForQC = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
                 id,
-                asset_name as name,
-                asset_type as type,
-                asset_category,
-                asset_format,
-                tags as repository,
-                usage_status,
-                status,
-                file_url,
-                COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
-                application_type,
-                web_title,
-                web_description,
-                web_keywords,
-                web_url,
-                web_h1,
-                web_h2_1,
-                web_h2_2,
-                web_body_content,
-                smm_platform,
-                smm_description,
-                smm_hashtags,
-                smm_media_url,
-                seo_score,
-                grammar_score,
-                submitted_by,
-                submitted_at,
-                qc_score,
-                qc_remarks,
-                rework_count,
-                linked_service_ids,
-                linked_sub_service_ids,
-                created_at as date
+        asset_name as name,
+        asset_type as type,
+        asset_category,
+        asset_format,
+        tags as repository,
+        usage_status,
+        status,
+        file_url,
+        COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
+        application_type,
+        web_title,
+        web_description,
+        web_keywords,
+        web_url,
+        web_h1,
+        web_h2_1,
+        web_h2_2,
+        web_body_content,
+        smm_platform,
+        smm_description,
+        smm_hashtags,
+        smm_media_url,
+        seo_score,
+        grammar_score,
+        submitted_by,
+        submitted_at,
+        qc_score,
+        qc_remarks,
+        rework_count,
+        linked_service_ids,
+        linked_sub_service_ids,
+        created_at as date
             FROM assets 
-            WHERE status IN ('Pending QC Review', 'Rework Required')
+            WHERE status IN('Pending QC Review', 'Rework Required')
             ORDER BY submitted_at ASC
         `);
 
@@ -757,7 +794,7 @@ export const getAssetsForQC = async (req: any, res: any) => {
 };
 
 // QC Review - Approve, Reject, or Rework asset (Admin only)
-export const reviewAsset = async (req: any, res: any) => {
+export const reviewAsset = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, checklist_completion, checklist_items, user_role } = req.body;
 
@@ -780,7 +817,7 @@ export const reviewAsset = async (req: any, res: any) => {
         const finalQcScore = qc_score || 0;
 
         // Get current asset data including rework count
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = $1', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
         if (currentAsset.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -835,30 +872,30 @@ export const reviewAsset = async (req: any, res: any) => {
 
         // Update the asset with QC review data
         const result = await pool.query(
-            `UPDATE assets SET 
-                status = $1,
-                qc_score = $2,
-                qc_remarks = $3,
-                qc_reviewer_id = $4,
-                qc_reviewed_at = datetime('now'),
-                qc_checklist_completion = $5,
-                linking_active = $6,
-                workflow_log = $7,
-                rework_count = $8,
-                updated_at = datetime('now')
-            WHERE id = $9`,
+            `UPDATE assets SET
+status = ?,
+    qc_score = ?,
+    qc_remarks = ?,
+    qc_reviewer_id = ?,
+    qc_reviewed_at = datetime('now'),
+    qc_checklist_completion = ?,
+    linking_active = ?,
+    workflow_log = ?,
+    rework_count = ?,
+    updated_at = datetime('now')
+            WHERE id = ?`,
             [newStatus, finalQcScore, qc_remarks || '', qc_reviewer_id, checklist_completion ? 1 : 0, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
         );
 
         // Get the updated asset
-        const updatedAsset = await pool.query('SELECT id, asset_name as name, status, qc_score, qc_remarks, qc_reviewed_at, linking_active, rework_count, submitted_by FROM assets WHERE id = $1', [id]);
+        const updatedAsset = await pool.query('SELECT id, asset_name as name, status, qc_score, qc_remarks, qc_reviewed_at, linking_active, rework_count, submitted_by FROM assets WHERE id = ?', [id]);
 
         // Create QC review record with checklist items
         try {
             await pool.query(
-                `INSERT INTO asset_qc_reviews (
-                    asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, datetime('now'))`,
+                `INSERT INTO asset_qc_reviews(
+        asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items, created_at
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
                 [id, qc_reviewer_id, finalQcScore, checklist_completion ? 1 : 0, qc_remarks || '', qc_decision, JSON.stringify(checklist_items || {})]
             );
         } catch (insertError) {
@@ -870,14 +907,14 @@ export const reviewAsset = async (req: any, res: any) => {
         const notificationText = qc_decision === 'approved'
             ? `Your asset "${assetData.asset_name}" has been approved!`
             : qc_decision === 'rework'
-                ? `Your asset "${assetData.asset_name}" requires rework. Please review the feedback.`
+                ? `Your asset "${assetData.asset_name}" requires rework.Please review the feedback.`
                 : `Your asset "${assetData.asset_name}" has been rejected.`;
 
         const notificationType = qc_decision === 'approved' ? 'success' : qc_decision === 'rework' ? 'warning' : 'error';
 
         try {
             await pool.query(
-                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES ($1, $2, $3, $4, $5, datetime(\'now\'))',
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
                 [assetData.submitted_by, 'QC Review Update', notificationText, notificationType, 0]
             );
             // Emit notification via socket
@@ -917,7 +954,7 @@ export const reviewAsset = async (req: any, res: any) => {
             for (const serviceId of linkedServiceIds) {
                 try {
                     await pool.query(
-                        `INSERT OR IGNORE INTO service_asset_links (service_id, asset_id) VALUES ($1, $2)`,
+                        `INSERT OR IGNORE INTO service_asset_links(service_id, asset_id) VALUES(?, ?)`,
                         [serviceId, id]
                     );
                 } catch (e) {
@@ -929,7 +966,7 @@ export const reviewAsset = async (req: any, res: any) => {
             for (const subServiceId of linkedSubServiceIds) {
                 try {
                     await pool.query(
-                        `INSERT OR IGNORE INTO subservice_asset_links (sub_service_id, asset_id) VALUES ($1, $2)`,
+                        `INSERT OR IGNORE INTO subservice_asset_links(sub_service_id, asset_id) VALUES(?, ?)`,
                         [subServiceId, id]
                     );
                 } catch (e) {
@@ -941,7 +978,7 @@ export const reviewAsset = async (req: any, res: any) => {
             for (const serviceId of linkedServiceIds) {
                 try {
                     await pool.query(
-                        `UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 WHERE id = $1`,
+                        `UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 WHERE id = ?`,
                         [serviceId]
                     );
                 } catch (e) {
@@ -955,9 +992,9 @@ export const reviewAsset = async (req: any, res: any) => {
         // Log QC action for audit trail
         try {
             await pool.query(
-                `INSERT INTO qc_audit_log (asset_id, user_id, action, details, created_at) 
-                 VALUES ($1, $2, $3, $4, datetime('now'))`,
-                [id, qc_reviewer_id, `qc_${qc_decision}`, JSON.stringify({
+                `INSERT INTO qc_audit_log(asset_id, user_id, action, details, created_at)
+VALUES(?, ?, ?, ?, datetime('now'))`,
+                [id, qc_reviewer_id, `qc_${ qc_decision } `, JSON.stringify({
                     qc_score: finalQcScore,
                     qc_remarks: qc_remarks,
                     checklist_completion: checklist_completion,
@@ -979,7 +1016,7 @@ export const reviewAsset = async (req: any, res: any) => {
 };
 
 // Generate AI scores for SEO, Grammar, and Plagiarism
-export const generateAIScores = async (req: any, res: any) => {
+export const generateAIScores = async (req: Request, res: Response) => {
     const { content, keywords, title, description, meta_description } = req.body;
 
     try {
@@ -1047,13 +1084,13 @@ export const generateAIScores = async (req: any, res: any) => {
 };
 
 // User Edit Asset (Only during QC review stage)
-export const editAssetInQC = async (req: any, res: any) => {
+export const editAssetInQC = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { user_role, user_id, ...updateData } = req.body;
 
     try {
         // Check if asset is in QC review stage
-        const assetCheck = await pool.query('SELECT status, submitted_by FROM assets WHERE id = $1', [id]);
+        const assetCheck = await pool.query('SELECT status, submitted_by FROM assets WHERE id = ?', [id]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -1079,13 +1116,13 @@ export const editAssetInQC = async (req: any, res: any) => {
 };
 
 // User Delete Asset (Only during QC review stage)
-export const deleteAssetInQC = async (req: any, res: any) => {
+export const deleteAssetInQC = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { user_role, user_id } = req.body;
 
     try {
         // Check if asset is in QC review stage
-        const assetCheck = await pool.query('SELECT status, submitted_by FROM assets WHERE id = $1', [id]);
+        const assetCheck = await pool.query('SELECT status, submitted_by FROM assets WHERE id = ?', [id]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -1103,7 +1140,7 @@ export const deleteAssetInQC = async (req: any, res: any) => {
         }
 
         // Delete the asset
-        await pool.query('DELETE FROM assets WHERE id = $1', [id]);
+        await pool.query('DELETE FROM assets WHERE id = ?', [id]);
         getSocket().emit('assetLibrary_deleted', { id });
         res.status(204).send();
     } catch (error: any) {
@@ -1112,29 +1149,29 @@ export const deleteAssetInQC = async (req: any, res: any) => {
 };
 
 // Get QC reviews for an asset (for side panel display)
-export const getAssetQCReviews = async (req: any, res: any) => {
+export const getAssetQCReviews = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
         // Get all QC reviews for this asset with reviewer info
         const reviewsResult = await pool.query(`
-            SELECT 
-                aqr.id,
-                aqr.asset_id,
-                aqr.qc_reviewer_id,
-                aqr.qc_score,
-                aqr.checklist_completion,
-                aqr.qc_remarks,
-                aqr.qc_decision,
-                aqr.checklist_items,
-                aqr.created_at,
-                u.name as reviewer_name,
-                u.email as reviewer_email
+SELECT
+aqr.id,
+    aqr.asset_id,
+    aqr.qc_reviewer_id,
+    aqr.qc_score,
+    aqr.checklist_completion,
+    aqr.qc_remarks,
+    aqr.qc_decision,
+    aqr.checklist_items,
+    aqr.created_at,
+    u.name as reviewer_name,
+    u.email as reviewer_email
             FROM asset_qc_reviews aqr
             LEFT JOIN users u ON aqr.qc_reviewer_id = u.id
-            WHERE aqr.asset_id = $1
+            WHERE aqr.asset_id = ?
             ORDER BY aqr.created_at DESC
-        `, [id]);
+    `, [id]);
 
         // Get the latest QC review details
         const latestReview = reviewsResult.rows[0] || null;
@@ -1147,18 +1184,18 @@ export const getAssetQCReviews = async (req: any, res: any) => {
 
         // Get the asset's current QC status info
         const assetResult = await pool.query(`
-            SELECT 
-                qc_score,
-                qc_status,
-                qc_remarks,
-                qc_reviewer_id,
-                qc_reviewed_at,
-                qc_checklist_completion,
-                rework_count,
-                status
+SELECT
+qc_score,
+    qc_status,
+    qc_remarks,
+    qc_reviewer_id,
+    qc_reviewed_at,
+    qc_checklist_completion,
+    rework_count,
+    status
             FROM assets 
-            WHERE id = $1
-        `, [id]);
+            WHERE id = ?
+    `, [id]);
 
         const assetQCInfo = assetResult.rows[0] || {};
 

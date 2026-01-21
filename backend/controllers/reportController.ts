@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 
-export const getTodayReport = async (req: any, res: any) => {
+export const getTodayReport = async (req: Request, res: Response) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -35,7 +35,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count, 
                        json_agg(json_build_object('id', id, 'name', campaign_name, 'type', campaign_type, 'status', status)) as items
                 FROM campaigns 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Tasks created today
@@ -43,7 +43,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'title', title, 'status', status, 'priority', priority)) as items
                 FROM tasks 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Content created today
@@ -51,7 +51,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'title', title, 'type', content_type, 'stage', pipeline_stage)) as items
                 FROM content_repository 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Projects created today
@@ -59,7 +59,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'name', project_name, 'status', project_status)) as items
                 FROM projects 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // SMM Posts created today
@@ -67,14 +67,14 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'platform', platform, 'status', status)) as items
                 FROM smm_posts 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Backlinks created today
             pool.query(`
                 SELECT COUNT(*) as count
                 FROM backlink_sources 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Submissions created today
@@ -82,7 +82,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'status', submission_status)) as items
                 FROM backlink_submissions 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Notifications today
@@ -90,7 +90,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'message', message, 'type', type, 'read', read)) as items
                 FROM notifications 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
                 ORDER BY created_at DESC
             `, [todayStr]),
             
@@ -98,21 +98,21 @@ export const getTodayReport = async (req: any, res: any) => {
             pool.query(`
                 SELECT value 
                 FROM analytics_daily_traffic 
-                WHERE date = $1
+                WHERE date = ?
             `, [todayStr]),
             
             // Tasks completed today
             pool.query(`
                 SELECT COUNT(*) as count
                 FROM tasks 
-                WHERE status = 'completed' AND DATE(updated_at) = $1
+                WHERE status = 'completed' AND DATE(updated_at) = ?
             `, [todayStr]),
             
             // Tasks created today (separate count)
             pool.query(`
                 SELECT COUNT(*) as count
                 FROM tasks 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr]),
             
             // Active campaigns (overall)
@@ -141,7 +141,7 @@ export const getTodayReport = async (req: any, res: any) => {
                 SELECT COUNT(*) as count,
                        json_agg(json_build_object('id', id, 'target_type', target_type, 'status', qc_status)) as items
                 FROM qc_runs 
-                WHERE DATE(created_at) = $1
+                WHERE DATE(created_at) = ?
             `, [todayStr])
         ]);
 

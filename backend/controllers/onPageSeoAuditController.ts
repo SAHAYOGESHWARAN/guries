@@ -3,7 +3,7 @@ import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // --- On-page SEO Audits ---
-export const getOnPageSeoAudits = async (req: any, res: any) => {
+export const getOnPageSeoAudits = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -30,7 +30,7 @@ export const getOnPageSeoAudits = async (req: any, res: any) => {
     }
 };
 
-export const createOnPageSeoAudit = async (req: any, res: any) => {
+export const createOnPageSeoAudit = async (req: Request, res: Response) => {
     const {
         url, service_id, sub_service_id, error_type, error_category, severity,
         issue_description, current_value, recommended_value, linked_campaign_id,
@@ -43,7 +43,7 @@ export const createOnPageSeoAudit = async (req: any, res: any) => {
                 url, service_id, sub_service_id, error_type, error_category, severity,
                 issue_description, current_value, recommended_value, linked_campaign_id,
                 status, assigned_to_id, created_by, detected_at, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW(), NOW()) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))`,
             [
                 url || null, service_id || null, sub_service_id || null, error_type, error_category, severity || 'Medium',
                 issue_description, current_value || null, recommended_value || null, linked_campaign_id || null,
@@ -58,7 +58,7 @@ export const createOnPageSeoAudit = async (req: any, res: any) => {
     }
 };
 
-export const updateOnPageSeoAudit = async (req: any, res: any) => {
+export const updateOnPageSeoAudit = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         url, service_id, sub_service_id, error_type, error_category, severity,
@@ -86,16 +86,16 @@ export const updateOnPageSeoAudit = async (req: any, res: any) => {
             updateFields.push(`status=$${paramIndex++}`);
             values.push(status);
             if (status === 'Resolved') {
-                updateFields.push(`resolved_at=NOW()`);
+                updateFields.push(`resolved_at=datetime('now')`);
             }
         }
         if (resolution_notes !== undefined) { updateFields.push(`resolution_notes=$${paramIndex++}`); values.push(resolution_notes); }
 
-        updateFields.push(`updated_at=NOW()`);
+        updateFields.push(`updated_at=datetime('now')`);
         values.push(id);
 
         const result = await pool.query(
-            `UPDATE on_page_seo_audits SET ${updateFields.join(', ')} WHERE id=$${paramIndex} RETURNING *`,
+            `UPDATE on_page_seo_audits SET ${updateFields.join(', ')} WHERE id=$${paramIndex}`,
             values
         );
         const updatedItem = result.rows[0];
@@ -106,9 +106,9 @@ export const updateOnPageSeoAudit = async (req: any, res: any) => {
     }
 };
 
-export const deleteOnPageSeoAudit = async (req: any, res: any) => {
+export const deleteOnPageSeoAudit = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM on_page_seo_audits WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM on_page_seo_audits WHERE id = ?', [req.params.id]);
         getSocket().emit('on_page_seo_audit_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {
@@ -117,7 +117,7 @@ export const deleteOnPageSeoAudit = async (req: any, res: any) => {
 };
 
 // Get audits for a specific service
-export const getAuditsByService = async (req: any, res: any) => {
+export const getAuditsByService = async (req: Request, res: Response) => {
     try {
         const { serviceId } = req.params;
         const result = await pool.query(
@@ -126,7 +126,7 @@ export const getAuditsByService = async (req: any, res: any) => {
              LEFT JOIN services s ON a.service_id = s.id
              LEFT JOIN sub_services ss ON a.sub_service_id = ss.id
              LEFT JOIN users u ON a.assigned_to_id = u.id
-             WHERE a.service_id = $1 ORDER BY a.detected_at DESC`,
+             WHERE a.service_id = ? ORDER BY a.detected_at DESC`,
             [serviceId]
         );
         res.status(200).json(result.rows);
@@ -136,7 +136,7 @@ export const getAuditsByService = async (req: any, res: any) => {
 };
 
 // Get audits for a specific sub-service
-export const getAuditsBySubService = async (req: any, res: any) => {
+export const getAuditsBySubService = async (req: Request, res: Response) => {
     try {
         const { subServiceId } = req.params;
         const result = await pool.query(
@@ -145,7 +145,7 @@ export const getAuditsBySubService = async (req: any, res: any) => {
              LEFT JOIN services s ON a.service_id = s.id
              LEFT JOIN sub_services ss ON a.sub_service_id = ss.id
              LEFT JOIN users u ON a.assigned_to_id = u.id
-             WHERE a.sub_service_id = $1 ORDER BY a.detected_at DESC`,
+             WHERE a.sub_service_id = ? ORDER BY a.detected_at DESC`,
             [subServiceId]
         );
         res.status(200).json(result.rows);

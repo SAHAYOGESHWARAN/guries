@@ -9,7 +9,7 @@ export const uploadBase64 = async (req: any, res: Response) => {
 
         // sanitize filename and add timestamp to avoid collisions
         const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const timestamp = Date.now();
+        const timestamp = Date.datetime('now');
         const finalName = `${timestamp}_${safeName}`;
 
         const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getSubmissions = async (req: any, res: any) => {
+export const getSubmissions = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -23,7 +23,7 @@ export const getSubmissions = async (req: any, res: any) => {
     }
 };
 
-export const createSubmission = async (req: any, res: any) => {
+export const createSubmission = async (req: Request, res: Response) => {
     const {
         domain,
         opportunity_type,
@@ -47,7 +47,7 @@ export const createSubmission = async (req: any, res: any) => {
                 domain, opportunity_type, category, target_url, anchor_text, 
                 content_used, da_score, spam_score, country, service_id, 
                 sub_service_id, seo_owner_id, is_paid, submission_status, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 domain,
                 opportunity_type || 'Guest Post',
@@ -79,7 +79,7 @@ export const createSubmission = async (req: any, res: any) => {
             LEFT JOIN services s ON bs.service_id = s.id
             LEFT JOIN sub_services ss ON bs.sub_service_id = ss.id
             LEFT JOIN users u ON bs.seo_owner_id = u.id
-            WHERE bs.id = $1
+            WHERE bs.id = ?
         `, [result.rows[0].id]);
 
         getSocket().emit('submission_created', newItem.rows[0]);
@@ -90,7 +90,7 @@ export const createSubmission = async (req: any, res: any) => {
     }
 };
 
-export const updateSubmission = async (req: any, res: any) => {
+export const updateSubmission = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         domain,
@@ -112,22 +112,22 @@ export const updateSubmission = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE backlink_submissions SET 
-                domain=COALESCE($1, domain),
-                opportunity_type=COALESCE($2, opportunity_type),
-                category=COALESCE($3, category),
-                target_url=COALESCE($4, target_url), 
-                anchor_text=COALESCE($5, anchor_text), 
-                content_used=COALESCE($6, content_used), 
-                da_score=COALESCE($7, da_score),
-                spam_score=COALESCE($8, spam_score),
-                country=COALESCE($9, country),
-                service_id=COALESCE($10, service_id),
-                sub_service_id=COALESCE($11, sub_service_id),
-                seo_owner_id=COALESCE($12, seo_owner_id),
-                is_paid=COALESCE($13, is_paid),
-                submission_status=COALESCE($14, submission_status),
-                updated_at=$15
-            WHERE id=$16 RETURNING *`,
+                domain=COALESCE(?, domain),
+                opportunity_type=COALESCE(?, opportunity_type),
+                category=COALESCE(?, category),
+                target_url=COALESCE(?, target_url), 
+                anchor_text=COALESCE(?, anchor_text), 
+                content_used=COALESCE(?, content_used), 
+                da_score=COALESCE(?, da_score),
+                spam_score=COALESCE(?, spam_score),
+                country=COALESCE(?, country),
+                service_id=COALESCE(?, service_id),
+                sub_service_id=COALESCE(?, sub_service_id),
+                seo_owner_id=COALESCE(?, seo_owner_id),
+                is_paid=COALESCE(?, is_paid),
+                submission_status=COALESCE(?, submission_status),
+                updated_at=?
+            WHERE id=?`,
             [
                 domain,
                 opportunity_type,
@@ -159,7 +159,7 @@ export const updateSubmission = async (req: any, res: any) => {
             LEFT JOIN services s ON bs.service_id = s.id
             LEFT JOIN sub_services ss ON bs.sub_service_id = ss.id
             LEFT JOIN users u ON bs.seo_owner_id = u.id
-            WHERE bs.id = $1
+            WHERE bs.id = ?
         `, [id]);
 
         getSocket().emit('submission_updated', updatedItem.rows[0]);
@@ -170,9 +170,9 @@ export const updateSubmission = async (req: any, res: any) => {
     }
 };
 
-export const deleteSubmission = async (req: any, res: any) => {
+export const deleteSubmission = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM backlink_submissions WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM backlink_submissions WHERE id = ?', [req.params.id]);
         getSocket().emit('submission_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getBacklinkSources = async (req: any, res: any) => {
+export const getBacklinkSources = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT * FROM backlink_sources
@@ -16,7 +16,7 @@ export const getBacklinkSources = async (req: any, res: any) => {
     }
 };
 
-export const createBacklinkSource = async (req: any, res: any) => {
+export const createBacklinkSource = async (req: Request, res: Response) => {
     const {
         domain, backlink_url, backlink_category, niche_industry, da_score, spam_score,
         pricing, country, username, password, credentials_notes, status, created_by
@@ -28,7 +28,7 @@ export const createBacklinkSource = async (req: any, res: any) => {
                 domain, backlink_url, backlink_category, niche_industry, da_score, spam_score,
                 pricing, country, username, password, credentials_notes, status, created_by,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 domain, backlink_url, backlink_category, niche_industry || null, da_score || 0,
                 spam_score || 0, pricing || 'Free', country || null, username || null,
@@ -46,7 +46,7 @@ export const createBacklinkSource = async (req: any, res: any) => {
     }
 };
 
-export const updateBacklinkSource = async (req: any, res: any) => {
+export const updateBacklinkSource = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
 
@@ -60,7 +60,7 @@ export const updateBacklinkSource = async (req: any, res: any) => {
         const values = fields.map(field => updates[field]);
 
         const result = await pool.query(
-            `UPDATE backlink_sources SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2} RETURNING *`,
+            `UPDATE backlink_sources SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2}`,
             [...values, new Date().toISOString(), id]
         );
 
@@ -73,9 +73,9 @@ export const updateBacklinkSource = async (req: any, res: any) => {
     }
 };
 
-export const deleteBacklinkSource = async (req: any, res: any) => {
+export const deleteBacklinkSource = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM backlink_sources WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM backlink_sources WHERE id = ?', [req.params.id]);
         getSocket().emit('backlink_source_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import os from 'os';
 
-export const getSystemStats = async (req: any, res: any) => {
+export const getSystemStats = async (req: Request, res: Response) => {
     try {
         // DB Health Check
-        const start = Date.now();
+        const start = Date.datetime('now');
         await pool.query('SELECT 1');
-        const dbLatency = Date.now() - start;
+        const dbLatency = Date.datetime('now') - start;
 
         // System Metrics
         const memoryUsage = (process as any).memoryUsage();

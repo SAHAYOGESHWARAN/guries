@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getUxIssues = async (req: any, res: any) => {
+export const getUxIssues = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -29,7 +29,7 @@ export const getUxIssues = async (req: any, res: any) => {
     }
 };
 
-export const createUxIssue = async (req: any, res: any) => {
+export const createUxIssue = async (req: Request, res: Response) => {
     const {
         title,
         description,
@@ -52,7 +52,7 @@ export const createUxIssue = async (req: any, res: any) => {
                 title, issue_title, description, url, issue_type, device, severity, source, 
                 screenshot_url, assigned_to_id, service_id, status, resolution_notes, priority_score,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 title,
                 title, // Also populate issue_title for backward compatibility
@@ -82,7 +82,7 @@ export const createUxIssue = async (req: any, res: any) => {
             FROM ux_issues ui
             LEFT JOIN users u ON ui.assigned_to_id = u.id
             LEFT JOIN services s ON ui.service_id = s.id
-            WHERE ui.id = $1
+            WHERE ui.id = ?
         `, [result.rows[0].id]);
 
         getSocket().emit('ux_issue_created', newItem.rows[0]);
@@ -93,7 +93,7 @@ export const createUxIssue = async (req: any, res: any) => {
     }
 };
 
-export const updateUxIssue = async (req: any, res: any) => {
+export const updateUxIssue = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         title,
@@ -114,21 +114,21 @@ export const updateUxIssue = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE ux_issues SET 
-                title=COALESCE($1, title),
-                description=COALESCE($2, description),
-                url=COALESCE($3, url),
-                issue_type=COALESCE($4, issue_type),
-                device=COALESCE($5, device),
-                severity=COALESCE($6, severity),
-                source=COALESCE($7, source),
-                screenshot_url=COALESCE($8, screenshot_url),
-                assigned_to_id=COALESCE($9, assigned_to_id),
-                service_id=COALESCE($10, service_id),
-                status=COALESCE($11, status),
-                resolution_notes=COALESCE($12, resolution_notes),
-                priority_score=COALESCE($13, priority_score),
-                updated_at=$14
-            WHERE id=$15 RETURNING *`,
+                title=COALESCE(?, title),
+                description=COALESCE(?, description),
+                url=COALESCE(?, url),
+                issue_type=COALESCE(?, issue_type),
+                device=COALESCE(?, device),
+                severity=COALESCE(?, severity),
+                source=COALESCE(?, source),
+                screenshot_url=COALESCE(?, screenshot_url),
+                assigned_to_id=COALESCE(?, assigned_to_id),
+                service_id=COALESCE(?, service_id),
+                status=COALESCE(?, status),
+                resolution_notes=COALESCE(?, resolution_notes),
+                priority_score=COALESCE(?, priority_score),
+                updated_at=?
+            WHERE id=?`,
             [
                 title,
                 description,
@@ -157,7 +157,7 @@ export const updateUxIssue = async (req: any, res: any) => {
             FROM ux_issues ui
             LEFT JOIN users u ON ui.assigned_to_id = u.id
             LEFT JOIN services s ON ui.service_id = s.id
-            WHERE ui.id = $1
+            WHERE ui.id = ?
         `, [id]);
 
         getSocket().emit('ux_issue_updated', updatedItem.rows[0]);
@@ -168,9 +168,9 @@ export const updateUxIssue = async (req: any, res: any) => {
     }
 };
 
-export const deleteUxIssue = async (req: any, res: any) => {
+export const deleteUxIssue = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM ux_issues WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM ux_issues WHERE id = ?', [req.params.id]);
         getSocket().emit('ux_issue_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

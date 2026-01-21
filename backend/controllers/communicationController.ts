@@ -4,7 +4,7 @@ import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // --- Emails ---
-export const getEmails = async (req: any, res: any) => {
+export const getEmails = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM emails ORDER BY created_at DESC');
         res.status(200).json(result.rows);
@@ -13,11 +13,11 @@ export const getEmails = async (req: any, res: any) => {
     }
 };
 
-export const createEmail = async (req: any, res: any) => {
+export const createEmail = async (req: Request, res: Response) => {
     const { subject, recipient, status, scheduled_at, template_id } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO emails (subject, recipient, status, scheduled_at, template_id, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *',
+            'INSERT INTO emails (subject, recipient, status, scheduled_at, template_id, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))',
             [subject, recipient, status || 'draft', scheduled_at, template_id]
         );
         res.status(201).json(result.rows[0]);
@@ -27,7 +27,7 @@ export const createEmail = async (req: any, res: any) => {
 };
 
 // --- Voice Profiles ---
-export const getVoiceProfiles = async (req: any, res: any) => {
+export const getVoiceProfiles = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM voice_profiles ORDER BY name ASC');
         res.status(200).json(result.rows);
@@ -36,11 +36,11 @@ export const getVoiceProfiles = async (req: any, res: any) => {
     }
 };
 
-export const createVoiceProfile = async (req: any, res: any) => {
+export const createVoiceProfile = async (req: Request, res: Response) => {
     const { name, voice_id, language, gender, provider } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO voice_profiles (name, voice_id, language, gender, provider) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            'INSERT INTO voice_profiles (name, voice_id, language, gender, provider) VALUES (?, ?, ?, ?, ?)',
             [name, voice_id, language, gender, provider]
         );
         res.status(201).json(result.rows[0]);
@@ -50,7 +50,7 @@ export const createVoiceProfile = async (req: any, res: any) => {
 };
 
 // --- Call Logs ---
-export const getCallLogs = async (req: any, res: any) => {
+export const getCallLogs = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM call_logs ORDER BY start_time DESC');
         res.status(200).json(result.rows);
@@ -59,11 +59,11 @@ export const getCallLogs = async (req: any, res: any) => {
     }
 };
 
-export const logCall = async (req: any, res: any) => {
+export const logCall = async (req: Request, res: Response) => {
     const { agent_id, customer_phone, duration, sentiment, recording_url, summary } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO call_logs (agent_id, customer_phone, duration, sentiment, recording_url, summary, start_time) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *',
+            'INSERT INTO call_logs (agent_id, customer_phone, duration, sentiment, recording_url, summary, start_time) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))',
             [agent_id, customer_phone, duration, sentiment, recording_url, summary]
         );
         const newCall = result.rows[0];

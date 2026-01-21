@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getServicePages = async (req: any, res: any) => {
+export const getServicePages = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -27,7 +27,7 @@ export const getServicePages = async (req: any, res: any) => {
     }
 };
 
-export const createServicePage = async (req: any, res: any) => {
+export const createServicePage = async (req: Request, res: Response) => {
     const {
         page_title, url, url_slug, page_type, service_id, sub_service_id,
         industry, target_keyword, primary_keyword, seo_score, audit_score,
@@ -41,7 +41,7 @@ export const createServicePage = async (req: any, res: any) => {
                 industry, target_keyword, primary_keyword, seo_score, audit_score,
                 last_audit, status, meta_description, writer_id, seo_id, developer_id,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, datetime('now'), datetime('now')) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
             [
                 page_title, url || `/services/${url_slug || ''}`, url_slug, page_type || 'Service Page',
                 service_id || null, sub_service_id || null, industry || null,
@@ -60,7 +60,7 @@ export const createServicePage = async (req: any, res: any) => {
     }
 };
 
-export const updateServicePage = async (req: any, res: any) => {
+export const updateServicePage = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         page_title, url, url_slug, page_type, service_id, sub_service_id,
@@ -71,25 +71,25 @@ export const updateServicePage = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE service_pages SET 
-                page_title=COALESCE($1, page_title),
-                url=COALESCE($2, url),
-                url_slug=COALESCE($3, url_slug),
-                page_type=COALESCE($4, page_type),
-                service_id=COALESCE($5, service_id),
-                sub_service_id=COALESCE($6, sub_service_id),
-                industry=COALESCE($7, industry),
-                target_keyword=COALESCE($8, target_keyword),
-                primary_keyword=COALESCE($9, primary_keyword),
-                seo_score=COALESCE($10, seo_score),
-                audit_score=COALESCE($11, audit_score),
-                last_audit=COALESCE($12, last_audit),
-                status=COALESCE($13, status),
-                meta_description=COALESCE($14, meta_description),
-                writer_id=COALESCE($15, writer_id),
-                seo_id=COALESCE($16, seo_id),
-                developer_id=COALESCE($17, developer_id),
+                page_title=COALESCE(?, page_title),
+                url=COALESCE(?, url),
+                url_slug=COALESCE(?, url_slug),
+                page_type=COALESCE(?, page_type),
+                service_id=COALESCE(?, service_id),
+                sub_service_id=COALESCE(?, sub_service_id),
+                industry=COALESCE(?, industry),
+                target_keyword=COALESCE(?, target_keyword),
+                primary_keyword=COALESCE(?, primary_keyword),
+                seo_score=COALESCE(?, seo_score),
+                audit_score=COALESCE(?, audit_score),
+                last_audit=COALESCE(?, last_audit),
+                status=COALESCE(?, status),
+                meta_description=COALESCE(?, meta_description),
+                writer_id=COALESCE(?, writer_id),
+                seo_id=COALESCE(?, seo_id),
+                developer_id=COALESCE(?, developer_id),
                 updated_at=datetime('now')
-            WHERE id=$18 RETURNING *`,
+            WHERE id=?`,
             [
                 page_title, url, url_slug, page_type, service_id, sub_service_id,
                 industry, target_keyword, primary_keyword, seo_score, audit_score,
@@ -104,9 +104,9 @@ export const updateServicePage = async (req: any, res: any) => {
     }
 };
 
-export const deleteServicePage = async (req: any, res: any) => {
+export const deleteServicePage = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM service_pages WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM service_pages WHERE id = ?', [req.params.id]);
         getSocket().emit('service_page_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

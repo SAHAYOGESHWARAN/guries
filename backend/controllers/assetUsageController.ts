@@ -20,7 +20,7 @@ export const getAssetWebsiteUsage = async (req: Request, res: Response) => {
     const { assetId } = req.params;
     try {
         const result = await pool.query(
-            `SELECT * FROM asset_website_usage WHERE asset_id = $1 ORDER BY created_at DESC`,
+            `SELECT * FROM asset_website_usage WHERE asset_id = ? ORDER BY created_at DESC`,
             [assetId]
         );
         res.status(200).json(result.rows);
@@ -37,13 +37,13 @@ export const addAssetWebsiteUsage = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(
             `INSERT INTO asset_website_usage (asset_id, website_url, page_title, added_by)
-             VALUES ($1, $2, $3, $4) RETURNING *`,
+             VALUES (?, ?, ?, ?)`,
             [assetId, website_url, page_title, added_by]
         );
 
         // Update asset usage count
         await pool.query(
-            `UPDATE assets SET usage_count = COALESCE(usage_count, 0) + 1 WHERE id = $1`,
+            `UPDATE assets SET usage_count = COALESCE(usage_count, 0) + 1 WHERE id = ?`,
             [assetId]
         );
 
@@ -58,11 +58,11 @@ export const addAssetWebsiteUsage = async (req: Request, res: Response) => {
 export const deleteAssetWebsiteUsage = async (req: Request, res: Response) => {
     const { assetId, usageId } = req.params;
     try {
-        await pool.query(`DELETE FROM asset_website_usage WHERE id = $1 AND asset_id = $2`, [usageId, assetId]);
+        await pool.query(`DELETE FROM asset_website_usage WHERE id = ? AND asset_id = ?`, [usageId, assetId]);
 
         // Update asset usage count
         await pool.query(
-            `UPDATE assets SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0) WHERE id = $1`,
+            `UPDATE assets SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0) WHERE id = ?`,
             [assetId]
         );
 
@@ -82,7 +82,7 @@ export const getAssetSocialMediaUsage = async (req: Request, res: Response) => {
     const { assetId } = req.params;
     try {
         const result = await pool.query(
-            `SELECT * FROM asset_social_media_usage WHERE asset_id = $1 ORDER BY created_at DESC`,
+            `SELECT * FROM asset_social_media_usage WHERE asset_id = ? ORDER BY created_at DESC`,
             [assetId]
         );
         res.status(200).json(result.rows);
@@ -106,7 +106,7 @@ export const addAssetSocialMediaUsage = async (req: Request, res: Response) => {
              (asset_id, platform_name, post_url, post_id, status, 
               engagement_impressions, engagement_clicks, engagement_shares,
               engagement_likes, engagement_comments, posted_at, added_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [assetId, platform_name, post_url, post_id, status || 'Published',
                 engagement_impressions || 0, engagement_clicks || 0, engagement_shares || 0,
                 engagement_likes || 0, engagement_comments || 0, posted_at, added_by]
@@ -114,7 +114,7 @@ export const addAssetSocialMediaUsage = async (req: Request, res: Response) => {
 
         // Update asset usage count
         await pool.query(
-            `UPDATE assets SET usage_count = COALESCE(usage_count, 0) + 1 WHERE id = $1`,
+            `UPDATE assets SET usage_count = COALESCE(usage_count, 0) + 1 WHERE id = ?`,
             [assetId]
         );
 
@@ -140,16 +140,16 @@ export const updateAssetSocialMediaUsage = async (req: Request, res: Response) =
     try {
         const result = await pool.query(
             `UPDATE asset_social_media_usage SET
-             platform_name = COALESCE($1, platform_name),
-             post_url = COALESCE($2, post_url),
-             status = COALESCE($3, status),
-             engagement_impressions = COALESCE($4, engagement_impressions),
-             engagement_clicks = COALESCE($5, engagement_clicks),
-             engagement_shares = COALESCE($6, engagement_shares),
-             engagement_likes = COALESCE($7, engagement_likes),
-             engagement_comments = COALESCE($8, engagement_comments),
-             updated_at = CURRENT_TIMESTAMP
-             WHERE id = $9 AND asset_id = $10 RETURNING *`,
+             platform_name = COALESCE(?, platform_name),
+             post_url = COALESCE(?, post_url),
+             status = COALESCE(?, status),
+             engagement_impressions = COALESCE(?, engagement_impressions),
+             engagement_clicks = COALESCE(?, engagement_clicks),
+             engagement_shares = COALESCE(?, engagement_shares),
+             engagement_likes = COALESCE(?, engagement_likes),
+             engagement_comments = COALESCE(?, engagement_comments),
+             updated_at = datetime('now')
+             WHERE id = ? AND asset_id = ?`,
             [platform_name, post_url, status, engagement_impressions, engagement_clicks,
                 engagement_shares, engagement_likes, engagement_comments, usageId, assetId]
         );
@@ -168,11 +168,11 @@ export const updateAssetSocialMediaUsage = async (req: Request, res: Response) =
 export const deleteAssetSocialMediaUsage = async (req: Request, res: Response) => {
     const { assetId, usageId } = req.params;
     try {
-        await pool.query(`DELETE FROM asset_social_media_usage WHERE id = $1 AND asset_id = $2`, [usageId, assetId]);
+        await pool.query(`DELETE FROM asset_social_media_usage WHERE id = ? AND asset_id = ?`, [usageId, assetId]);
 
         // Update asset usage count
         await pool.query(
-            `UPDATE assets SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0) WHERE id = $1`,
+            `UPDATE assets SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0) WHERE id = ?`,
             [assetId]
         );
 
@@ -195,7 +195,7 @@ export const getAssetBacklinkUsage = async (req: Request, res: Response) => {
     const { assetId } = req.params;
     try {
         const result = await pool.query(
-            `SELECT * FROM asset_backlink_usage WHERE asset_id = $1 ORDER BY created_at DESC`,
+            `SELECT * FROM asset_backlink_usage WHERE asset_id = ? ORDER BY created_at DESC`,
             [assetId]
         );
         res.status(200).json(result.rows);
@@ -213,13 +213,13 @@ export const addAssetBacklinkUsage = async (req: Request, res: Response) => {
         const result = await pool.query(
             `INSERT INTO asset_backlink_usage 
              (asset_id, domain_name, backlink_url, anchor_text, approval_status, da_score, submitted_at, added_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [assetId, domain_name, backlink_url, anchor_text, approval_status || 'Pending', da_score, submitted_at, added_by]
         );
 
         // Update asset usage count
         await pool.query(
-            `UPDATE assets SET usage_count = COALESCE(usage_count, 0) + 1 WHERE id = $1`,
+            `UPDATE assets SET usage_count = COALESCE(usage_count, 0) + 1 WHERE id = ?`,
             [assetId]
         );
 
@@ -238,14 +238,14 @@ export const updateAssetBacklinkUsage = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(
             `UPDATE asset_backlink_usage SET
-             domain_name = COALESCE($1, domain_name),
-             backlink_url = COALESCE($2, backlink_url),
-             anchor_text = COALESCE($3, anchor_text),
-             approval_status = COALESCE($4, approval_status),
-             da_score = COALESCE($5, da_score),
-             approved_at = COALESCE($6, approved_at),
-             updated_at = CURRENT_TIMESTAMP
-             WHERE id = $7 AND asset_id = $8 RETURNING *`,
+             domain_name = COALESCE(?, domain_name),
+             backlink_url = COALESCE(?, backlink_url),
+             anchor_text = COALESCE(?, anchor_text),
+             approval_status = COALESCE(?, approval_status),
+             da_score = COALESCE(?, da_score),
+             approved_at = COALESCE(?, approved_at),
+             updated_at = datetime('now')
+             WHERE id = ? AND asset_id = ?`,
             [domain_name, backlink_url, anchor_text, approval_status, da_score, approved_at, usageId, assetId]
         );
 
@@ -260,11 +260,11 @@ export const updateAssetBacklinkUsage = async (req: Request, res: Response) => {
 export const deleteAssetBacklinkUsage = async (req: Request, res: Response) => {
     const { assetId, usageId } = req.params;
     try {
-        await pool.query(`DELETE FROM asset_backlink_usage WHERE id = $1 AND asset_id = $2`, [usageId, assetId]);
+        await pool.query(`DELETE FROM asset_backlink_usage WHERE id = ? AND asset_id = ?`, [usageId, assetId]);
 
         // Update asset usage count
         await pool.query(
-            `UPDATE assets SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0) WHERE id = $1`,
+            `UPDATE assets SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0) WHERE id = ?`,
             [assetId]
         );
 
@@ -284,7 +284,7 @@ export const getAssetEngagementMetrics = async (req: Request, res: Response) => 
     const { assetId } = req.params;
     try {
         const result = await pool.query(
-            `SELECT * FROM asset_engagement_metrics WHERE asset_id = $1`,
+            `SELECT * FROM asset_engagement_metrics WHERE asset_id = ?`,
             [assetId]
         );
 
@@ -320,13 +320,13 @@ export const updateAssetEngagementMetrics = async (req: Request, res: Response) 
         // Then update the performance summary if provided
         if (performance_summary) {
             await pool.query(
-                `UPDATE asset_engagement_metrics SET performance_summary = $1, updated_at = CURRENT_TIMESTAMP WHERE asset_id = $2`,
+                `UPDATE asset_engagement_metrics SET performance_summary = ?, updated_at = datetime('now') WHERE asset_id = ?`,
                 [performance_summary, assetId]
             );
         }
 
         const result = await pool.query(
-            `SELECT * FROM asset_engagement_metrics WHERE asset_id = $1`,
+            `SELECT * FROM asset_engagement_metrics WHERE asset_id = ?`,
             [assetId]
         );
 
@@ -349,7 +349,7 @@ async function recalculateEngagementMetrics(assetId: number) {
                 COALESCE(SUM(engagement_shares), 0) as total_shares,
                 COALESCE(SUM(engagement_likes), 0) as total_likes,
                 COALESCE(SUM(engagement_comments), 0) as total_comments
-             FROM asset_social_media_usage WHERE asset_id = $1`,
+             FROM asset_social_media_usage WHERE asset_id = ?`,
             [assetId]
         );
 
@@ -362,16 +362,16 @@ async function recalculateEngagementMetrics(assetId: number) {
         await pool.query(
             `INSERT INTO asset_engagement_metrics 
              (asset_id, total_impressions, total_clicks, total_shares, total_likes, total_comments, ctr_percentage, last_calculated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+             VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
              ON CONFLICT (asset_id) DO UPDATE SET
-             total_impressions = $2,
-             total_clicks = $3,
-             total_shares = $4,
-             total_likes = $5,
-             total_comments = $6,
-             ctr_percentage = $7,
-             last_calculated_at = CURRENT_TIMESTAMP,
-             updated_at = CURRENT_TIMESTAMP`,
+             total_impressions = ?,
+             total_clicks = ?,
+             total_shares = ?,
+             total_likes = ?,
+             total_comments = ?,
+             ctr_percentage = ?,
+             last_calculated_at = datetime('now'),
+             updated_at = datetime('now')`,
             [assetId, metrics.total_impressions, metrics.total_clicks, metrics.total_shares,
                 metrics.total_likes, metrics.total_comments, ctr.toFixed(2)]
         );
@@ -389,10 +389,10 @@ export const getAssetAllUsage = async (req: Request, res: Response) => {
     try {
         // Fetch all usage data in parallel
         const [websiteUsage, socialMediaUsage, backlinkUsage, engagementMetrics] = await Promise.all([
-            pool.query(`SELECT * FROM asset_website_usage WHERE asset_id = $1 ORDER BY created_at DESC`, [assetId]),
-            pool.query(`SELECT * FROM asset_social_media_usage WHERE asset_id = $1 ORDER BY created_at DESC`, [assetId]),
-            pool.query(`SELECT * FROM asset_backlink_usage WHERE asset_id = $1 ORDER BY created_at DESC`, [assetId]),
-            pool.query(`SELECT * FROM asset_engagement_metrics WHERE asset_id = $1`, [assetId])
+            pool.query(`SELECT * FROM asset_website_usage WHERE asset_id = ? ORDER BY created_at DESC`, [assetId]),
+            pool.query(`SELECT * FROM asset_social_media_usage WHERE asset_id = ? ORDER BY created_at DESC`, [assetId]),
+            pool.query(`SELECT * FROM asset_backlink_usage WHERE asset_id = ? ORDER BY created_at DESC`, [assetId]),
+            pool.query(`SELECT * FROM asset_engagement_metrics WHERE asset_id = ?`, [assetId])
         ]);
 
         res.status(200).json({

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getOKRs = async (req: any, res: any) => {
+export const getOKRs = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -29,7 +29,7 @@ export const getOKRs = async (req: any, res: any) => {
     }
 };
 
-export const createOKR = async (req: any, res: any) => {
+export const createOKR = async (req: Request, res: Response) => {
     const {
         objective_title, objective_type, department, owner_id, cycle,
         objective_description, why_this_matters, expected_outcome, target_date,
@@ -44,7 +44,7 @@ export const createOKR = async (req: any, res: any) => {
                 objective_description, why_this_matters, expected_outcome, target_date,
                 alignment, parent_okr_id, key_results, reviewer_id, review_notes,
                 evidence_links, status, progress, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 objective_title,
                 objective_type || 'Department',
@@ -77,7 +77,7 @@ export const createOKR = async (req: any, res: any) => {
             FROM okrs o
             LEFT JOIN users u ON o.owner_id = u.id
             LEFT JOIN users r ON o.reviewer_id = r.id
-            WHERE o.id = $1
+            WHERE o.id = ?
         `, [result.rows[0].id]);
 
         const item = {
@@ -94,7 +94,7 @@ export const createOKR = async (req: any, res: any) => {
     }
 };
 
-export const updateOKR = async (req: any, res: any) => {
+export const updateOKR = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         objective_title, objective_type, department, owner_id, cycle,
@@ -106,25 +106,25 @@ export const updateOKR = async (req: any, res: any) => {
     try {
         const result = await pool.query(
             `UPDATE okrs SET
-                objective_title=COALESCE($1, objective_title),
-                objective_type=COALESCE($2, objective_type),
-                department=COALESCE($3, department),
-                owner_id=COALESCE($4, owner_id),
-                cycle=COALESCE($5, cycle),
-                objective_description=COALESCE($6, objective_description),
-                why_this_matters=COALESCE($7, why_this_matters),
-                expected_outcome=COALESCE($8, expected_outcome),
-                target_date=COALESCE($9, target_date),
-                alignment=COALESCE($10, alignment),
-                parent_okr_id=COALESCE($11, parent_okr_id),
-                key_results=COALESCE($12, key_results),
-                reviewer_id=COALESCE($13, reviewer_id),
-                review_notes=COALESCE($14, review_notes),
-                evidence_links=COALESCE($15, evidence_links),
-                status=COALESCE($16, status),
-                progress=COALESCE($17, progress),
-                updated_at=$18
-            WHERE id=$19 RETURNING *`,
+                objective_title=COALESCE(?, objective_title),
+                objective_type=COALESCE(?, objective_type),
+                department=COALESCE(?, department),
+                owner_id=COALESCE(?, owner_id),
+                cycle=COALESCE(?, cycle),
+                objective_description=COALESCE(?, objective_description),
+                why_this_matters=COALESCE(?, why_this_matters),
+                expected_outcome=COALESCE(?, expected_outcome),
+                target_date=COALESCE(?, target_date),
+                alignment=COALESCE(?, alignment),
+                parent_okr_id=COALESCE(?, parent_okr_id),
+                key_results=COALESCE(?, key_results),
+                reviewer_id=COALESCE(?, reviewer_id),
+                review_notes=COALESCE(?, review_notes),
+                evidence_links=COALESCE(?, evidence_links),
+                status=COALESCE(?, status),
+                progress=COALESCE(?, progress),
+                updated_at=?
+            WHERE id=?`,
             [
                 objective_title, objective_type, department, owner_id, cycle,
                 objective_description, why_this_matters, expected_outcome, target_date,
@@ -147,7 +147,7 @@ export const updateOKR = async (req: any, res: any) => {
             FROM okrs o
             LEFT JOIN users u ON o.owner_id = u.id
             LEFT JOIN users r ON o.reviewer_id = r.id
-            WHERE o.id = $1
+            WHERE o.id = ?
         `, [id]);
 
         const item = {
@@ -164,9 +164,9 @@ export const updateOKR = async (req: any, res: any) => {
     }
 };
 
-export const deleteOKR = async (req: any, res: any) => {
+export const deleteOKR = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM okrs WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM okrs WHERE id = ?', [req.params.id]);
         getSocket().emit('okr_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

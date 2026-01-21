@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getPerformanceTargets = async (req: any, res: any) => {
+export const getPerformanceTargets = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -22,7 +22,7 @@ export const getPerformanceTargets = async (req: any, res: any) => {
     }
 };
 
-export const createPerformanceTarget = async (req: any, res: any) => {
+export const createPerformanceTarget = async (req: Request, res: Response) => {
     const {
         target_level, brand_id, brand_name, tutorials_india, department_function, applies_to,
         kpi_name, metric_type, unit, direction, examples, baseline_value, current_performance,
@@ -51,7 +51,7 @@ export const createPerformanceTarget = async (req: any, res: any) => {
                 performance_scoring_logic, achievement_calculation, score_capping_logic,
                 status_achieved_green, status_on_track_yellow, status_off_track_red,
                 owner_id, reviewer_id, responsible_roles, created_by, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 target_level, brand_id, brand_name, tutorials_india, department_function, applies_to,
                 kpi_name, metric_type, unit, direction, examples, baseline_value, current_performance,
@@ -77,7 +77,7 @@ export const createPerformanceTarget = async (req: any, res: any) => {
             FROM performance_targets p
             LEFT JOIN users u ON p.owner_id = u.id
             LEFT JOIN users r ON p.reviewer_id = r.id
-            WHERE p.id = $1
+            WHERE p.id = ?
         `, [result.rows[0].id]);
 
         const item = {
@@ -93,7 +93,7 @@ export const createPerformanceTarget = async (req: any, res: any) => {
     }
 };
 
-export const updatePerformanceTarget = async (req: any, res: any) => {
+export const updatePerformanceTarget = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
 
@@ -115,7 +115,7 @@ export const updatePerformanceTarget = async (req: any, res: any) => {
         });
 
         const result = await pool.query(
-            `UPDATE performance_targets SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2} RETURNING *`,
+            `UPDATE performance_targets SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2}`,
             [...values, new Date().toISOString(), id]
         );
 
@@ -128,7 +128,7 @@ export const updatePerformanceTarget = async (req: any, res: any) => {
             FROM performance_targets p
             LEFT JOIN users u ON p.owner_id = u.id
             LEFT JOIN users r ON p.reviewer_id = r.id
-            WHERE p.id = $1
+            WHERE p.id = ?
         `, [id]);
 
         const item = {
@@ -144,9 +144,9 @@ export const updatePerformanceTarget = async (req: any, res: any) => {
     }
 };
 
-export const deletePerformanceTarget = async (req: any, res: any) => {
+export const deletePerformanceTarget = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM performance_targets WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM performance_targets WHERE id = ?', [req.params.id]);
         getSocket().emit('performance_target_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

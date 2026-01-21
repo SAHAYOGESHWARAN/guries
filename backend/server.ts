@@ -10,6 +10,7 @@ import apiRoutes from './routes/api';
 import migrationRoutes from './routes/migration';
 import { db, initDatabase } from './config/db-sqlite';
 import { initSocket } from './socket';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // Load environment variables
 dotenv.config();
@@ -74,11 +75,11 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Global Error Handling
-app.use((err: any, req: any, res: any, next: any) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Internal Server Error', message: err.message });
-});
+// 404 Handler
+app.use(notFoundHandler);
+
+// Global Error Handler (must be last)
+app.use(errorHandler);
 
 // Start Server
 const startServer = (portToTry: number) => {

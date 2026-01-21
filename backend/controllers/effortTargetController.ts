@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
-export const getEffortTargets = async (req: any, res: any) => {
+export const getEffortTargets = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -22,7 +22,7 @@ export const getEffortTargets = async (req: any, res: any) => {
     }
 };
 
-export const createEffortTarget = async (req: any, res: any) => {
+export const createEffortTarget = async (req: Request, res: Response) => {
     const {
         department, role, kpi_category, effort_metric, effective_date, status,
         monthly_target, weekly_target, daily_target, max_capacity, min_completion_percent,
@@ -41,7 +41,7 @@ export const createEffortTarget = async (req: any, res: any) => {
                 prevent_overload, reassign_if_target_not_met, max_tasks_per_day, max_tasks_per_campaign,
                 allowed_rework_percent, delay_tolerance_percent, auto_assign_rules_summary,
                 validation_rules, owner_id, reviewer_id, created_by, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28) RETURNING *`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 department, role, kpi_category, effort_metric, effective_date, status || 'Draft',
                 monthly_target || 0, weekly_target || 0, daily_target || 0, max_capacity || 0, min_completion_percent || 90,
@@ -62,7 +62,7 @@ export const createEffortTarget = async (req: any, res: any) => {
             FROM effort_targets e
             LEFT JOIN users u ON e.owner_id = u.id
             LEFT JOIN users r ON e.reviewer_id = r.id
-            WHERE e.id = $1
+            WHERE e.id = ?
         `, [result.rows[0].id]);
 
         const item = {
@@ -78,7 +78,7 @@ export const createEffortTarget = async (req: any, res: any) => {
     }
 };
 
-export const updateEffortTarget = async (req: any, res: any) => {
+export const updateEffortTarget = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
 
@@ -100,7 +100,7 @@ export const updateEffortTarget = async (req: any, res: any) => {
         });
 
         const result = await pool.query(
-            `UPDATE effort_targets SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2} RETURNING *`,
+            `UPDATE effort_targets SET ${setClause}, updated_at=$${fields.length + 1} WHERE id=$${fields.length + 2}`,
             [...values, new Date().toISOString(), id]
         );
 
@@ -113,7 +113,7 @@ export const updateEffortTarget = async (req: any, res: any) => {
             FROM effort_targets e
             LEFT JOIN users u ON e.owner_id = u.id
             LEFT JOIN users r ON e.reviewer_id = r.id
-            WHERE e.id = $1
+            WHERE e.id = ?
         `, [id]);
 
         const item = {
@@ -129,9 +129,9 @@ export const updateEffortTarget = async (req: any, res: any) => {
     }
 };
 
-export const deleteEffortTarget = async (req: any, res: any) => {
+export const deleteEffortTarget = async (req: Request, res: Response) => {
     try {
-        await pool.query('DELETE FROM effort_targets WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM effort_targets WHERE id = ?', [req.params.id]);
         getSocket().emit('effort_target_deleted', { id: req.params.id });
         res.status(204).send();
     } catch (error: any) {

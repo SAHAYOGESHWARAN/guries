@@ -4,7 +4,7 @@ import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // --- Integrations ---
-export const getIntegrations = async (req: any, res: any) => {
+export const getIntegrations = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM integrations ORDER BY name ASC');
         res.status(200).json(result.rows);
@@ -13,20 +13,20 @@ export const getIntegrations = async (req: any, res: any) => {
     }
 };
 
-export const updateIntegration = async (req: any, res: any) => {
+export const updateIntegration = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { connected, config, health_score, sync_status } = req.body;
     
     try {
         const result = await pool.query(
             `UPDATE integrations SET 
-                connected = COALESCE($1, connected), 
-                config = COALESCE($2, config),
-                health_score = COALESCE($3, health_score),
-                sync_status = COALESCE($4, sync_status),
-                last_sync_time = CASE WHEN $4 = 'success' THEN NOW() ELSE last_sync_time END,
-                updated_at = NOW()
-            WHERE id = $5 RETURNING *`,
+                connected = COALESCE(?, connected), 
+                config = COALESCE(?, config),
+                health_score = COALESCE(?, health_score),
+                sync_status = COALESCE(?, sync_status),
+                last_sync_time = CASE WHEN ? = 'success' THEN datetime('now') ELSE last_sync_time END,
+                updated_at = datetime('now')
+            WHERE id = ?`,
             [connected, config, health_score, sync_status, id]
         );
         
@@ -42,7 +42,7 @@ export const updateIntegration = async (req: any, res: any) => {
         const eventDesc = sync_status ? `Sync Status: ${sync_status}` : `Connection updated: ${statusLog}`;
         
         await pool.query(
-            'INSERT INTO integration_logs (integration_id, event, status, timestamp) VALUES ($1, $2, $3, NOW())',
+            'INSERT INTO integration_logs (integration_id, event, status, timestamp) VALUES (?, ?, ?, datetime('now'))',
             [id, eventDesc, 'success']
         );
 
@@ -53,21 +53,21 @@ export const updateIntegration = async (req: any, res: any) => {
 };
 
 // --- Integration Logs ---
-export const getIntegrationLogs = async (req: any, res: any) => {
+export const getIntegrationLogs = async (req: Request, res: Response) => {
     try {
         const limit = req.query.limit || 100;
-        const result = await pool.query('SELECT * FROM integration_logs ORDER BY timestamp DESC LIMIT $1', [limit]);
+        const result = await pool.query('SELECT * FROM integration_logs ORDER BY timestamp DESC LIMIT ?', [limit]);
         res.status(200).json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
 };
 
-export const createLog = async (req: any, res: any) => {
+export const createLog = async (req: Request, res: Response) => {
     const { integration_id, event, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO integration_logs (integration_id, event, status, timestamp) VALUES ($1, $2, $3, NOW()) RETURNING *',
+            'INSERT INTO integration_logs (integration_id, event, status, timestamp) VALUES (?, ?, ?, datetime('now'))',
             [integration_id, event, status]
         );
         const newLog = result.rows[0];

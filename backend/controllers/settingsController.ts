@@ -4,7 +4,7 @@ import { pool } from '../config/db-sqlite';
 import { getSocket } from '../socket';
 
 // Get all system settings
-export const getSettings = async (req: any, res: any) => {
+export const getSettings = async (req: Request, res: Response) => {
     try {
         const result = await pool.query('SELECT * FROM system_settings');
         // Convert array of rows to a simple key-value object for frontend convenience if needed, 
@@ -16,7 +16,7 @@ export const getSettings = async (req: any, res: any) => {
 };
 
 // Update a specific setting
-export const updateSetting = async (req: any, res: any) => {
+export const updateSetting = async (req: Request, res: Response) => {
     const { key } = req.params;
     const { value, enabled } = req.body;
 
@@ -24,10 +24,9 @@ export const updateSetting = async (req: any, res: any) => {
         // Upsert logic
         const result = await pool.query(
             `INSERT INTO system_settings (setting_key, setting_value, is_enabled, updated_at)
-             VALUES ($1, $2, $3, NOW())
+             VALUES (?, ?, ?, datetime('now'))
              ON CONFLICT (setting_key) 
-             DO UPDATE SET setting_value = EXCLUDED.setting_value, is_enabled = EXCLUDED.is_enabled, updated_at = NOW()
-             RETURNING *`,
+             DO UPDATE SET setting_value = EXCLUDED.setting_value, is_enabled = EXCLUDED.is_enabled, updated_at = datetime('now')`,
             [key, value, enabled]
         );
         
@@ -40,7 +39,7 @@ export const updateSetting = async (req: any, res: any) => {
 };
 
 // Perform system maintenance tasks (Mock)
-export const runMaintenance = async (req: any, res: any) => {
+export const runMaintenance = async (req: Request, res: Response) => {
     const { action } = req.body; // e.g., 'clear_cache', 'reindex_db'
     
     try {
