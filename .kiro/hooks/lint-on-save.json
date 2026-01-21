@@ -1,0 +1,18 @@
+{
+    "name": "Lint on Save",
+    "version": "1.0.0",
+    "description": "Automatically lint and analyze TypeScript/JavaScript files on save, providing instant feedback and auto-fix suggestions",
+    "when": {
+        "type": "fileEdited",
+        "patterns": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.js",
+            "**/*.jsx"
+        ]
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "Analyze the saved file for:\n1. Syntax errors and type issues\n2. Linting violations\n3. Code quality problems\n4. Security vulnerabilities\n5. Performance concerns\n\nProvide specific fixes and suggestions. Use getDiagnostics to check for issues first."
+    }
+}

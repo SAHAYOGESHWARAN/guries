@@ -1,0 +1,12 @@
+{
+    "name": "Codebase Health Check",
+    "version": "1.0.0",
+    "description": "Run comprehensive codebase analysis including code quality, performance, security, and SEO",
+    "when": {
+        "type": "userTriggered"
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "Run a complete codebase health check:\n\n1. CODE QUALITY ANALYSIS\n   - Syntax errors and type issues\n   - Code smells and anti-patterns\n   - Complexity analysis\n   - Duplication detection\n   - Error handling coverage\n\n2. PERFORMANCE ANALYSIS\n   - Bundle size and imports\n   - Inefficient patterns\n   - Database query efficiency\n   - Component performance\n   - Memory usage patterns\n\n3. SECURITY ANALYSIS\n   - Vulnerability scanning\n   - Authentication/authorization logic\n   - Input validation\n   - Data protection\n   - API security\n\n4. SEO ANALYSIS\n   - Asset structure validation\n   - Metadata completeness\n   - Content optimization\n   - Linking structure\n   - Schema markup\n\n5. MIGRATION ANALYSIS\n   - Breaking changes\n   - Data compatibility\n   - Rollback safety\n\nProvide a comprehensive report with priority recommendations."
+    }
+}

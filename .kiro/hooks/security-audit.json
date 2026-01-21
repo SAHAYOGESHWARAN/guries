@@ -1,0 +1,18 @@
+{
+    "name": "Security Audit",
+    "version": "1.0.0",
+    "description": "Scan for security vulnerabilities, unsafe patterns, and compliance issues",
+    "when": {
+        "type": "fileEdited",
+        "patterns": [
+            "**/auth*",
+            "**/controllers/**",
+            "**/routes/**",
+            "**/*security*"
+        ]
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "Perform security audit:\n1. Detect security vulnerabilities\n2. Check for unsafe patterns (SQL injection, XSS, CSRF)\n3. Verify authentication/authorization logic\n4. Check sensitive data handling\n5. Review API security\n6. Identify compliance issues\n\nProvide specific security recommendations and fixes."
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "name": "SEO Validation",
+    "version": "1.0.0",
+    "description": "Validate SEO assets, metadata, content optimization, and backlink quality",
+    "when": {
+        "type": "fileEdited",
+        "patterns": [
+            "**/seoAsset*",
+            "**/SEO*",
+            "**/*seo*.ts",
+            "**/*seo*.tsx"
+        ]
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "Validate SEO implementation:\n1. Check SEO asset structure and completeness\n2. Verify metadata fields (title, description, keywords)\n3. Analyze content optimization (headings, keywords, readability)\n4. Review internal linking structure\n5. Check backlink quality and relevance\n6. Validate schema markup if present\n\nProvide specific recommendations for improvement."
+    }
+}

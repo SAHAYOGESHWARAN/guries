@@ -1,0 +1,18 @@
+{
+    "name": "Dependency Impact Analysis",
+    "version": "1.0.0",
+    "description": "Analyze impact when files are deleted, checking for broken dependencies",
+    "when": {
+        "type": "fileDeleted",
+        "patterns": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.js",
+            "**/*.jsx"
+        ]
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "A file has been deleted. Analyze:\n1. Files that import from this file\n2. Broken dependencies\n3. Impact on functionality\n4. Required fixes\n5. Migration path\n\nProvide specific guidance on what needs to be updated."
+    }
+}

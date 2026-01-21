@@ -1,0 +1,18 @@
+{
+    "name": "File Creation Template",
+    "version": "1.0.0",
+    "description": "Suggest best practices and templates when new files are created",
+    "when": {
+        "type": "fileCreated",
+        "patterns": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.js",
+            "**/*.jsx"
+        ]
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "A new file has been created. Provide:\n1. Best practices for this file type\n2. Suggested structure/template\n3. Common patterns to follow\n4. Testing recommendations\n5. Documentation guidelines\n\nKeep suggestions concise and actionable."
+    }
+}

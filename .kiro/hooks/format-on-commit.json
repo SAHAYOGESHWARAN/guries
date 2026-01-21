@@ -1,0 +1,12 @@
+{
+    "name": "Format on Commit",
+    "version": "1.0.0",
+    "description": "Automatically format code and run quality checks before commit",
+    "when": {
+        "type": "promptSubmit"
+    },
+    "then": {
+        "type": "runCommand",
+        "command": "npm run lint:fix 2>&1 || echo 'Linting completed'"
+    }
+}

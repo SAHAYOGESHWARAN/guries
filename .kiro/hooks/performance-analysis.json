@@ -1,0 +1,12 @@
+{
+    "name": "Performance Analysis",
+    "version": "1.0.0",
+    "description": "Analyze performance bottlenecks, bundle size, and database query efficiency",
+    "when": {
+        "type": "userTriggered"
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "Perform comprehensive performance analysis:\n1. Identify performance bottlenecks in the codebase\n2. Analyze bundle size and import efficiency\n3. Check for memory leaks and inefficient patterns\n4. Review database query efficiency\n5. Suggest optimization strategies\n\nFocus on frontend (React/TypeScript) and backend (Node.js) performance."
+    }
+}

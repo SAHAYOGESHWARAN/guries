@@ -1,0 +1,16 @@
+{
+    "name": "Migration Compatibility Check",
+    "version": "1.0.0",
+    "description": "Analyze migration files for compatibility issues and breaking changes",
+    "when": {
+        "type": "fileEdited",
+        "patterns": [
+            "**/migrations/**",
+            "**/*migration*"
+        ]
+    },
+    "then": {
+        "type": "askAgent",
+        "prompt": "Analyze migration file for:\n1. Syntax and structure validity\n2. Breaking changes detection\n3. Backward compatibility issues\n4. Data loss risks\n5. Performance impact\n6. Rollback safety\n\nProvide upgrade guidance and risk assessment."
+    }
+}
