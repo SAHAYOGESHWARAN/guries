@@ -36,7 +36,7 @@ const SubServiceMasterView: React.FC = () => {
   const [brandFilter, setBrandFilter] = useState('All Brands');
   const [industryFilter, setIndustryFilter] = useState('All Industries');
   const [editingItem, setEditingItem] = useState<SubServiceItem | null>(null);
-  const [activeTab, setActiveTab] = useState<'GeneralInfo' | 'SubServiceManager' | 'SEOContent' | 'LinkedAssets'>('GeneralInfo');
+  const [activeTab, setActiveTab] = useState<'Core' | 'Navigation' | 'Strategic' | 'Content' | 'SEO' | 'SMM' | 'Technical' | 'Linking' | 'Governance'>('Core');
   const [assetSearch, setAssetSearch] = useState('');
   const [repositoryFilter, setRepositoryFilter] = useState('All');
   const [copiedUrl, setCopiedUrl] = useState(false);
@@ -222,7 +222,7 @@ const SubServiceMasterView: React.FC = () => {
       primary_cta_label: '',
       primary_cta_url: ''
     });
-    setActiveTab('GeneralInfo');
+    setActiveTab('Core');
     setViewMode('form');
   };
 
@@ -254,7 +254,7 @@ const SubServiceMasterView: React.FC = () => {
       instagram_description: item.instagram_description || '',
       instagram_image_url: item.instagram_image_url || ''
     });
-    setActiveTab('GeneralInfo');
+    setActiveTab('Core');
     setViewMode('view');
   };
 
@@ -286,7 +286,7 @@ const SubServiceMasterView: React.FC = () => {
       instagram_description: item.instagram_description || '',
       instagram_image_url: item.instagram_image_url || ''
     });
-    setActiveTab('GeneralInfo');
+    setActiveTab('Core');
     setViewMode('form');
   };
 
@@ -328,6 +328,27 @@ const SubServiceMasterView: React.FC = () => {
   const handleSlugChange = (val: string) => {
     const slug = val.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
     setFormData((prev: any) => ({ ...prev, slug, full_url: `/services/${slug}` }));
+  };
+
+  const handleParentServiceChange = (parentId: number) => {
+    // parentId of 0 or NaN resets selection
+    if (!parentId) {
+      setFormData((prev: any) => ({ ...prev, parent_service_id: 0 }));
+      return;
+    }
+
+    const parent = services.find(s => s.id === parentId);
+    setFormData((prev: any) => ({
+      ...prev,
+      parent_service_id: parentId,
+      // Inherit key fields from parent when available
+      brand_id: parent?.brand_id ?? prev.brand_id ?? 0,
+      content_owner_id: parent?.content_owner_id ?? prev.content_owner_id ?? 0,
+      content_type: parent?.content_type ?? prev.content_type ?? 'Cluster',
+      buyer_journey_stage: parent?.buyer_journey_stage ?? prev.buyer_journey_stage ?? 'Consideration',
+      industry_ids: parent?.industry_ids ?? prev.industry_ids ?? [],
+      country_ids: parent?.country_ids ?? prev.country_ids ?? []
+    }));
   };
 
   const handleCopyFullUrl = () => {
@@ -595,10 +616,15 @@ const SubServiceMasterView: React.FC = () => {
   }, []);
 
   const tabs = [
-    { id: 'GeneralInfo', label: 'General Info', icon: '📋' },
-    { id: 'SubServiceManager', label: 'Sub-Service Manager', icon: '🔧' },
-    { id: 'SEOContent', label: 'SEO & Content', icon: '🔍' },
-    { id: 'LinkedAssets', label: 'Linked Assets & Insights', icon: '🔗' }
+    { id: 'Core', label: 'Core', icon: '💎' },
+    { id: 'Navigation', label: 'Navigation', icon: '🧭' },
+    { id: 'Strategic', label: 'Strategic', icon: '🎯' },
+    { id: 'Content', label: 'Content', icon: '📝' },
+    { id: 'SEO', label: 'SEO', icon: '🔍' },
+    { id: 'SMM', label: 'SMM', icon: '📢' },
+    { id: 'Technical', label: 'Technical', icon: '⚙️' },
+    { id: 'Linking', label: 'Linking', icon: '🔗' },
+    { id: 'Governance', label: 'Governance', icon: '⚖️' }
   ];
 
   // Define isViewMode at component level for consistent access
@@ -654,7 +680,7 @@ const SubServiceMasterView: React.FC = () => {
           <div className="max-w-7xl mx-auto space-y-8 pb-20">
 
             {/* --- TAB: GENERAL INFO --- */}
-            {activeTab === 'GeneralInfo' && (
+            {activeTab === 'Core' && (
               <div className="space-y-10">
                 {/* 1. SUB-SERVICE IDENTITY CARD */}
                 <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50 rounded-2xl border-2 border-indigo-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
@@ -684,7 +710,7 @@ const SubServiceMasterView: React.FC = () => {
                             </label>
                             <select
                               value={formData.parent_service_id}
-                              onChange={(e) => setFormData({ ...formData, parent_service_id: parseInt(e.target.value) })}
+                              onChange={(e) => handleParentServiceChange(parseInt(e.target.value))}
                               disabled={isViewMode}
                               className={`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium transition-all focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isViewMode ? 'bg-slate-50 cursor-not-allowed' : 'bg-white cursor-pointer'}`}
                             >
@@ -1043,7 +1069,7 @@ const SubServiceMasterView: React.FC = () => {
 
   {/* --- TAB: SUB-SERVICE MANAGER --- */ }
   {
-    activeTab === 'SubServiceManager' && (
+    activeTab === 'Navigation' && (
       <div className="space-y-8">
         {/* Sub-Services Table */}
         <div className="bg-gradient-to-br from-cyan-50 via-blue-50 to-slate-50 rounded-2xl border-2 border-cyan-200 shadow-lg overflow-hidden">
@@ -1136,7 +1162,7 @@ const SubServiceMasterView: React.FC = () => {
 
   {/* --- TAB: SEO & CONTENT --- */ }
   {
-    activeTab === 'SEOContent' && (
+    (activeTab === 'SEO' || activeTab === 'Content') && (
       <div className="space-y-8">
         {/* Missing SEO Components Warning */}
         {showMissingSeoWarning && checkSeoCompleteness().length > 0 && (
@@ -1619,9 +1645,111 @@ const SubServiceMasterView: React.FC = () => {
     )
   }
 
+  {/* --- TAB: STRATEGIC --- */ }
+  {
+    activeTab === 'Strategic' && (
+      <div className="space-y-8">
+        <div className="bg-gradient-to-br from-yellow-50 via-amber-50 to-slate-50 rounded-2xl border-2 border-amber-200 shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold">Strategic Settings</h3>
+              <p className="text-sm text-slate-500">Inherit strategic context from parent service</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Inherited Parent Service</label>
+              <div className="p-3 bg-white rounded border border-slate-200 text-sm">{services.find(s => s.id === formData.parent_service_id)?.service_name || '—'}</div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Strategic Notes</label>
+              <textarea
+                value={formData.strategic_notes || ''}
+                onChange={(e) => setFormData({ ...formData, strategic_notes: e.target.value })}
+                placeholder="Enter strategic guidance, positioning, or notes..."
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-white"
+                rows={4}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {/* --- TAB: SMM --- */ }
+  {
+    activeTab === 'SMM' && (
+      <div className="space-y-8">
+        <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-slate-50 rounded-2xl border-2 border-purple-200 shadow-lg p-6">
+          <h3 className="text-xl font-bold mb-2">Social Media (SMM)</h3>
+          <p className="text-sm text-slate-500 mb-4">Social metadata inherits from parent service where available.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">LinkedIn Title</label>
+              <input type="text" value={formData.linkedin_title || ''} onChange={(e) => setFormData({ ...formData, linkedin_title: e.target.value })} className="w-full px-3 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">LinkedIn Description</label>
+              <input type="text" value={formData.linkedin_description || ''} onChange={(e) => setFormData({ ...formData, linkedin_description: e.target.value })} className="w-full px-3 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Twitter Title</label>
+              <input type="text" value={formData.twitter_title || ''} onChange={(e) => setFormData({ ...formData, twitter_title: e.target.value })} className="w-full px-3 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Twitter Description</label>
+              <input type="text" value={formData.twitter_description || ''} onChange={(e) => setFormData({ ...formData, twitter_description: e.target.value })} className="w-full px-3 py-2 border rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {/* --- TAB: TECHNICAL --- */ }
+  {
+    activeTab === 'Technical' && (
+      <div className="space-y-8">
+        <div className="bg-gradient-to-br from-cyan-50 via-slate-50 to-slate-50 rounded-2xl border-2 border-cyan-200 shadow-lg p-6">
+          <h3 className="text-xl font-bold mb-2">Technical Settings</h3>
+          <p className="text-sm text-slate-500 mb-4">Technical attributes inherited from parent service where applicable.</p>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-2">Robots</label>
+            <input type="text" value={formData.robots_custom || ''} onChange={(e) => setFormData({ ...formData, robots_custom: e.target.value })} className="w-full px-3 py-2 border rounded" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {/* --- TAB: GOVERNANCE --- */ }
+  {
+    activeTab === 'Governance' && (
+      <div className="space-y-8">
+        <div className="bg-gradient-to-br from-slate-50 via-gray-50 to-slate-50 rounded-2xl border-2 border-slate-200 shadow-lg p-6">
+          <h3 className="text-xl font-bold mb-2">Governance</h3>
+          <p className="text-sm text-slate-500 mb-4">Control publication status and ownership (inherited from parent where necessary).</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Status</label>
+              <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border rounded">
+                {['Draft', 'In Progress', 'QC', 'Approved', 'Published', 'Archived'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Content Owner</label>
+              <input type="text" value={String(formData.content_owner_id || '')} onChange={(e) => setFormData({ ...formData, content_owner_id: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   {/* --- TAB: LINKED ASSETS & INSIGHTS --- */ }
   {
-    activeTab === 'LinkedAssets' && (
+    activeTab === 'Linking' && (
       <div className="space-y-8">
         {/* Linked Insights Section */}
         <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden">
