@@ -76,6 +76,7 @@ import rewardPenaltyAutomationRoutes from './reward-penalty-automation';
 import aiTaskAllocationRoutes from './ai-task-allocation';
 import * as assetUsageController from '../controllers/assetUsageController';
 import * as seoAssetController from '../controllers/seoAssetController';
+import * as bulkOperationsController from '../controllers/bulkOperationsController';
 
 const router = Router();
 
@@ -577,5 +578,24 @@ router.get('/dashboards/workload-prediction/capacity-forecast', workloadPredicti
 
 // AI Task Allocation Suggestions
 router.use('/workload-allocation', aiTaskAllocationRoutes);
+
+// --- BULK OPERATIONS ---
+// Bulk Delete
+router.delete('/bulk/delete', bulkOperationsController.bulkDelete);
+
+// Bulk Update
+router.patch('/bulk/update', bulkOperationsController.bulkUpdate);
+
+// Bulk Status Change
+router.patch('/bulk/status', bulkOperationsController.bulkStatusChange);
+
+// Bulk Assign to User
+router.patch('/bulk/assign', bulkOperationsController.bulkAssign);
+
+// Bulk Duplicate/Clone
+router.post('/bulk/duplicate', bulkOperationsController.bulkDuplicate);
+
+// Bulk Export
+router.post('/bulk/export', bulkOperationsController.bulkExport);
 
 export default router;
