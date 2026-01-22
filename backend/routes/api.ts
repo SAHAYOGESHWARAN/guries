@@ -54,6 +54,7 @@ import * as aiEvaluationController from '../controllers/aiEvaluationController';
 import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import * as adminController from '../controllers/adminController';
+
 import { requireAdmin, requirePermission, requireQCPermission } from '../middleware/roleAuth';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
@@ -95,6 +96,7 @@ router.post('/auth/verify-otp', authController.verifyOtp as any);
 router.get('/dashboard/stats', dashboardController.getDashboardStats);
 router.get('/dashboard/upcoming-tasks', dashboardController.getUpcomingTasks);
 router.get('/dashboard/recent-activity', dashboardController.getRecentActivity);
+
 router.get('/notifications', notificationController.getNotifications);
 router.post('/notifications', notificationController.createNotification);
 router.put('/notifications/:id/read', notificationController.markAsRead);
