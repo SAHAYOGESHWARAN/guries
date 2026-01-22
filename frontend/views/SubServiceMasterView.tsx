@@ -231,7 +231,6 @@ const SubServiceMasterView: React.FC = () => {
       knowledge_topic_id: undefined,
       linked_insights_ids: [],
       linked_assets_ids: [],
-      linked_campaign_ids: [],
       industry_ids: [],
       country_ids: []
     });
