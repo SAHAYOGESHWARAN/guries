@@ -55,6 +55,56 @@ const SubServiceMasterView: React.FC = () => {
   const [assetSearch, setAssetSearch] = useState('');
   const [repositoryFilter, setRepositoryFilter] = useState('All');
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [formData, setFormData] = useState<any>({});
+  const [ogImageFile, setOgImageFile] = useState<File | null>(null);
+  const [ogImagePreview, setOgImagePreview] = useState<string>('');
+  const [h2Headings, setH2Headings] = useState<string[]>([]);
+  const [h3Headings, setH3Headings] = useState<string[]>([]);
+  const [tempH2, setTempH2] = useState('');
+  const [tempH3, setTempH3] = useState('');
+  const [schemaType, setSchemaType] = useState('Service');
+  const [schemaJson, setSchemaJson] = useState('');
+
+  // Computed values
+  const availableContentTypes = contentTypes.length > 0 ? contentTypes : FALLBACK_CONTENT_TYPES;
+
+  const filteredData = useMemo(() => {
+    return subServices.filter(item => {
+      const matchesSearch = !searchQuery ||
+        item.sub_service_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.slug?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesParent = parentFilter === 'All Parent Services' ||
+        services.find(s => s.id === item.parent_service_id)?.service_name === parentFilter;
+
+      const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
+
+      const matchesContentType = contentTypeFilter === 'All Types' || item.content_type === contentTypeFilter;
+
+      return matchesSearch && matchesParent && matchesStatus && matchesContentType;
+    });
+  }, [subServices, searchQuery, parentFilter, statusFilter, contentTypeFilter, services]);
+
+  const linkedLibraryAssets = useMemo(() => {
+    if (!editingItem) return [];
+    return libraryAssets.filter(asset => {
+      const links = Array.isArray(asset.linked_sub_service_ids) ? asset.linked_sub_service_ids : [];
+      return links.map(String).includes(String(editingItem.id));
+    });
+  }, [editingItem, libraryAssets]);
+
+  const availableLibraryAssets = useMemo(() => {
+    if (!assetSearch) return libraryAssets;
+    return libraryAssets.filter(asset =>
+      asset.asset_name?.toLowerCase().includes(assetSearch.toLowerCase())
+    );
+  }, [libraryAssets, assetSearch]);
+
+  const handleCreateClick = () => {
+    handleAdd();
+  };
+
   {/* --- TAB: LINKED ASSETS & INSIGHTS --- */ }
   {
     activeTab === 'Linking' && (
