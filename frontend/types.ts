@@ -184,6 +184,7 @@ export interface Service {
     // G. SEO Metadata
     meta_title?: string;
     meta_description?: string;
+    meta_keywords?: string[];
     focus_keywords?: string[];
     secondary_keywords?: string[];
     seo_score?: number;

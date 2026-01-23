@@ -4,6 +4,7 @@ import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
 import ServiceAssetLinker from '../components/ServiceAssetLinker';
+import AssetLibraryByCategory from '../components/AssetLibraryByCategory';
 import LinkedInsightsSelector from '../components/LinkedInsightsSelector';
 import LinkedAssetsSelector from '../components/LinkedAssetsSelector';
 import { getStatusBadge } from '../constants';
@@ -57,6 +58,7 @@ const SubServiceMasterView: React.FC = () => {
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Status');
+    const [parentServiceFilter, setParentServiceFilter] = useState('All Parent Services');
     const [industryFilter, setIndustryFilter] = useState('All Industries');
     const [sectorFilter, setSectorFilter] = useState('All Sectors');
     const [contentTypeFilter, setContentTypeFilter] = useState('All Types');
@@ -531,6 +533,225 @@ const SubServiceMasterView: React.FC = () => {
         { id: 'Linking', label: 'Linking', icon: '🔗' },
         { id: 'Governance', label: 'Governance', icon: '⚖️' }
     ];
+
+    const getTimeAgo = (date?: string) => {
+        if (!date) return '-';
+        const now = new Date();
+        const then = new Date(date);
+        const diff = now.getTime() - then.getTime();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+        if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        return 'just now';
+    };
+
+    const getParentServiceName = (parentServiceId?: number) => {
+        if (!parentServiceId) return '-';
+        return services.find(s => s.id === parentServiceId)?.service_name || '-';
+    };
+
+    // List view
+    if (viewMode === 'list') {
+        return (
+            <div className="h-full flex flex-col bg-white">
+                {/* Header */}
+                <div className="border-b border-slate-200 px-6 py-6">
+                    <div className="flex items-start justify-between mb-6">
+                        <div>
+                            <h1 className="text-3xl font-bold text-slate-900">Sub-Service Master</h1>
+                            <p className="text-sm text-slate-600 mt-1">Manage sub-services and their detailed configurations</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleExport}
+                                className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium flex items-center gap-2"
+                            >
+                                📥 Export
+                            </button>
+                            <button
+                                className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium flex items-center gap-2"
+                            >
+                                🔽 Filter
+                            </button>
+                            <button
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                            >
+                                🔄 Refresh
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setEditingItem(null);
+                                    setFormData(createInitialFormState());
+                                    setViewMode('form');
+                                }}
+                                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-bold flex items-center gap-2"
+                            >
+                                + Add New Sub-Service
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Search and Filters */}
+                    <div className="flex gap-3 mb-4">
+                        <input
+                            type="search"
+                            placeholder="Search sub-services..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+
+                    {/* Filter Dropdowns */}
+                    <div className="flex gap-3">
+                        <select
+                            value={parentServiceFilter}
+                            onChange={(e) => setParentServiceFilter(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="All Parent Services">All Parent Services</option>
+                            {services.map(service => (
+                                <option key={service.id} value={service.id}>
+                                    {service.service_name}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option>All Status</option>
+                            <option>Draft</option>
+                            <option>In Progress</option>
+                            <option>QC</option>
+                            <option>Approved</option>
+                            <option>Published</option>
+                            <option>Archived</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="flex-1 overflow-auto">
+                    <table className="w-full">
+                        <thead className="bg-slate-50 sticky top-0 z-10">
+                            <tr className="border-b border-slate-200">
+                                <th className="px-4 py-3 text-left">
+                                    <input type="checkbox" className="rounded" />
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Sub-Service Name</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Parent Service</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">URL Slug</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Keywords</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Content Status</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Assets Linked</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Insights Linked</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Updated At</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredData.length > 0 ? (
+                                filteredData.map((item) => (
+                                    <tr
+                                        key={item.id}
+                                        className="border-b border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                                        onClick={() => {
+                                            setEditingItem(item);
+                                            setFormData(item);
+                                            setViewMode('form');
+                                        }}
+                                    >
+                                        <td className="px-4 py-3">
+                                            <input type="checkbox" className="rounded" onClick={(e) => e.stopPropagation()} />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <p className="font-semibold text-slate-900">{item.sub_service_name}</p>
+                                            <p className="text-xs text-slate-500">{item.sub_service_code}</p>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-700">
+                                            {getParentServiceName(item.parent_service_id)}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-600 font-mono">
+                                            {item.slug || '-'}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1">
+                                                {item.focus_keywords && item.focus_keywords.length > 0 ? (
+                                                    <>
+                                                        {item.focus_keywords.slice(0, 2).map((kw, i) => (
+                                                            <span key={i} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                                                                {kw}
+                                                            </span>
+                                                        ))}
+                                                        {item.focus_keywords.length > 2 && (
+                                                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded">
+                                                                +{item.focus_keywords.length - 2}
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">-</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${item.status === 'Published' ? 'bg-purple-100 text-purple-700' :
+                                                item.status === 'QC' ? 'bg-green-100 text-green-700' :
+                                                    item.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                                        item.status === 'Draft' ? 'bg-slate-100 text-slate-700' :
+                                                            'bg-slate-100 text-slate-700'
+                                                }`}>
+                                                <span className={`w-2 h-2 rounded-full ${item.status === 'Published' ? 'bg-purple-600' :
+                                                    item.status === 'QC' ? 'bg-green-600' :
+                                                        item.status === 'In Progress' ? 'bg-blue-600' :
+                                                            'bg-slate-400'
+                                                    }`}></span>
+                                                {item.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-700 font-semibold">
+                                            {item.asset_count || 0}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-700 font-semibold">
+                                            {item.linked_insights_ids?.length || 0}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-600">
+                                            {getTimeAgo(item.updated_at)}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {getStatusBadge(item.status)}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={10} className="px-4 py-8 text-center text-slate-500">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="text-4xl opacity-50">📭</span>
+                                            <p>No sub-services found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Footer */}
+                <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
+                    <div className="text-sm text-slate-600">
+                        Showing <span className="font-bold text-slate-900">{filteredData.length}</span> of <span className="font-bold text-slate-900">{subServices.length}</span> entries
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (viewMode === 'form') {
         return (
@@ -2006,17 +2227,11 @@ Lists:
                             {/* --- TAB: LINKING (ASSETS) --- */}
                             {activeTab === 'Linking' && (
                                 <div className="space-y-10">
-                                    {/* 1. ASSET LIBRARY MANAGEMENT - FIRST */}
-                                    <ServiceAssetLinker
+                                    {/* 1. ASSET LIBRARY BY CATEGORY - NEW COMPONENT */}
+                                    <AssetLibraryByCategory
                                         linkedAssets={linkedLibraryAssets}
-                                        availableAssets={availableLibraryAssets}
-                                        assetSearch={assetSearch}
-                                        setAssetSearch={setAssetSearch}
                                         onToggle={handleToggleLibraryLink}
                                         totalAssets={libraryAssets.length}
-                                        repositoryFilter={repositoryFilter}
-                                        setRepositoryFilter={setRepositoryFilter}
-                                        allAssets={libraryAssets}
                                     />
 
                                     {/* 2. LINKING METADATA - SECOND */}

@@ -125,3 +125,76 @@ export const deleteAssetCategory = async (req: Request, res: Response) => {
 
 
 
+
+// Get assets by repository/category (Web, SEO, SMM)
+export const getAssetsByRepository = async (req: Request, res: Response) => {
+    const db = new Database(dbPath);
+
+    try {
+        const { repository } = req.query;
+
+        if (!repository) {
+            return res.status(400).json({ error: 'Repository parameter is required' });
+        }
+
+        const assets = db.prepare(`
+            SELECT 
+                id,
+                asset_name as name,
+                asset_type as type,
+                asset_category,
+                asset_format,
+                content_type,
+                tags as repository,
+                status,
+                created_at,
+                updated_at,
+                linked_service_id,
+                linked_sub_service_id,
+                web_thumbnail as thumbnail_url,
+                web_url as url
+            FROM assets
+            WHERE tags = ? OR asset_category = ?
+            ORDER BY created_at DESC
+        `).all(repository, repository);
+
+        res.json(assets);
+    } catch (error) {
+        console.error('Error fetching assets by repository:', error);
+        res.status(500).json({ error: 'Failed to fetch assets by repository' });
+    } finally {
+        db.close();
+    }
+};
+
+// Get all available repositories/categories (Web, SEO, SMM)
+export const getRepositories = async (req: Request, res: Response) => {
+    const db = new Database(dbPath);
+
+    try {
+        const repositories = db.prepare(`
+            SELECT DISTINCT tags as repository
+            FROM assets
+            WHERE tags IS NOT NULL AND tags != ''
+            ORDER BY tags ASC
+        `).all();
+
+        // Add default categories if not found
+        const defaultCategories = ['Web', 'SEO', 'SMM'];
+        const existingRepos = repositories.map((r: any) => r.repository);
+
+        const allRepos = [
+            ...repositories,
+            ...defaultCategories
+                .filter(cat => !existingRepos.includes(cat))
+                .map(cat => ({ repository: cat }))
+        ];
+
+        res.json(allRepos);
+    } catch (error) {
+        console.error('Error fetching repositories:', error);
+        res.status(500).json({ error: 'Failed to fetch repositories' });
+    } finally {
+        db.close();
+    }
+};

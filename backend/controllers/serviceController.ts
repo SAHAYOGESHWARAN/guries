@@ -38,7 +38,7 @@ const parseServiceRow = (row: any) => {
     const jsonArrayFields = [
         'industry_ids', 'country_ids', 'secondary_persona_ids', 'linked_campaign_ids',
         'h2_list', 'h3_list', 'h4_list', 'h5_list', 'internal_links', 'external_links',
-        'image_alt_texts', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content',
+        'image_alt_texts', 'meta_keywords', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content',
         'linked_insights_ids', 'linked_assets_ids'
     ];
     const jsonObjectFields = ['social_meta'];
@@ -162,7 +162,7 @@ export const createService = async (req: Request, res: Response) => {
                 primary_cta_label, primary_cta_url, form_id, linked_campaign_ids,
                 h1, h2_list, h3_list, h4_list, h5_list, body_content, internal_links, external_links, image_alt_texts, 
                 word_count, reading_time_minutes,
-                meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
+                meta_title, meta_description, meta_keywords, focus_keywords, secondary_keywords, seo_score, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
                 linkedin_title, linkedin_description, linkedin_image_url,
                 facebook_title, facebook_description, facebook_image_url,
@@ -186,7 +186,7 @@ export const createService = async (req: Request, res: Response) => {
                 primary_cta_label, primary_cta_url, form_id, JSON.stringify(linked_campaign_ids || []),
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), JSON.stringify(h4_list || []), JSON.stringify(h5_list || []), body_content,
                 JSON.stringify(internal_links || []), JSON.stringify(external_links || []), JSON.stringify(image_alt_texts || []), word_count || 0, reading_time_minutes || 0,
-                meta_title, meta_description, JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
+                meta_title, meta_description, meta_keywords, JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
                 linkedin_title, linkedin_description, linkedin_image_url,
                 facebook_title, facebook_description, facebook_image_url,
@@ -274,7 +274,7 @@ export const updateService = async (req: Request, res: Response) => {
                 h1=COALESCE(?, h1), h2_list=COALESCE(?, h2_list), h3_list=COALESCE(?, h3_list), h4_list=COALESCE(?, h4_list), h5_list=COALESCE(?, h5_list),
                 body_content=COALESCE(?, body_content), internal_links=COALESCE(?, internal_links), external_links=COALESCE(?, external_links),
                 image_alt_texts=COALESCE(?, image_alt_texts), word_count=COALESCE(?, word_count), reading_time_minutes=COALESCE(?, reading_time_minutes),
-                meta_title=COALESCE(?, meta_title), meta_description=COALESCE(?, meta_description), focus_keywords=COALESCE(?, focus_keywords),
+                meta_title=COALESCE(?, meta_title), meta_description=COALESCE(?, meta_description), meta_keywords=COALESCE(?, meta_keywords), focus_keywords=COALESCE(?, focus_keywords),
                 secondary_keywords=COALESCE(?, secondary_keywords), seo_score=COALESCE(?, seo_score), ranking_summary=COALESCE(?, ranking_summary),
                 og_title=COALESCE(?, og_title), og_description=COALESCE(?, og_description), og_image_url=COALESCE(?, og_image_url),
                 og_type=COALESCE(?, og_type), twitter_title=COALESCE(?, twitter_title), twitter_description=COALESCE(?, twitter_description), twitter_image_url=COALESCE(?, twitter_image_url),
@@ -300,7 +300,7 @@ export const updateService = async (req: Request, res: Response) => {
                 primary_cta_label, primary_cta_url, form_id, JSON.stringify(linked_campaign_ids),
                 h1, JSON.stringify(h2_list), JSON.stringify(h3_list), JSON.stringify(h4_list), JSON.stringify(h5_list), body_content,
                 JSON.stringify(internal_links), JSON.stringify(external_links), JSON.stringify(image_alt_texts), word_count, reading_time_minutes,
-                meta_title, meta_description, JSON.stringify(focus_keywords), JSON.stringify(secondary_keywords), seo_score, ranking_summary,
+                meta_title, meta_description, meta_keywords, JSON.stringify(focus_keywords), JSON.stringify(secondary_keywords), seo_score, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
                 linkedin_title, linkedin_description, linkedin_image_url,
                 facebook_title, facebook_description, facebook_image_url,
