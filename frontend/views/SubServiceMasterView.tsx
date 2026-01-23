@@ -612,13 +612,60 @@ const SubServiceMasterView: React.FC = () => {
                                         {/* Content with Enhanced Spacing */}
                                         <div className="p-10">
                                             <div className="space-y-8">
-                                                {/* Row 1 - Service Name & Code */}
+                                                {/* Row 1 - Service Code & Parent Service */}
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <Tooltip content="Unique internal identifier (e.g., SRV-001) for system referencing. Auto-generated from sub-service name.">
+                                                        <div className="bg-white rounded-xl border-2 border-purple-100 p-6 hover:border-purple-300 transition-colors">
+                                                            <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+                                                                <span className="text-sm">�</span>
+                                                                Service Code
+                                                                <span className="text-red-500 ml-auto">*</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.sub_service_code}
+                                                                onChange={(e) => {
+                                                                    // Only allow editing if this is an existing service
+                                                                    if (editingItem) {
+                                                                        setFormData({ ...formData, sub_service_code: e.target.value });
+                                                                    }
+                                                                }}
+                                                                readOnly={!editingItem}
+                                                                className={`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder:text-slate-400 ${!editingItem ? 'bg-purple-50 cursor-not-allowed' : 'bg-white'
+                                                                    }`}
+                                                                placeholder="Auto-generated"
+                                                            />
+                                                        </div>
+                                                    </Tooltip>
+
+                                                    <Tooltip content="Select the parent service that this sub-service belongs to.">
+                                                        <div className="bg-white rounded-xl border-2 border-rose-100 p-6 hover:border-rose-300 transition-colors">
+                                                            <label className="flex items-center gap-2 text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">
+                                                                <span className="text-sm">👨‍👧</span>
+                                                                Parent Service
+                                                                <span className="text-red-500 ml-auto">*</span>
+                                                            </label>
+                                                            <select
+                                                                value={formData.parent_service_id || ''}
+                                                                onChange={(e) => setFormData({ ...formData, parent_service_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-rose-500 focus:border-rose-500 cursor-pointer"
+                                                            >
+                                                                <option value="">Select parent service...</option>
+                                                                {Array.isArray(services) && services.length > 0 ? services.map(s => (
+                                                                    <option key={s.id} value={s.id}>{s.service_name} ({s.service_code})</option>
+                                                                )) : null}
+                                                            </select>
+                                                        </div>
+                                                    </Tooltip>
+                                                </div>
+
+                                                {/* Row 2 - Sub-Service Name */}
+                                                <div className="grid grid-cols-1 gap-8">
                                                     <Tooltip content="The primary name displayed to users in menus and headers.">
                                                         <div className="bg-white rounded-xl border-2 border-indigo-100 p-6 hover:border-indigo-300 transition-colors">
                                                             <label className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">
                                                                 <span className="text-sm">📝</span>
-                                                                Service Name
+                                                                Sub-Service Name
                                                                 <span className="text-red-500 ml-auto">*</span>
                                                             </label>
                                                             <input
@@ -643,52 +690,6 @@ const SubServiceMasterView: React.FC = () => {
                                                                 className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white placeholder:text-slate-400"
                                                                 placeholder="Enter sub-service name"
                                                             />
-                                                        </div>
-                                                    </Tooltip>
-
-                                                    <Tooltip content="Unique internal identifier (e.g., SRV-001) for system referencing.">
-                                                        <div className="bg-white rounded-xl border-2 border-purple-100 p-6 hover:border-purple-300 transition-colors">
-                                                            <label className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
-                                                                <span className="text-sm">🔐</span>
-                                                                Service Code
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={formData.sub_service_code}
-                                                                onChange={(e) => {
-                                                                    // Only allow editing if this is an existing service
-                                                                    if (editingItem) {
-                                                                        setFormData({ ...formData, sub_service_code: e.target.value });
-                                                                    }
-                                                                }}
-                                                                readOnly={!editingItem}
-                                                                className={`w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder:text-slate-400 ${!editingItem ? 'bg-purple-50 cursor-not-allowed' : 'bg-white'
-                                                                    }`}
-                                                                placeholder="Auto-generated"
-                                                            />
-                                                        </div>
-                                                    </Tooltip>
-                                                </div>
-
-                                                {/* Row 2 - Parent Service (NEW FIELD FOR SUBSERVICE) */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <Tooltip content="Select the parent service that this sub-service belongs to.">
-                                                        <div className="bg-white rounded-xl border-2 border-rose-100 p-6 hover:border-rose-300 transition-colors">
-                                                            <label className="flex items-center gap-2 text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">
-                                                                <span className="text-sm">👨‍👧</span>
-                                                                Parent Service
-                                                                <span className="text-red-500 ml-auto">*</span>
-                                                            </label>
-                                                            <select
-                                                                value={formData.parent_service_id || ''}
-                                                                onChange={(e) => setFormData({ ...formData, parent_service_id: e.target.value ? parseInt(e.target.value) : undefined })}
-                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium bg-white transition-all focus:ring-2 focus:ring-rose-500 focus:border-rose-500 cursor-pointer"
-                                                            >
-                                                                <option value="">Select parent service...</option>
-                                                                {Array.isArray(services) && services.length > 0 ? services.map(s => (
-                                                                    <option key={s.id} value={s.id}>{s.service_name} ({s.service_code})</option>
-                                                                )) : null}
-                                                            </select>
                                                         </div>
                                                     </Tooltip>
                                                 </div>
