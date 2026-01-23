@@ -446,4 +446,180 @@ router.get('/performance-dashboard', (req: Request, res: Response) => {
     }
 });
 
+// ===== DASHBOARD ACTIVITY TRACKING =====
+
+// Get dashboard stats (dynamic based on actual data)
+router.get('/dashboard/stats', (req: Request, res: Response) => {
+    try {
+        // Active campaigns
+        const activeCampaigns = db.prepare(`
+      SELECT COUNT(*) as count FROM campaigns 
+      WHERE status IN ('active', 'In Progress', 'Active')
+    `).get() as any;
+
+        // Content published
+        const contentPublished = db.prepare(`
+      SELECT COUNT(*) as count FROM content 
+      WHERE status = 'Published'
+    `).get() as any;
+
+        // Tasks completed
+        const tasksCompleted = db.prepare(`
+      SELECT COUNT(*) as count FROM tasks 
+      WHERE status = 'completed'
+    `).get() as any;
+
+        // Team members
+        const teamMembers = db.prepare(`
+      SELECT COUNT(*) as count FROM users
+    `).get() as any;
+
+        // Calculate trends (comparing last 30 days with previous 30 days)
+        const campaignsTrend = db.prepare(`
+      SELECT 
+        (SELECT COUNT(*) FROM campaigns WHERE status IN ('active', 'In Progress', 'Active') AND created_at >= datetime('now', '-30 days')) as current,
+        (SELECT COUNT(*) FROM campaigns WHERE status IN ('active', 'In Progress', 'Active') AND created_at >= datetime('now', '-60 days') AND created_at < datetime('now', '-30 days')) as previous
+    `).get() as any;
+
+        const contentTrend = db.prepare(`
+      SELECT 
+        (SELECT COUNT(*) FROM content WHERE status = 'Published' AND created_at >= datetime('now', '-30 days')) as current,
+        (SELECT COUNT(*) FROM content WHERE status = 'Published' AND created_at >= datetime('now', '-60 days') AND created_at < datetime('now', '-30 days')) as previous
+    `).get() as any;
+
+        const tasksTrend = db.prepare(`
+      SELECT 
+        (SELECT COUNT(*) FROM tasks WHERE status = 'completed' AND updated_at >= datetime('now', '-30 days')) as current,
+        (SELECT COUNT(*) FROM tasks WHERE status = 'completed' AND updated_at >= datetime('now', '-60 days') AND updated_at < datetime('now', '-30 days')) as previous
+    `).get() as any;
+
+        const calculateTrendPercentage = (current: number, previous: number) => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return Math.round(((current - previous) / previous) * 100);
+        };
+
+        res.json({
+            activeCampaigns: activeCampaigns?.count || 0,
+            campaignsTrendPercent: calculateTrendPercentage(campaignsTrend?.current || 0, campaignsTrend?.previous || 0),
+            contentPublished: contentPublished?.count || 0,
+            contentTrendPercent: calculateTrendPercentage(contentTrend?.current || 0, contentTrend?.previous || 0),
+            tasksCompleted: tasksCompleted?.count || 0,
+            tasksTrendPercent: calculateTrendPercentage(tasksTrend?.current || 0, tasksTrend?.previous || 0),
+            teamMembers: teamMembers?.count || 0
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+});
+
+// Get recent projects with progress
+router.get('/dashboard/projects', (req: Request, res: Response) => {
+    try {
+        const projects = db.prepare(`
+      SELECT 
+        id,
+        name,
+        project_name,
+        status,
+        progress,
+        created_at,
+        updated_at
+      FROM projects
+      ORDER BY updated_at DESC
+      LIMIT 10
+    `).all();
+
+        res.json(projects);
+    } catch (error) {
+        console.error('Error fetching dashboard projects:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard projects' });
+    }
+});
+
+// Get upcoming tasks
+router.get('/dashboard/tasks', (req: Request, res: Response) => {
+    try {
+        const tasks = db.prepare(`
+      SELECT 
+        id,
+        name,
+        task_name,
+        status,
+        priority,
+        due_date,
+        created_at,
+        updated_at
+      FROM tasks
+      WHERE status != 'completed'
+      ORDER BY priority DESC, due_date ASC
+      LIMIT 10
+    `).all();
+
+        res.json(tasks);
+    } catch (error) {
+        console.error('Error fetching dashboard tasks:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard tasks' });
+    }
+});
+
+// Get recent activity
+router.get('/dashboard/activity', (req: Request, res: Response) => {
+    try {
+        // Get recent task completions
+        const taskActivity = db.prepare(`
+      SELECT 
+        t.id,
+        u.name as user_name,
+        'completed task' as action,
+        t.task_name as target,
+        t.updated_at as timestamp
+      FROM tasks t
+      LEFT JOIN users u ON t.assigned_to = u.id
+      WHERE t.status = 'completed'
+      ORDER BY t.updated_at DESC
+      LIMIT 5
+    `).all();
+
+        // Get recent content published
+        const contentActivity = db.prepare(`
+      SELECT 
+        c.id,
+        u.name as user_name,
+        'published content' as action,
+        c.content_title_clean as target,
+        c.created_at as timestamp
+      FROM content c
+      LEFT JOIN users u ON c.created_by = u.id
+      WHERE c.status = 'Published'
+      ORDER BY c.created_at DESC
+      LIMIT 5
+    `).all();
+
+        // Get recent campaign updates
+        const campaignActivity = db.prepare(`
+      SELECT 
+        c.id,
+        u.name as user_name,
+        'updated campaign' as action,
+        c.campaign_name as target,
+        c.updated_at as timestamp
+      FROM campaigns c
+      LEFT JOIN users u ON c.created_by = u.id
+      ORDER BY c.updated_at DESC
+      LIMIT 5
+    `).all();
+
+        // Combine and sort by timestamp
+        const allActivity = [...(taskActivity || []), ...(contentActivity || []), ...(campaignActivity || [])]
+            .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 10);
+
+        res.json(allActivity);
+    } catch (error) {
+        console.error('Error fetching dashboard activity:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard activity' });
+    }
+});
+
 export default router;

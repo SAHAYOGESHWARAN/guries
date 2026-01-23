@@ -34,97 +34,106 @@ const StatCard: React.FC<{
 );
 
 const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = ({ onNavigate }) => {
-    const { data: campaigns } = useData<Campaign>('campaigns');
-    const { data: tasks } = useData<Task>('tasks');
-    const { data: projects } = useData<Project>('projects');
-    const { data: users } = useData<User>('users');
+    const [stats, setStats] = useState<any>(null);
+    const [projects, setProjects] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<any[]>([]);
+    const [activity, setActivity] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Demo data for consistent display
-    const demoStats = {
-        activeCampaigns: 24,
-        contentPublished: 156,
-        tasksCompleted: 89,
-        teamMembers: 12
+    // Fetch dashboard data from backend
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3003/api/v1';
+
+                // Fetch stats
+                const statsRes = await fetch(`${apiUrl}/analytics/dashboard/stats`);
+                const statsData = await statsRes.json();
+                setStats(statsData);
+
+                // Fetch projects
+                const projectsRes = await fetch(`${apiUrl}/analytics/dashboard/projects`);
+                const projectsData = await projectsRes.json();
+                setProjects(Array.isArray(projectsData) ? projectsData.slice(0, 4) : []);
+
+                // Fetch tasks
+                const tasksRes = await fetch(`${apiUrl}/analytics/dashboard/tasks`);
+                const tasksData = await tasksRes.json();
+                setTasks(Array.isArray(tasksData) ? tasksData.slice(0, 4) : []);
+
+                // Fetch activity
+                const activityRes = await fetch(`${apiUrl}/analytics/dashboard/activity`);
+                const activityData = await activityRes.json();
+                setActivity(Array.isArray(activityData) ? activityData.slice(0, 2) : []);
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+
+        // Refresh data every 30 seconds
+        const interval = setInterval(fetchDashboardData, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const getTrendType = (percent: number): 'up' | 'down' | 'neutral' => {
+        if (percent > 0) return 'up';
+        if (percent < 0) return 'down';
+        return 'neutral';
     };
 
-    const demoProjects = [
-        {
-            id: 1,
-            name: 'Q4 Marketing Campaign',
-            status: 'In Progress',
-            progress: 65,
-            dueDate: 'Dec 15, 2024',
-            team: ['JD', 'SM', 'MJ']
-        },
-        {
-            id: 2,
-            name: 'Product Launch Strategy',
-            status: 'QC Pending',
-            progress: 85,
-            dueDate: 'Dec 20, 2024',
-            team: ['EW', 'JD']
-        },
-        {
-            id: 3,
-            name: 'SEO Content Optimization',
-            status: 'QC Passed',
-            progress: 100,
-            dueDate: 'Dec 10, 2024',
-            team: ['SM', 'AB', 'CD']
-        },
-        {
-            id: 4,
-            name: 'Social Media Calendar',
-            status: 'Draft',
-            progress: 25,
-            dueDate: 'Dec 25, 2024',
-            team: ['MJ', 'EW']
-        }
-    ];
+    const formatTrendText = (percent: number) => {
+        if (percent > 0) return `+${percent}% from last month`;
+        if (percent < 0) return `${percent}% from last month`;
+        return 'No change from last month';
+    };
 
-    const demoTasks = [
-        {
-            id: 1,
-            title: 'Review campaign metrics',
-            priority: 'high',
-            dueTime: '2 hours'
-        },
-        {
-            id: 2,
-            title: 'Content approval needed',
-            priority: 'high',
-            dueTime: '4 hours'
-        },
-        {
-            id: 3,
-            title: 'Update keyword research',
-            priority: 'medium',
-            dueTime: '1 day'
-        },
-        {
-            id: 4,
-            title: 'Team sync meeting',
-            priority: 'low',
-            dueTime: '2 days'
-        }
-    ];
+    const getStatusColor = (status: string) => {
+        const statusLower = (status || '').toLowerCase();
+        if (statusLower.includes('progress') || statusLower === 'in progress') return 'bg-blue-500';
+        if (statusLower.includes('pending') || statusLower.includes('qc')) return 'bg-yellow-500';
+        if (statusLower.includes('passed') || statusLower.includes('completed')) return 'bg-green-500';
+        if (statusLower === 'draft') return 'bg-slate-400';
+        return 'bg-slate-400';
+    };
 
-    const demoActivity = [
-        {
-            id: 1,
-            user: 'Jane Smith',
-            action: 'completed QC review for',
-            target: 'SEO Content Optimization',
-            time: '10 minutes ago'
-        },
-        {
-            id: 2,
-            user: 'Mike Johnson',
-            action: 'created new campaign',
-            target: 'Holiday Season Promo',
-            time: '1 hour ago'
-        }
-    ];
+    const getPriorityColor = (priority: string) => {
+        const priorityLower = (priority || '').toLowerCase();
+        if (priorityLower === 'high') return 'bg-red-100 text-red-700';
+        if (priorityLower === 'medium') return 'bg-orange-100 text-orange-700';
+        return 'bg-green-100 text-green-700';
+    };
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'just now';
+        if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        return date.toLocaleDateString();
+    };
+
+    if (loading) {
+        return (
+            <div className="h-full w-full flex items-center justify-center bg-slate-50">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <p className="text-sm font-medium text-slate-600">Loading dashboard...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full w-full flex flex-col bg-slate-50">
@@ -144,36 +153,36 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
                             label="Active Campaigns"
-                            value={demoStats.activeCampaigns}
-                            trend="+12% from last month"
-                            trendType="up"
+                            value={stats?.activeCampaigns || 0}
+                            trend={formatTrendText(stats?.campaignsTrendPercent || 0)}
+                            trendType={getTrendType(stats?.campaignsTrendPercent || 0)}
                             iconBg="bg-blue-100"
                             iconColor="text-blue-600"
                             icon="🎯"
                         />
                         <StatCard
                             label="Content Published"
-                            value={demoStats.contentPublished}
-                            trend="+8% from last month"
-                            trendType="up"
+                            value={stats?.contentPublished || 0}
+                            trend={formatTrendText(stats?.contentTrendPercent || 0)}
+                            trendType={getTrendType(stats?.contentTrendPercent || 0)}
                             iconBg="bg-green-100"
                             iconColor="text-green-600"
                             icon="📋"
                         />
                         <StatCard
                             label="Tasks Completed"
-                            value={demoStats.tasksCompleted}
-                            trend="-3% from last month"
-                            trendType="down"
+                            value={stats?.tasksCompleted || 0}
+                            trend={formatTrendText(stats?.tasksTrendPercent || 0)}
+                            trendType={getTrendType(stats?.tasksTrendPercent || 0)}
                             iconBg="bg-purple-100"
                             iconColor="text-purple-600"
                             icon="✓"
                         />
                         <StatCard
                             label="Team Members"
-                            value={demoStats.teamMembers}
-                            trend="+2 this month"
-                            trendType="up"
+                            value={stats?.teamMembers || 0}
+                            trend="Active team"
+                            trendType="neutral"
                             iconBg="bg-orange-100"
                             iconColor="text-orange-600"
                             icon="👥"
@@ -198,48 +207,45 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                                 </button>
                             </div>
                             <div className="p-8 space-y-6">
-                                {demoProjects.map((project) => (
-                                    <div key={project.id} className="space-y-3">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`w-2 h-2 rounded-full ${project.status === 'In Progress' ? 'bg-blue-500' :
-                                                            project.status === 'QC Pending' ? 'bg-yellow-500' :
-                                                                project.status === 'QC Passed' ? 'bg-green-500' :
-                                                                    'bg-slate-400'
-                                                        }`}></span>
-                                                    <h4 className="font-semibold text-slate-900">{project.name}</h4>
-                                                </div>
-                                                <p className="text-xs text-slate-500 mt-1">{project.status}</p>
-                                            </div>
-                                            <span className="text-sm font-bold text-slate-900">{project.progress}%</span>
-                                        </div>
-                                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full ${project.progress === 100 ? 'bg-green-500' :
-                                                        project.progress >= 80 ? 'bg-blue-500' :
-                                                            'bg-blue-400'
-                                                    }`}
-                                                style={{ width: `${project.progress}%` }}
-                                            ></div>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                {project.team.map((member, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center"
-                                                    >
-                                                        {member}
+                                {projects.length > 0 ? (
+                                    projects.map((project) => (
+                                        <div key={project.id} className="space-y-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`}></span>
+                                                        <h4 className="font-semibold text-slate-900">{project.name || project.project_name || `Project ${project.id}`}</h4>
                                                     </div>
-                                                ))}
+                                                    <p className="text-xs text-slate-500 mt-1">{project.status || 'Active'}</p>
+                                                </div>
+                                                <span className="text-sm font-bold text-slate-900">{project.progress || 0}%</span>
                                             </div>
-                                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                                                🕐 {project.dueDate}
-                                            </span>
+                                            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full ${(project.progress || 0) === 100 ? 'bg-green-500' :
+                                                            (project.progress || 0) >= 80 ? 'bg-blue-500' :
+                                                                'bg-blue-400'
+                                                        }`}
+                                                    style={{ width: `${project.progress || 0}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+                                                        P
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs text-slate-500 flex items-center gap-1">
+                                                    🕐 {formatDate(project.updated_at)}
+                                                </span>
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-slate-500 text-sm">No projects yet</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
 
@@ -250,24 +256,27 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                                 <p className="text-xs text-slate-500 mt-1">What needs attention</p>
                             </div>
                             <div className="p-8 space-y-4">
-                                {demoTasks.map((task) => (
-                                    <div key={task.id} className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1">
-                                                <p className="text-sm font-medium text-slate-900">{task.title}</p>
-                                                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                                    🕐 {task.dueTime}
-                                                </p>
+                                {tasks.length > 0 ? (
+                                    tasks.map((task) => (
+                                        <div key={task.id} className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-slate-900">{task.name || task.task_name || `Task ${task.id}`}</p>
+                                                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                                        🕐 {formatDate(task.due_date || task.updated_at)}
+                                                    </p>
+                                                </div>
+                                                <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${getPriorityColor(task.priority)}`}>
+                                                    {task.priority || 'normal'}
+                                                </span>
                                             </div>
-                                            <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                                    task.priority === 'medium' ? 'bg-orange-100 text-orange-700' :
-                                                        'bg-green-100 text-green-700'
-                                                }`}>
-                                                {task.priority}
-                                            </span>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-slate-500 text-sm">No tasks yet</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
                     </div>
@@ -287,21 +296,27 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                             </button>
                         </div>
                         <div className="p-8 space-y-4">
-                            {demoActivity.map((activity) => (
-                                <div key={activity.id} className="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                                        {activity.user.split(' ').map(n => n[0]).join('')}
+                            {activity.length > 0 ? (
+                                activity.map((item) => (
+                                    <div key={item.id} className="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                                        <div className="w-8 h-8 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                            {(item.user_name || 'U').split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm text-slate-900">
+                                                <span className="font-semibold">{item.user_name || 'User'}</span>
+                                                {' '}{item.action}{' '}
+                                                <span className="font-semibold">{item.target || 'item'}</span>
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-1">{formatDate(item.timestamp)}</p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-slate-900">
-                                            <span className="font-semibold">{activity.user}</span>
-                                            {' '}{activity.action}{' '}
-                                            <span className="font-semibold">{activity.target}</span>
-                                        </p>
-                                        <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
-                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-slate-500 text-sm">No recent activity</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
                 </div>
