@@ -588,7 +588,7 @@ const ServiceMasterView: React.FC = () => {
 
                 {/* Form Body */}
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
-                    {!isFormLoading ? (
+                    {!isFormLoading && (
                         <div className="max-w-7xl mx-auto space-y-8 pb-20">
                             {/* Only render active tab to prevent performance issues */}
                             {/* --- TAB: CORE --- */}
