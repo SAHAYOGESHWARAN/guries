@@ -2023,7 +2023,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                             )
                         }
                     ]}
-                    onRowClick={() => { }}
+                    onRowClick={() => console.log('Row clicked')}
                 />
             </div>
         </div>
