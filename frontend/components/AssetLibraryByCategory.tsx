@@ -28,6 +28,9 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
 
                 // Fetch available repositories
                 const reposRes = await fetch(`${apiUrl}/asset-categories/repositories`);
+                if (!reposRes.ok) {
+                    throw new Error(`Failed to fetch repositories: ${reposRes.statusText}`);
+                }
                 const reposData = await reposRes.json();
                 const repoNames = Array.isArray(reposData)
                     ? reposData.map((r: any) => r.repository).filter(Boolean)
@@ -38,15 +41,30 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                 // Fetch assets for each repository
                 const assetsByRepo: Record<string, AssetLibraryItem[]> = {};
                 for (const repo of repoNames) {
-                    const assetsRes = await fetch(`${apiUrl}/asset-categories/by-repository?repository=${repo}`);
-                    const assetsData = await assetsRes.json();
-                    assetsByRepo[repo] = Array.isArray(assetsData) ? assetsData : [];
+                    try {
+                        const assetsRes = await fetch(`${apiUrl}/asset-categories/by-repository?repository=${encodeURIComponent(repo)}`);
+                        if (!assetsRes.ok) {
+                            console.warn(`Failed to fetch assets for ${repo}: ${assetsRes.statusText}`);
+                            assetsByRepo[repo] = [];
+                            continue;
+                        }
+                        const assetsData = await assetsRes.json();
+                        assetsByRepo[repo] = Array.isArray(assetsData) ? assetsData : [];
+                    } catch (error) {
+                        console.error(`Error fetching assets for ${repo}:`, error);
+                        assetsByRepo[repo] = [];
+                    }
                 }
                 setAssetsByRepository(assetsByRepo);
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 // Set default repositories if fetch fails
                 setRepositories(['Web', 'SEO', 'SMM']);
+                setAssetsByRepository({
+                    'Web': [],
+                    'SEO': [],
+                    'SMM': []
+                });
             } finally {
                 setLoading(false);
             }
@@ -150,8 +168,8 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                     <button
                         onClick={() => setSelectedRepository('All')}
                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${selectedRepository === 'All'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white border-2 border-slate-200 text-slate-700 hover:border-indigo-300'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white border-2 border-slate-200 text-slate-700 hover:border-indigo-300'
                             }`}
                     >
                         📦 All Categories ({filteredAssets.length})
@@ -161,8 +179,8 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                             key={repo}
                             onClick={() => setSelectedRepository(repo)}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${selectedRepository === repo
-                                    ? `${getRepositoryColor(repo)} bg-opacity-100 shadow-md`
-                                    : `${getRepositoryColor(repo)} bg-opacity-20 border-2 hover:bg-opacity-30`
+                                ? `${getRepositoryColor(repo)} bg-opacity-100 shadow-md`
+                                : `${getRepositoryColor(repo)} bg-opacity-20 border-2 hover:bg-opacity-30`
                                 }`}
                         >
                             <span>{getRepositoryIcon(repo)}</span>
@@ -183,8 +201,8 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                                 >
                                     <div
                                         className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${isLinked
-                                                ? 'bg-green-50 border-green-300 shadow-md'
-                                                : 'bg-white border-slate-200 hover:border-indigo-300'
+                                            ? 'bg-green-50 border-green-300 shadow-md'
+                                            : 'bg-white border-slate-200 hover:border-indigo-300'
                                             }`}
                                         onClick={() => onToggle(asset)}
                                     >
@@ -225,8 +243,8 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                                                         onToggle(asset);
                                                     }}
                                                     className={`w-full py-2 rounded text-xs font-bold transition-all ${isLinked
-                                                            ? 'bg-green-500 text-white hover:bg-green-600'
-                                                            : 'bg-indigo-500 text-white hover:bg-indigo-600'
+                                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                                        : 'bg-indigo-500 text-white hover:bg-indigo-600'
                                                         }`}
                                                 >
                                                     {isLinked ? '✓ Linked' : '+ Link Asset'}

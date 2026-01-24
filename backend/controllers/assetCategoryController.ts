@@ -137,6 +137,15 @@ export const getAssetsByRepository = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Repository parameter is required' });
         }
 
+        // Map repository names to application_type values
+        const repositoryToAppType: Record<string, string> = {
+            'Web': 'web',
+            'SEO': 'seo',
+            'SMM': 'smm'
+        };
+
+        const appType = repositoryToAppType[repository as string] || (repository as string).toLowerCase();
+
         const assets = db.prepare(`
             SELECT 
                 id,
@@ -147,16 +156,27 @@ export const getAssetsByRepository = async (req: Request, res: Response) => {
                 content_type,
                 tags as repository,
                 status,
+                workflow_stage,
+                qc_status,
                 created_at,
                 updated_at,
                 linked_service_id,
                 linked_sub_service_id,
+                linked_service_ids,
+                linked_sub_service_ids,
                 web_thumbnail as thumbnail_url,
-                web_url as url
+                web_url as url,
+                file_url,
+                og_image_url,
+                application_type,
+                linking_active,
+                seo_score,
+                grammar_score,
+                ai_plagiarism_score
             FROM assets
-            WHERE tags = ? OR asset_category = ?
+            WHERE application_type = ? AND status IN ('Draft', 'Pending QC Review', 'Published')
             ORDER BY created_at DESC
-        `).all(repository, repository);
+        `).all(appType);
 
         res.json(assets);
     } catch (error) {
@@ -172,14 +192,21 @@ export const getRepositories = async (req: Request, res: Response) => {
     const db = new Database(dbPath);
 
     try {
+        // Get distinct application types from assets table
         const repositories = db.prepare(`
-            SELECT DISTINCT tags as repository
+            SELECT DISTINCT 
+                CASE 
+                    WHEN application_type = 'web' THEN 'Web'
+                    WHEN application_type = 'seo' THEN 'SEO'
+                    WHEN application_type = 'smm' THEN 'SMM'
+                    ELSE application_type
+                END as repository
             FROM assets
-            WHERE tags IS NOT NULL AND tags != ''
-            ORDER BY tags ASC
+            WHERE application_type IS NOT NULL AND application_type != ''
+            ORDER BY repository ASC
         `).all();
 
-        // Add default categories if not found
+        // Always include default categories
         const defaultCategories = ['Web', 'SEO', 'SMM'];
         const existingRepos = repositories.map((r: any) => r.repository);
 
