@@ -281,6 +281,7 @@ CREATE TABLE IF NOT EXISTS sub_services (
 	-- G. SEO Metadata
 	meta_title VARCHAR(500),
 	meta_description TEXT,
+	meta_keywords TEXT, -- JSON array
 	focus_keywords TEXT, -- JSON array
 	secondary_keywords TEXT, -- JSON array
 	seo_score DECIMAL(5,2) DEFAULT 0,

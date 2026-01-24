@@ -350,7 +350,7 @@ export const createSubService = async (req: Request, res: Response) => {
         h1, h2_list, h3_list, h4_list, h5_list, body_content,
         word_count, reading_time_minutes,
         // SEO
-        meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
+        meta_title, meta_description, meta_keywords, focus_keywords, secondary_keywords, seo_score, ranking_summary,
         // SMM
         og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
         linkedin_title, linkedin_description, linkedin_image_url,
@@ -389,7 +389,7 @@ export const createSubService = async (req: Request, res: Response) => {
                 menu_heading, short_tagline, language, industry_ids, country_ids,
                 h1, h2_list, h3_list, h4_list, h5_list, body_content,
                 word_count, reading_time_minutes,
-                meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
+                meta_title, meta_description, meta_keywords, focus_keywords, secondary_keywords, seo_score, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
                 linkedin_title, linkedin_description, linkedin_image_url,
                 facebook_title, facebook_description, facebook_image_url,
@@ -410,7 +410,7 @@ export const createSubService = async (req: Request, res: Response) => {
                 menu_heading, short_tagline, language || 'en', JSON.stringify(industry_ids || []), JSON.stringify(country_ids || []),
                 h1, JSON.stringify(h2_list || []), JSON.stringify(h3_list || []), JSON.stringify(h4_list || []), JSON.stringify(h5_list || []), body_content,
                 word_count || 0, reading_time_minutes || 0,
-                meta_title, meta_description, JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
+                meta_title, meta_description, JSON.stringify(meta_keywords || []), JSON.stringify(focus_keywords || []), JSON.stringify(secondary_keywords || []), seo_score || 0, ranking_summary,
                 og_title, og_description, og_image_url, og_type || 'website', twitter_title, twitter_description, twitter_image_url,
                 linkedin_title, linkedin_description, linkedin_image_url,
                 facebook_title, facebook_description, facebook_image_url,
@@ -427,6 +427,27 @@ export const createSubService = async (req: Request, res: Response) => {
         );
 
         const newItem = parseSubServiceRow(result.rows[0]);
+        const subServiceId = newItem.id;
+
+        // --- Update Keywords Table with Mapping ---
+        if (focus_keywords && Array.isArray(focus_keywords) && focus_keywords.length > 0) {
+            for (const keyword of focus_keywords) {
+                await pool.query(
+                    `UPDATE keywords SET mapped_sub_service_id = ?, mapped_sub_service = ? WHERE keyword = ?`,
+                    [subServiceId, sub_service_name, keyword]
+                );
+            }
+        }
+
+        if (secondary_keywords && Array.isArray(secondary_keywords) && secondary_keywords.length > 0) {
+            for (const keyword of secondary_keywords) {
+                await pool.query(
+                    `UPDATE keywords SET mapped_sub_service_id = ?, mapped_sub_service = ? WHERE keyword = ?`,
+                    [subServiceId, sub_service_name, keyword]
+                );
+            }
+        }
+
         getSocket().emit('sub_service_created', newItem);
 
         // --- Auto-Update Parent Service Count ---
@@ -462,7 +483,7 @@ export const updateSubService = async (req: Request, res: Response) => {
         h1, h2_list, h3_list, h4_list, h5_list, body_content,
         word_count, reading_time_minutes,
         // SEO
-        meta_title, meta_description, focus_keywords, secondary_keywords, seo_score, ranking_summary,
+        meta_title, meta_description, meta_keywords, focus_keywords, secondary_keywords, seo_score, ranking_summary,
         // SMM
         og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
         linkedin_title, linkedin_description, linkedin_image_url,
@@ -515,7 +536,7 @@ export const updateSubService = async (req: Request, res: Response) => {
                 industry_ids=COALESCE(?, industry_ids), country_ids=COALESCE(?, country_ids),
                 h1=COALESCE(?, h1), h2_list=COALESCE(?, h2_list), h3_list=COALESCE(?, h3_list), h4_list=COALESCE(?, h4_list), h5_list=COALESCE(?, h5_list),
                 body_content=COALESCE(?, body_content), word_count=COALESCE(?, word_count), reading_time_minutes=COALESCE(?, reading_time_minutes),
-                meta_title=COALESCE(?, meta_title), meta_description=COALESCE(?, meta_description), focus_keywords=COALESCE(?, focus_keywords),
+                meta_title=COALESCE(?, meta_title), meta_description=COALESCE(?, meta_description), meta_keywords=COALESCE(?, meta_keywords), focus_keywords=COALESCE(?, focus_keywords),
                 secondary_keywords=COALESCE(?, secondary_keywords), seo_score=COALESCE(?, seo_score), ranking_summary=COALESCE(?, ranking_summary),
                 og_title=COALESCE(?, og_title), og_description=COALESCE(?, og_description), og_image_url=COALESCE(?, og_image_url),
                 og_type=COALESCE(?, og_type), twitter_title=COALESCE(?, twitter_title), twitter_description=COALESCE(?, twitter_description),
@@ -542,7 +563,7 @@ export const updateSubService = async (req: Request, res: Response) => {
                 menu_heading, short_tagline, language, JSON.stringify(industry_ids), JSON.stringify(country_ids),
                 h1, JSON.stringify(h2_list), JSON.stringify(h3_list), JSON.stringify(h4_list), JSON.stringify(h5_list), body_content,
                 word_count, reading_time_minutes,
-                meta_title, meta_description, JSON.stringify(focus_keywords), JSON.stringify(secondary_keywords), seo_score, ranking_summary,
+                meta_title, meta_description, JSON.stringify(meta_keywords), JSON.stringify(focus_keywords), JSON.stringify(secondary_keywords), seo_score, ranking_summary,
                 og_title, og_description, og_image_url, og_type, twitter_title, twitter_description, twitter_image_url,
                 linkedin_title, linkedin_description, linkedin_image_url, facebook_title, facebook_description, facebook_image_url,
                 instagram_title, instagram_description, instagram_image_url,
@@ -559,6 +580,33 @@ export const updateSubService = async (req: Request, res: Response) => {
         );
 
         const updatedItem = parseSubServiceRow(result.rows[0]);
+
+        // --- Update Keywords Table with Mapping ---
+        // First, clear old mappings for this sub-service
+        await pool.query(
+            `UPDATE keywords SET mapped_sub_service_id = NULL, mapped_sub_service = NULL WHERE mapped_sub_service_id = ?`,
+            [id]
+        );
+
+        // Then add new mappings
+        if (focus_keywords && Array.isArray(focus_keywords) && focus_keywords.length > 0) {
+            for (const keyword of focus_keywords) {
+                await pool.query(
+                    `UPDATE keywords SET mapped_sub_service_id = ?, mapped_sub_service = ? WHERE keyword = ?`,
+                    [id, sub_service_name, keyword]
+                );
+            }
+        }
+
+        if (secondary_keywords && Array.isArray(secondary_keywords) && secondary_keywords.length > 0) {
+            for (const keyword of secondary_keywords) {
+                await pool.query(
+                    `UPDATE keywords SET mapped_sub_service_id = ?, mapped_sub_service = ? WHERE keyword = ?`,
+                    [id, sub_service_name, keyword]
+                );
+            }
+        }
+
         getSocket().emit('sub_service_updated', updatedItem);
 
         if (updatedItem.parent_service_id) {

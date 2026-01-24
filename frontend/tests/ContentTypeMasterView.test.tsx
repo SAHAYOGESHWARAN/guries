@@ -212,10 +212,10 @@ describe('ContentTypeMasterView', () => {
         await userEvent.click(addButton);
 
         const contentTypeInput = screen.getByPlaceholderText('e.g., Blog, Pillar, Landing Page');
-        const categoryInput = screen.getByPlaceholderText('e.g., Editorial, Core, Supporting');
+        const categorySelect = screen.getByDisplayValue('Select a category...');
 
         await userEvent.type(contentTypeInput, 'Test Type');
-        await userEvent.type(categoryInput, 'Test Category');
+        await userEvent.selectOptions(categorySelect, 'Editorial');
 
         const createButton = screen.getByText('Create');
         await userEvent.click(createButton);
@@ -241,7 +241,7 @@ describe('ContentTypeMasterView', () => {
         const editButtons = screen.getAllByTitle('Edit');
         await userEvent.click(editButtons[0]);
 
-        const descriptionInput = screen.getByPlaceholderText('Describe this content type');
+        const descriptionInput = screen.getByPlaceholderText('Describe this content type and its use cases...');
         await userEvent.clear(descriptionInput);
         await userEvent.type(descriptionInput, 'Updated description');
 
@@ -341,11 +341,20 @@ describe('ContentTypeMasterView', () => {
 
         render(<ContentTypeMasterView />);
 
-        const expandButtons = screen.getAllByRole('button').filter(btn => btn.querySelector('svg'));
-        await userEvent.click(expandButtons[0]);
+        // Find the first row's expand button (Eye icon button)
+        const table = screen.getByRole('table');
+        const rows = table.querySelectorAll('tbody tr');
+        const firstRowExpandButton = rows[0].querySelector('button');
 
-        expect(screen.getByText('Description')).toBeInTheDocument();
-        expect(screen.getByText('Flags')).toBeInTheDocument();
+        if (firstRowExpandButton) {
+            await userEvent.click(firstRowExpandButton);
+        }
+
+        await waitFor(() => {
+            // Check for the expanded row content
+            const expandedContent = screen.queryByText(/Blog post for SEO/);
+            expect(expandedContent).toBeInTheDocument();
+        });
     });
 
     it('displays status badge correctly', () => {
@@ -405,10 +414,10 @@ describe('ContentTypeMasterView', () => {
         await userEvent.click(addButton);
 
         const contentTypeInput = screen.getByPlaceholderText('e.g., Blog, Pillar, Landing Page');
-        const categoryInput = screen.getByPlaceholderText('e.g., Editorial, Core, Supporting');
+        const categorySelect = screen.getByDisplayValue('Select a category...');
 
         await userEvent.type(contentTypeInput, 'Test');
-        await userEvent.type(categoryInput, 'Test');
+        await userEvent.selectOptions(categorySelect, 'Editorial');
 
         const seoCheckbox = screen.getByLabelText('SEO Focus Keywords Required');
         await userEvent.click(seoCheckbox);
