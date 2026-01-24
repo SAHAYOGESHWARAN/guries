@@ -24,7 +24,7 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
         const fetchRepositories = async () => {
             try {
                 setLoading(true);
-                const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3003/api/v1';
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
 
                 // Fetch available repositories
                 const reposRes = await fetch(`${apiUrl}/asset-categories/repositories`);
@@ -32,6 +32,7 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                     throw new Error(`Failed to fetch repositories: ${reposRes.statusText}`);
                 }
                 const reposData = await reposRes.json();
+
                 const repoNames = Array.isArray(reposData)
                     ? reposData.map((r: any) => r.repository).filter(Boolean)
                     : ['Web', 'SEO', 'SMM'];
@@ -42,7 +43,9 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                 const assetsByRepo: Record<string, AssetLibraryItem[]> = {};
                 for (const repo of repoNames) {
                     try {
-                        const assetsRes = await fetch(`${apiUrl}/asset-categories/by-repository?repository=${encodeURIComponent(repo)}`);
+                        const url = `${apiUrl}/asset-categories/by-repository?repository=${encodeURIComponent(repo)}`;
+
+                        const assetsRes = await fetch(url);
                         if (!assetsRes.ok) {
                             console.warn(`Failed to fetch assets for ${repo}: ${assetsRes.statusText}`);
                             assetsByRepo[repo] = [];

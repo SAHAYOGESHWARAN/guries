@@ -4,9 +4,6 @@ import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
 import ServiceAssetLinker from '../components/ServiceAssetLinker';
-import AssetLibraryByCategory from '../components/AssetLibraryByCategory';
-import LinkedInsightsSelector from '../components/LinkedInsightsSelector';
-import LinkedAssetsSelector from '../components/LinkedAssetsSelector';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
@@ -2227,11 +2224,17 @@ Lists:
                             {/* --- TAB: LINKING (ASSETS) --- */}
                             {activeTab === 'Linking' && (
                                 <div className="space-y-10">
-                                    {/* 1. ASSET LIBRARY BY CATEGORY - NEW COMPONENT */}
-                                    <AssetLibraryByCategory
+                                    {/* 1. ASSET LIBRARY MANAGEMENT - FIRST */}
+                                    <ServiceAssetLinker
                                         linkedAssets={linkedLibraryAssets}
+                                        availableAssets={availableLibraryAssets}
+                                        assetSearch={assetSearch}
+                                        setAssetSearch={setAssetSearch}
                                         onToggle={handleToggleLibraryLink}
                                         totalAssets={libraryAssets.length}
+                                        repositoryFilter={repositoryFilter}
+                                        setRepositoryFilter={setRepositoryFilter}
+                                        allAssets={libraryAssets}
                                     />
 
                                     {/* 2. LINKING METADATA - SECOND */}
