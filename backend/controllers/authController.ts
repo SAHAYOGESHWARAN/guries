@@ -11,7 +11,7 @@ const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 // Hardcoded admin credentials
-const ADMIN_EMAIL = 'admin@guires.com';
+const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASSWORD = 'admin123';
 
 export const login = async (req: Request, res: Response) => {

@@ -2,7 +2,6 @@ import React, { useState, Suspense, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginView from './views/LoginView';
-import SplashScreen from './components/SplashScreen';
 import Chatbot from './components/Chatbot';
 import { AuthUser } from './hooks/useAuth';
 
@@ -57,9 +56,8 @@ const OKRManagementView = React.lazy(() => import('./views/OKRManagementView'));
 const PerformanceDashboard = React.lazy(() => import('./views/PerformanceDashboard'));
 const EffortDashboard = React.lazy(() => import('./views/EffortDashboard'));
 const EmployeeScorecardDashboard = React.lazy(() => import('./views/EmployeeScorecardDashboard'));
-const EmployeeComparisonDashboard = React.lazy(() => import('./views/EmployeeComparisonDashboard'));
+const EmployeeComparisonDashboard = React.lazy(() => import('./views/EmployeeComparisonDashboardView'));
 const TeamLeaderDashboard = React.lazy(() => import('./views/TeamLeaderDashboard'));
-const AIEvaluationDashboard = React.lazy(() => import('./views/AIEvaluationDashboard'));
 const AIEvaluationEngineView = React.lazy(() => import('./views/AIEvaluationEngineView'));
 const RewardPenaltyAutomationView = React.lazy(() => import('./views/RewardPenaltyAutomationView'));
 const RewardPenaltyDashboard = React.lazy(() => import('./views/RewardPenaltyDashboard'));
@@ -100,9 +98,8 @@ const AutomationNotificationsView = React.lazy(() => import('./views/AutomationN
 const DashboardConfigView = React.lazy(() => import('./views/DashboardConfigView'));
 
 const LoadingSpinner = () => (
-  <div className="flex flex-col items-center justify-center h-full w-full min-h-[400px] animate-fade-in">
-    <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
-    <p className="text-slate-400 text-xs font-semibold mt-4 uppercase tracking-wide">Loading Module...</p>
+  <div className="flex items-center justify-center h-full w-full">
+    <div className="w-6 h-6 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
   </div>
 );
 
@@ -139,6 +136,7 @@ const App: React.FC = () => {
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
     setIsAuthenticated(false);
+    setIsLoading(false);
   }, []);
 
   // Listen for hash changes from ServiceMasterView and other components
@@ -163,7 +161,6 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
     setViewState({ view: 'dashboard', id: null });
-    setIsLoading(false);
   };
 
   const handleNavigate = (view: string, id: string | number | null = null) => {
@@ -173,10 +170,6 @@ const App: React.FC = () => {
       setViewState({ view, id });
       window.scrollTo(0, 0);
     }
-  };
-
-  const handleSplashComplete = () => {
-    setIsLoading(false);
   };
 
   const handleLogin = (user: AuthUser) => {
@@ -291,7 +284,6 @@ const App: React.FC = () => {
       case 'team-leader-dashboard': return <TeamLeaderDashboard onNavigate={handleNavigate} />;
       case 'team-leader-dashboard-new': return <TeamLeaderDashboard onNavigate={handleNavigate} />;
       case 'ai-evaluation-engine': return <AIEvaluationEngineView />;
-      case 'ai-evaluation-dashboard': return <AIEvaluationDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction-dashboard': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
       case 'ai-task-allocation': return <AITaskAllocationSuggestionsView onNavigate={handleNavigate} />;
@@ -304,10 +296,6 @@ const App: React.FC = () => {
       default: return <DashboardView onNavigate={handleNavigate} />;
     }
   };
-
-  if (isLoading) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
 
   if (!isAuthenticated) {
     return <LoginView onLogin={handleLogin} />;

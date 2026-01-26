@@ -81,10 +81,10 @@ export const linkKeywordsToAsset = async (req: Request, res: Response) => {
         }
 
         // Update keyword usage stats
-        await updateKeywordUsageStats(keywordIds, 'asset', 1);
+        // await updateKeywordUsageStats(keywordIds, 'asset', 1);
 
         getSocket().emit('asset_keywords_linked', { assetId, keywordIds, keywordType });
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Keywords linked successfully',
             linkedKeywords,
             count: linkedKeywords.length
@@ -120,7 +120,7 @@ export const unlinkKeywordsFromAsset = async (req: Request, res: Response) => {
         await pool.query(query, params);
 
         // Update keyword usage stats
-        await updateKeywordUsageStats(keywordIds, 'asset', -1);
+        // await updateKeywordUsageStats(keywordIds, 'asset', -1);
 
         getSocket().emit('asset_keywords_unlinked', { assetId, keywordIds, keywordType });
         res.status(200).json({ message: 'Keywords unlinked successfully', count: keywordIds.length });
@@ -169,6 +169,3 @@ export const getServiceKeywords = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
-
-/**
- * Link ke

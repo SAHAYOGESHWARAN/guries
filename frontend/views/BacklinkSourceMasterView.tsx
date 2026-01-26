@@ -14,7 +14,7 @@ import { useData } from '../hooks/useData';
 import { BacklinkSource } from '../types';
 
 const BacklinkSourceMasterView: React.FC = () => {
-    const { backlinkSources, loading, error, createBacklinkSource, updateBacklinkSource, deleteBacklinkSource } = useData();
+    const { data: backlinkSources, loading, error, create: createBacklinkSource, update: updateBacklinkSource, remove: deleteBacklinkSource } = useData<BacklinkSource>('backlinkSources');
 
     const [openModal, setOpenModal] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -44,7 +44,7 @@ const BacklinkSourceMasterView: React.FC = () => {
     const pricingOptions = ['Free', 'Paid'];
     const statusOptions = ['active', 'inactive', 'blacklisted', 'test', 'trusted', 'avoid'];
 
-    const filteredSources = backlinkSources.filter(source => {
+    const filteredSources = (backlinkSources || []).filter(source => {
         const matchesSearch = source.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
             source.backlink_url.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = !filterCategory || source.backlink_category === filterCategory;

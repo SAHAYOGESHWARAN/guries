@@ -97,7 +97,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setIsLoading(false);
         } else {
             // Hardcoded admin credentials for testing
-            const ADMIN_EMAIL = 'admin@guires.com';
+            const ADMIN_EMAIL = 'admin@example.com';
             const ADMIN_PASSWORD = 'admin123';
 
             // Check if credentials match admin
@@ -273,11 +273,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                         <p className="text-xs font-medium text-slate-400">
                             Marketing Operating System
                         </p>
-                        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                            <p className="text-blue-400 text-xs font-medium">Demo Credentials:</p>
-                            <p className="text-blue-300 text-xs">Email: admin@guires.com</p>
-                            <p className="text-blue-300 text-xs">Password: admin123</p>
-                        </div>
                     </div>
 
 
