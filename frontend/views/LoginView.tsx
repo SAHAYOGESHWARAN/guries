@@ -96,10 +96,31 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setOtp(['', '', '', '', '', '']);
             setIsLoading(false);
         } else {
-            // Try backend API first for login validation
+            // Hardcoded admin credentials for testing
+            const ADMIN_EMAIL = 'admin@guires.com';
+            const ADMIN_PASSWORD = 'admin123';
+
+            // Check if credentials match admin
+            if (formData.email.toLowerCase() === ADMIN_EMAIL && formData.password === ADMIN_PASSWORD) {
+                const adminUser: AuthUser = {
+                    id: 1,
+                    name: 'Admin User',
+                    email: ADMIN_EMAIL,
+                    role: 'admin' as UserRole,
+                    status: 'active',
+                    created_at: new Date().toISOString(),
+                    department: 'Administration',
+                    last_login: new Date().toISOString()
+                };
+                onLogin(adminUser);
+                setIsLoading(false);
+                return;
+            }
+
+            // Try backend API for other users
             const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
             try {
-                const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -114,55 +135,44 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                         last_login: new Date().toISOString()
                     };
                     onLogin(authUser);
-                    return;
-                } else if (response.status === 403) {
-                    // User is deactivated
-                    setError('User deactivated');
                     setIsLoading(false);
                     return;
-                } else if (response.status === 401) {
-                    // Invalid credentials - fall through to localStorage check
                 }
             } catch (apiError) {
-                // API not available, fall back to localStorage
-                console.log('Backend not available, using localStorage');
+                // API not available, continue with localStorage check
             }
 
-            // Fallback: Check localStorage - ONLY allow registered and approved users
+            // Fallback: Check localStorage for registered users
             const existingUsers = db.users.getAll();
             const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
 
-            // User not found - BLOCK login (no auto-registration)
             if (!existingUser) {
-                setError('Account not found. Please request access from an administrator.');
+                setError('Invalid email or password');
                 setIsLoading(false);
                 return;
             }
 
-            // User is deactivated - BLOCK login
             if (existingUser.status === 'inactive') {
                 setError('Your account has been deactivated. Contact an administrator.');
                 setIsLoading(false);
                 return;
             }
 
-            // User is pending approval - BLOCK login
             if (existingUser.status === 'pending') {
-                setError('Your account is pending approval. Please wait for an administrator to activate your account.');
+                setError('Your account is pending approval.');
                 setIsLoading(false);
                 return;
             }
 
-            // ONLY allow active users to login
             if (existingUser.status === 'active') {
                 const authUser: AuthUser = {
                     ...existingUser,
                     role: existingUser.role as UserRole,
                     last_login: new Date().toISOString()
                 };
-                // Update last login
                 db.users.update(existingUser.id, { last_login: new Date().toISOString() });
                 onLogin(authUser);
+                setIsLoading(false);
             } else {
                 setError('Access denied. Contact an administrator.');
                 setIsLoading(false);
@@ -263,6 +273,11 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                         <p className="text-xs font-medium text-slate-400">
                             Marketing Operating System
                         </p>
+                        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <p className="text-blue-400 text-xs font-medium">Demo Credentials:</p>
+                            <p className="text-blue-300 text-xs">Email: admin@guires.com</p>
+                            <p className="text-blue-300 text-xs">Password: admin123</p>
+                        </div>
                     </div>
 
 
