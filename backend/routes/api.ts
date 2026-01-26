@@ -89,6 +89,7 @@ const asyncHandler = (fn: (req: any, res: any, next?: any) => Promise<any>) =>
 
 // --- System & Auth ---
 router.get('/system/stats', systemController.getSystemStats);
+router.post('/auth/login', authController.login as any);
 router.post('/auth/send-otp', authController.sendOtp as any);
 router.post('/auth/verify-otp', authController.verifyOtp as any);
 
