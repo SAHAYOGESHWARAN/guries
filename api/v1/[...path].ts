@@ -202,34 +202,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const fullPath = pathArray.join('/');
     const method = req.method || 'GET';
 
-    // Debug endpoint to check configuration
-    if (fullPath === 'debug/config') {
-        const testAssets = await getCollection('assets');
-        return res.status(200).json({
-            redisConfigured: isRedisConfigured,
-            redisUrl: redisUrl ? redisUrl.substring(0, 40) + '...' : 'NOT SET',
-            hasToken: !!redisToken,
-            assetsCount: testAssets.length,
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    // Debug endpoint to check stored data
-    if (fullPath === 'debug/data') {
-        const assets = await getCollection('assets');
-        const services = await getCollection('services');
-        const users = await getCollection('users');
-        return res.status(200).json({
-            assets: assets.length,
-            services: services.length,
-            users: users.length,
-            sampleAsset: assets[0] || null,
-            timestamp: new Date().toISOString()
-        });
-    }
-
     // Initialize default data endpoint
-    if (fullPath === 'debug/init' && method === 'POST') {
+    if (fullPath === 'init' && method === 'POST') {
         // Initialize default services if empty
         const services = await getCollection('services');
         if (services.length === 0) {
