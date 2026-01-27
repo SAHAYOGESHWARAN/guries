@@ -23,13 +23,15 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: users = [], loading: usersLoading } = useData<User>('users');
     const { data: keywords = [] } = useData<any>('keywords');
 
-    // Debug: Log assets data state
+    // Debug: Log assets data state (development only)
     useEffect(() => {
-        console.log('[AssetsView] Assets data:', {
-            count: assets.length,
-            loading: assetsLoading,
-            sample: assets[0] || null
-        });
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[AssetsView] Assets data:', {
+                count: assets.length,
+                loading: assetsLoading,
+                sample: assets[0] || null
+            });
+        }
     }, [assets, assetsLoading]);
 
     // Create a memoized user lookup map for O(1) access instead of O(n) find operations
@@ -532,7 +534,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // Refresh master data so new category appears immediately
             setTimeout(() => refreshAssetCategories?.(), 100);
         } catch (error) {
-            console.error('Failed to save category:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to save category:', error);
+            }
             alert('Failed to save category');
         }
     };
@@ -549,7 +553,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // Refresh asset types so new type appears immediately
             setTimeout(() => refreshAssetTypes?.(), 100);
         } catch (error) {
-            console.error('Failed to save asset type:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to save asset type:', error);
+            }
             alert('Failed to save asset type');
         }
     };
@@ -5955,7 +5961,9 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                 setIsRefreshing(false);
                                             }, 800);
                                         } catch (error) {
-                                            console.error('Refresh failed:', error);
+                                            if (process.env.NODE_ENV === 'development') {
+                                                console.error('Refresh failed:', error);
+                                            }
                                             setIsRefreshing(false);
                                         }
                                     }}

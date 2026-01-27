@@ -41,7 +41,9 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ onNavigate 
                 setDashboardData(result.data);
             }
         } catch (error) {
-            console.error('Error fetching performance dashboard:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching performance dashboard:', error);
+            }
         } finally {
             setLoading(false);
         }
@@ -56,7 +58,9 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ onNavigate 
             });
             // Handle export download
         } catch (error) {
-            console.error('Error exporting data:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error exporting data:', error);
+            }
         }
     };
 

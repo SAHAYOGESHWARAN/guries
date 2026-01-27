@@ -88,13 +88,21 @@ const PromotionRepositoryView: React.FC = () => {
                 thumbnail_url: formData.thumbnail_url || null, full_url: formData.full_url || null, qc_status: formData.qc_status,
             } as any);
             setShowCreateModal(false); resetForm(); refresh();
-        } catch (error) { console.error('Failed to create promotion item:', error); }
+        } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create promotion item:', error);
+            }
+        }
         finally { setIsSubmitting(false); }
     };
 
     const handleDelete = async (id: number) => {
         if (confirm('Are you sure you want to delete this item?')) {
-            try { await deleteItem(id); refresh(); } catch (error) { console.error('Failed to delete:', error); }
+            try { await deleteItem(id); refresh(); } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Failed to delete:', error);
+                }
+            }
         }
     };
 

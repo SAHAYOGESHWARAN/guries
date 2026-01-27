@@ -129,7 +129,9 @@ const OnPageErrorsView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create error:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create error:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -575,8 +577,8 @@ const OnPageErrorsView: React.FC = () => {
                             key={tab.key}
                             onClick={() => setActiveSeverity(tab.key)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeSeverity === tab.key
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                ? 'bg-red-100 text-red-700'
+                                : 'text-slate-600 hover:bg-slate-100'
                                 }`}
                         >
                             {tab.label}

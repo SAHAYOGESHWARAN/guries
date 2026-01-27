@@ -221,7 +221,11 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
             });
             const urls = await Promise.all(uploadPromises);
             setUploadedFileUrls(prev => [...prev, ...urls.filter(u => u)]);
-        } catch (error) { console.error('Upload error:', error); }
+        } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Upload error:', error);
+            }
+        }
         finally { setIsUploading(false); }
     };
 
@@ -302,7 +306,12 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
             await refresh?.();
             alert(submitForQC ? 'Asset submitted for QC successfully!' : editAssetId ? 'Asset updated successfully!' : 'Asset saved successfully!');
             onNavigate?.('assets');
-        } catch (error) { console.error('Error saving asset:', error); alert('Failed to save asset. Please try again.'); }
+        } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error saving asset:', error);
+            }
+            alert('Failed to save asset. Please try again.');
+        }
         finally { setIsSubmitting(false); }
     };
 
@@ -314,7 +323,12 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
             const newVersionEntry = { version: `v${(parseFloat((formData.version_number || 'v1.0').replace('v', '')) + 0.1).toFixed(1)}`, date: new Date().toISOString(), action: 'Published', user: currentUser?.name || 'Unknown' };
             const assetData: Partial<AssetLibraryItem> = { ...formData, workflow_stage: 'Published', status: 'Published', qc_status: 'Approved', published_by: currentUser?.id, published_at: new Date().toISOString(), linking_active: true, version_history: [...versionHistory, newVersionEntry] };
             if (editAssetId) { await updateAsset(editAssetId, assetData); await refresh?.(); alert('Asset published successfully!'); onNavigate?.('assets'); }
-        } catch (error) { console.error('Error publishing asset:', error); alert('Failed to publish asset. Please try again.'); }
+        } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error publishing asset:', error);
+            }
+            alert('Failed to publish asset. Please try again.');
+        }
         finally { setIsSubmitting(false); }
     };
 

@@ -36,7 +36,9 @@ const EffortDashboard: React.FC<EffortDashboardProps> = ({ onNavigate }) => {
                 setDashboardData(result.data);
             }
         } catch (error) {
-            console.error('Error fetching effort dashboard:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching effort dashboard:', error);
+            }
         } finally {
             setLoading(false);
         }

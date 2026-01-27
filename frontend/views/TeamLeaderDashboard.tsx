@@ -37,7 +37,9 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                 setDashboardData(result.data);
             }
         } catch (error) {
-            console.error('Error fetching team leader dashboard:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching team leader dashboard:', error);
+            }
         } finally {
             setLoading(false);
         }
@@ -59,7 +61,9 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                 fetchDashboardData(); // Refresh data
             }
         } catch (error) {
-            console.error('Error reassigning task:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error reassigning task:', error);
+            }
         }
     };
 

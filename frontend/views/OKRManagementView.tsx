@@ -110,7 +110,9 @@ const OKRManagementView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create OKR:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create OKR:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -118,7 +120,11 @@ const OKRManagementView: React.FC = () => {
 
     const handleDelete = async (id: number) => {
         if (confirm('Are you sure you want to delete this OKR?')) {
-            try { await deleteOKR(id); refresh(); } catch (error) { console.error('Failed to delete:', error); }
+            try { await deleteOKR(id); refresh(); } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Failed to delete:', error);
+                }
+            }
         }
     };
 

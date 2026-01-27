@@ -150,7 +150,9 @@ const SmmRepositoryView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create post:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create post:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }

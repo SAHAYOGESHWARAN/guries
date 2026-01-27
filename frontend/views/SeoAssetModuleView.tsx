@@ -244,7 +244,11 @@ const SeoAssetModuleView: React.FC<SeoAssetModuleViewProps> = ({ onNavigate, edi
                         });
                     }
                 })
-                .catch(err => console.error('Error loading SEO asset:', err));
+                .catch(err => {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error('Error loading SEO asset:', err);
+                    }
+                });
         }
     }, [editAssetId]);
 

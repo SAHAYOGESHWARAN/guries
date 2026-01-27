@@ -222,7 +222,9 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                     if (fullAsset.name || fullAsset.seo_title) setSeoTitle(fullAsset.name || fullAsset.seo_title);
                 }
             } catch (err) {
-                console.log('Using cached asset data');
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('Using cached asset data');
+                }
             } finally {
                 setIsFetchingAsset(false);
             }
@@ -301,7 +303,11 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                         setVerifiedBy(data.verified_by || null);
                     }
                 })
-                .catch(err => console.error('Error loading SEO asset:', err));
+                .catch(err => {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error('Error loading SEO asset:', err);
+                    }
+                });
         }
     }, [editAssetId, apiUrl]);
 
@@ -521,7 +527,9 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                 alert(`Error: ${error.message || 'Failed to save'}`);
             }
         } catch (error) {
-            console.error('Save error:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Save error:', error);
+            }
             alert('Failed to save SEO Asset');
         } finally {
             setIsSubmitting(false);
@@ -553,7 +561,9 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
                 alert(`Error: ${error.message || 'Failed to submit'}`);
             }
         } catch (error) {
-            console.error('Submit error:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Submit error:', error);
+            }
             alert('Failed to submit SEO Asset');
         } finally {
             setIsSubmitting(false);

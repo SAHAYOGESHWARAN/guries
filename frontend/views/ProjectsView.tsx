@@ -168,7 +168,9 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create project:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create project:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }

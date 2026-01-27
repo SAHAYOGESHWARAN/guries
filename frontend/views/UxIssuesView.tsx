@@ -152,7 +152,9 @@ const UxIssuesView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create UX issue:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create UX issue:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -164,7 +166,9 @@ const UxIssuesView: React.FC = () => {
                 await deleteIssue(id);
                 refresh();
             } catch (error) {
-                console.error('Failed to delete:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Failed to delete:', error);
+                }
             }
         }
     };
@@ -603,8 +607,8 @@ const UxIssuesView: React.FC = () => {
                             key={tab.key}
                             onClick={() => setActiveSeverity(tab.key)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeSeverity === tab.key
-                                    ? 'bg-purple-100 text-purple-700'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'text-slate-600 hover:bg-slate-100'
                                 }`}
                         >
                             {tab.label}

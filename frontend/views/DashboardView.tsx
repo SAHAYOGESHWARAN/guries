@@ -24,8 +24,8 @@ const StatCard: React.FC<{
         </div>
         {trend && (
             <p className={`text-xs font-medium ${trendType === 'up' ? 'text-green-600' :
-                    trendType === 'down' ? 'text-red-600' :
-                        'text-slate-600'
+                trendType === 'down' ? 'text-red-600' :
+                    'text-slate-600'
                 }`}>
                 {trend}
             </p>
@@ -67,7 +67,9 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                 const activityData = await activityRes.json();
                 setActivity(Array.isArray(activityData) ? activityData.slice(0, 2) : []);
             } catch (error) {
-                console.error('Error fetching dashboard data:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error fetching dashboard data:', error);
+                }
             } finally {
                 setLoading(false);
             }
@@ -223,8 +225,8 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                                             <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                                                 <div
                                                     className={`h-full ${(project.progress || 0) === 100 ? 'bg-green-500' :
-                                                            (project.progress || 0) >= 80 ? 'bg-blue-500' :
-                                                                'bg-blue-400'
+                                                        (project.progress || 0) >= 80 ? 'bg-blue-500' :
+                                                            'bg-blue-400'
                                                         }`}
                                                     style={{ width: `${project.progress || 0}%` }}
                                                 ></div>

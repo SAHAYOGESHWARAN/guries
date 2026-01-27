@@ -71,10 +71,14 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onNavigateBa
                         const assetData = await response.json();
                         setAsset(assetData);
                     } else {
-                        console.error('Failed to fetch asset');
+                        if (process.env.NODE_ENV === 'development') {
+                            console.error('Failed to fetch asset');
+                        }
                     }
                 } catch (error) {
-                    console.error('Error fetching asset:', error);
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error('Error fetching asset:', error);
+                    }
                 } finally {
                     setLoading(false);
                 }

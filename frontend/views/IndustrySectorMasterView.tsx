@@ -95,7 +95,9 @@ const IndustrySectorMasterView: React.FC = () => {
             }
             handleCloseModal();
         } catch (error) {
-            console.error('Error saving:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error saving:', error);
+            }
             alert('Failed to save. Please try again.');
         }
     };
@@ -105,7 +107,9 @@ const IndustrySectorMasterView: React.FC = () => {
             try {
                 await remove(id);
             } catch (error) {
-                console.error('Error deleting:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error deleting:', error);
+                }
                 alert('Failed to delete. Please try again.');
             }
         }
@@ -258,8 +262,8 @@ const IndustrySectorMasterView: React.FC = () => {
                                         <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{item.description || '-'}</td>
                                         <td className="px-6 py-4 text-sm">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'active'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-slate-100 text-slate-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-slate-100 text-slate-800'
                                                 }`}>
                                                 {item.status === 'active' ? '✓ Active' : 'Inactive'}
                                             </span>

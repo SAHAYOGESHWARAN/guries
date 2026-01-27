@@ -78,7 +78,9 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                     setSeoAssets(data);
                 }
             } catch (error) {
-                console.error('Error fetching SEO assets:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error fetching SEO assets:', error);
+                }
             } finally {
                 setLoading(false);
             }

@@ -48,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onLogout }) => {
       const timer = setTimeout(() => setHasNewNotification(false), 1000);
       return () => clearTimeout(timer);
     }
-  }, [unreadCount]);
+  }, [unreadCount, showNotifications]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onLogout }) => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [setShowNotifications, setShowProfile, setShowHelpCenter, setShowRoleSwitcher]);
 
   return (
     <header className="h-16 flex items-center justify-between px-4 lg:px-6 bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 transition-all duration-200">
@@ -73,7 +73,9 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onLogout }) => {
           placeholder="Search campaigns, tasks, assets, services..."
           onNavigate={(type, id) => {
             // Handle navigation based on type and id
-            console.log('Navigate to:', type, id);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Navigate to:', type, id);
+            }
             // You can implement navigation logic here
           }}
           size="md"

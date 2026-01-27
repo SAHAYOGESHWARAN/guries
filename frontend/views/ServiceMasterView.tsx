@@ -434,12 +434,16 @@ const ServiceMasterView: React.FC = () => {
             // Force a refresh to ensure we have the latest data
             await refreshContentAssets();
         } catch (e) {
-            console.error('Content link update error:', e);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Content link update error:', e);
+            }
             // Even if there's an error, try to refresh to show current state
             try {
                 await refreshContentAssets();
             } catch (refreshError) {
-                console.error('Refresh error:', refreshError);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Refresh error:', refreshError);
+                }
             }
         }
     };
@@ -459,12 +463,16 @@ const ServiceMasterView: React.FC = () => {
             // Force a refresh to ensure we have the latest data
             await refreshLibraryAssets();
         } catch (e) {
-            console.error('Library asset link update error:', e);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Library asset link update error:', e);
+            }
             // Even if there's an error, try to refresh to show current state
             try {
                 await refreshLibraryAssets();
             } catch (refreshError) {
-                console.error('Refresh error:', refreshError);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Refresh error:', refreshError);
+                }
             }
         }
     };
@@ -515,7 +523,9 @@ const ServiceMasterView: React.FC = () => {
             await refreshContentAssets();
             await refreshLibraryAssets();
         } catch (error) {
-            console.error('Refresh failed:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Refresh failed:', error);
+            }
         } finally {
             setIsRefreshing(false);
         }
@@ -2340,7 +2350,9 @@ Lists:
                         Export
                     </button>
                     <button
-                        onClick={() => console.log('Filter clicked')}
+                        onClick={() => {
+                            // Filter functionality to be implemented
+                        }}
                         className="text-slate-600 bg-white border border-slate-300 px-3 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors hover:bg-slate-50 flex items-center gap-1.5"
                         title="Filter options"
                     >

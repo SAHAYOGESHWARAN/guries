@@ -221,7 +221,9 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create campaign:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create campaign:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }

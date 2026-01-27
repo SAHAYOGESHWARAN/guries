@@ -142,7 +142,9 @@ const ContentRepositoryView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create content:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create content:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }

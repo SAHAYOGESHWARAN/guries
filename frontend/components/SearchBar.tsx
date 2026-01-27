@@ -64,7 +64,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     setShowResults(true);
                     setSelectedIndex(-1);
                 } catch (error) {
-                    console.error('Search error:', error);
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error('Search error:', error);
+                    }
                 } finally {
                     setIsLoading(false);
                 }
@@ -126,7 +128,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [setShowResults, setSelectedIndex]);
 
     // Keyboard shortcut (Cmd/Ctrl + K)
     useEffect(() => {
@@ -207,11 +209,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                                     onClick={() => handleResultClick(result)}
                                 >
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${result.type === 'campaign' ? 'bg-blue-100 text-blue-600' :
-                                            result.type === 'task' ? 'bg-green-100 text-green-600' :
-                                                result.type === 'asset' ? 'bg-purple-100 text-purple-600' :
-                                                    result.type === 'service' ? 'bg-orange-100 text-orange-600' :
-                                                        result.type === 'user' ? 'bg-indigo-100 text-indigo-600' :
-                                                            'bg-pink-100 text-pink-600'
+                                        result.type === 'task' ? 'bg-green-100 text-green-600' :
+                                            result.type === 'asset' ? 'bg-purple-100 text-purple-600' :
+                                                result.type === 'service' ? 'bg-orange-100 text-orange-600' :
+                                                    result.type === 'user' ? 'bg-indigo-100 text-indigo-600' :
+                                                        'bg-pink-100 text-pink-600'
                                         }`}>
                                         {result.icon || (
                                             result.type === 'campaign' ? '📊' :

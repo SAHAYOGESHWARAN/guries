@@ -139,7 +139,12 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
             await refresh?.();
             alert(submitForQC ? 'SMM Asset submitted for QC!' : 'SMM Asset saved!');
             onNavigate?.('assets');
-        } catch (error) { console.error('Error saving SMM asset:', error); alert('Failed to save. Please try again.'); }
+        } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error saving SMM asset:', error);
+            }
+            alert('Failed to save. Please try again.');
+        }
         finally { setIsSubmitting(false); }
     };
 

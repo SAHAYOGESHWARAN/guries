@@ -40,7 +40,9 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                 setDashboardData(result.data);
             }
         } catch (error) {
-            console.error('Error fetching rewards & penalties dashboard:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching rewards & penalties dashboard:', error);
+            }
         } finally {
             setLoading(false);
         }
@@ -57,7 +59,9 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                 fetchDashboardData(); // Refresh data
             }
         } catch (error) {
-            console.error('Error creating automation rule:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error creating automation rule:', error);
+            }
         }
     };
 
@@ -72,7 +76,9 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                 fetchDashboardData(); // Refresh data
             }
         } catch (error) {
-            console.error('Error updating approval status:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error updating approval status:', error);
+            }
         }
     };
 

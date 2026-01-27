@@ -155,7 +155,9 @@ const ServicePagesMasterView: React.FC<ServicePagesMasterViewProps> = ({ onNavig
             ]);
             setTimeout(() => setIsRefreshing(false), 800);
         } catch (error) {
-            console.error('Refresh failed:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Refresh failed:', error);
+            }
             setIsRefreshing(false);
         }
     };
@@ -171,7 +173,9 @@ const ServicePagesMasterView: React.FC<ServicePagesMasterViewProps> = ({ onNavig
                     refreshContentTypes?.(),
                 ]);
             } catch (error) {
-                console.error('Failed to load initial data:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Failed to load initial data:', error);
+                }
             }
         };
         loadData();

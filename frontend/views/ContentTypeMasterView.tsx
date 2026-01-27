@@ -92,7 +92,9 @@ const ContentTypeMasterView: React.FC = () => {
             }
             handleCloseModal();
         } catch (error) {
-            console.error('Error saving:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error saving:', error);
+            }
             alert('Failed to save. Please try again.');
         }
     };
@@ -102,7 +104,9 @@ const ContentTypeMasterView: React.FC = () => {
             try {
                 await remove(id);
             } catch (error) {
-                console.error('Error deleting:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error deleting:', error);
+                }
                 alert('Failed to delete. Please try again.');
             }
         }

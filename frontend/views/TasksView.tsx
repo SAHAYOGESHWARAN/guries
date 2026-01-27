@@ -157,7 +157,9 @@ const TasksView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create task:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create task:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }

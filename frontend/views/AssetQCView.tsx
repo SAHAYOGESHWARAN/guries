@@ -64,15 +64,17 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const { data: assetTypes = [] } = useData<AssetTypeMasterItem>('asset-type-master');
     const { user, isAdmin, hasPermission } = useAuth();
 
-    // Debug: Log assets data state
+    // Debug: Log assets data state (development only)
     useEffect(() => {
-        console.log('[AssetQCView] Assets data:', {
-            count: assetsForQC.length,
-            loading: dataLoading,
-            isAdmin,
-            userId: user?.id,
-            sample: assetsForQC[0] || null
-        });
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[AssetQCView] Assets data:', {
+                count: assetsForQC.length,
+                loading: dataLoading,
+                isAdmin,
+                userId: user?.id,
+                sample: assetsForQC[0] || null
+            });
+        }
     }, [assetsForQC, dataLoading, isAdmin, user]);
 
     // Create a memoized user lookup map for O(1) access instead of O(n) find operations

@@ -175,7 +175,9 @@ const BacklinksView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create backlink:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create backlink:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -688,8 +690,8 @@ const BacklinksView: React.FC = () => {
                     <button
                         onClick={() => setShowFilters(!showFilters)}
                         className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${showFilters
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                                : 'text-slate-600 border-slate-300 hover:bg-white'
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            : 'text-slate-600 border-slate-300 hover:bg-white'
                             }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -731,8 +733,8 @@ const BacklinksView: React.FC = () => {
                             key={stage.key}
                             onClick={() => setActiveStage(stage.key)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeStage === stage.key
-                                    ? 'bg-indigo-100 text-indigo-700'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-slate-600 hover:bg-slate-100'
                                 }`}
                         >
                             {stage.label}

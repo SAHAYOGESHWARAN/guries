@@ -100,7 +100,9 @@ const CompetitorRepositoryView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create competitor:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create competitor:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -108,7 +110,11 @@ const CompetitorRepositoryView: React.FC = () => {
 
     const handleDelete = async (id: number) => {
         if (confirm('Are you sure you want to delete this competitor?')) {
-            try { await deleteCompetitor(id); refresh(); } catch (error) { console.error('Failed to delete:', error); }
+            try { await deleteCompetitor(id); refresh(); } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Failed to delete:', error);
+                }
+            }
         }
     };
 

@@ -38,7 +38,9 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                 setDashboardData(result.data);
             }
         } catch (error) {
-            console.error('Error fetching workload prediction dashboard:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching workload prediction dashboard:', error);
+            }
         } finally {
             setLoading(false);
         }
@@ -59,7 +61,9 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                 fetchDashboardData(); // Refresh data
             }
         } catch (error) {
-            console.error('Error implementing suggestion:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error implementing suggestion:', error);
+            }
         }
     };
 

@@ -9,11 +9,11 @@ import type { OKRItem } from '../types';
 const PerformanceBenchmarkView: React.FC = () => {
     const { data: okrs, create, update, remove } = useData<OKRItem>('okrs');
     const [activeTab, setActiveTab] = useState<'okr' | 'kpi' | 'log'>('okr');
-    
+
     // Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCycle, setSelectedCycle] = useState('All Cycles');
-    
+
     // Full Frame State
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [editingItem, setEditingItem] = useState<OKRItem | null>(null);
@@ -27,10 +27,10 @@ const PerformanceBenchmarkView: React.FC = () => {
     // Filtering Logic
     const filteredOkrs = okrs.filter(item => {
         const matchesSearch = item.objective.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              item.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              item.type.toLowerCase().includes(searchQuery.toLowerCase());
+            item.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.type.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCycle = selectedCycle === 'All Cycles' || item.cycle === selectedCycle;
-        
+
         return matchesSearch && matchesCycle;
     });
 
@@ -93,8 +93,11 @@ const PerformanceBenchmarkView: React.FC = () => {
                 }
                 alert(`Successfully imported ${count} OKRs.`);
             } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error parsing CSV file. Please check the format.');
+                    console.error(error);
+                }
                 alert('Error parsing CSV file. Please check the format.');
-                console.error(error);
             }
             // Reset input
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -102,8 +105,8 @@ const PerformanceBenchmarkView: React.FC = () => {
     };
 
     const okrColumns = [
-        { 
-            header: 'Objective', 
+        {
+            header: 'Objective',
             accessor: (item: OKRItem) => (
                 <div>
                     <div className="font-medium text-slate-900">{item.objective}</div>
@@ -112,21 +115,20 @@ const PerformanceBenchmarkView: React.FC = () => {
             ),
             className: "min-w-[300px]"
         },
-        { 
-            header: 'Type', 
+        {
+            header: 'Type',
             accessor: (item: OKRItem) => (
-                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                    item.type === 'Company' ? 'bg-purple-100 text-purple-800' :
-                    item.type === 'Department' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-700'
-                }`}>
+                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${item.type === 'Company' ? 'bg-purple-100 text-purple-800' :
+                        item.type === 'Department' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-700'
+                    }`}>
                     {item.type}
                 </span>
             )
         },
         { header: 'Cycle', accessor: 'cycle' as keyof OKRItem, className: 'font-mono text-xs text-slate-600' },
-        { 
-            header: 'Owner', 
+        {
+            header: 'Owner',
             accessor: (item: OKRItem) => (
                 <div className="flex items-center">
                     <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold mr-2">
@@ -136,20 +138,19 @@ const PerformanceBenchmarkView: React.FC = () => {
                 </div>
             )
         },
-        { 
-            header: 'Progress %', 
+        {
+            header: 'Progress %',
             accessor: (item: OKRItem) => (
                 <div className="w-32">
                     <div className="flex justify-between text-xs mb-1">
                         <span className="font-bold text-slate-700">{item.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                            className={`h-2 rounded-full ${
-                                item.progress === 100 ? 'bg-green-500' : 
-                                item.progress > 60 ? 'bg-blue-500' : 
-                                item.progress > 30 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`} 
+                        <div
+                            className={`h-2 rounded-full ${item.progress === 100 ? 'bg-green-500' :
+                                    item.progress > 60 ? 'bg-blue-500' :
+                                        item.progress > 30 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
                             style={{ width: `${Math.min(item.progress, 100)}%` }}
                         ></div>
                     </div>
@@ -202,9 +203,9 @@ const PerformanceBenchmarkView: React.FC = () => {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Objective</label>
-                                    <textarea 
-                                        value={formData.objective} 
-                                        onChange={(e) => setFormData({...formData, objective: e.target.value})} 
+                                    <textarea
+                                        value={formData.objective}
+                                        onChange={(e) => setFormData({ ...formData, objective: e.target.value })}
                                         className="block w-full border border-gray-300 rounded-lg p-3 h-24 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="e.g. Increase market share by 15% through organic growth"
                                     />
@@ -212,7 +213,7 @@ const PerformanceBenchmarkView: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Level / Type</label>
-                                        <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value as any})} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
+                                        <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
                                             <option>Company</option>
                                             <option>Department</option>
                                             <option>Individual</option>
@@ -220,7 +221,7 @@ const PerformanceBenchmarkView: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Time Cycle</label>
-                                        <input type="text" value={formData.cycle} onChange={(e) => setFormData({...formData, cycle: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g. Q1 2025" />
+                                        <input type="text" value={formData.cycle} onChange={(e) => setFormData({ ...formData, cycle: e.target.value })} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g. Q1 2025" />
                                     </div>
                                 </div>
                             </div>
@@ -231,20 +232,20 @@ const PerformanceBenchmarkView: React.FC = () => {
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
-                                    <input type="text" value={formData.owner} onChange={(e) => setFormData({...formData, owner: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" placeholder="Person Responsible" />
+                                    <input type="text" value={formData.owner} onChange={(e) => setFormData({ ...formData, owner: e.target.value })} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" placeholder="Person Responsible" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
-                                    <input type="number" min="0" max="100" value={formData.progress} onChange={(e) => setFormData({...formData, progress: parseInt(e.target.value)})} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" />
+                                    <input type="number" min="0" max="100" value={formData.progress} onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                             </div>
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Alignment (Parent Goal)</label>
-                                <input type="text" value={formData.alignment} onChange={(e) => setFormData({...formData, alignment: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" placeholder="Optional: Link to higher level OKR" />
+                                <input type="text" value={formData.alignment} onChange={(e) => setFormData({ ...formData, alignment: e.target.value })} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" placeholder="Optional: Link to higher level OKR" />
                             </div>
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
+                                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
                                     <option>Active</option>
                                     <option>Delayed</option>
                                     <option>Completed</option>
@@ -281,18 +282,18 @@ const PerformanceBenchmarkView: React.FC = () => {
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between flex-shrink-0">
                     <div className="relative flex-1 w-full">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/></svg>
+                            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" /></svg>
                         </div>
-                        <input 
-                            type="search" 
-                            className="block w-full p-2.5 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="Search Objective / Owner / Department..." 
+                        <input
+                            type="search"
+                            className="block w-full p-2.5 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Search Objective / Owner / Department..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                        <select 
+                        <select
                             value={selectedCycle}
                             onChange={(e) => setSelectedCycle(e.target.value)}
                             className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 min-w-[120px]"
@@ -303,16 +304,16 @@ const PerformanceBenchmarkView: React.FC = () => {
                             <option>Q3</option>
                             <option>Q4</option>
                             <option>Yearly</option>
-                            {uniqueCycles.filter(c => !['Q1','Q2','Q3','Q4','Yearly'].includes(c as string)).map(c => (
+                            {uniqueCycles.filter(c => !['Q1', 'Q2', 'Q3', 'Q4', 'Yearly'].includes(c as string)).map(c => (
                                 <option key={c as string} value={c as string}>{c as string}</option>
                             ))}
                         </select>
-                        
+
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" style={{ display: 'none' }} />
                         <button onClick={handleImportClick} className="text-slate-600 hover:text-indigo-600 border border-slate-300 hover:border-indigo-300 bg-white px-3 py-2 rounded-lg transition-colors text-sm flex items-center">Import OKRs</button>
                         <button onClick={handleExport} className="text-slate-600 hover:text-indigo-600 border border-slate-300 hover:border-indigo-300 bg-white px-3 py-2 rounded-lg transition-colors text-sm flex items-center">Export</button>
-                        
-                        <button 
+
+                        <button
                             onClick={() => {
                                 setEditingItem(null);
                                 setFormData({ objective: '', type: 'Department', cycle: 'Q1', owner: '', alignment: '', progress: 0, status: 'Active' });
@@ -329,7 +330,7 @@ const PerformanceBenchmarkView: React.FC = () => {
                     {activeTab === 'okr' && (
                         <Table columns={okrColumns} data={filteredOkrs} title="" />
                     )}
-                    
+
                     {activeTab === 'kpi' && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-500">
                             <h3 className="text-lg font-semibold text-slate-700">KPI Master Configuration</h3>

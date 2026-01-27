@@ -154,7 +154,9 @@ const ToxicBacklinksView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create toxic backlink:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create toxic backlink:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -168,7 +170,9 @@ const ToxicBacklinksView: React.FC = () => {
             } as any);
             refresh();
         } catch (error) {
-            console.error('Failed to disavow:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to disavow:', error);
+            }
         }
     };
 
@@ -178,7 +182,9 @@ const ToxicBacklinksView: React.FC = () => {
                 await deleteToxicLink(id);
                 refresh();
             } catch (error) {
-                console.error('Failed to delete:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Failed to delete:', error);
+                }
             }
         }
     };
@@ -594,8 +600,8 @@ const ToxicBacklinksView: React.FC = () => {
                     <button
                         onClick={() => setShowFilters(!showFilters)}
                         className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${showFilters
-                                ? 'bg-red-50 text-red-700 border-red-200'
-                                : 'text-slate-600 border-slate-300 hover:bg-white'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'text-slate-600 border-slate-300 hover:bg-white'
                             }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -651,8 +657,8 @@ const ToxicBacklinksView: React.FC = () => {
                             key={tab.key}
                             onClick={() => setActiveSeverity(tab.key)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeSeverity === tab.key
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                ? 'bg-red-100 text-red-700'
+                                : 'text-slate-600 hover:bg-slate-100'
                                 }`}
                         >
                             {tab.label}

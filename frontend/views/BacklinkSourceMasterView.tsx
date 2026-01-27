@@ -93,7 +93,9 @@ const BacklinkSourceMasterView: React.FC = () => {
             }
             handleCloseModal();
         } catch (err) {
-            console.error('Error saving backlink source:', err);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error saving backlink source:', err);
+            }
         }
     };
 
@@ -102,7 +104,9 @@ const BacklinkSourceMasterView: React.FC = () => {
             try {
                 await deleteBacklinkSource(id);
             } catch (err) {
-                console.error('Error deleting backlink source:', err);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error deleting backlink source:', err);
+                }
             }
         }
     };

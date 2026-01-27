@@ -41,7 +41,9 @@ const EmployeeScorecardDashboard: React.FC<EmployeeScorecardDashboardProps> = ({
                 setEmployeeList(result.data);
             }
         } catch (error) {
-            console.error('Error fetching employee list:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching employee list:', error);
+            }
         }
     };
 
@@ -54,7 +56,9 @@ const EmployeeScorecardDashboard: React.FC<EmployeeScorecardDashboardProps> = ({
                 setDashboardData(result.data);
             }
         } catch (error) {
-            console.error('Error fetching employee scorecard:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching employee scorecard:', error);
+            }
         } finally {
             setLoading(false);
         }

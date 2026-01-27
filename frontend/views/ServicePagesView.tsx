@@ -126,7 +126,9 @@ const ServicePagesView: React.FC = () => {
             resetForm();
             refresh();
         } catch (error) {
-            console.error('Failed to create service page:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Failed to create service page:', error);
+            }
         } finally {
             setIsSubmitting(false);
         }
