@@ -132,6 +132,14 @@ router.post('/assets', assetController.createAsset);
 router.put('/assets/:id', assetController.updateAsset);
 router.delete('/assets/:id', assetController.deleteAsset);
 
+// --- Asset Linking ---
+router.get('/services/:serviceId/linked-assets', asyncHandler(assetController.getServiceLinkedAssets));
+router.get('/sub-services/:subServiceId/linked-assets', asyncHandler(assetController.getSubServiceLinkedAssets));
+router.post('/assets/link-to-service', asyncHandler(assetController.linkAssetToService));
+router.post('/assets/link-to-sub-service', asyncHandler(assetController.linkAssetToSubService));
+router.post('/assets/unlink-from-service', asyncHandler(assetController.unlinkAssetFromService));
+router.post('/assets/unlink-from-sub-service', asyncHandler(assetController.unlinkAssetFromSubService));
+
 // --- Asset Library ---
 router.get('/assetLibrary', asyncHandler(assetController.getAssetLibrary));
 router.get('/assetLibrary/:id', asyncHandler(assetController.getAssetLibraryItem));

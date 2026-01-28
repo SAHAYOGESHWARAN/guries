@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
+import LinkedAssetsDisplay from '../components/LinkedAssetsDisplay';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
@@ -439,12 +440,21 @@ const ServicePagesMasterView: React.FC<ServicePagesMasterViewProps> = ({ onNavig
                             <div className="space-y-6">
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                                     <h3 className="font-semibold text-green-900 mb-2">🔗 Linked Assets & Insights</h3>
-                                    <p className="text-sm text-green-800">Link content assets and insights to this service page</p>
+                                    <p className="text-sm text-green-800">View and manage content assets linked to this service page</p>
                                 </div>
 
-                                <div className="text-center py-8 text-slate-500">
-                                    <p>No linked assets yet. Link assets from the Asset Library to enhance this service page.</p>
-                                </div>
+                                {editingItem?.id ? (
+                                    <LinkedAssetsDisplay
+                                        subServiceId={editingItem.id}
+                                        onAssetsLoaded={(assets) => {
+                                            console.log('Sub-service linked assets loaded:', assets);
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="text-center py-8 text-slate-500">
+                                        <p>Select a service page to view linked assets.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

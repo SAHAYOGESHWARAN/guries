@@ -1214,3 +1214,194 @@ qc_score,
 
 
 
+
+
+// Get linked assets for a service
+export const getServiceLinkedAssets = async (req: Request, res: Response) => {
+    const { serviceId } = req.params;
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                a.id,
+                a.asset_name as name,
+                a.asset_type as type,
+                a.file_url,
+                a.thumbnail_url,
+                a.description,
+                a.status,
+                a.qc_status,
+                a.qc_score,
+                a.version_number,
+                a.created_at,
+                sal.created_at as linked_at
+            FROM assets a
+            INNER JOIN service_asset_links sal ON a.id = sal.asset_id
+            WHERE sal.service_id = ?
+            ORDER BY sal.created_at DESC
+        `, [serviceId]);
+
+        res.status(200).json(result.rows || []);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get linked assets for a sub-service
+export const getSubServiceLinkedAssets = async (req: Request, res: Response) => {
+    const { subServiceId } = req.params;
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                a.id,
+                a.asset_name as name,
+                a.asset_type as type,
+                a.file_url,
+                a.thumbnail_url,
+                a.description,
+                a.status,
+                a.qc_status,
+                a.qc_score,
+                a.version_number,
+                a.created_at,
+                sal.created_at as linked_at
+            FROM assets a
+            INNER JOIN subservice_asset_links sal ON a.id = sal.asset_id
+            WHERE sal.sub_service_id = ?
+            ORDER BY sal.created_at DESC
+        `, [subServiceId]);
+
+        res.status(200).json(result.rows || []);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Link asset to service
+export const linkAssetToService = async (req: Request, res: Response) => {
+    const { serviceId, assetId } = req.body;
+
+    try {
+        // Verify asset exists and is approved
+        const assetCheck = await pool.query(
+            'SELECT id, status, qc_status FROM assets WHERE id = ?',
+            [assetId]
+        );
+
+        if (assetCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const asset = assetCheck.rows[0];
+        if (asset.qc_status !== 'Pass' && asset.qc_status !== 'Approved') {
+            return res.status(400).json({ error: 'Asset must be QC approved before linking' });
+        }
+
+        // Verify service exists
+        const serviceCheck = await pool.query(
+            'SELECT id FROM services WHERE id = ?',
+            [serviceId]
+        );
+
+        if (serviceCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+
+        // Create link (INSERT OR IGNORE to prevent duplicates)
+        await pool.query(
+            'INSERT OR IGNORE INTO service_asset_links(service_id, asset_id) VALUES(?, ?)',
+            [serviceId, assetId]
+        );
+
+        // Update asset count
+        await pool.query(
+            'UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 WHERE id = ? AND NOT EXISTS (SELECT 1 FROM service_asset_links WHERE service_id = ? AND asset_id = ?)',
+            [serviceId, serviceId, assetId]
+        );
+
+        res.status(201).json({ success: true, message: 'Asset linked to service' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Link asset to sub-service
+export const linkAssetToSubService = async (req: Request, res: Response) => {
+    const { subServiceId, assetId } = req.body;
+
+    try {
+        // Verify asset exists and is approved
+        const assetCheck = await pool.query(
+            'SELECT id, status, qc_status FROM assets WHERE id = ?',
+            [assetId]
+        );
+
+        if (assetCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const asset = assetCheck.rows[0];
+        if (asset.qc_status !== 'Pass' && asset.qc_status !== 'Approved') {
+            return res.status(400).json({ error: 'Asset must be QC approved before linking' });
+        }
+
+        // Verify sub-service exists
+        const subServiceCheck = await pool.query(
+            'SELECT id FROM sub_services WHERE id = ?',
+            [subServiceId]
+        );
+
+        if (subServiceCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Sub-service not found' });
+        }
+
+        // Create link (INSERT OR IGNORE to prevent duplicates)
+        await pool.query(
+            'INSERT OR IGNORE INTO subservice_asset_links(sub_service_id, asset_id) VALUES(?, ?)',
+            [subServiceId, assetId]
+        );
+
+        res.status(201).json({ success: true, message: 'Asset linked to sub-service' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Unlink asset from service
+export const unlinkAssetFromService = async (req: Request, res: Response) => {
+    const { serviceId, assetId } = req.body;
+
+    try {
+        await pool.query(
+            'DELETE FROM service_asset_links WHERE service_id = ? AND asset_id = ?',
+            [serviceId, assetId]
+        );
+
+        // Update asset count
+        await pool.query(
+            'UPDATE services SET asset_count = COALESCE(asset_count, 0) - 1 WHERE id = ?',
+            [serviceId]
+        );
+
+        res.status(200).json({ success: true, message: 'Asset unlinked from service' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Unlink asset from sub-service
+export const unlinkAssetFromSubService = async (req: Request, res: Response) => {
+    const { subServiceId, assetId } = req.body;
+
+    try {
+        await pool.query(
+            'DELETE FROM subservice_asset_links WHERE sub_service_id = ? AND asset_id = ?',
+            [subServiceId, assetId]
+        );
+
+        res.status(200).json({ success: true, message: 'Asset unlinked from sub-service' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};

@@ -4,6 +4,7 @@ import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import SocialMetaForm from '../components/SocialMetaForm';
 import ServiceAssetLinker from '../components/ServiceAssetLinker';
+import LinkedAssetsDisplay from '../components/LinkedAssetsDisplay';
 import LinkedInsightsSelector from '../components/LinkedInsightsSelector';
 import LinkedAssetsSelector from '../components/LinkedAssetsSelector';
 import KeywordSelector from '../components/KeywordSelector';
@@ -1963,7 +1964,17 @@ Lists:
                             {/* --- TAB: LINKING (ASSETS) --- */}
                             {activeTab === 'Linking' && (
                                 <div className="space-y-10">
-                                    {/* 1. ASSET LIBRARY MANAGEMENT - FIRST */}
+                                    {/* 1. LINKED ASSETS DISPLAY - SHOWS ACTUAL LINKED ASSETS */}
+                                    {editingItem?.id && (
+                                        <LinkedAssetsDisplay
+                                            serviceId={editingItem.id}
+                                            onAssetsLoaded={(assets) => {
+                                                console.log('Linked assets loaded:', assets);
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* 2. ASSET LIBRARY MANAGEMENT - FOR LINKING NEW ASSETS */}
                                     <ServiceAssetLinker
                                         linkedAssets={linkedLibraryAssets}
                                         availableAssets={availableLibraryAssets}
@@ -1976,7 +1987,7 @@ Lists:
                                         allAssets={libraryAssets}
                                     />
 
-                                    {/* 2. LINKING METADATA - SECOND */}
+                                    {/* 3. LINKING METADATA - SECOND */}
                                     <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                                         {/* Header */}
                                         <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-10 text-white overflow-hidden">
