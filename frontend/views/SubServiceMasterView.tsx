@@ -192,7 +192,14 @@ const SubServiceMasterView: React.FC = () => {
 
                 // Check repository filter - handle both 'repository' and 'application_type' fields
                 const assetRepository = a.repository || a.application_type;
-                if (repositoryFilter !== 'All' && assetRepository !== repositoryFilter) {
+
+                // Map application_type to display names for comparison
+                let displayRepo = assetRepository;
+                if (assetRepository === 'web') displayRepo = 'Web';
+                if (assetRepository === 'seo') displayRepo = 'SEO';
+                if (assetRepository === 'smm') displayRepo = 'SMM';
+
+                if (repositoryFilter !== 'All' && displayRepo !== repositoryFilter) {
                     return false;
                 }
 

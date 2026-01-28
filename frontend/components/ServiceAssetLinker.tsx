@@ -24,16 +24,30 @@ const ServiceAssetLinker: React.FC<Props> = ({
     setRepositoryFilter,
     allAssets = []
 }) => {
-    // Get unique repositories from all assets
-    const repositories = React.useMemo(() => {
-        const repos = new Set<string>();
-        allAssets.forEach(asset => {
-            // Check both repository and application_type fields
-            const repo = asset.repository || asset.application_type;
-            if (repo) repos.add(repo);
-        });
-        return ['All', ...Array.from(repos).sort()];
-    }, [allAssets]);
+    const [repositories, setRepositories] = React.useState<string[]>(['All']);
+
+    // Fetch repositories from API
+    React.useEffect(() => {
+        const fetchRepositories = async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+                const res = await fetch(`${apiUrl}/asset-categories/repositories`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const repoNames = Array.isArray(data)
+                        ? data.map((r: any) => r.repository || r).filter(Boolean)
+                        : ['Web', 'SEO', 'SMM'];
+                    setRepositories(['All', ...repoNames]);
+                } else {
+                    setRepositories(['All', 'Web', 'SEO', 'SMM']);
+                }
+            } catch (error) {
+                console.error('Error fetching repositories:', error);
+                setRepositories(['All', 'Web', 'SEO', 'SMM']);
+            }
+        };
+        fetchRepositories();
+    }, []);
     const getAssetTypeColor = (type: string) => {
         const colors: Record<string, string> = {
             'Image': 'bg-green-500',
