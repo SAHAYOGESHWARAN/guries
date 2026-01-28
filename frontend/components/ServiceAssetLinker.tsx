@@ -28,7 +28,9 @@ const ServiceAssetLinker: React.FC<Props> = ({
     const repositories = React.useMemo(() => {
         const repos = new Set<string>();
         allAssets.forEach(asset => {
-            if (asset.repository) repos.add(asset.repository);
+            // Check both repository and application_type fields
+            const repo = asset.repository || asset.application_type;
+            if (repo) repos.add(repo);
         });
         return ['All', ...Array.from(repos).sort()];
     }, [allAssets]);

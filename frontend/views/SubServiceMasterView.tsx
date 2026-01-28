@@ -175,6 +175,14 @@ const SubServiceMasterView: React.FC = () => {
     const availableLibraryAssets = useMemo(() => {
         if (!editingItem) return [];
         const searchLower = assetSearch.toLowerCase().trim();
+
+        console.log('Filtering assets:', {
+            total: libraryAssets.length,
+            repositoryFilter,
+            searchLower,
+            editingItemId: editingItem.id
+        });
+
         return libraryAssets
             .filter(a => {
                 // Check if asset is not already linked
@@ -182,14 +190,17 @@ const SubServiceMasterView: React.FC = () => {
                 const isLinked = links.map(String).includes(String(editingItem.id));
                 if (isLinked) return false;
 
-                // Check repository filter
-                if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;
+                // Check repository filter - handle both 'repository' and 'application_type' fields
+                const assetRepository = a.repository || a.application_type;
+                if (repositoryFilter !== 'All' && assetRepository !== repositoryFilter) {
+                    return false;
+                }
 
                 // Check if asset matches search query (if any)
                 if (!searchLower) return true;
                 const name = (a.name || '').toLowerCase();
                 const assetType = (a.type || '').toLowerCase();
-                const repository = (a.repository || '').toLowerCase();
+                const repository = (assetRepository || '').toLowerCase();
                 return name.includes(searchLower) || assetType.includes(searchLower) || repository.includes(searchLower);
             })
             .slice(0, 20); // Limit to show 20 results

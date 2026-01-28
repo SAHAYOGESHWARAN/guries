@@ -146,6 +146,8 @@ export const getAssetsByRepository = async (req: Request, res: Response) => {
 
         const appType = repositoryToAppType[repository as string] || (repository as string).toLowerCase();
 
+        console.log(`Fetching assets for repository: ${repository} (appType: ${appType})`);
+
         const assets = db.prepare(`
             SELECT 
                 id,
@@ -176,9 +178,17 @@ export const getAssetsByRepository = async (req: Request, res: Response) => {
             FROM assets
             WHERE application_type = ? AND status IN ('Draft', 'Pending QC Review', 'Published')
             ORDER BY created_at DESC
-        `).all(appType);
+        `).all(appType) as any[];
 
-        res.json(assets);
+        // Ensure repository field is set correctly based on application_type
+        const assetsWithRepository = assets.map(asset => ({
+            ...asset,
+            repository: repository as string // Use the requested repository name (Web, SEO, SMM)
+        }));
+
+        console.log(`Found ${assetsWithRepository.length} assets for ${repository}`);
+
+        res.json(assetsWithRepository);
     } catch (error) {
         console.error('Error fetching assets by repository:', error);
         res.status(500).json({ error: 'Failed to fetch assets by repository' });
@@ -204,7 +214,7 @@ export const getRepositories = async (req: Request, res: Response) => {
             FROM assets
             WHERE application_type IS NOT NULL AND application_type != ''
             ORDER BY repository ASC
-        `).all();
+        `).all() as Array<{ repository: string }>;
 
         // Always include default categories
         const defaultCategories = ['Web', 'SEO', 'SMM'];
@@ -217,10 +227,21 @@ export const getRepositories = async (req: Request, res: Response) => {
                 .map(cat => ({ repository: cat }))
         ];
 
-        res.json(allRepos);
+        // Remove duplicates and sort
+        const uniqueRepos = Array.from(
+            new Map(allRepos.map(r => [r.repository, r])).values()
+        ).sort((a, b) => a.repository.localeCompare(b.repository));
+
+        console.log('Available repositories:', uniqueRepos);
+        res.json(uniqueRepos);
     } catch (error) {
         console.error('Error fetching repositories:', error);
-        res.status(500).json({ error: 'Failed to fetch repositories' });
+        // Return default repositories on error
+        res.json([
+            { repository: 'Web' },
+            { repository: 'SEO' },
+            { repository: 'SMM' }
+        ]);
     } finally {
         db.close();
     }

@@ -33,9 +33,22 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                 }
                 const reposData = await reposRes.json();
 
-                const repoNames = Array.isArray(reposData)
-                    ? reposData.map((r: any) => r.repository).filter(Boolean)
-                    : ['Web', 'SEO', 'SMM'];
+                // Parse repository names - handle both array of objects and array of strings
+                let repoNames: string[] = [];
+                if (Array.isArray(reposData)) {
+                    repoNames = reposData
+                        .map((r: any) => {
+                            if (typeof r === 'string') return r;
+                            if (r.repository) return r.repository;
+                            return null;
+                        })
+                        .filter((r: any): r is string => r !== null && r !== '');
+                } else {
+                    repoNames = ['Web', 'SEO', 'SMM'];
+                }
+
+                // Remove duplicates and sort
+                repoNames = [...new Set(repoNames)].sort();
 
                 setRepositories(repoNames);
 
@@ -44,6 +57,7 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                 for (const repo of repoNames) {
                     try {
                         const url = `${apiUrl}/asset-categories/by-repository?repository=${encodeURIComponent(repo)}`;
+                        console.log(`Fetching assets for ${repo} from:`, url);
 
                         const assetsRes = await fetch(url);
                         if (!assetsRes.ok) {
@@ -53,6 +67,7 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
                         }
                         const assetsData = await assetsRes.json();
                         assetsByRepo[repo] = Array.isArray(assetsData) ? assetsData : [];
+                        console.log(`Loaded ${assetsByRepo[repo].length} assets for ${repo}`);
                     } catch (error) {
                         console.error(`Error fetching assets for ${repo}:`, error);
                         assetsByRepo[repo] = [];
