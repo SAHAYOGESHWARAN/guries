@@ -220,6 +220,7 @@ export const initDatabase = () => {
             reading_time_minutes INTEGER DEFAULT 0,
             meta_title TEXT,
             meta_description TEXT,
+            meta_keywords TEXT,
             focus_keywords TEXT,
             secondary_keywords TEXT,
             seo_score REAL DEFAULT 0,
@@ -1526,10 +1527,12 @@ export const pool = {
 
             const stmt = sqliteDb.prepare(sqliteQuery);
 
-            if (text.trim().toUpperCase().startsWith('SELECT')) {
+            const queryType = text.trim().toUpperCase().split(/\s+/)[0];
+
+            if (queryType === 'SELECT') {
                 const rows = stmt.all(...(params || []));
                 return { rows };
-            } else if (text.trim().toUpperCase().startsWith('INSERT')) {
+            } else if (queryType === 'INSERT') {
                 const result = stmt.run(...(params || []));
                 if (hasReturning) {
                     // Get the last inserted row from the correct table
@@ -1543,7 +1546,7 @@ export const pool = {
                     return { rows };
                 }
                 return { rows: [], rowCount: result.changes };
-            } else if (text.trim().toUpperCase().startsWith('UPDATE')) {
+            } else if (queryType === 'UPDATE') {
                 const result = stmt.run(...(params || []));
                 if (hasReturning) {
                     // Get the updated row from the correct table

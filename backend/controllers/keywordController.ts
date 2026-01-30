@@ -85,3 +85,74 @@ export const deleteKeyword = async (req: Request, res: Response) => {
     }
 };
 
+// Link keywords to sub-service
+export const linkKeywordsToSubService = async (req: Request, res: Response) => {
+    const { sub_service_id, sub_service_name, keywords } = req.body;
+
+    if (!sub_service_id || !Array.isArray(keywords) || keywords.length === 0) {
+        return res.status(400).json({ error: 'sub_service_id and keywords array are required' });
+    }
+
+    try {
+        for (const keyword of keywords) {
+            await pool.query(
+                `UPDATE keywords SET mapped_sub_service_id = ?, mapped_sub_service = ?, updated_at = ? WHERE keyword = ?`,
+                [sub_service_id, sub_service_name || null, new Date().toISOString(), keyword]
+            );
+        }
+
+        // Fetch updated keywords
+        const result = await pool.query(
+            `SELECT * FROM keywords WHERE mapped_sub_service_id = ? ORDER BY keyword ASC`,
+            [sub_service_id]
+        );
+
+        getSocket().emit('keywords_linked_to_subservice', { sub_service_id, keywords: result.rows });
+        res.status(200).json({ success: true, linked_keywords: result.rows });
+    } catch (error: any) {
+        console.error('Error linking keywords to sub-service:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Unlink keywords from sub-service
+export const unlinkKeywordsFromSubService = async (req: Request, res: Response) => {
+    const { sub_service_id, keywords } = req.body;
+
+    if (!sub_service_id || !Array.isArray(keywords) || keywords.length === 0) {
+        return res.status(400).json({ error: 'sub_service_id and keywords array are required' });
+    }
+
+    try {
+        for (const keyword of keywords) {
+            await pool.query(
+                `UPDATE keywords SET mapped_sub_service_id = NULL, mapped_sub_service = NULL, updated_at = ? WHERE keyword = ? AND mapped_sub_service_id = ?`,
+                [new Date().toISOString(), keyword, sub_service_id]
+            );
+        }
+
+        getSocket().emit('keywords_unlinked_from_subservice', { sub_service_id, keywords });
+        res.status(200).json({ success: true, message: 'Keywords unlinked from sub-service' });
+    } catch (error: any) {
+        console.error('Error unlinking keywords from sub-service:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get keywords linked to a sub-service
+export const getSubServiceLinkedKeywords = async (req: Request, res: Response) => {
+    const { sub_service_id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `SELECT * FROM keywords WHERE mapped_sub_service_id = ? ORDER BY keyword ASC`,
+            [sub_service_id]
+        );
+
+        res.status(200).json(result.rows);
+    } catch (error: any) {
+        console.error('Error fetching sub-service linked keywords:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+

@@ -104,7 +104,7 @@ export const deleteAsset = async (req: Request, res: Response) => {
 // Asset Library endpoints
 export const getAssetLibrary = async (req: Request, res: Response) => {
     try {
-        const result = query(`
+        const result = await pool.query(`
             SELECT 
                 a.id,
                 a.asset_name as name,
@@ -185,7 +185,7 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
         `);
 
         // Parse JSON arrays for linked IDs
-        const parsed = result.rows.map(row => ({
+        const parsed = result.rows.map((row: any) => ({
             ...row,
             repository: row.repository || 'Content Repository',
             usage_status: row.usage_status || 'Available',

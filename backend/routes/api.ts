@@ -401,6 +401,9 @@ router.get('/keywords', keywordController.getKeywords);
 router.post('/keywords', keywordController.createKeyword);
 router.put('/keywords/:id', keywordController.updateKeyword);
 router.delete('/keywords/:id', keywordController.deleteKeyword);
+router.post('/keywords/link-to-sub-service', keywordController.linkKeywordsToSubService);
+router.post('/keywords/unlink-from-sub-service', keywordController.unlinkKeywordsFromSubService);
+router.get('/keywords/sub-service/:sub_service_id', keywordController.getSubServiceLinkedKeywords);
 
 router.get('/backlink-sources', backlinkSourceController.getBacklinkSources);
 router.post('/backlink-sources', backlinkSourceController.createBacklinkSource);
