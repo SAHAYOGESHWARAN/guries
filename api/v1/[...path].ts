@@ -185,6 +185,109 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+// Handle Asset Library with QC Review support
+async function handleAssetLibrary(req: VercelRequest, res: VercelResponse, fullPath: string, method: string) {
+    const pathParts = fullPath.split('/');
+    const id = pathParts[1] ? parseInt(pathParts[1]) : null;
+    const action = pathParts[2];
+
+    // Handle QC Review endpoint
+    if (id && action === 'qc-review' && method === 'POST') {
+        const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, user_role } = req.body;
+
+        // Check admin role
+        if (!user_role || user_role.toLowerCase() !== 'admin') {
+            return res.status(403).json({
+                error: 'Access denied. Only administrators can perform QC reviews.',
+                code: 'ADMIN_REQUIRED'
+            });
+        }
+
+        // Validate QC decision
+        if (!['approved', 'rejected', 'rework'].includes(qc_decision)) {
+            return res.status(400).json({ error: 'QC decision must be "approved", "rejected", or "rework"' });
+        }
+
+        try {
+            let assets = await getCollection('assetLibrary');
+            const assetIndex = assets.findIndex((a: any) => a.id === id);
+
+            if (assetIndex === -1) {
+                return res.status(404).json({ error: 'Asset not found' });
+            }
+
+            const asset = assets[assetIndex];
+            const finalQcScore = qc_score || 0;
+
+            // Determine new status and QC status
+            let newStatus: string;
+            let qcStatus: string;
+            let linkingActive = 0;
+
+            switch (qc_decision) {
+                case 'approved':
+                    newStatus = 'QC Approved';
+                    qcStatus = 'Pass';
+                    linkingActive = 1;
+                    break;
+                case 'rejected':
+                    newStatus = 'QC Rejected';
+                    qcStatus = 'Fail';
+                    break;
+                case 'rework':
+                    newStatus = 'Rework Required';
+                    qcStatus = 'Rework';
+                    break;
+                default:
+                    return res.status(400).json({ error: 'Invalid QC decision' });
+            }
+
+            // Update asset
+            assets[assetIndex] = {
+                ...asset,
+                status: newStatus,
+                qc_status: qcStatus,
+                qc_score: finalQcScore,
+                qc_remarks: qc_remarks || '',
+                qc_reviewer_id: qc_reviewer_id,
+                qc_reviewed_at: new Date().toISOString(),
+                linking_active: linkingActive,
+                updated_at: new Date().toISOString()
+            };
+
+            await saveCollection('assetLibrary', assets);
+
+            // Create QC review record
+            let qcReviews = await getCollection('assetQCReviews');
+            if (!Array.isArray(qcReviews)) qcReviews = [];
+
+            const reviewId = await getNextId('assetQCReviews');
+            qcReviews.push({
+                id: reviewId,
+                asset_id: id,
+                qc_reviewer_id: qc_reviewer_id,
+                qc_score: finalQcScore,
+                qc_remarks: qc_remarks || '',
+                qc_decision: qc_decision,
+                created_at: new Date().toISOString()
+            });
+
+            await saveCollection('assetQCReviews', qcReviews);
+
+            return res.status(200).json({
+                success: true,
+                message: `Asset ${qc_decision}`,
+                asset: assets[assetIndex]
+            });
+        } catch (error: any) {
+            return res.status(500).json({ error: error.message || 'Failed to process QC review' });
+        }
+    }
+
+    // Default CRUD handling for assetLibrary
+    return handleCRUD(req, res, 'assetLibrary', fullPath, method);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Handle preflight and HEAD requests
     if (req.method === 'OPTIONS') return res.status(200).json({ ok: true });
@@ -800,6 +903,29 @@ async function handleQCReview(req: VercelRequest, res: VercelResponse, assetId: 
     await saveCollection('notifications', notifications);
 
     return res.status(200).json(assets[assetIndex]);
+}
+
+// Handle Asset Library with QC Review support
+async function handleAssetLibrary(req: VercelRequest, res: VercelResponse, fullPath: string, method: string) {
+    const pathParts = fullPath.split('/');
+    const id = pathParts[1] ? parseInt(pathParts[1]) : null;
+    const action = pathParts[2];
+
+    let assets = await getCollection('assetLibrary');
+    if (!Array.isArray(assets)) assets = [];
+
+    // Handle QC Review endpoint: /assetLibrary/:id/qc-review
+    if (id && action === 'qc-review' && method === 'POST') {
+        return handleQCReview(req, res, id, assets);
+    }
+
+    // Handle Submit for QC endpoint: /assetLibrary/:id/submit-qc
+    if (id && action === 'submit-qc' && method === 'POST') {
+        return handleSubmitForQC(req, res, id, assets);
+    }
+
+    // Default CRUD handling for assetLibrary
+    return handleCRUD(req, res, 'assetLibrary', fullPath, method);
 }
 
 // Submit for QC handler
