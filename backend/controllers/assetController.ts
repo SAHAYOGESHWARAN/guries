@@ -921,12 +921,13 @@ status = ?,
     qc_reviewer_id = ?,
     qc_reviewed_at = datetime('now'),
     qc_checklist_completion = ?,
+    qc_status = ?,
     linking_active = ?,
     workflow_log = ?,
     rework_count = ?,
     updated_at = datetime('now')
             WHERE id = ?`,
-            [newStatus, finalQcScore, qc_remarks || '', qc_reviewer_id, checklist_completion ? 1 : 0, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
+            [newStatus, finalQcScore, qc_remarks || '', qc_reviewer_id, checklist_completion ? 1 : 0, qcStatus, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
         );
 
         // Get the updated asset
