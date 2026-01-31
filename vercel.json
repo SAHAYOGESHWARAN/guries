@@ -6,7 +6,7 @@
     "functions": {
         "api/**/*.ts": {
             "runtime": "@vercel/node@3.2.0",
-            "maxDuration": 10
+            "maxDuration": 30
         }
     },
     "build": {
@@ -17,7 +17,7 @@
     "rewrites": [
         {
             "source": "/api/v1/:path*",
-            "destination": "/api/v1/[...path]?path=:path*"
+            "destination": "/api/v1/[...path]"
         },
         {
             "source": "/((?!api).*)",
