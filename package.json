@@ -18,9 +18,11 @@
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
     "vercel-build": "cd frontend && npm run build"
   },
+  "dependencies": {
+    "@vercel/node": "^3.0.0"
+  },
   "devDependencies": {
     "concurrently": "^8.2.0",
-    "@vercel/node": "^3.0.0",
     "@upstash/redis": "^1.36.0",
     "typescript": "^5.0.2"
   }
