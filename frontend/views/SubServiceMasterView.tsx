@@ -2095,6 +2095,203 @@ Lists:
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* SEO OPTIMIZATION SECTION */}
+                                    <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-50 rounded-2xl border-2 border-emerald-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                                        {/* Header */}
+                                        <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-10 text-white overflow-hidden">
+                                            <div className="absolute top-0 right-0 opacity-10">
+                                                <span className="text-9xl">🔍</span>
+                                            </div>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="bg-white bg-opacity-20 p-2 rounded-lg text-2xl">📊</span>
+                                                    <h3 className="text-2xl font-bold">Search Engine Optimization</h3>
+                                                </div>
+                                                <p className="text-emerald-100 text-sm">Organic Visibility Controls & Optimization Metrics</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="p-10">
+                                            <div className="space-y-8">
+                                                {/* Row 1 - Meta Title & Description */}
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                    <div className="bg-white rounded-xl border-2 border-emerald-100 p-6 hover:border-emerald-300 transition-colors">
+                                                        <label className="flex items-center justify-between text-xs font-bold text-emerald-700 uppercase tracking-widest mb-3">
+                                                            <span className="flex items-center gap-2">
+                                                                <span className="text-sm">📝</span>
+                                                                Meta Title
+                                                            </span>
+                                                            <span className={`text-[10px] font-mono px-2 py-1 rounded-full ${((formData.meta_title?.length || 0) > 60) ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                                {formData.meta_title?.length || 0}/60
+                                                            </span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.meta_title}
+                                                            onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
+                                                            placeholder="e.g. Enterprise Marketing Solutions | Your Company"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-2">Optimal: 50-60 characters</p>
+                                                    </div>
+
+                                                    <div className="bg-white rounded-xl border-2 border-teal-100 p-6 hover:border-teal-300 transition-colors">
+                                                        <label className="flex items-center justify-between text-xs font-bold text-teal-700 uppercase tracking-widest mb-3">
+                                                            <span className="flex items-center gap-2">
+                                                                <span className="text-sm">📄</span>
+                                                                Meta Description
+                                                            </span>
+                                                            <span className={`text-[10px] font-mono px-2 py-1 rounded-full ${((formData.meta_description?.length || 0) > 160) ? 'bg-red-100 text-red-600' : 'bg-teal-100 text-teal-600'}`}>
+                                                                {formData.meta_description?.length || 0}/160
+                                                            </span>
+                                                        </label>
+                                                        <textarea
+                                                            value={formData.meta_description}
+                                                            onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all bg-white resize-none h-24"
+                                                            placeholder="High-level promise plus differentiator for this service..."
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-2">Optimal: 150-160 characters</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Row 2 - Meta Keywords */}
+                                                <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
+                                                    <label className="flex items-center justify-between text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="text-sm">🏷️</span>
+                                                            Meta Keywords
+                                                        </span>
+                                                        <span className="text-[10px] font-mono px-2 py-1 rounded-full bg-cyan-100 text-cyan-600">
+                                                            {(formData.meta_keywords || []).length} keywords
+                                                        </span>
+                                                    </label>
+                                                    <p className="text-xs text-slate-600 mb-3">Keywords for search engine metadata</p>
+
+                                                    {/* Display selected meta keywords */}
+                                                    <div className="mb-4 flex flex-wrap gap-2">
+                                                        {(formData.meta_keywords || []).map((keyword, idx) => (
+                                                            <div key={idx} className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                                <span>{keyword}</span>
+                                                                <button
+                                                                    onClick={() => removeFromList('meta_keywords', idx)}
+                                                                    className="text-cyan-600 hover:text-cyan-800 font-bold"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Add new meta keyword */}
+                                                    <div className="flex gap-2 mb-4">
+                                                        <input
+                                                            type="text"
+                                                            value={tempKeyword}
+                                                            onChange={(e) => setTempKeyword(e.target.value)}
+                                                            onKeyPress={(e) => {
+                                                                if (e.key === 'Enter' && tempKeyword.trim()) {
+                                                                    addToList('meta_keywords', tempKeyword.trim());
+                                                                    setTempKeyword('');
+                                                                }
+                                                            }}
+                                                            placeholder="Type keyword and press Enter..."
+                                                            className="flex-1 px-4 py-2 border-2 border-cyan-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                if (tempKeyword.trim()) {
+                                                                    addToList('meta_keywords', tempKeyword.trim());
+                                                                    setTempKeyword('');
+                                                                }
+                                                            }}
+                                                            className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors"
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Keyword suggestions */}
+                                                    {keywordsMaster.length > 0 && (
+                                                        <div className="pt-4 border-t border-cyan-200">
+                                                            <p className="text-xs font-bold text-slate-600 mb-2">Suggested Keywords:</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {keywordsMaster.slice(0, 8).map((kw, idx) => (
+                                                                    <button
+                                                                        key={idx}
+                                                                        onClick={() => {
+                                                                            if (!(formData.meta_keywords || []).includes(kw.keyword)) {
+                                                                                addToList('meta_keywords', kw.keyword);
+                                                                            }
+                                                                        }}
+                                                                        className="text-xs px-2 py-1 bg-cyan-50 border border-cyan-200 text-cyan-600 rounded hover:bg-cyan-100 transition-colors"
+                                                                    >
+                                                                        + {kw.keyword}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Row 3 - SEO Score & Ranking Summary */}
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                    <div className="bg-white rounded-xl border-2 border-violet-100 p-6 hover:border-violet-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-violet-700 uppercase tracking-widest mb-4">
+                                                            <span className="text-sm">📈</span>
+                                                            SEO Score
+                                                        </label>
+                                                        <div className="space-y-3">
+                                                            <input
+                                                                type="range"
+                                                                min={0}
+                                                                max={100}
+                                                                value={formData.seo_score ?? 0}
+                                                                onChange={(e) => setFormData({ ...formData, seo_score: parseInt(e.target.value) })}
+                                                                className="w-full accent-violet-600"
+                                                            />
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-sm font-bold text-slate-700">{formData.seo_score ?? 0}%</span>
+                                                                <span className={`text-xs font-bold px-3 py-1 rounded-full ${(formData.seo_score ?? 0) >= 80 ? 'bg-green-100 text-green-700' : (formData.seo_score ?? 0) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                                                    {(formData.seo_score ?? 0) >= 80 ? 'Excellent' : (formData.seo_score ?? 0) >= 60 ? 'Good' : 'Needs Work'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-white rounded-xl border-2 border-orange-100 p-6 hover:border-orange-300 transition-colors">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-widest mb-3">
+                                                            <span className="text-sm">📊</span>
+                                                            Ranking Summary
+                                                        </label>
+                                                        <textarea
+                                                            value={formData.ranking_summary}
+                                                            onChange={(e) => setFormData({ ...formData, ranking_summary: e.target.value })}
+                                                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm h-24 resize-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                                                            placeholder="Capture SERP positions, rich snippets, competitive notes..."
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Info Banner */}
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                                                    <span className="text-lg flex-shrink-0">💡</span>
+                                                    <div className="text-xs text-slate-700 space-y-1">
+                                                        <p className="font-semibold">SEO Optimization Tips:</p>
+                                                        <ul className="text-slate-600 space-y-1 ml-3 list-disc">
+                                                            <li>Keep meta title between 50-60 characters</li>
+                                                            <li>Meta description should be 150-160 characters</li>
+                                                            <li>Include primary keywords in title and description</li>
+                                                            <li>Use natural language, avoid keyword stuffing</li>
+                                                            <li>Monitor SERP positions and adjust strategy</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

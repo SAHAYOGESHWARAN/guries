@@ -1967,6 +1967,44 @@ Lists:
                             {/* --- TAB: LINKING (ASSETS) --- */}
                             {activeTab === 'Linking' && (
                                 <div className="space-y-10">
+                                    {/* LINKING FILTERS - TOP */}
+                                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border-2 border-indigo-200 p-6">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="text-2xl">🔗</span>
+                                            <h4 className="text-lg font-bold text-indigo-900">Asset Linking Filters</h4>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-700 uppercase mb-2">Repository Type</label>
+                                                <select
+                                                    value={repositoryFilter}
+                                                    onChange={(e) => setRepositoryFilter(e.target.value)}
+                                                    className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Repositories</option>
+                                                    <option value="Web">🌐 Web Assets</option>
+                                                    <option value="SEO">🔍 SEO Assets</option>
+                                                    <option value="SMM">📱 Social Media Assets</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-700 uppercase mb-2">Search Assets</label>
+                                                <input
+                                                    type="text"
+                                                    value={assetSearch}
+                                                    onChange={(e) => setAssetSearch(e.target.value)}
+                                                    placeholder="Search by name, type..."
+                                                    className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                />
+                                            </div>
+                                            <div className="flex items-end">
+                                                <div className="w-full bg-white rounded-lg border-2 border-indigo-200 px-4 py-2 text-sm font-bold text-indigo-600">
+                                                    📊 {availableLibraryAssets.length} assets available
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* 1. LINKED ASSETS DISPLAY - SHOWS ACTUAL LINKED ASSETS */}
                                     {editingItem?.id && (
                                         <LinkedAssetsDisplay
