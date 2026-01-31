@@ -29,8 +29,9 @@ const EffortDashboard: React.FC<EffortDashboardProps> = ({ onNavigate }) => {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const queryParams = new URLSearchParams(filters).toString();
-            const response = await fetch(`/api/v1/dashboards/effort?${queryParams}`);
+            const response = await fetch(`${apiUrl}/dashboards/effort?${queryParams}`);
             const result = await response.json();
             if (result.success) {
                 setDashboardData(result.data);

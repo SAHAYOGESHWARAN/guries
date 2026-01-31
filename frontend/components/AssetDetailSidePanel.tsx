@@ -81,7 +81,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
 
             setLoadingQCData(true);
             try {
-                const response = await fetch(`/api/v1/assetLibrary/${asset.id}/qc-reviews`);
+                const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+                const response = await fetch(`${apiUrl}/assetLibrary/${asset.id}/qc-reviews`);
                 if (response.ok) {
                     const data = await response.json();
                     setQcReviewData(data);
@@ -172,7 +173,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
 
         setSubmitting(true);
         try {
-            const response = await fetch(`/api/v1/assetLibrary/${asset.id}/submit-qc`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/assetLibrary/${asset.id}/submit-qc`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,7 +210,8 @@ const AssetDetailSidePanel: React.FC<AssetDetailSidePanelProps> = ({
 
         setSubmitting(true);
         try {
-            const response = await fetch(`/api/v1/assetLibrary/${asset.id}/submit-qc`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/assetLibrary/${asset.id}/submit-qc`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

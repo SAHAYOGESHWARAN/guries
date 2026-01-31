@@ -75,12 +75,13 @@ const AITaskAllocationSuggestions: React.FC<AITaskAllocationSuggestionsProps> = 
     const fetchSuggestions = async () => {
         try {
             setLoading(true);
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const queryParams = new URLSearchParams();
             if (filters.status !== 'all') queryParams.append('status', filters.status);
             if (filters.priority !== 'all') queryParams.append('priority', filters.priority);
             queryParams.append('minConfidence', filters.minConfidence.toString());
 
-            const response = await fetch(`/api/v1/workload-allocation/task-suggestions?${queryParams}`);
+            const response = await fetch(`${apiUrl}/workload-allocation/task-suggestions?${queryParams}`);
             const data = await response.json();
             setSuggestions(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
@@ -93,7 +94,8 @@ const AITaskAllocationSuggestions: React.FC<AITaskAllocationSuggestionsProps> = 
 
     const handleAcceptSuggestion = async (suggestionId: number) => {
         try {
-            const response = await fetch(`/api/v1/workload-allocation/task-suggestions/${suggestionId}/accept`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/workload-allocation/task-suggestions/${suggestionId}/accept`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -108,7 +110,8 @@ const AITaskAllocationSuggestions: React.FC<AITaskAllocationSuggestionsProps> = 
 
     const handleRejectSuggestion = async (suggestionId: number) => {
         try {
-            const response = await fetch(`/api/v1/workload-allocation/task-suggestions/${suggestionId}/reject`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/workload-allocation/task-suggestions/${suggestionId}/reject`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' }
             });

@@ -50,7 +50,8 @@ const EmployeeScorecardDashboard: React.FC<EmployeeScorecardDashboardProps> = ({
     const fetchEmployeeScorecard = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/v1/dashboards/employee-scorecard?employeeId=${selectedEmployee}&month=${selectedPeriod}`);
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/dashboards/employee-scorecard?employeeId=${selectedEmployee}&month=${selectedPeriod}`);
             const result = await response.json();
             if (result.success) {
                 setDashboardData(result.data);

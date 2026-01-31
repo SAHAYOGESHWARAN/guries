@@ -211,7 +211,8 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
 
         setSubmitting(true);
         try {
-            const response = await fetch(`/api/v1/assetLibrary/${selectedAsset.id}/qc-review`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

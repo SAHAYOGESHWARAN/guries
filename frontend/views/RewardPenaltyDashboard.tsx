@@ -33,8 +33,9 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const queryParams = new URLSearchParams(filters).toString();
-            const response = await fetch(`/api/v1/dashboards/rewards-penalties?${queryParams}`);
+            const response = await fetch(`${apiUrl}/dashboards/rewards-penalties?${queryParams}`);
             const result = await response.json();
             if (result.success) {
                 setDashboardData(result.data);
@@ -50,7 +51,8 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
 
     const createAutomationRule = async (ruleData: any) => {
         try {
-            const response = await fetch('/api/v1/dashboards/rewards-penalties/automation-rules', {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/dashboards/rewards-penalties/automation-rules`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ruleData)
@@ -67,7 +69,8 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
 
     const updateApprovalStatus = async (id: string, status: string, comments: string) => {
         try {
-            const response = await fetch(`/api/v1/dashboards/rewards-penalties/approvals/${id}`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/dashboards/rewards-penalties/approvals/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, approverComments: comments })

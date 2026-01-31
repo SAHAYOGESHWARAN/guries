@@ -34,8 +34,9 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ onNavigate 
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const queryParams = new URLSearchParams(filters).toString();
-            const response = await fetch(`/api/v1/dashboards/performance?${queryParams}`);
+            const response = await fetch(`${apiUrl}/dashboards/performance?${queryParams}`);
             const result = await response.json();
             if (result.success) {
                 setDashboardData(result.data);

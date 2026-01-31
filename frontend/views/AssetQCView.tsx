@@ -238,7 +238,8 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
 
         setSubmitting(true);
         try {
-            const response = await fetch(`/api/v1/assetLibrary/${selectedAsset.id}/qc-review`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -282,7 +283,8 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const handleSendToQC = async (asset: AssetLibraryItem) => {
         if (!confirm(`Send "${asset.name}" to QC Review?`)) return;
         try {
-            const res = await fetch(`/api/v1/assetLibrary/${asset.id}/submit-qc`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const res = await fetch(`${apiUrl}/assetLibrary/${asset.id}/submit-qc`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -307,7 +309,8 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const handleResubmitForQC = async (asset: AssetLibraryItem) => {
         if (!confirm(`Resubmit "${asset.name}" for QC review?`)) return;
         try {
-            const res = await fetch(`/api/v1/assetLibrary/${asset.id}/submit-qc`, {
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const res = await fetch(`${apiUrl}/assetLibrary/${asset.id}/submit-qc`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

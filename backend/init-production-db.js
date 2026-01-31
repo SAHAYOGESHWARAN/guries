@@ -698,6 +698,105 @@ try {
 
     console.log('✅ All tables created successfully!\n');
 
+    // ==================== SAMPLE DATA ====================
+    console.log('📝 Populating sample data...\n');
+
+    // Create admin user
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, role, status) VALUES (?, ?, ?, ?)`).run(
+        'Admin User', 'admin@example.com', 'admin', 'active'
+    );
+
+    // Create sample brand
+    db.prepare(`INSERT OR IGNORE INTO brands (name, code, industry, status) VALUES (?, ?, ?, ?)`).run(
+        'Sample Brand', 'BRAND-001', 'Technology', 'active'
+    );
+
+    // Create sample services
+    const serviceIds = [];
+    for (let i = 1; i <= 3; i++) {
+        const result = db.prepare(`
+            INSERT INTO services (service_name, service_code, slug, status, language, has_subservices)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `).run(`Service ${i}`, `SRV-${i}`, `service-${i}`, 'Published', 'en', 1);
+        serviceIds.push(result.lastInsertRowid);
+    }
+
+    // Create sample assets with proper QC setup
+    const assetIds = [];
+    for (let i = 1; i <= 5; i++) {
+        const result = db.prepare(`
+            INSERT INTO assets (
+                asset_name, asset_type, asset_category, asset_format, 
+                application_type, status, qc_status, linking_active,
+                created_by, submitted_by, rework_count
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            `Asset ${i}`,
+            'Image',
+            'Marketing',
+            'JPG',
+            i % 3 === 0 ? 'web' : i % 3 === 1 ? 'seo' : 'smm',
+            'Draft',
+            'Pending',
+            0,
+            1,
+            1,
+            0
+        );
+        assetIds.push(result.lastInsertRowid);
+    }
+
+    // Create sample QC reviews for some assets
+    for (let i = 0; i < 3; i++) {
+        db.prepare(`
+            INSERT INTO asset_qc_reviews (
+                asset_id, qc_reviewer_id, qc_score, 
+                checklist_completion, qc_remarks, qc_decision, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        `).run(
+            assetIds[i],
+            1,
+            85 + (i * 5),
+            1,
+            `QC Review for Asset ${i + 1}`,
+            i === 0 ? 'approved' : i === 1 ? 'rejected' : 'rework'
+        );
+    }
+
+    // Update assets with QC status based on reviews
+    db.prepare(`UPDATE assets SET qc_status = ?, status = ? WHERE id = ?`).run('Pass', 'QC Approved', assetIds[0]);
+    db.prepare(`UPDATE assets SET qc_status = ?, status = ? WHERE id = ?`).run('Fail', 'QC Rejected', assetIds[1]);
+    db.prepare(`UPDATE assets SET qc_status = ?, status = ? WHERE id = ?`).run('Rework', 'Rework Required', assetIds[2]);
+
+    // Create sample keywords
+    const keywords = ['marketing', 'seo', 'content', 'digital', 'strategy'];
+    keywords.forEach((kw, idx) => {
+        db.prepare(`
+            INSERT INTO keywords (keyword, keyword_intent, keyword_type, language, status)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(kw, 'informational', 'primary', 'en', 'active');
+    });
+
+    // Create sample platforms
+    const platforms = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter'];
+    platforms.forEach(platform => {
+        db.prepare(`
+            INSERT OR IGNORE INTO platforms (platform_name, status)
+            VALUES (?, ?)
+        `).run(platform, 'active');
+    });
+
+    // Create sample content types
+    const contentTypes = ['Blog', 'Whitepaper', 'Case Study', 'Infographic'];
+    contentTypes.forEach(ct => {
+        db.prepare(`
+            INSERT OR IGNORE INTO content_types (content_type, status)
+            VALUES (?, ?)
+        `).run(ct, 'active');
+    });
+
+    console.log('✅ Sample data populated successfully!\n');
+
     // ==================== VERIFICATION ====================
     console.log('🔍 Verifying database...\n');
 
@@ -708,11 +807,23 @@ try {
         console.log(`   ✓ ${table.name}: ${count.count} records`);
     });
 
+    // Verify QC setup
+    console.log('\n🔍 QC Review Setup Verification:');
+    const qcReviews = db.prepare('SELECT COUNT(*) as count FROM asset_qc_reviews').get();
+    const qcAssets = db.prepare('SELECT COUNT(*) as count FROM assets WHERE qc_status IS NOT NULL').get();
+    console.log(`   ✓ QC Reviews: ${qcReviews.count}`);
+    console.log(`   ✓ Assets with QC Status: ${qcAssets.count}`);
+
     db.close();
 
     console.log('\n🎉 Production database initialization completed successfully!');
     console.log(`📁 Database location: ${dbPath}`);
     console.log('\n✨ Your application is ready for deployment!\n');
+    console.log('📋 QC Review Setup:');
+    console.log('   ✓ asset_qc_reviews table created');
+    console.log('   ✓ Sample QC reviews populated');
+    console.log('   ✓ Asset QC status properly configured');
+    console.log('   ✓ Ready for QC workflow testing\n');
 
 } catch (error) {
     console.error('❌ Error during database initialization:', error.message);
