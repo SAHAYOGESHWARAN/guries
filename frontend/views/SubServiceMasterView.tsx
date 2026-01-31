@@ -71,6 +71,12 @@ const SubServiceMasterView: React.FC = () => {
     const [assetSearch, setAssetSearch] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
 
+    // Reset filter state when editing item changes
+    React.useEffect(() => {
+        setAssetSearch('');
+        setRepositoryFilter('All');
+    }, [editingItem?.id]);
+
     const createInitialFormState = (): Partial<SubServiceItem> => ({
         sub_service_name: '', sub_service_code: '', slug: '', full_url: '',
         description: '', status: 'Draft', language: 'en',

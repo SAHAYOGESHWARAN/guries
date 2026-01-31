@@ -73,6 +73,12 @@ const ServiceMasterView: React.FC = () => {
     const [assetSearch, setAssetSearch] = useState('');
     const [repositoryFilter, setRepositoryFilter] = useState('All');
 
+    // Reset filter state when editing item changes
+    React.useEffect(() => {
+        setAssetSearch('');
+        setRepositoryFilter('All');
+    }, [editingItem?.id]);
+
     const createInitialFormState = (): Partial<Service> => ({
         service_name: '', service_code: '', slug: '', full_url: '',
         menu_heading: '', short_tagline: '',
@@ -178,7 +184,7 @@ const ServiceMasterView: React.FC = () => {
         // For new services (editingItem is null), show all assets
         // For existing services, filter out already linked assets
         const searchLower = assetSearch.toLowerCase().trim();
-        return libraryAssets
+        const filtered = libraryAssets
             .filter(a => {
                 // If editing existing item, check if asset is already linked
                 if (editingItem) {
@@ -198,6 +204,19 @@ const ServiceMasterView: React.FC = () => {
                 return name.includes(searchLower) || assetType.includes(searchLower) || repository.includes(searchLower);
             })
             .slice(0, 20); // Limit to show 20 results
+
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[ServiceMasterView] availableLibraryAssets:', {
+                total: libraryAssets.length,
+                filtered: filtered.length,
+                repositoryFilter,
+                assetSearch,
+                editingItemId: editingItem?.id
+            });
+        }
+
+        return filtered;
     }, [libraryAssets, editingItem, assetSearch, repositoryFilter]);
 
     // Legacy: Content Repository Assets (for backward compatibility)
