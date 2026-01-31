@@ -15,7 +15,7 @@ export const getAssets = async (req: Request, res: Response) => {
 };
 
 export const createAsset = async (req: Request, res: Response) => {
-    const { name, type, repository, linked_task, owner_id, usage_status, social_meta } = req.body;
+    const { name, type, repository, application_type, linked_task, owner_id, usage_status, social_meta, status, qc_status, linking_active } = req.body;
 
     // Validate required fields
     const errors = validateRequired(req.body, ['name', 'type']);
@@ -24,17 +24,36 @@ export const createAsset = async (req: Request, res: Response) => {
     try {
         const sanitized = sanitizeObject(req.body);
 
+        // Determine application_type from repository or application_type field
+        let appType = application_type;
+        if (!appType && repository) {
+            const repoMap: Record<string, string> = {
+                'Web': 'web',
+                'SEO': 'seo',
+                'SMM': 'smm',
+                'web': 'web',
+                'seo': 'seo',
+                'smm': 'smm'
+            };
+            appType = repoMap[repository] || 'web';
+        }
+        appType = appType || 'web'; // Default to web
+
         const sql = `INSERT INTO assets (
-            asset_name, asset_type, file_url, description, tags, social_meta, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
+            asset_name, asset_type, file_url, description, tags, social_meta, application_type, status, qc_status, linking_active, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
 
         const result = execute(sql, [
             sanitized.name,
             sanitized.type,
-            repository,
+            repository || '',
             '',
-            sanitized.repository,
-            JSON.stringify(social_meta || {})
+            sanitized.repository || '',
+            JSON.stringify(social_meta || {}),
+            appType,
+            status || 'Draft',
+            qc_status || 'Pending',
+            linking_active !== undefined ? linking_active : 1
         ]);
 
         // Fetch the created asset
@@ -52,10 +71,24 @@ export const createAsset = async (req: Request, res: Response) => {
 
 export const updateAsset = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { name, usage_status, linked_task, repository, type, social_meta } = req.body;
+    const { name, usage_status, linked_task, repository, type, social_meta, application_type, status, qc_status, linking_active } = req.body;
 
     try {
         const sanitized = sanitizeObject(req.body);
+
+        // Determine application_type from repository or application_type field
+        let appType = application_type;
+        if (!appType && repository) {
+            const repoMap: Record<string, string> = {
+                'Web': 'web',
+                'SEO': 'seo',
+                'SMM': 'smm',
+                'web': 'web',
+                'seo': 'seo',
+                'smm': 'smm'
+            };
+            appType = repoMap[repository] || null;
+        }
 
         const sql = `UPDATE assets SET 
             asset_name = COALESCE(?, asset_name), 
@@ -64,6 +97,10 @@ export const updateAsset = async (req: Request, res: Response) => {
             description = COALESCE(?, description),
             asset_type = COALESCE(?, asset_type),
             social_meta = COALESCE(?, social_meta),
+            application_type = COALESCE(?, application_type),
+            status = COALESCE(?, status),
+            qc_status = COALESCE(?, qc_status),
+            linking_active = COALESCE(?, linking_active),
             updated_at = datetime('now')
         WHERE id = ?`;
 
@@ -74,6 +111,10 @@ export const updateAsset = async (req: Request, res: Response) => {
             null,
             sanitized.type || null,
             JSON.stringify(social_meta || {}) || null,
+            appType || null,
+            status || null,
+            qc_status || null,
+            linking_active !== undefined ? linking_active : null,
             id
         ]);
 
