@@ -104,3 +104,5 @@ const startServer = (portToTry: number) => {
 connectDB().then(() => {
     startServer(PORT);
 });
+
+export { app, httpServer };
