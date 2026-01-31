@@ -71,7 +71,7 @@ const parseServiceRow = (row: any) => {
 
 // Helper function to parse JSON fields for sub-services
 const parseSubServiceRow = (row: any) => {
-    const jsonArrayFields = ['industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content', 'internal_links', 'external_links', 'image_alt_texts', 'secondary_persona_ids', 'linked_campaign_ids', 'linked_insights_ids', 'linked_assets_ids'];
+    const jsonArrayFields = ['industry_ids', 'country_ids', 'h2_list', 'h3_list', 'h4_list', 'h5_list', 'meta_keywords', 'focus_keywords', 'secondary_keywords', 'redirect_from_urls', 'faq_content', 'internal_links', 'external_links', 'image_alt_texts', 'secondary_persona_ids', 'linked_campaign_ids', 'linked_insights_ids', 'linked_assets_ids'];
     const jsonObjectFields = ['social_meta'];
 
     const parsed = { ...row };
