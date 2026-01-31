@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
         const assetTypes = db.prepare(`
             SELECT * FROM asset_type_master 
             WHERE status = 'active' 
-            ORDER BY brand, asset_type_name
+            ORDER BY asset_type_name
         `).all();
         db.close();
         res.json(assetTypes);
@@ -43,29 +43,29 @@ router.get('/brand/:brand', (req, res) => {
 // Create new asset type
 router.post('/', (req, res) => {
     try {
-        const { brand, asset_type_name, word_count } = req.body;
+        const { asset_type_name, word_count } = req.body;
 
-        if (!brand || !asset_type_name) {
-            return res.status(400).json({ error: 'Brand and asset type name are required' });
+        if (!asset_type_name) {
+            return res.status(400).json({ error: 'Asset type name is required' });
         }
 
         const db = new Database(dbPath);
 
-        // Check if asset type already exists for this brand
+        // Check if asset type already exists
         const existing = db.prepare(`
             SELECT id FROM asset_type_master 
-            WHERE brand = ? AND asset_type_name = ?
-        `).get(brand, asset_type_name);
+            WHERE asset_type_name = ?
+        `).get(asset_type_name);
 
         if (existing) {
             db.close();
-            return res.status(409).json({ error: 'Asset type already exists for this brand' });
+            return res.status(409).json({ error: 'Asset type already exists' });
         }
 
         const result = db.prepare(`
-            INSERT INTO asset_type_master (brand, asset_type_name, word_count)
-            VALUES (?, ?, ?)
-        `).run(brand, asset_type_name, word_count || 0);
+            INSERT INTO asset_type_master (asset_type_name, word_count)
+            VALUES (?, ?)
+        `).run(asset_type_name, word_count || 0);
 
         const newAssetType = db.prepare(`
             SELECT * FROM asset_type_master WHERE id = ?
@@ -83,15 +83,15 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const { brand, asset_type_name, word_count, status } = req.body;
+        const { asset_type_name, word_count, status } = req.body;
 
         const db = new Database(dbPath);
 
         const result = db.prepare(`
             UPDATE asset_type_master 
-            SET brand = ?, asset_type_name = ?, word_count = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            SET asset_type_name = ?, word_count = ?, status = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).run(brand, asset_type_name, word_count, status || 'active', id);
+        `).run(asset_type_name, word_count, status || 'active', id);
 
         if (result.changes === 0) {
             db.close();

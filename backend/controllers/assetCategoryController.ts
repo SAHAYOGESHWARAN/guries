@@ -166,7 +166,7 @@ export const getAssetsByRepository = async (req: Request, res: Response) => {
                 linked_sub_service_id,
                 linked_service_ids,
                 linked_sub_service_ids,
-                web_thumbnail as thumbnail_url,
+                COALESCE(og_image_url, web_thumbnail, file_url) as thumbnail_url,
                 web_url as url,
                 file_url,
                 og_image_url,
@@ -176,14 +176,15 @@ export const getAssetsByRepository = async (req: Request, res: Response) => {
                 grammar_score,
                 ai_plagiarism_score
             FROM assets
-            WHERE application_type = ? AND status IN ('Draft', 'Pending QC Review', 'Published')
+            WHERE application_type = ?
             ORDER BY created_at DESC
         `).all(appType) as any[];
 
         // Ensure repository field is set correctly based on application_type
         const assetsWithRepository = assets.map(asset => ({
             ...asset,
-            repository: repository as string // Use the requested repository name (Web, SEO, SMM)
+            repository: repository as string, // Use the requested repository name (Web, SEO, SMM)
+            thumbnail_url: asset.thumbnail_url || null // Ensure null instead of undefined
         }));
 
         console.log(`Found ${assetsWithRepository.length} assets for ${repository}`);

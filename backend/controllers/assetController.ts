@@ -222,25 +222,35 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 COALESCE((SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0) +
                 COALESCE((SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0) as usage_count
             FROM assets a
+            WHERE a.application_type IS NOT NULL AND a.application_type != ''
             ORDER BY a.created_at DESC
         `);
 
-        // Parse JSON arrays for linked IDs
-        const parsed = result.rows.map((row: any) => ({
-            ...row,
-            repository: row.repository || 'Content Repository',
-            usage_status: row.usage_status || 'Available',
-            workflow_stage: row.workflow_stage || 'Add',
-            usage_count: parseInt(row.usage_count) || 0,
-            linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
-            linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : [],
-            keywords: row.keywords ? JSON.parse(row.keywords) : [],
-            content_keywords: row.content_keywords ? JSON.parse(row.content_keywords) : [],
-            seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
-            web_h3_tags: row.web_h3_tags ? JSON.parse(row.web_h3_tags) : [],
-            resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],
-            version_history: row.version_history ? JSON.parse(row.version_history) : []
-        }));
+        // Parse JSON arrays for linked IDs and map application_type to repository
+        const parsed = result.rows.map((row: any) => {
+            // Map application_type to repository name
+            let repository = row.repository || 'Content Repository';
+            if (row.application_type === 'web') repository = 'Web';
+            else if (row.application_type === 'seo') repository = 'SEO';
+            else if (row.application_type === 'smm') repository = 'SMM';
+
+            return {
+                ...row,
+                repository,
+                usage_status: row.usage_status || 'Available',
+                workflow_stage: row.workflow_stage || 'Add',
+                usage_count: parseInt(row.usage_count) || 0,
+                thumbnail_url: row.thumbnail_url || null, // Ensure null instead of undefined
+                linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
+                linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : [],
+                keywords: row.keywords ? JSON.parse(row.keywords) : [],
+                content_keywords: row.content_keywords ? JSON.parse(row.content_keywords) : [],
+                seo_keywords: row.seo_keywords ? JSON.parse(row.seo_keywords) : [],
+                web_h3_tags: row.web_h3_tags ? JSON.parse(row.web_h3_tags) : [],
+                resource_files: row.resource_files ? JSON.parse(row.resource_files) : [],
+                version_history: row.version_history ? JSON.parse(row.version_history) : []
+            };
+        });
 
         res.status(200).json(parsed);
     } catch (error: any) {
@@ -338,6 +348,7 @@ id,
             repository: asset.repository || 'Content Repository',
             usage_status: asset.usage_status || 'Available',
             workflow_stage: asset.workflow_stage || 'Add',
+            thumbnail_url: asset.thumbnail_url || null, // Ensure null instead of undefined
             linked_service_ids: asset.linked_service_ids ? JSON.parse(asset.linked_service_ids) : [],
             linked_sub_service_ids: asset.linked_sub_service_ids ? JSON.parse(asset.linked_sub_service_ids) : [],
             keywords: asset.keywords ? JSON.parse(asset.keywords) : [],
@@ -813,6 +824,7 @@ export const getAssetsForQC = async (req: Request, res: Response) => {
         const parsed = result.rows.map(row => ({
             ...row,
             rework_count: row.rework_count || 0,
+            thumbnail_url: row.thumbnail_url || null, // Ensure null instead of undefined
             linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
             linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : []
         }));

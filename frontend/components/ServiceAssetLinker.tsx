@@ -24,45 +24,31 @@ const ServiceAssetLinker: React.FC<Props> = ({
     setRepositoryFilter,
     allAssets = []
 }) => {
-    const [repositories, setRepositories] = React.useState<string[]>(['All']);
-    const [displayedAssets, setDisplayedAssets] = React.useState<AssetLibraryItem[]>([]);
+    const [repositories, setRepositories] = React.useState<string[]>(['All', 'Web', 'SEO', 'SMM']);
     const [loading, setLoading] = React.useState(false);
 
-    // Fetch assets directly from API if not provided
+    // Initialize repositories on mount
     React.useEffect(() => {
-        const fetchAssets = async () => {
+        const fetchRepositories = async () => {
             try {
-                setLoading(true);
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+                const reposRes = await fetch(`${apiUrl}/asset-categories/repositories`);
 
-                // Fetch assets from API
-                const res = await fetch(`${apiUrl}/assetLibrary`);
-                if (res.ok) {
-                    const data = await res.json();
-                    const assets = Array.isArray(data) ? data : [];
-                    setDisplayedAssets(assets);
-
-                    // Extract unique repositories
-                    const repos = new Set(assets.map((a: any) => a.repository).filter(Boolean));
-                    setRepositories(['All', ...Array.from(repos)]);
-                } else {
-                    setRepositories(['All', 'Web', 'SEO', 'SMM']);
+                if (reposRes.ok) {
+                    const reposData = await reposRes.json();
+                    const repoNames = Array.isArray(reposData)
+                        ? reposData.map((r: any) => r.repository || r).filter(Boolean)
+                        : ['Web', 'SEO', 'SMM'];
+                    setRepositories(['All', ...repoNames]);
                 }
             } catch (error) {
-                console.error('Error fetching assets:', error);
+                console.error('Error fetching repositories:', error);
                 setRepositories(['All', 'Web', 'SEO', 'SMM']);
-            } finally {
-                setLoading(false);
             }
         };
 
-        // Only fetch if availableAssets is empty
-        if (availableAssets.length === 0 && allAssets.length === 0) {
-            fetchAssets();
-        } else if (availableAssets.length > 0) {
-            setDisplayedAssets(availableAssets);
-        }
-    }, [availableAssets, allAssets]);
+        fetchRepositories();
+    }, []);
     const getAssetTypeColor = (type: string) => {
         const colors: Record<string, string> = {
             'Image': 'bg-green-500',
@@ -82,6 +68,16 @@ const ServiceAssetLinker: React.FC<Props> = ({
         };
         return icons[type] || '📁';
     };
+
+    // Debug logging
+    React.useEffect(() => {
+        console.log('[ServiceAssetLinker] Props received:', {
+            availableAssets: availableAssets?.length || 0,
+            linkedAssets: linkedAssets?.length || 0,
+            totalAssets,
+            repositoryFilter
+        });
+    }, [availableAssets, linkedAssets, totalAssets, repositoryFilter]);
 
     return (
         <div className="space-y-6">
@@ -282,7 +278,7 @@ const ServiceAssetLinker: React.FC<Props> = ({
                                         <div className="h-full flex items-center justify-center">
                                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                                         </div>
-                                    ) : displayedAssets.length > 0 ? displayedAssets.map(asset => (
+                                    ) : (availableAssets && availableAssets.length > 0) ? availableAssets.map(asset => (
                                         <div
                                             key={asset.id}
                                             onClick={() => onToggle(asset)}

@@ -175,14 +175,17 @@ const ServiceMasterView: React.FC = () => {
     }, [libraryAssets, editingItem]);
 
     const availableLibraryAssets = useMemo(() => {
-        if (!editingItem) return [];
+        // For new services (editingItem is null), show all assets
+        // For existing services, filter out already linked assets
         const searchLower = assetSearch.toLowerCase().trim();
         return libraryAssets
             .filter(a => {
-                // Check if asset is not already linked
-                const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
-                const isLinked = links.map(String).includes(String(editingItem.id));
-                if (isLinked) return false;
+                // If editing existing item, check if asset is already linked
+                if (editingItem) {
+                    const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
+                    const isLinked = links.map(String).includes(String(editingItem.id));
+                    if (isLinked) return false;
+                }
 
                 // Check repository filter
                 if (repositoryFilter !== 'All' && a.repository !== repositoryFilter) return false;

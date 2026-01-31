@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
         const categories = db.prepare(`
             SELECT * FROM asset_category_master 
             WHERE status = 'active' 
-            ORDER BY brand, category_name
+            ORDER BY category_name
         `).all();
         db.close();
         res.json(categories);
@@ -22,50 +22,32 @@ router.get('/', (req, res) => {
     }
 });
 
-// Get categories by brand
-router.get('/brand/:brand', (req, res) => {
-    try {
-        const { brand } = req.params;
-        const db = new Database(dbPath);
-        const categories = db.prepare(`
-            SELECT * FROM asset_category_master 
-            WHERE brand = ? AND status = 'active' 
-            ORDER BY category_name
-        `).all(brand);
-        db.close();
-        res.json(categories);
-    } catch (error) {
-        console.error('Error fetching categories by brand:', error);
-        res.status(500).json({ error: 'Failed to fetch categories by brand' });
-    }
-});
-
 // Create new asset category
 router.post('/', (req, res) => {
     try {
-        const { brand, category_name, word_count } = req.body;
+        const { category_name, word_count } = req.body;
 
-        if (!brand || !category_name) {
-            return res.status(400).json({ error: 'Brand and category name are required' });
+        if (!category_name) {
+            return res.status(400).json({ error: 'Category name is required' });
         }
 
         const db = new Database(dbPath);
 
-        // Check if category already exists for this brand
+        // Check if category already exists
         const existing = db.prepare(`
             SELECT id FROM asset_category_master 
-            WHERE brand = ? AND category_name = ?
-        `).get(brand, category_name);
+            WHERE category_name = ?
+        `).get(category_name);
 
         if (existing) {
             db.close();
-            return res.status(409).json({ error: 'Category already exists for this brand' });
+            return res.status(409).json({ error: 'Category already exists' });
         }
 
         const result = db.prepare(`
-            INSERT INTO asset_category_master (brand, category_name, word_count)
-            VALUES (?, ?, ?)
-        `).run(brand, category_name, word_count || 0);
+            INSERT INTO asset_category_master (category_name, word_count)
+            VALUES (?, ?)
+        `).run(category_name, word_count || 0);
 
         const newCategory = db.prepare(`
             SELECT * FROM asset_category_master WHERE id = ?
@@ -83,15 +65,15 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const { brand, category_name, word_count, status } = req.body;
+        const { category_name, word_count, status } = req.body;
 
         const db = new Database(dbPath);
 
         const result = db.prepare(`
             UPDATE asset_category_master 
-            SET brand = ?, category_name = ?, word_count = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            SET category_name = ?, word_count = ?, status = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).run(brand, category_name, word_count, status || 'active', id);
+        `).run(category_name, word_count, status || 'active', id);
 
         if (result.changes === 0) {
             db.close();

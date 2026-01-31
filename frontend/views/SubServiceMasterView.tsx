@@ -116,7 +116,11 @@ const SubServiceMasterView: React.FC = () => {
         change_log_link: '',
         parent_service_id: undefined,
         breadcrumb_label: '',
-        strategic_notes: ''
+        strategic_notes: '',
+        // Linking Metadata
+        has_subservices: false,
+        featured_asset_id: undefined,
+        knowledge_topic_id: undefined
     });
 
     // Form State
@@ -149,6 +153,7 @@ const SubServiceMasterView: React.FC = () => {
         const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
         const matchesContentType = contentTypeFilter === 'All Types' || item.content_type === contentTypeFilter;
         const matchesBrand = brandFilter === 'All Brands' || (item.brand_id && brands.find(b => b.id === item.brand_id)?.name === brandFilter);
+        const matchesParentService = parentServiceFilter === 'All Parent Services' || item.parent_service_id === Number(parentServiceFilter);
 
         // Industry filter - check if any of the service's industry_ids match the selected industry
         const matchesIndustry = industryFilter === 'All Industries' ||
@@ -160,7 +165,7 @@ const SubServiceMasterView: React.FC = () => {
         // Sector filter - check business_unit field
         const matchesSector = sectorFilter === 'All Sectors' || item.business_unit === sectorFilter;
 
-        return matchesSearch && matchesStatus && matchesContentType && matchesBrand && matchesIndustry && matchesSector;
+        return matchesSearch && matchesStatus && matchesContentType && matchesBrand && matchesIndustry && matchesSector && matchesParentService;
     });
 
     // Linked and Available Assets from Asset Library
@@ -173,22 +178,25 @@ const SubServiceMasterView: React.FC = () => {
     }, [libraryAssets, editingItem]);
 
     const availableLibraryAssets = useMemo(() => {
-        if (!editingItem) return [];
+        // For new sub-services (editingItem is null), show all assets
+        // For existing sub-services, filter out already linked assets
         const searchLower = assetSearch.toLowerCase().trim();
 
         console.log('Filtering assets:', {
             total: libraryAssets.length,
             repositoryFilter,
             searchLower,
-            editingItemId: editingItem.id
+            editingItemId: editingItem?.id
         });
 
         return libraryAssets
             .filter(a => {
-                // Check if asset is not already linked
-                const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
-                const isLinked = links.map(String).includes(String(editingItem.id));
-                if (isLinked) return false;
+                // If editing existing item, check if asset is already linked
+                if (editingItem) {
+                    const links = Array.isArray(a.linked_service_ids) ? a.linked_service_ids : [];
+                    const isLinked = links.map(String).includes(String(editingItem.id));
+                    if (isLinked) return false;
+                }
 
                 // Check repository filter - handle both 'repository' and 'application_type' fields
                 const assetRepository = a.repository || a.application_type;
@@ -335,7 +343,11 @@ const SubServiceMasterView: React.FC = () => {
             primary_cta_url: item.primary_cta_url || '',
             parent_service_id: item.parent_service_id ?? undefined,
             breadcrumb_label: item.breadcrumb_label || '',
-            strategic_notes: item.strategic_notes || ''
+            strategic_notes: item.strategic_notes || '',
+            // Linking Metadata
+            has_subservices: item.has_subservices || false,
+            featured_asset_id: item.featured_asset_id ?? undefined,
+            knowledge_topic_id: item.knowledge_topic_id ?? undefined
         });
         setActiveTab('Core');
         setViewMode('form');
@@ -367,7 +379,11 @@ const SubServiceMasterView: React.FC = () => {
 
     const handleSlugChange = (val: string) => {
         const slug = val.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
-        setFormData(prev => ({ ...prev, slug, full_url: `/services/${slug}` }));
+        // Get parent service slug for URL generation
+        const parentService = services.find(s => s.id === formData.parent_service_id);
+        const parentSlug = parentService?.slug || 'service';
+        const fullUrl = `/services/${parentSlug}/${slug}`;
+        setFormData(prev => ({ ...prev, slug, full_url: fullUrl }));
     };
 
     const handleCopyFullUrl = () => {
@@ -648,6 +664,18 @@ const SubServiceMasterView: React.FC = () => {
                             ))}
                         </select>
                         <select
+                            value={contentTypeFilter}
+                            onChange={(e) => setContentTypeFilter(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="All Types">All Content Status</option>
+                            {availableContentTypes.map(ct => (
+                                <option key={ct.id} value={ct.content_type}>
+                                    {ct.content_type}
+                                </option>
+                            ))}
+                        </select>
+                        <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -671,6 +699,7 @@ const SubServiceMasterView: React.FC = () => {
                                 <th className="px-4 py-3 text-left">
                                     <input type="checkbox" className="rounded" />
                                 </th>
+                                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Service Code</th>
                                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Sub-Service Name</th>
                                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">Parent Service</th>
                                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700">URL Slug</th>
@@ -697,9 +726,11 @@ const SubServiceMasterView: React.FC = () => {
                                         <td className="px-4 py-3">
                                             <input type="checkbox" className="rounded" onClick={(e) => e.stopPropagation()} />
                                         </td>
+                                        <td className="px-4 py-3 text-sm font-mono text-slate-600">
+                                            {item.sub_service_code || '-'}
+                                        </td>
                                         <td className="px-4 py-3">
                                             <p className="font-semibold text-slate-900">{item.sub_service_name}</p>
-                                            <p className="text-xs text-slate-500">{item.sub_service_code}</p>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-slate-700">
                                             {getParentServiceName(item.parent_service_id)}

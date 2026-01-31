@@ -7,16 +7,18 @@ import {
     getAssetsByRepository,
     getRepositories
 } from '../controllers/assetCategoryController';
+import { asyncHandler } from '../middleware/errorHandler';
 
 const router = express.Router();
 
-router.get('/', getAssetCategories);
-router.post('/', createAssetCategory);
-router.put('/:id', updateAssetCategory);
-router.delete('/:id', deleteAssetCategory);
+// New endpoints for repository-based asset filtering (must come before /:id routes)
+router.get('/repositories', asyncHandler(getRepositories));
+router.get('/by-repository', asyncHandler(getAssetsByRepository));
 
-// New endpoints for repository-based asset filtering
-router.get('/repositories', getRepositories);
-router.get('/by-repository', getAssetsByRepository);
+// Standard CRUD endpoints
+router.get('/', asyncHandler(getAssetCategories));
+router.post('/', asyncHandler(createAssetCategory));
+router.put('/:id', asyncHandler(updateAssetCategory));
+router.delete('/:id', asyncHandler(deleteAssetCategory));
 
 export default router;

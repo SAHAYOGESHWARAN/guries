@@ -476,10 +476,8 @@ router.post('/asset-types', configController.createAssetType);
 router.put('/asset-types/:id', configController.updateAssetType);
 router.delete('/asset-types/:id', configController.deleteAssetType);
 
-router.get('/asset-categories', configController.getAssetCategories);
-router.post('/asset-categories', configController.createAssetCategory);
-router.put('/asset-categories/:id', configController.updateAssetCategory);
-router.delete('/asset-categories/:id', configController.deleteAssetCategory);
+// Asset categories are now handled by assetCategoryRoutes (see line 151)
+// Removed duplicate routes that were conflicting
 
 router.get('/platforms', configController.getPlatforms);
 router.post('/platforms', configController.createPlatform);
