@@ -34,17 +34,26 @@ module.exports = function handler(req, res) {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        let assetId = parseInt(req.query.assetId || req.body.assetId);
+        // Extract assetId from body (primary source)
+        let assetId = req.body?.assetId;
 
-        if (!assetId || isNaN(assetId)) {
+        // Fallback to query string
+        if (!assetId) {
+            assetId = req.query?.assetId;
+        }
+
+        // Fallback to URL path
+        if (!assetId) {
             const pathParts = (req.url || '').split('/');
             for (let i = 0; i < pathParts.length; i++) {
                 if (pathParts[i] === 'assetLibrary' && pathParts[i + 1]) {
-                    assetId = parseInt(pathParts[i + 1]);
-                    if (!isNaN(assetId)) break;
+                    assetId = pathParts[i + 1];
+                    break;
                 }
             }
         }
+
+        assetId = parseInt(assetId);
 
         if (!assetId || isNaN(assetId)) {
             return res.status(400).json({ error: 'Asset ID is required' });
@@ -52,19 +61,19 @@ module.exports = function handler(req, res) {
 
         const { qc_decision, user_role, qc_score, qc_remarks, qc_reviewer_id } = req.body;
 
-        if (user_role?.toLowerCase() !== 'admin') {
-            return res.status(403).json({ error: 'Admin only' });
+        if (!user_role || user_role.toLowerCase() !== 'admin') {
+            return res.status(403).json({ error: 'Admin role required' });
         }
 
-        if (!['approved', 'rejected', 'rework'].includes(qc_decision)) {
-            return res.status(400).json({ error: 'Invalid decision' });
+        if (!qc_decision || !['approved', 'rejected', 'rework'].includes(qc_decision)) {
+            return res.status(400).json({ error: 'Invalid or missing qc_decision' });
         }
 
         const assets = getAssets();
         const idx = assets.findIndex((a) => a.id === assetId);
 
         if (idx === -1) {
-            return res.status(404).json({ error: 'Asset not found' });
+            return res.status(404).json({ error: `Asset with ID ${assetId} not found` });
         }
 
         assets[idx] = {
