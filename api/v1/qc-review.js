@@ -18,7 +18,7 @@ function saveAssets(assets) {
 
 module.exports = function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-User-Role');
 
     if (req.method === 'OPTIONS') {
@@ -26,12 +26,25 @@ module.exports = function handler(req, res) {
     }
 
     try {
+        if (req.method === 'GET') {
+            return res.status(200).json(getAssets());
+        }
+
         if (req.method !== 'POST') {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        // Get asset ID from query parameter or body
-        const assetId = parseInt(req.query.assetId || req.body.assetId);
+        let assetId = parseInt(req.query.assetId || req.body.assetId);
+
+        if (!assetId || isNaN(assetId)) {
+            const pathParts = (req.url || '').split('/');
+            for (let i = 0; i < pathParts.length; i++) {
+                if (pathParts[i] === 'assetLibrary' && pathParts[i + 1]) {
+                    assetId = parseInt(pathParts[i + 1]);
+                    if (!isNaN(assetId)) break;
+                }
+            }
+        }
 
         if (!assetId || isNaN(assetId)) {
             return res.status(400).json({ error: 'Asset ID is required' });
@@ -39,12 +52,10 @@ module.exports = function handler(req, res) {
 
         const { qc_decision, user_role, qc_score, qc_remarks, qc_reviewer_id } = req.body;
 
-        // Validate admin role
         if (user_role?.toLowerCase() !== 'admin') {
             return res.status(403).json({ error: 'Admin only' });
         }
 
-        // Validate QC decision
         if (!['approved', 'rejected', 'rework'].includes(qc_decision)) {
             return res.status(400).json({ error: 'Invalid decision' });
         }
@@ -56,7 +67,6 @@ module.exports = function handler(req, res) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
-        // Update asset status
         assets[idx] = {
             ...assets[idx],
             status: qc_decision === 'approved' ? 'QC Approved' : qc_decision === 'rejected' ? 'QC Rejected' : 'Rework Required',
