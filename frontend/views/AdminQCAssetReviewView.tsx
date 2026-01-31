@@ -212,7 +212,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
         setSubmitting(true);
         try {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
-            const response = await fetch(`${apiUrl}/qc-review`, {
+            const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -220,7 +220,6 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                     'X-User-Role': user.role
                 },
                 body: JSON.stringify({
-                    assetId: selectedAsset.id,
                     qc_score: qcScore || 0,
                     qc_remarks: qcRemarks || '',
                     qc_decision: decision,
@@ -245,9 +244,12 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                 handleRefresh();
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                alert(`Error: ${errorData.error || 'Failed to submit QC review'}`);
+                const errorMessage = errorData.error || 'Failed to submit QC review';
+                console.error('QC Submit error:', errorData);
+                alert(`Error: ${errorMessage}`);
             }
         } catch (error: any) {
+            console.error('QC Submit error:', error);
             alert(`Failed to submit QC review: ${error.message || 'Network error'}`);
         } finally {
             setSubmitting(false);
