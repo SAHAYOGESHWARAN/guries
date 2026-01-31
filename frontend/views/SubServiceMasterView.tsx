@@ -2020,16 +2020,80 @@ Lists:
                                     </div>
 
                                     <div className="p-5 rounded-xl border border-slate-200 bg-blue-50 space-y-4 lg:col-span-3">
-                                        <KeywordSelector
-                                            keywords={keywordsMaster}
-                                            selectedKeywords={formData.meta_keywords || []}
-                                            onSelect={(keyword) => addToList('meta_keywords', keyword)}
-                                            onRemove={(keyword) => removeFromList('meta_keywords', formData.meta_keywords?.indexOf(keyword) || 0)}
-                                            label="Meta Keywords"
-                                            description="Keywords for search engine metadata - linked with Keyword Master"
-                                            placeholder="Search keywords from master list..."
-                                            maxKeywords={10}
-                                        />
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-[11px] font-bold uppercase tracking-wide text-blue-700">Meta Keywords</label>
+                                                <span className="text-[10px] font-mono px-2 py-1 rounded-full bg-blue-100 text-blue-600">
+                                                    {(formData.meta_keywords || []).length} keywords
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-600 mb-3">Keywords for search engine metadata - linked with Keyword Master</p>
+
+                                            {/* Display selected meta keywords */}
+                                            <div className="mb-4 flex flex-wrap gap-2">
+                                                {(formData.meta_keywords || []).map((keyword, idx) => (
+                                                    <div key={idx} className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                        <span>{keyword}</span>
+                                                        <button
+                                                            onClick={() => removeFromList('meta_keywords', idx)}
+                                                            className="text-blue-600 hover:text-blue-800 font-bold"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Add new meta keyword */}
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={tempKeyword}
+                                                    onChange={(e) => setTempKeyword(e.target.value)}
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === 'Enter' && tempKeyword.trim()) {
+                                                            addToList('meta_keywords', tempKeyword.trim());
+                                                            setTempKeyword('');
+                                                        }
+                                                    }}
+                                                    placeholder="Type keyword and press Enter..."
+                                                    className="flex-1 px-4 py-2 border-2 border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        if (tempKeyword.trim()) {
+                                                            addToList('meta_keywords', tempKeyword.trim());
+                                                            setTempKeyword('');
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                                                >
+                                                    Add
+                                                </button>
+                                            </div>
+
+                                            {/* Keyword suggestions from master */}
+                                            {keywordsMaster.length > 0 && (
+                                                <div className="mt-4 pt-4 border-t border-blue-200">
+                                                    <p className="text-xs font-bold text-slate-600 mb-2">Suggested from Keyword Master:</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {keywordsMaster.slice(0, 8).map((kw, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() => {
+                                                                    if (!(formData.meta_keywords || []).includes(kw.keyword)) {
+                                                                        addToList('meta_keywords', kw.keyword);
+                                                                    }
+                                                                }}
+                                                                className="text-xs px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition-colors"
+                                                            >
+                                                                + {kw.keyword}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -2226,6 +2290,44 @@ Lists:
                             {/* --- TAB: LINKING (ASSETS) --- */}
                             {activeTab === 'Linking' && (
                                 <div className="space-y-10">
+                                    {/* LINKING FILTERS - TOP */}
+                                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border-2 border-indigo-200 p-6">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="text-2xl">🔗</span>
+                                            <h4 className="text-lg font-bold text-indigo-900">Asset Linking Filters</h4>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-700 uppercase mb-2">Repository Type</label>
+                                                <select
+                                                    value={repositoryFilter}
+                                                    onChange={(e) => setRepositoryFilter(e.target.value)}
+                                                    className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="All">All Repositories</option>
+                                                    <option value="Web">🌐 Web Assets</option>
+                                                    <option value="SEO">🔍 SEO Assets</option>
+                                                    <option value="SMM">📱 Social Media Assets</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-700 uppercase mb-2">Search Assets</label>
+                                                <input
+                                                    type="text"
+                                                    value={assetSearch}
+                                                    onChange={(e) => setAssetSearch(e.target.value)}
+                                                    placeholder="Search by name, type..."
+                                                    className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                />
+                                            </div>
+                                            <div className="flex items-end">
+                                                <div className="w-full bg-white rounded-lg border-2 border-indigo-200 px-4 py-2 text-sm font-bold text-indigo-600">
+                                                    📊 {availableLibraryAssets.length} assets available
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* 1. ASSET LIBRARY MANAGEMENT - FIRST */}
                                     <ServiceAssetLinker
                                         linkedAssets={linkedLibraryAssets}
