@@ -4,15 +4,19 @@
     "outputDirectory": "frontend/dist",
     "framework": "vite",
     "functions": {
-        "api/**/*.ts": {
+        "api/**/*.js": {
             "runtime": "@vercel/node@3.2.0",
-            "maxDuration": 30
+            "maxDuration": 30,
+            "memory": 1024
         }
     },
     "build": {
         "env": {
             "NODE_VERSION": "20"
         }
+    },
+    "env": {
+        "NODE_ENV": "production"
     },
     "rewrites": [
         {
