@@ -8,16 +8,17 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
 import migrationRoutes from './routes/migration';
-import { db, initDatabase } from './config/db-sqlite';
+import { pool } from './config/db';
 import { initSocket } from './socket';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { initializeDatabase, seedDatabase } from './database/init';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
-const PORT = parseInt(process.env.PORT || '3003', 10);
+const PORT = parseInt(process.env.PORT || process.env.API_PORT || '3001', 10);
 
 // Setup Socket.io
 const io = initSocket(httpServer, {
@@ -31,20 +32,29 @@ const io = initSocket(httpServer, {
 // Middleware
 app.use(helmet() as any);
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true
 }));
 app.use(morgan('dev') as any);
-app.use(express.json({ limit: '100mb' }) as any); // Increased limit for file uploads
+app.use(express.json({ limit: '100mb' }) as any);
 app.use(express.urlencoded({ limit: '100mb', extended: true }) as any);
 
-// Initialize SQLite Database
+// Initialize PostgreSQL Database
 const connectDB = async () => {
     try {
-        initDatabase();
-        console.log('✅ Connected to SQLite Database');
-    } catch (err) {
-        console.error('❌ Database initialization failed:', err);
+        // Test connection
+        const result = await pool.query('SELECT NOW()');
+        console.log('✅ Connected to PostgreSQL Database');
+
+        // Initialize schema on first run
+        if (process.env.NODE_ENV !== 'production' || process.env.INIT_DB === 'true') {
+            console.log('🔄 Initializing database schema...');
+            await initializeDatabase();
+            await seedDatabase();
+            console.log('✅ Database schema initialized');
+        }
+    } catch (err: any) {
+        console.error('❌ Database initialization failed:', err.message);
         (process as any).exit(1);
     }
 };
@@ -128,7 +138,7 @@ const gracefulShutdown = () => {
             (io as any).close();
         }
         if (db && typeof (db as any).close === 'function') {
-            try { (db as any).close(); } catch {}
+            try { (db as any).close(); } catch { }
         }
     } catch (e) {
         // ignore errors during shutdown
