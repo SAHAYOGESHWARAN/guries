@@ -345,7 +345,7 @@ const PerformanceTargetConfigView: React.FC = () => {
                                 <div>
                                     <label className="flex items-center mt-2">
                                         <input type="checkbox" checked={formData.trigger_alert_70_percent} onChange={(e) => setFormData({ ...formData, trigger_alert_70_percent: e.target.checked })} className="rounded" />
-                                        <span className="ml-2 text-sm">Trigger alert if < 70% of Target achieved</span>
+                                        <span className="ml-2 text-sm">Trigger alert if &lt; 70% of Target achieved</span>
                                     </label>
                                 </div>
                                 <div>
