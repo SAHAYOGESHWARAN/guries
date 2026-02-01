@@ -46,15 +46,19 @@ const connectDB = async () => {
         const result = await pool.query('SELECT NOW()');
         console.log('✅ Connected to PostgreSQL Database');
 
-        // Initialize schema on startup
-        if (process.env.NODE_ENV !== 'production' || process.env.INIT_DB === 'true') {
-            console.log('🔄 Initializing database schema...');
-            await initializeDatabase();
-            await seedDatabase();
-            console.log('✅ Database schema initialized');
+        // Initialize schema on startup (development only)
+        if (process.env.NODE_ENV !== 'production') {
+            try {
+                console.log('🔄 Initializing database schema...');
+                await initializeDatabase();
+                await seedDatabase();
+                console.log('✅ Database schema initialized');
+            } catch (error: any) {
+                console.warn('⚠️  Database initialization skipped:', error.message);
+            }
         }
     } catch (err: any) {
-        console.error('❌ Database initialization failed:', err.message);
+        console.error('❌ Database connection failed:', err.message);
         (process as any).exit(1);
     }
 };
