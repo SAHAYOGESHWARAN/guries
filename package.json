@@ -2,8 +2,8 @@
   "name": "guires-marketing-control-center",
   "private": true,
   "version": "2.5.0",
-  "engines": {
-    "node": "20.x"
+    "engines": {
+    "node": "24.x"
   },
   "scripts": {
     "setup": "node setup-env.js",
