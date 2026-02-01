@@ -24,9 +24,11 @@ export const initializeDatabase = async () => {
             try {
                 await pool.query(statement);
             } catch (error: any) {
-                // Ignore "already exists" errors
-                if (!error.message.includes('already exists')) {
-                    console.error('Error executing statement:', error.message);
+                // Ignore errors that are benign for existing databases
+                const msg = (error && error.message) ? error.message : '';
+                const ignorable = msg.includes('already exists') || msg.includes('no such column') || msg.includes('no such table');
+                if (!ignorable) {
+                    console.error('Error executing statement:', msg);
                 }
             }
         }

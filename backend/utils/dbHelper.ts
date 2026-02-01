@@ -16,9 +16,10 @@ export interface QueryResult<T = any> {
 export const query = async <T = any>(sql: string, params: any[] = []): Promise<QueryResult<T>> => {
     try {
         const result = await pool.query(sql, params);
+        const rowCount = (result && (result as any).rowCount) ?? (result && (result as any).info && (result as any).info.changes) ?? (result && (result as any).rows ? (result as any).rows.length : 0);
         return {
-            rows: result.rows as T[],
-            rowCount: result.rowCount || 0
+            rows: (result.rows as T[]) || [],
+            rowCount
         };
     } catch (error: any) {
         console.error('Database query error:', error.message, { sql, params });
@@ -32,9 +33,11 @@ export const query = async <T = any>(sql: string, params: any[] = []): Promise<Q
 export const execute = async (sql: string, params: any[] = []): Promise<{ changes: number; lastID?: number }> => {
     try {
         const result = await pool.query(sql, params);
+        const changes = (result && (result as any).rowCount) ?? (result && (result as any).info && (result as any).info.changes) ?? 0;
+        const lastID = (result && (result as any).info && ((result as any).info.lastInsertRowid || (result as any).info.lastInsertId)) ?? result.rows?.[0]?.id;
         return {
-            changes: result.rowCount || 0,
-            lastID: result.rows[0]?.id
+            changes,
+            lastID
         };
     } catch (error: any) {
         console.error('Database execute error:', error.message, { sql, params });

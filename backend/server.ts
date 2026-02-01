@@ -42,9 +42,15 @@ app.use(express.urlencoded({ limit: '100mb', extended: true }) as any);
 // Initialize PostgreSQL Database
 const connectDB = async () => {
     try {
-        // Test connection
-        const result = await pool.query('SELECT NOW()');
-        console.log('✅ Connected to PostgreSQL Database');
+        // Test connection - try Postgres-style first, then fall back to SQLite-compatible query
+        try {
+            await pool.query('SELECT NOW()');
+            console.log('✅ Connected to database (Postgres)');
+        } catch (pgErr) {
+            // Fallback for SQLite
+            await pool.query("SELECT datetime('now')");
+            console.log('✅ Connected to database (SQLite)');
+        }
 
         // Initialize schema on startup (development only)
         if (process.env.NODE_ENV !== 'production') {
@@ -94,6 +100,10 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Backwards-compatible health route used by diagnostics and frontend
+app.get('/api/v1/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 // 404 Handler
 app.use(notFoundHandler);
 
