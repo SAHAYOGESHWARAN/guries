@@ -58,6 +58,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         if (req.method === 'GET') {
             if (!getAssetQCReviews) {
+                // If backend controller not present (e.g. on Vercel), proxy to external backend if configured
+                const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL;
+                if (BACKEND_URL) {
+                    const proxied = await fetch(`${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`, {
+                        method: 'GET',
+                        headers: req.headers as any
+                    });
+                    const text = await proxied.text();
+                    res.status(proxied.status).send(text);
+                    return;
+                }
                 return res.status(501).json({ error: 'Backend controller unavailable' });
             }
             await getAssetQCReviews(expressReq, expressRes);
@@ -66,6 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (req.method === 'POST') {
             if (!reviewAsset) {
+                // Proxy POST to external backend if available
+                const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL;
+                if (BACKEND_URL) {
+                    // Forward headers and body
+                    const proxied = await fetch(`${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`, {
+                        method: 'POST',
+                        headers: Object.assign({}, req.headers, { 'content-type': req.headers['content-type'] || 'application/json' }) as any,
+                        body: req.body && Object.keys(req.body).length ? JSON.stringify(req.body) : undefined
+                    });
+                    const text = await proxied.text();
+                    res.status(proxied.status).send(text);
+                    return;
+                }
                 return res.status(501).json({ error: 'Backend controller unavailable' });
             }
 

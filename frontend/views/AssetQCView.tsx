@@ -241,7 +241,11 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Id': String(user.id),
+                    'X-User-Role': user.role
+                },
                 body: JSON.stringify({
                     qc_score: qcScore || 0,
                     qc_remarks: qcRemarks || '',

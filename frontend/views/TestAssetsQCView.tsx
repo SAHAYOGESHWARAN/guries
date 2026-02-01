@@ -161,7 +161,9 @@ const TestAssetsQCView: React.FC = () => {
             const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-User-Id': String(user.id),
+                    'X-User-Role': user.role
                 },
                 body: JSON.stringify({
                     qc_score: qcData.qc_score || 0,
