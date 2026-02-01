@@ -5,18 +5,7 @@
     "env": {
         "NODE_ENV": "production"
     },
-    "functions": {
-        "api/**/*.ts": {
-            "runtime": "nodejs20.x",
-            "memory": 1024,
-            "maxDuration": 30
-        }
-    },
     "rewrites": [
-        {
-            "source": "/api/v1/(.*)",
-            "destination": "/api/v1/$1"
-        },
         {
             "source": "/((?!api|_next/static|_next/image|favicon.ico).*)",
             "destination": "/index.html"
