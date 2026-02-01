@@ -1,10 +1,12 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-User-Id, X-User-Role');
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -13,22 +15,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const assetId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
 
-    // Try to load the compiled backend controller at runtime to avoid TypeScript cross-package import issues
+    // Resolve the compiled backend controller path robustly
+    const controllerRel = '../../../../backend/dist/controllers/assetController.js';
+    const controllerPath = path.resolve(__dirname, controllerRel);
+
     let reviewAsset: any = null;
     let getAssetQCReviews: any = null;
-    try {
-        // Path from this file to compiled backend controller
-        // (api/v1/assetLibrary/[id] -> ../../../../backend/dist/controllers/assetController.js)
-        // Use require so TS doesn't try to type-check the import at compile time
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const mod: any = require('../../../../backend/dist/controllers/assetController.js');
-        reviewAsset = mod.reviewAsset || (mod.default && mod.default.reviewAsset) || mod.default;
-        getAssetQCReviews = mod.getAssetQCReviews || (mod.default && mod.default.getAssetQCReviews) || mod.default;
-    } catch (err) {
-        console.error('Failed to require backend controller:', err);
+
+    if (fs.existsSync(controllerPath)) {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const mod: any = require(controllerPath);
+            // Support both named exports and default exports
+            reviewAsset = mod.reviewAsset || (mod.default && mod.default.reviewAsset) || mod.default;
+            getAssetQCReviews = mod.getAssetQCReviews || (mod.default && mod.default.getAssetQCReviews) || mod.default;
+        } catch (err) {
+            console.error('Error requiring backend controller at', controllerPath, err);
+        }
+    } else {
+        console.warn('Backend controller not found at', controllerPath);
     }
 
-    // Adapt Vercel request/response to Express-style objects expected by backend controllers
     const expressReq: any = {
         params: { id: assetId },
         body: req.body || {},
@@ -51,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         if (req.method === 'GET') {
             if (!getAssetQCReviews) {
-                return res.status(500).json({ error: 'Backend controller not available' });
+                return res.status(501).json({ error: 'Backend controller unavailable' });
             }
             await getAssetQCReviews(expressReq, expressRes);
             return;
@@ -59,10 +66,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (req.method === 'POST') {
             if (!reviewAsset) {
-                return res.status(500).json({ error: 'Backend controller not available' });
+                return res.status(501).json({ error: 'Backend controller unavailable' });
             }
 
-            // Merge headers into body for role detection if provided by frontend
+            // Allow frontend-sent headers to seed reviewer info if not included in body
             if (!expressReq.body.user_role && req.headers['x-user-role']) {
                 expressReq.body.user_role = Array.isArray(req.headers['x-user-role']) ? req.headers['x-user-role'][0] : req.headers['x-user-role'];
             }
