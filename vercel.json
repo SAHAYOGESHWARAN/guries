@@ -1,14 +1,24 @@
 {
     "version": 2,
-    "buildCommand": "cd frontend && npm install && npm run build",
-    "outputDirectory": "frontend/dist",
+    "buildCommand": "npm run build:all",
     "framework": "vite",
     "env": {
         "NODE_ENV": "production"
     },
+    "functions": {
+        "api/**/*.ts": {
+            "runtime": "nodejs20.x",
+            "memory": 1024,
+            "maxDuration": 30
+        }
+    },
     "rewrites": [
         {
-            "source": "/((?!api).*)",
+            "source": "/api/v1/(.*)",
+            "destination": "/api/v1/$1"
+        },
+        {
+            "source": "/((?!api|_next/static|_next/image|favicon.ico).*)",
             "destination": "/index.html"
         }
     ],
@@ -30,7 +40,7 @@
                 },
                 {
                     "key": "Access-Control-Allow-Headers",
-                    "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+                    "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
                 }
             ]
         }
