@@ -8,7 +8,7 @@ import { getSocket } from '../socket';
 export const getAssets = async (req: Request, res: Response) => {
     try {
         const result = query('SELECT * FROM assets ORDER BY created_at DESC');
-        res.status(200).json(result.rows);
+        res.status(200).json((await result).rows);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -59,7 +59,7 @@ export const createAsset = async (req: Request, res: Response) => {
         // Fetch the created asset
         const newAsset = queryOne(
             'SELECT * FROM assets WHERE id = ?',
-            [result.lastID]
+            [(await result).lastID]
         );
 
         getSocket().emit('asset_created', newAsset);

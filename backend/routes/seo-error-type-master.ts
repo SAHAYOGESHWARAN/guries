@@ -19,14 +19,14 @@ const PREDEFINED_ERROR_TYPES = [
 ];
 
 // Get all SEO error types
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const errorTypes = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM seo_error_type_master
       ORDER BY error_type
-    `).all();
+    `);
 
-        res.json(errorTypes);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching SEO error types:', error);
         res.status(500).json({ error: 'Failed to fetch SEO error types' });
@@ -34,13 +34,15 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Get SEO error type by ID
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const errorType = db.prepare(`
-      SELECT * FROM seo_error_type_master WHERE id = ?
-    `).get(id);
+        const result = await pool.query(`
+      SELECT * FROM seo_error_type_master WHERE id = $1
+    `, [id]);
+
+        const errorType = result.rows[0];
 
         if (!errorType) {
             return res.status(404).json({ error: 'SEO error type not found' });
@@ -54,7 +56,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // Create new SEO error type
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
         const {
             error_type,
@@ -79,7 +81,7 @@ router.post('/', (req: Request, res: Response) => {
         }
 
         // Insert error type
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO seo_error_type_master (
         error_type,
         category,
@@ -87,17 +89,18 @@ router.post('/', (req: Request, res: Response) => {
         description,
         status
       )
-      VALUES (?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [
             error_type,
             category,
             severity_level,
             description,
             status || 'active'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             error_type,
             category,
             severity_level,
@@ -117,7 +120,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // Update SEO error type
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const {
@@ -143,26 +146,26 @@ router.put('/:id', (req: Request, res: Response) => {
         }
 
         // Update error type
-        const result = db.prepare(`
+        const result = await pool.query(`
       UPDATE seo_error_type_master
       SET
-        error_type = ?,
-        category = ?,
-        severity_level = ?,
-        description = ?,
-        status = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(
+        error_type = $1,
+        category = $2,
+        severity_level = $3,
+        description = $4,
+        status = $5,
+        updated_at = NOW()
+      WHERE id = $6
+    `, [
             error_type,
             category,
             severity_level,
             description,
             status || 'active',
             id
-        );
+        ]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'SEO error type not found' });
         }
 
@@ -179,13 +182,13 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // Delete SEO error type
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const result = db.prepare('DELETE FROM seo_error_type_master WHERE id = ?').run(id);
+        const result = await pool.query('DELETE FROM seo_error_type_master WHERE id = $1', [id]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'SEO error type not found' });
         }
 
@@ -207,17 +210,17 @@ router.get('/list/predefined', (req: Request, res: Response) => {
 });
 
 // Get error types by category
-router.get('/category/:category', (req: Request, res: Response) => {
+router.get('/category/:category', async (req: Request, res: Response) => {
     try {
         const { category } = req.params;
 
-        const errorTypes = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM seo_error_type_master
-      WHERE category = ?
+      WHERE category = $1
       ORDER BY error_type
-    `).all(category);
+    `, [category]);
 
-        res.json(errorTypes);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching error types by category:', error);
         res.status(500).json({ error: 'Failed to fetch error types' });
@@ -225,17 +228,17 @@ router.get('/category/:category', (req: Request, res: Response) => {
 });
 
 // Get error types by severity
-router.get('/severity/:severity', (req: Request, res: Response) => {
+router.get('/severity/:severity', async (req: Request, res: Response) => {
     try {
         const { severity } = req.params;
 
-        const errorTypes = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM seo_error_type_master
-      WHERE severity_level = ?
+      WHERE severity_level = $1
       ORDER BY error_type
-    `).all(severity);
+    `, [severity]);
 
-        res.json(errorTypes);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching error types by severity:', error);
         res.status(500).json({ error: 'Failed to fetch error types' });
@@ -243,14 +246,14 @@ router.get('/severity/:severity', (req: Request, res: Response) => {
 });
 
 // Get available categories
-router.get('/list/categories', (req: Request, res: Response) => {
+router.get('/list/categories', async (req: Request, res: Response) => {
     try {
-        const categories = db.prepare(`
+        const result = await pool.query(`
       SELECT DISTINCT category FROM seo_error_type_master
       ORDER BY category
-    `).all() as any[];
+    `);
 
-        res.json(categories.map(c => c.category));
+        res.json(result.rows.map((c: any) => c.category));
     } catch (error) {
         console.error('Error fetching categories:', error);
         res.status(500).json({ error: 'Failed to fetch categories' });

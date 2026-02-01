@@ -104,9 +104,6 @@ export const createTaskSuggestion = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to create task suggestion' });
     }
 };
-res.status(500).json({ error: 'Failed to create task suggestion' });
-    }
-};
 
 // Accept task suggestion
 export const acceptTaskSuggestion = async (req: Request, res: Response) => {

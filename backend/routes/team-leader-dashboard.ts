@@ -4,17 +4,17 @@ import { pool } from "../config/db";
 const router = express.Router();
 
 // Get team workload distribution
-router.get('/workload-distribution/:teamId', (req: Request, res: Response) => {
+router.get('/workload-distribution/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const distribution = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM team_workload_distribution
-      WHERE team_id = ?
+      WHERE team_id = $1
       ORDER BY workload_percentage DESC
-    `).all(teamId);
+    `, [teamId]);
 
-        res.json(distribution);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching workload distribution:', error);
         res.status(500).json({ error: 'Failed to fetch workload distribution' });
@@ -22,15 +22,15 @@ router.get('/workload-distribution/:teamId', (req: Request, res: Response) => {
 });
 
 // Get team capacity analysis
-router.get('/capacity-analysis/:teamId', (req: Request, res: Response) => {
+router.get('/capacity-analysis/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const analysis = db.prepare(`
-      SELECT * FROM team_capacity_analysis WHERE team_id = ?
-    `).get(teamId);
+        const result = await pool.query(`
+      SELECT * FROM team_capacity_analysis WHERE team_id = $1
+    `, [teamId]);
 
-        res.json(analysis || {});
+        res.json(result.rows[0] || {});
     } catch (error) {
         console.error('Error fetching capacity analysis:', error);
         res.status(500).json({ error: 'Failed to fetch capacity analysis' });
@@ -38,17 +38,17 @@ router.get('/capacity-analysis/:teamId', (req: Request, res: Response) => {
 });
 
 // Get campaign overview
-router.get('/campaigns/:teamId', (req: Request, res: Response) => {
+router.get('/campaigns/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const campaigns = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM campaign_overview
-      WHERE team_id = ?
+      WHERE team_id = $1
       ORDER BY progress_percentage DESC
-    `).all(teamId);
+    `, [teamId]);
 
-        res.json(campaigns);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching campaigns:', error);
         res.status(500).json({ error: 'Failed to fetch campaigns' });
@@ -56,17 +56,17 @@ router.get('/campaigns/:teamId', (req: Request, res: Response) => {
 });
 
 // Get task status distribution
-router.get('/task-status/:teamId', (req: Request, res: Response) => {
+router.get('/task-status/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const distribution = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM task_status_distribution
-      WHERE team_id = ?
+      WHERE team_id = $1
       ORDER BY task_count DESC
-    `).all(teamId);
+    `, [teamId]);
 
-        res.json(distribution);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching task status distribution:', error);
         res.status(500).json({ error: 'Failed to fetch task status distribution' });
@@ -74,18 +74,18 @@ router.get('/task-status/:teamId', (req: Request, res: Response) => {
 });
 
 // Get team performance trend
-router.get('/performance-trend/:teamId', (req: Request, res: Response) => {
+router.get('/performance-trend/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const trend = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM team_performance_trend
-      WHERE team_id = ?
+      WHERE team_id = $1
       ORDER BY date_recorded DESC
       LIMIT 30
-    `).all(teamId);
+    `, [teamId]);
 
-        res.json(trend);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching performance trend:', error);
         res.status(500).json({ error: 'Failed to fetch performance trend' });
@@ -93,17 +93,17 @@ router.get('/performance-trend/:teamId', (req: Request, res: Response) => {
 });
 
 // Get team member performance
-router.get('/member-performance/:teamId', (req: Request, res: Response) => {
+router.get('/member-performance/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const performance = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM team_member_performance
-      WHERE team_id = ?
+      WHERE team_id = $1
       ORDER BY completion_rate DESC
-    `).all(teamId);
+    `, [teamId]);
 
-        res.json(performance);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching member performance:', error);
         res.status(500).json({ error: 'Failed to fetch member performance' });
@@ -111,25 +111,27 @@ router.get('/member-performance/:teamId', (req: Request, res: Response) => {
 });
 
 // Get task assignment history
-router.get('/task-history/:teamId', (req: Request, res: Response) => {
+router.get('/task-history/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
         const { status, limit } = req.query;
 
-        let query = 'SELECT * FROM task_assignment_history WHERE team_id = ?';
+        let query = 'SELECT * FROM task_assignment_history WHERE team_id = $1';
         const params: any[] = [teamId];
+        let paramIndex = 2;
 
         if (status) {
-            query += ' AND status = ?';
+            query += ` AND status = $${paramIndex}`;
             params.push(status);
+            paramIndex++;
         }
 
-        query += ' ORDER BY assigned_date DESC LIMIT ?';
+        query += ` ORDER BY assigned_date DESC LIMIT $${paramIndex}`;
         params.push(parseInt(limit as string) || 50);
 
-        const history = db.prepare(query).all(...params);
+        const result = await pool.query(query, params);
 
-        res.json(history);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching task history:', error);
         res.status(500).json({ error: 'Failed to fetch task history' });
@@ -137,18 +139,18 @@ router.get('/task-history/:teamId', (req: Request, res: Response) => {
 });
 
 // Get team capacity forecast
-router.get('/capacity-forecast/:teamId', (req: Request, res: Response) => {
+router.get('/capacity-forecast/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
 
-        const forecast = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM team_capacity_forecast
-      WHERE team_id = ?
+      WHERE team_id = $1
       ORDER BY forecast_date DESC
       LIMIT 30
-    `).all(teamId);
+    `, [teamId]);
 
-        res.json(forecast);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching capacity forecast:', error);
         res.status(500).json({ error: 'Failed to fetch capacity forecast' });
@@ -156,7 +158,7 @@ router.get('/capacity-forecast/:teamId', (req: Request, res: Response) => {
 });
 
 // Create workload distribution entry
-router.post('/workload-distribution', (req: Request, res: Response) => {
+router.post('/workload-distribution', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -175,13 +177,14 @@ router.post('/workload-distribution', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and member ID are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO team_workload_distribution (
         team_id, team_name, member_id, member_name, total_tasks,
         completed_tasks, pending_tasks, overdue_tasks, workload_percentage, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id
+    `, [
             team_id,
             team_name || null,
             member_id,
@@ -192,10 +195,10 @@ router.post('/workload-distribution', (req: Request, res: Response) => {
             overdue_tasks || 0,
             workload_percentage || 0,
             status || 'Normal'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Workload distribution entry created successfully'
         });
     } catch (error: any) {
@@ -208,7 +211,7 @@ router.post('/workload-distribution', (req: Request, res: Response) => {
 });
 
 // Update workload distribution
-router.put('/workload-distribution/:teamId/:memberId', (req: Request, res: Response) => {
+router.put('/workload-distribution/:teamId/:memberId', async (req: Request, res: Response) => {
     try {
         const { teamId, memberId } = req.params;
         const {
@@ -220,12 +223,12 @@ router.put('/workload-distribution/:teamId/:memberId', (req: Request, res: Respo
             status
         } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE team_workload_distribution
-      SET total_tasks = ?, completed_tasks = ?, pending_tasks = ?, overdue_tasks = ?,
-          workload_percentage = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE team_id = ? AND member_id = ?
-    `).run(
+      SET total_tasks = $1, completed_tasks = $2, pending_tasks = $3, overdue_tasks = $4,
+          workload_percentage = $5, status = $6, updated_at = NOW()
+      WHERE team_id = $7 AND member_id = $8
+    `, [
             total_tasks || 0,
             completed_tasks || 0,
             pending_tasks || 0,
@@ -234,7 +237,7 @@ router.put('/workload-distribution/:teamId/:memberId', (req: Request, res: Respo
             status || 'Normal',
             teamId,
             memberId
-        );
+        ]);
 
         res.json({ message: 'Workload distribution updated successfully' });
     } catch (error) {
@@ -244,7 +247,7 @@ router.put('/workload-distribution/:teamId/:memberId', (req: Request, res: Respo
 });
 
 // Create capacity analysis
-router.post('/capacity-analysis', (req: Request, res: Response) => {
+router.post('/capacity-analysis', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -261,13 +264,14 @@ router.post('/capacity-analysis', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO team_capacity_analysis (
         team_id, team_name, total_capacity, utilized_capacity, available_capacity,
         capacity_utilization_percentage, team_members_count, avg_workload
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [
             team_id,
             team_name || null,
             total_capacity || 0,
@@ -276,10 +280,10 @@ router.post('/capacity-analysis', (req: Request, res: Response) => {
             capacity_utilization_percentage || 0,
             team_members_count || 0,
             avg_workload || 0
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Capacity analysis created successfully'
         });
     } catch (error: any) {
@@ -292,7 +296,7 @@ router.post('/capacity-analysis', (req: Request, res: Response) => {
 });
 
 // Update capacity analysis
-router.put('/capacity-analysis/:teamId', (req: Request, res: Response) => {
+router.put('/capacity-analysis/:teamId', async (req: Request, res: Response) => {
     try {
         const { teamId } = req.params;
         const {
@@ -304,13 +308,13 @@ router.put('/capacity-analysis/:teamId', (req: Request, res: Response) => {
             avg_workload
         } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE team_capacity_analysis
-      SET total_capacity = ?, utilized_capacity = ?, available_capacity = ?,
-          capacity_utilization_percentage = ?, team_members_count = ?, avg_workload = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE team_id = ?
-    `).run(
+      SET total_capacity = $1, utilized_capacity = $2, available_capacity = $3,
+          capacity_utilization_percentage = $4, team_members_count = $5, avg_workload = $6,
+          updated_at = NOW()
+      WHERE team_id = $7
+    `, [
             total_capacity || 0,
             utilized_capacity || 0,
             available_capacity || 0,
@@ -318,7 +322,7 @@ router.put('/capacity-analysis/:teamId', (req: Request, res: Response) => {
             team_members_count || 0,
             avg_workload || 0,
             teamId
-        );
+        ]);
 
         res.json({ message: 'Capacity analysis updated successfully' });
     } catch (error) {
@@ -328,7 +332,7 @@ router.put('/capacity-analysis/:teamId', (req: Request, res: Response) => {
 });
 
 // Create campaign overview
-router.post('/campaigns', (req: Request, res: Response) => {
+router.post('/campaigns', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -346,13 +350,14 @@ router.post('/campaigns', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and campaign ID are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO campaign_overview (
         team_id, campaign_id, campaign_name, campaign_type, status,
         progress_percentage, start_date, end_date, assigned_members
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+    `, [
             team_id,
             campaign_id,
             campaign_name || null,
@@ -362,10 +367,10 @@ router.post('/campaigns', (req: Request, res: Response) => {
             start_date || null,
             end_date || null,
             assigned_members || 0
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Campaign overview created successfully'
         });
     } catch (error: any) {
@@ -378,7 +383,7 @@ router.post('/campaigns', (req: Request, res: Response) => {
 });
 
 // Update campaign overview
-router.put('/campaigns/:teamId/:campaignId', (req: Request, res: Response) => {
+router.put('/campaigns/:teamId/:campaignId', async (req: Request, res: Response) => {
     try {
         const { teamId, campaignId } = req.params;
         const {
@@ -391,12 +396,12 @@ router.put('/campaigns/:teamId/:campaignId', (req: Request, res: Response) => {
             assigned_members
         } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE campaign_overview
-      SET campaign_name = ?, campaign_type = ?, status = ?, progress_percentage = ?,
-          start_date = ?, end_date = ?, assigned_members = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE team_id = ? AND campaign_id = ?
-    `).run(
+      SET campaign_name = $1, campaign_type = $2, status = $3, progress_percentage = $4,
+          start_date = $5, end_date = $6, assigned_members = $7, updated_at = NOW()
+      WHERE team_id = $8 AND campaign_id = $9
+    `, [
             campaign_name || null,
             campaign_type || null,
             status || 'In Progress',
@@ -406,7 +411,7 @@ router.put('/campaigns/:teamId/:campaignId', (req: Request, res: Response) => {
             assigned_members || 0,
             teamId,
             campaignId
-        );
+        ]);
 
         res.json({ message: 'Campaign overview updated successfully' });
     } catch (error) {
@@ -416,7 +421,7 @@ router.put('/campaigns/:teamId/:campaignId', (req: Request, res: Response) => {
 });
 
 // Create task status distribution
-router.post('/task-status', (req: Request, res: Response) => {
+router.post('/task-status', async (req: Request, res: Response) => {
     try {
         const { team_id, status, task_count, percentage } = req.body;
 
@@ -424,13 +429,14 @@ router.post('/task-status', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and status are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO task_status_distribution (team_id, status, task_count, percentage)
-      VALUES (?, ?, ?, ?)
-    `).run(team_id, status, task_count || 0, percentage || 0);
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `, [team_id, status, task_count || 0, percentage || 0]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Task status distribution created successfully'
         });
     } catch (error: any) {
@@ -443,16 +449,16 @@ router.post('/task-status', (req: Request, res: Response) => {
 });
 
 // Update task status distribution
-router.put('/task-status/:teamId/:status', (req: Request, res: Response) => {
+router.put('/task-status/:teamId/:status', async (req: Request, res: Response) => {
     try {
         const { teamId, status } = req.params;
         const { task_count, percentage } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE task_status_distribution
-      SET task_count = ?, percentage = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE team_id = ? AND status = ?
-    `).run(task_count || 0, percentage || 0, teamId, status);
+      SET task_count = $1, percentage = $2, updated_at = NOW()
+      WHERE team_id = $3 AND status = $4
+    `, [task_count || 0, percentage || 0, teamId, status]);
 
         res.json({ message: 'Task status distribution updated successfully' });
     } catch (error) {
@@ -462,7 +468,7 @@ router.put('/task-status/:teamId/:status', (req: Request, res: Response) => {
 });
 
 // Create performance trend
-router.post('/performance-trend', (req: Request, res: Response) => {
+router.post('/performance-trend', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -477,22 +483,23 @@ router.post('/performance-trend', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and date are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO team_performance_trend (
         team_id, team_name, date_recorded, completion_rate, quality_score, efficiency_score
       )
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `, [
             team_id,
             team_name || null,
             date_recorded,
             completion_rate || 0,
             quality_score || 0,
             efficiency_score || 0
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Performance trend created successfully'
         });
     } catch (error: any) {
@@ -505,7 +512,7 @@ router.post('/performance-trend', (req: Request, res: Response) => {
 });
 
 // Create member performance
-router.post('/member-performance', (req: Request, res: Response) => {
+router.post('/member-performance', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -523,13 +530,14 @@ router.post('/member-performance', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and member ID are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO team_member_performance (
         team_id, member_id, member_name, role, tasks_assigned, tasks_completed,
         completion_rate, quality_score, efficiency_score
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+    `, [
             team_id,
             member_id,
             member_name || null,
@@ -539,10 +547,10 @@ router.post('/member-performance', (req: Request, res: Response) => {
             completion_rate || 0,
             quality_score || 0,
             efficiency_score || 0
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Member performance created successfully'
         });
     } catch (error: any) {
@@ -555,7 +563,7 @@ router.post('/member-performance', (req: Request, res: Response) => {
 });
 
 // Update member performance
-router.put('/member-performance/:teamId/:memberId', (req: Request, res: Response) => {
+router.put('/member-performance/:teamId/:memberId', async (req: Request, res: Response) => {
     try {
         const { teamId, memberId } = req.params;
         const {
@@ -566,12 +574,12 @@ router.put('/member-performance/:teamId/:memberId', (req: Request, res: Response
             efficiency_score
         } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE team_member_performance
-      SET tasks_assigned = ?, tasks_completed = ?, completion_rate = ?,
-          quality_score = ?, efficiency_score = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE team_id = ? AND member_id = ?
-    `).run(
+      SET tasks_assigned = $1, tasks_completed = $2, completion_rate = $3,
+          quality_score = $4, efficiency_score = $5, updated_at = NOW()
+      WHERE team_id = $6 AND member_id = $7
+    `, [
             tasks_assigned || 0,
             tasks_completed || 0,
             completion_rate || 0,
@@ -579,7 +587,7 @@ router.put('/member-performance/:teamId/:memberId', (req: Request, res: Response
             efficiency_score || 0,
             teamId,
             memberId
-        );
+        ]);
 
         res.json({ message: 'Member performance updated successfully' });
     } catch (error) {
@@ -589,7 +597,7 @@ router.put('/member-performance/:teamId/:memberId', (req: Request, res: Response
 });
 
 // Create task assignment
-router.post('/task-assignment', (req: Request, res: Response) => {
+router.post('/task-assignment', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -609,13 +617,14 @@ router.post('/task-assignment', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and task ID are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO task_assignment_history (
         team_id, task_id, task_name, assigned_to, assigned_by, assigned_date,
         due_date, status, priority, estimated_hours, actual_hours
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id
+    `, [
             team_id,
             task_id,
             task_name || null,
@@ -627,10 +636,10 @@ router.post('/task-assignment', (req: Request, res: Response) => {
             priority || 'Medium',
             estimated_hours || 0,
             actual_hours || 0
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Task assignment created successfully'
         });
     } catch (error) {
@@ -640,7 +649,7 @@ router.post('/task-assignment', (req: Request, res: Response) => {
 });
 
 // Update task assignment
-router.put('/task-assignment/:taskId', (req: Request, res: Response) => {
+router.put('/task-assignment/:taskId', async (req: Request, res: Response) => {
     try {
         const { taskId } = req.params;
         const {
@@ -652,12 +661,12 @@ router.put('/task-assignment/:taskId', (req: Request, res: Response) => {
             actual_hours
         } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE task_assignment_history
-      SET assigned_to = ?, status = ?, priority = ?, due_date = ?,
-          estimated_hours = ?, actual_hours = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE task_id = ?
-    `).run(
+      SET assigned_to = $1, status = $2, priority = $3, due_date = $4,
+          estimated_hours = $5, actual_hours = $6, updated_at = NOW()
+      WHERE task_id = $7
+    `, [
             assigned_to || null,
             status || 'Pending',
             priority || 'Medium',
@@ -665,7 +674,7 @@ router.put('/task-assignment/:taskId', (req: Request, res: Response) => {
             estimated_hours || 0,
             actual_hours || 0,
             taskId
-        );
+        ]);
 
         res.json({ message: 'Task assignment updated successfully' });
     } catch (error) {
@@ -675,7 +684,7 @@ router.put('/task-assignment/:taskId', (req: Request, res: Response) => {
 });
 
 // Create capacity forecast
-router.post('/capacity-forecast', (req: Request, res: Response) => {
+router.post('/capacity-forecast', async (req: Request, res: Response) => {
     try {
         const {
             team_id,
@@ -691,13 +700,14 @@ router.post('/capacity-forecast', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Team ID and forecast date are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO team_capacity_forecast (
         team_id, team_name, forecast_date, forecasted_capacity,
         forecasted_utilization, confidence_level, notes
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `, [
             team_id,
             team_name || null,
             forecast_date,
@@ -705,10 +715,10 @@ router.post('/capacity-forecast', (req: Request, res: Response) => {
             forecasted_utilization || 0,
             confidence_level || 'Medium',
             notes || null
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Capacity forecast created successfully'
         });
     } catch (error: any) {
@@ -721,7 +731,7 @@ router.post('/capacity-forecast', (req: Request, res: Response) => {
 });
 
 // Update capacity forecast
-router.put('/capacity-forecast/:teamId/:forecastDate', (req: Request, res: Response) => {
+router.put('/capacity-forecast/:teamId/:forecastDate', async (req: Request, res: Response) => {
     try {
         const { teamId, forecastDate } = req.params;
         const {
@@ -731,19 +741,19 @@ router.put('/capacity-forecast/:teamId/:forecastDate', (req: Request, res: Respo
             notes
         } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE team_capacity_forecast
-      SET forecasted_capacity = ?, forecasted_utilization = ?,
-          confidence_level = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE team_id = ? AND forecast_date = ?
-    `).run(
+      SET forecasted_capacity = $1, forecasted_utilization = $2,
+          confidence_level = $3, notes = $4, updated_at = NOW()
+      WHERE team_id = $5 AND forecast_date = $6
+    `, [
             forecasted_capacity || 0,
             forecasted_utilization || 0,
             confidence_level || 'Medium',
             notes || null,
             teamId,
             forecastDate
-        );
+        ]);
 
         res.json({ message: 'Capacity forecast updated successfully' });
     } catch (error) {

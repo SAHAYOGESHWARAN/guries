@@ -6,9 +6,9 @@ const router = express.Router();
 const WORKFLOW_STAGES = ['Draft', 'Review', 'Approved', 'Published', 'Pre-Publish', 'Post-Publish'];
 
 // Get all QC weightage configurations
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const configs = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         qwc.id,
         qwc.config_name,
@@ -23,9 +23,9 @@ router.get('/', (req: Request, res: Response) => {
       LEFT JOIN qc_weightage_items qwi ON qwc.id = qwi.config_id
       GROUP BY qwc.id
       ORDER BY qwc.config_name
-    `).all();
+    `);
 
-        res.json(configs);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching QC weightage configs:', error);
         res.status(500).json({ error: 'Failed to fetch QC weightage configs' });
@@ -33,19 +33,21 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Get QC weightage configuration by ID with items
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const config = db.prepare(`
-      SELECT * FROM qc_weightage_configs WHERE id = ?
-    `).get(id) as any;
+        const configResult = await pool.query(`
+      SELECT * FROM qc_weightage_configs WHERE id = $1
+    `, [id]);
+
+        const config = configResult.rows[0];
 
         if (!config) {
             return res.status(404).json({ error: 'QC weightage config not found' });
         }
 
-        const items = db.prepare(`
+        const itemsResult = await pool.query(`
       SELECT 
         qwi.id,
         qwi.checklist_id,
@@ -57,13 +59,13 @@ router.get('/:id', (req: Request, res: Response) => {
         ac.checklist_name
       FROM qc_weightage_items qwi
       LEFT JOIN audit_checklists ac ON qwi.checklist_id = ac.id
-      WHERE qwi.config_id = ?
+      WHERE qwi.config_id = $1
       ORDER BY qwi.item_order
-    `).all(id);
+    `, [id]);
 
         res.json({
-            ...(config as Record<string, any>),
-            items
+            ...config,
+            items: itemsResult.rows
         });
     } catch (error) {
         console.error('Error fetching QC weightage config:', error);
@@ -72,7 +74,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // Create new QC weightage configuration
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
         const { config_name, description, items } = req.body;
 
@@ -92,32 +94,32 @@ router.post('/', (req: Request, res: Response) => {
         }
 
         // Insert config
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO qc_weightage_configs (config_name, description, total_weight, is_valid, status)
-      VALUES (?, ?, ?, ?, 'active')
-    `).run(config_name, description || null, totalWeight, 1);
+      VALUES ($1, $2, $3, $4, 'active')
+      RETURNING id
+    `, [config_name, description || null, totalWeight, true]);
 
-        const configId = result.lastInsertRowid;
+        const configId = result.rows[0].id;
 
         // Insert items
-        const insertItem = db.prepare(`
+        for (let index = 0; index < items.length; index++) {
+            const item = items[index];
+            await pool.query(`
       INSERT INTO qc_weightage_items (
         config_id, checklist_id, checklist_type, weight_percentage, is_mandatory, applies_to_stage, item_order
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-        items.forEach((item: any, index: number) => {
-            insertItem.run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [
                 configId,
                 item.checklist_id,
                 item.checklist_type,
                 item.weight_percentage,
-                item.is_mandatory ? 1 : 0,
+                item.is_mandatory ? true : false,
                 item.applies_to_stage || null,
                 index + 1
-            );
-        });
+            ]);
+        }
 
         res.status(201).json({
             id: configId,
@@ -137,7 +139,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // Update QC weightage configuration
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { config_name, description, status, items } = req.body;
@@ -158,33 +160,32 @@ router.put('/:id', (req: Request, res: Response) => {
         }
 
         // Update config
-        db.prepare(`
+        await pool.query(`
       UPDATE qc_weightage_configs
-      SET config_name = ?, description = ?, total_weight = ?, is_valid = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(config_name, description || null, totalWeight, 1, status || 'active', id);
+      SET config_name = $1, description = $2, total_weight = $3, is_valid = $4, status = $5, updated_at = NOW()
+      WHERE id = $6
+    `, [config_name, description || null, totalWeight, true, status || 'active', id]);
 
         // Clear and re-insert items
-        db.prepare('DELETE FROM qc_weightage_items WHERE config_id = ?').run(id);
+        await pool.query('DELETE FROM qc_weightage_items WHERE config_id = $1', [id]);
 
-        const insertItem = db.prepare(`
+        for (let index = 0; index < items.length; index++) {
+            const item = items[index];
+            await pool.query(`
       INSERT INTO qc_weightage_items (
         config_id, checklist_id, checklist_type, weight_percentage, is_mandatory, applies_to_stage, item_order
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-        items.forEach((item: any, index: number) => {
-            insertItem.run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [
                 id,
                 item.checklist_id,
                 item.checklist_type,
                 item.weight_percentage,
-                item.is_mandatory ? 1 : 0,
+                item.is_mandatory ? true : false,
                 item.applies_to_stage || null,
                 index + 1
-            );
-        });
+            ]);
+        }
 
         res.json({ message: 'QC weightage config updated successfully' });
     } catch (error: any) {
@@ -197,17 +198,17 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // Delete QC weightage configuration
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
         // Delete items (cascade handled by DB)
-        db.prepare('DELETE FROM qc_weightage_items WHERE config_id = ?').run(id);
+        await pool.query('DELETE FROM qc_weightage_items WHERE config_id = $1', [id]);
 
         // Delete config
-        const result = db.prepare('DELETE FROM qc_weightage_configs WHERE id = ?').run(id);
+        const result = await pool.query('DELETE FROM qc_weightage_configs WHERE id = $1', [id]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'QC weightage config not found' });
         }
 
@@ -219,9 +220,9 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // Get all checklists for dropdown
-router.get('/list/checklists', (req: Request, res: Response) => {
+router.get('/list/checklists', async (req: Request, res: Response) => {
     try {
-        const checklists = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         id,
         checklist_name,
@@ -231,9 +232,9 @@ router.get('/list/checklists', (req: Request, res: Response) => {
       FROM audit_checklists
       WHERE status = 'active'
       ORDER BY checklist_name
-    `).all();
+    `);
 
-        res.json(checklists);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching checklists:', error);
         res.status(500).json({ error: 'Failed to fetch checklists' });
@@ -246,23 +247,23 @@ router.get('/list/stages', (req: Request, res: Response) => {
 });
 
 // Validate weightage configuration
-router.post('/:id/validate', (req: Request, res: Response) => {
+router.post('/:id/validate', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const items = db.prepare(`
-      SELECT weight_percentage FROM qc_weightage_items WHERE config_id = ?
-    `).all(id);
+        const itemsResult = await pool.query(`
+      SELECT weight_percentage FROM qc_weightage_items WHERE config_id = $1
+    `, [id]);
 
-        const totalWeight = items.reduce((sum: number, item: any) => sum + item.weight_percentage, 0);
+        const totalWeight = itemsResult.rows.reduce((sum: number, item: any) => sum + item.weight_percentage, 0);
         const isValid = totalWeight === 100;
 
         // Update config validity
-        db.prepare(`
+        await pool.query(`
       UPDATE qc_weightage_configs
-      SET is_valid = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(isValid ? 1 : 0, id);
+      SET is_valid = $1, updated_at = NOW()
+      WHERE id = $2
+    `, [isValid, id]);
 
         res.json({
             is_valid: isValid,
@@ -276,17 +277,17 @@ router.post('/:id/validate', (req: Request, res: Response) => {
 });
 
 // Get checklist usage statistics
-router.get('/:checklistId/usage', (req: Request, res: Response) => {
+router.get('/:checklistId/usage', async (req: Request, res: Response) => {
     try {
         const { checklistId } = req.params;
 
-        const usage = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM qc_checklist_usage
-      WHERE checklist_id = ?
+      WHERE checklist_id = $1
       ORDER BY usage_count DESC
-    `).all(checklistId);
+    `, [checklistId]);
 
-        res.json(usage);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching checklist usage:', error);
         res.status(500).json({ error: 'Failed to fetch checklist usage' });
@@ -294,7 +295,7 @@ router.get('/:checklistId/usage', (req: Request, res: Response) => {
 });
 
 // Update checklist usage
-router.post('/:checklistId/usage', (req: Request, res: Response) => {
+router.post('/:checklistId/usage', async (req: Request, res: Response) => {
     try {
         const { checklistId } = req.params;
         const { asset_type, usage_context } = req.body;
@@ -304,24 +305,26 @@ router.post('/:checklistId/usage', (req: Request, res: Response) => {
         }
 
         // Check if usage record exists
-        const existing = db.prepare(`
+        const existingResult = await pool.query(`
       SELECT id FROM qc_checklist_usage
-      WHERE checklist_id = ? AND asset_type = ? AND usage_context = ?
-    `).get(checklistId, asset_type, usage_context || null) as any;
+      WHERE checklist_id = $1 AND asset_type = $2 AND usage_context = $3
+    `, [checklistId, asset_type, usage_context || null]);
+
+        const existing = existingResult.rows[0];
 
         if (existing) {
             // Update existing
-            db.prepare(`
+            await pool.query(`
         UPDATE qc_checklist_usage
-        SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(existing.id);
+        SET usage_count = usage_count + 1, last_used = NOW(), updated_at = NOW()
+        WHERE id = $1
+      `, [existing.id]);
         } else {
             // Insert new
-            db.prepare(`
+            await pool.query(`
         INSERT INTO qc_checklist_usage (checklist_id, asset_type, usage_context, usage_count, last_used)
-        VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
-      `).run(checklistId, asset_type, usage_context || null);
+        VALUES ($1, $2, $3, 1, NOW())
+      `, [checklistId, asset_type, usage_context || null]);
         }
 
         res.json({ message: 'Checklist usage updated successfully' });

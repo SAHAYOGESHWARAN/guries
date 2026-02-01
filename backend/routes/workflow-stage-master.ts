@@ -6,9 +6,9 @@ const router = express.Router();
 const COLOR_OPTIONS = ['blue', 'orange', 'green', 'purple', 'pink', 'red', 'indigo', 'gray'];
 
 // Get all workflows
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const workflows = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         wm.id,
         wm.workflow_name,
@@ -21,9 +21,9 @@ router.get('/', (req: Request, res: Response) => {
       LEFT JOIN workflow_stage_items ws ON wm.id = ws.workflow_id
       GROUP BY wm.id
       ORDER BY wm.workflow_name
-    `).all();
+    `);
 
-        res.json(workflows);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching workflows:', error);
         res.status(500).json({ error: 'Failed to fetch workflows' });
@@ -31,27 +31,29 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Get workflow by ID with stages
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const workflow = db.prepare(`
-      SELECT * FROM workflow_master_new WHERE id = ?
-    `).get(id) as any;
+        const workflowResult = await pool.query(`
+      SELECT * FROM workflow_master_new WHERE id = $1
+    `, [id]);
+
+        const workflow = workflowResult.rows[0];
 
         if (!workflow) {
             return res.status(404).json({ error: 'Workflow not found' });
         }
 
-        const stages = db.prepare(`
+        const stagesResult = await pool.query(`
       SELECT * FROM workflow_stage_items
-      WHERE workflow_id = ?
+      WHERE workflow_id = $1
       ORDER BY stage_order
-    `).all(id);
+    `, [id]);
 
         res.json({
-            ...(workflow as Record<string, any>),
-            stages
+            ...workflow,
+            stages: stagesResult.rows
         });
     } catch (error) {
         console.error('Error fetching workflow:', error);
@@ -60,7 +62,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // Create new workflow
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
         const { workflow_name, description, stages } = req.body;
 
@@ -69,32 +71,32 @@ router.post('/', (req: Request, res: Response) => {
         }
 
         // Insert workflow
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO workflow_master_new (workflow_name, description, status)
-      VALUES (?, ?, 'active')
-    `).run(workflow_name, description || null);
+      VALUES ($1, $2, 'active')
+      RETURNING id
+    `, [workflow_name, description || null]);
 
-        const workflowId = result.lastInsertRowid;
+        const workflowId = result.rows[0].id;
 
         // Insert stages
         if (stages && stages.length > 0) {
-            const insertStage = db.prepare(`
+            for (let index = 0; index < stages.length; index++) {
+                const stage = stages[index];
+                await pool.query(`
         INSERT INTO workflow_stage_items (
           workflow_id, stage_order, stage_title, stage_label, color_tag, mandatory_qc
         )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-            stages.forEach((stage: any, index: number) => {
-                insertStage.run(
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
                     workflowId,
                     index + 1,
                     stage.stage_title,
                     stage.stage_label || null,
                     stage.color_tag || 'blue',
-                    stage.mandatory_qc ? 1 : 0
-                );
-            });
+                    stage.mandatory_qc ? true : false
+                ]);
+            }
         }
 
         res.status(201).json({
@@ -115,7 +117,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // Update workflow
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { workflow_name, description, status, stages } = req.body;
@@ -125,33 +127,32 @@ router.put('/:id', (req: Request, res: Response) => {
         }
 
         // Update workflow
-        db.prepare(`
+        await pool.query(`
       UPDATE workflow_master_new
-      SET workflow_name = ?, description = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(workflow_name, description || null, status || 'active', id);
+      SET workflow_name = $1, description = $2, status = $3, updated_at = NOW()
+      WHERE id = $4
+    `, [workflow_name, description || null, status || 'active', id]);
 
         // Clear and re-insert stages
-        db.prepare('DELETE FROM workflow_stage_items WHERE workflow_id = ?').run(id);
+        await pool.query('DELETE FROM workflow_stage_items WHERE workflow_id = $1', [id]);
 
         if (stages && stages.length > 0) {
-            const insertStage = db.prepare(`
+            for (let index = 0; index < stages.length; index++) {
+                const stage = stages[index];
+                await pool.query(`
         INSERT INTO workflow_stage_items (
           workflow_id, stage_order, stage_title, stage_label, color_tag, mandatory_qc
         )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-            stages.forEach((stage: any, index: number) => {
-                insertStage.run(
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
                     id,
                     index + 1,
                     stage.stage_title,
                     stage.stage_label || null,
                     stage.color_tag || 'blue',
-                    stage.mandatory_qc ? 1 : 0
-                );
-            });
+                    stage.mandatory_qc ? true : false
+                ]);
+            }
         }
 
         res.json({ message: 'Workflow updated successfully' });
@@ -165,17 +166,17 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // Delete workflow
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
         // Delete stages
-        db.prepare('DELETE FROM workflow_stage_items WHERE workflow_id = ?').run(id);
+        await pool.query('DELETE FROM workflow_stage_items WHERE workflow_id = $1', [id]);
 
         // Delete workflow
-        const result = db.prepare('DELETE FROM workflow_master_new WHERE id = ?').run(id);
+        const result = await pool.query('DELETE FROM workflow_master_new WHERE id = $1', [id]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Workflow not found' });
         }
 
@@ -187,7 +188,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // Reorder stages
-router.put('/:id/reorder-stages', (req: Request, res: Response) => {
+router.put('/:id/reorder-stages', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { stages } = req.body;
@@ -196,15 +197,13 @@ router.put('/:id/reorder-stages', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Stages array is required' });
         }
 
-        const updateStage = db.prepare(`
+        for (const stage of stages) {
+            await pool.query(`
       UPDATE workflow_stage_items
-      SET stage_order = ?
-      WHERE id = ?
-    `);
-
-        stages.forEach((stage: any) => {
-            updateStage.run(stage.stage_order, stage.id);
-        });
+      SET stage_order = $1
+      WHERE id = $2
+    `, [stage.stage_order, stage.id]);
+        }
 
         res.json({ message: 'Stages reordered successfully' });
     } catch (error) {
