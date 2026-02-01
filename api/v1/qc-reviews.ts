@@ -11,11 +11,20 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
+    const assetId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
+
     if (req.method === 'GET') {
-        res.status(200).json({ message: 'QC Reviews endpoint', data: [] });
-    } else if (req.method === 'POST') {
-        res.status(201).json({ message: 'Create QC Review', data: req.body });
-    } else {
-        res.status(405).json({ error: 'Method not allowed' });
+        res.status(200).json({ message: 'QC review endpoint for asset', assetId });
+        return;
     }
+
+    if (req.method === 'POST') {
+        // Minimal implementation: echo received data and return created status.
+        // Higher-level logic (DB insert, linking) can be implemented later.
+        const payload = req.body;
+        res.status(201).json({ message: 'Create QC Review', assetId, data: payload });
+        return;
+    }
+
+    res.status(405).json({ error: 'Method not allowed' });
 }
