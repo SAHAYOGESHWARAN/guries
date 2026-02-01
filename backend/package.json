@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon server.ts",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "better-sqlite3": "^12.5.0",

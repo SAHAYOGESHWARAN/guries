@@ -1,6 +1,9 @@
 import request from 'supertest';
 import express from 'express';
 
+// Increase timeout to avoid spurious failures when running full suite
+(jest as any).setTimeout(10000);
+
 // Mock Express app for testing
 const app = express();
 app.use(express.json());

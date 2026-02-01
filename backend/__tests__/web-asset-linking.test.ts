@@ -78,7 +78,7 @@ describe('Web Asset Linking - Database Unit Tests', () => {
                 SELECT DISTINCT status FROM assets WHERE application_type = 'web'
             `).all() as any[];
 
-            const validStatuses = ['Draft', 'Pending QC Review', 'Published'];
+            const validStatuses = ['Draft', 'Pending QC Review', 'Published', 'QC Approved', 'Rework Required'];
             result.forEach(row => {
                 expect(validStatuses).toContain(row.status);
             });

@@ -75,6 +75,11 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// API health endpoint expected by tests
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // 404 Handler
 app.use(notFoundHandler);
 
@@ -82,15 +87,27 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start Server
-const startServer = (portToTry: number) => {
-    const server = httpServer.listen(portToTry);
+let serverInstance: any = null;
 
-    server.on('listening', () => {
-        console.log(`🚀 Server running on port ${portToTry}`);
+const startServer = (portToTry: number) => {
+    serverInstance = httpServer.listen(portToTry);
+
+    serverInstance.on('listening', () => {
+        const isTest = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
+        if (!isTest) {
+            console.log(`🚀 Server running on port ${portToTry}`);
+        }
     });
 
-    server.on('error', (err: any) => {
+    serverInstance.on('error', (err: any) => {
+        // If running tests, avoid async retries/logging that can occur after Jest finishes.
+        const isTest = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
         if (err && err.code === 'EADDRINUSE') {
+            if (isTest) {
+                // Let the test harness deal with port conflicts synchronously.
+                throw err;
+            }
+
             console.warn(`Port ${portToTry} in use, trying ${portToTry + 1}...`);
             // try next port
             setTimeout(() => startServer(portToTry + 1), 200);
@@ -101,8 +118,32 @@ const startServer = (portToTry: number) => {
     });
 };
 
+// Graceful shutdown to prevent open handles during tests or on process exit
+const gracefulShutdown = () => {
+    try {
+        if (serverInstance && typeof serverInstance.close === 'function') {
+            serverInstance.close();
+        }
+        if (io && typeof (io as any).close === 'function') {
+            (io as any).close();
+        }
+        if (db && typeof (db as any).close === 'function') {
+            try { (db as any).close(); } catch {}
+        }
+    } catch (e) {
+        // ignore errors during shutdown
+    }
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+process.on('exit', gracefulShutdown);
+
+const isTestEnv = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
 connectDB().then(() => {
-    startServer(PORT);
+    if (!isTestEnv) {
+        startServer(PORT);
+    }
 });
 
 export { app, httpServer };
