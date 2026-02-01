@@ -22,3 +22,4 @@ router.put('/:id', asyncHandler(updateAssetCategory));
 router.delete('/:id', asyncHandler(deleteAssetCategory));
 
 export default router;
+

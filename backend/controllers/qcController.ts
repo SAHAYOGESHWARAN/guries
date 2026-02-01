@@ -169,3 +169,4 @@ export const deleteWeightageConfig = async (req: Request, res: Response) => {
 
 
 
+

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 // Performance Dashboard Controller
 export const getPerformanceDashboard = async (req: Request, res: Response) => {
@@ -637,6 +637,7 @@ export const exportPerformanceData = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
 
 
 

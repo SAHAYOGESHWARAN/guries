@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
@@ -224,3 +224,4 @@ router.get('/list/colors', (req: Request, res: Response) => {
 });
 
 export default router;
+

@@ -22,3 +22,4 @@ router.delete('/:id', platformController.deletePlatform);
 router.post('/bulk/update-status', platformController.bulkUpdateStatus);
 
 export default router;
+

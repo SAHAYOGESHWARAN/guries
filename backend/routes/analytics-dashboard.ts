@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
 // ===== EFFORT ANALYTICS =====
 
 // Get effort analytics summary
-router.get('/effort/summary', (req: Request, res: Response) => {
+router.get('/effort/summary', async (req: Request, res: Response) => {
     try {
         const { department, timeRange } = req.query;
 
@@ -22,20 +22,21 @@ router.get('/effort/summary', (req: Request, res: Response) => {
     `;
 
         const params: any[] = [];
+        let paramIndex = 1;
 
         if (department) {
-            query += ` AND department = ?`;
+            query += ` AND department = $${paramIndex++}`;
             params.push(department);
         }
 
         if (timeRange === 'month') {
-            query += ` AND date_recorded >= datetime('now', '-30 days')`;
+            query += ` AND date_recorded >= NOW() - INTERVAL '30 days'`;
         } else if (timeRange === 'quarter') {
-            query += ` AND date_recorded >= datetime('now', '-90 days')`;
+            query += ` AND date_recorded >= NOW() - INTERVAL '90 days'`;
         }
 
-        const summary = db.prepare(query).get(...params);
-        res.json(summary);
+        const result = await pool.query(query, params);
+        res.json(result.rows[0]);
     } catch (error) {
         console.error('Error fetching effort analytics summary:', error);
         res.status(500).json({ error: 'Failed to fetch effort analytics summary' });
@@ -43,9 +44,9 @@ router.get('/effort/summary', (req: Request, res: Response) => {
 });
 
 // Get effort analytics by department
-router.get('/effort/by-department', (req: Request, res: Response) => {
+router.get('/effort/by-department', async (req: Request, res: Response) => {
     try {
-        const analytics = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         department,
         AVG(effort_completion_percentage) as completion_percentage,
@@ -56,9 +57,9 @@ router.get('/effort/by-department', (req: Request, res: Response) => {
       FROM effort_analytics
       GROUP BY department
       ORDER BY completion_percentage DESC
-    `).all();
+    `);
 
-        res.json(analytics);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching effort analytics by department:', error);
         res.status(500).json({ error: 'Failed to fetch effort analytics by department' });
@@ -66,16 +67,16 @@ router.get('/effort/by-department', (req: Request, res: Response) => {
 });
 
 // Get effort trends (last 12 weeks)
-router.get('/effort/trends', (req: Request, res: Response) => {
+router.get('/effort/trends', async (req: Request, res: Response) => {
     try {
-        const trends = db.prepare(`
+        const result = await pool.query(`
       SELECT week_number, effort_percentage
       FROM effort_trends
       ORDER BY week_number DESC
       LIMIT 12
-    `).all();
+    `);
 
-        res.json(trends.reverse());
+        res.json(result.rows.reverse());
     } catch (error) {
         console.error('Error fetching effort trends:', error);
         res.status(500).json({ error: 'Failed to fetch effort trends' });
@@ -85,7 +86,7 @@ router.get('/effort/trends', (req: Request, res: Response) => {
 // ===== PERFORMANCE ANALYTICS =====
 
 // Get performance analytics summary
-router.get('/performance/summary', (req: Request, res: Response) => {
+router.get('/performance/summary', async (req: Request, res: Response) => {
     try {
         const { department, timeRange } = req.query;
 
@@ -102,20 +103,21 @@ router.get('/performance/summary', (req: Request, res: Response) => {
     `;
 
         const params: any[] = [];
+        let paramIndex = 1;
 
         if (department) {
-            query += ` AND department = ?`;
+            query += ` AND department = $${paramIndex++}`;
             params.push(department);
         }
 
         if (timeRange === 'month') {
-            query += ` AND date_recorded >= datetime('now', '-30 days')`;
+            query += ` AND date_recorded >= NOW() - INTERVAL '30 days'`;
         } else if (timeRange === 'quarter') {
-            query += ` AND date_recorded >= datetime('now', '-90 days')`;
+            query += ` AND date_recorded >= NOW() - INTERVAL '90 days'`;
         }
 
-        const summary = db.prepare(query).get(...params);
-        res.json(summary);
+        const result = await pool.query(query, params);
+        res.json(result.rows[0]);
     } catch (error) {
         console.error('Error fetching performance analytics summary:', error);
         res.status(500).json({ error: 'Failed to fetch performance analytics summary' });
@@ -123,9 +125,9 @@ router.get('/performance/summary', (req: Request, res: Response) => {
 });
 
 // Get performance analytics by department
-router.get('/performance/by-department', (req: Request, res: Response) => {
+router.get('/performance/by-department', async (req: Request, res: Response) => {
     try {
-        const analytics = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         department,
         AVG(kpi_achievement_percentage) as kpi_achievement,
@@ -137,9 +139,9 @@ router.get('/performance/by-department', (req: Request, res: Response) => {
       FROM performance_analytics
       GROUP BY department
       ORDER BY kpi_achievement DESC
-    `).all();
+    `);
 
-        res.json(analytics);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching performance analytics by department:', error);
         res.status(500).json({ error: 'Failed to fetch performance analytics by department' });
@@ -149,14 +151,14 @@ router.get('/performance/by-department', (req: Request, res: Response) => {
 // ===== KPI METRICS =====
 
 // Get all KPI metrics
-router.get('/kpi/metrics', (req: Request, res: Response) => {
+router.get('/kpi/metrics', async (req: Request, res: Response) => {
     try {
-        const metrics = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM kpi_metrics
       ORDER BY metric_name
-    `).all();
+    `);
 
-        res.json(metrics);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching KPI metrics:', error);
         res.status(500).json({ error: 'Failed to fetch KPI metrics' });
@@ -164,7 +166,7 @@ router.get('/kpi/metrics', (req: Request, res: Response) => {
 });
 
 // Create KPI metric
-router.post('/kpi/metrics', (req: Request, res: Response) => {
+router.post('/kpi/metrics', async (req: Request, res: Response) => {
     try {
         const {
             metric_name,
@@ -185,13 +187,14 @@ router.post('/kpi/metrics', (req: Request, res: Response) => {
         const trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'stable';
         const status = current_value >= target_value ? 'on-track' : 'at-risk';
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO kpi_metrics (
         metric_name, metric_type, benchmark, current_value, target_value,
         delta, percentage_changed, gold_standard, competitor_avg, trend, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id
+    `, [
             metric_name,
             metric_type || null,
             benchmark || null,
@@ -203,10 +206,10 @@ router.post('/kpi/metrics', (req: Request, res: Response) => {
             competitor_avg || null,
             trend,
             status
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'KPI metric created successfully'
         });
     } catch (error) {
@@ -218,14 +221,14 @@ router.post('/kpi/metrics', (req: Request, res: Response) => {
 // ===== TARGET VS ACTUAL =====
 
 // Get target vs actual performance
-router.get('/target-vs-actual', (req: Request, res: Response) => {
+router.get('/target-vs-actual', async (req: Request, res: Response) => {
     try {
-        const performance = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM target_vs_actual
       ORDER BY week_number, category
-    `).all();
+    `);
 
-        res.json(performance);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching target vs actual:', error);
         res.status(500).json({ error: 'Failed to fetch target vs actual' });
@@ -235,15 +238,15 @@ router.get('/target-vs-actual', (req: Request, res: Response) => {
 // ===== TEAM PERFORMANCE HEATMAP =====
 
 // Get team performance heatmap
-router.get('/team-heatmap', (req: Request, res: Response) => {
+router.get('/team-heatmap', async (req: Request, res: Response) => {
     try {
-        const heatmap = db.prepare(`
+        const result = await pool.query(`
       SELECT team_name, week_number, performance_percentage, status
       FROM team_performance_heatmap
       ORDER BY team_name, week_number
-    `).all();
+    `);
 
-        res.json(heatmap);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching team heatmap:', error);
         res.status(500).json({ error: 'Failed to fetch team heatmap' });
@@ -253,15 +256,15 @@ router.get('/team-heatmap', (req: Request, res: Response) => {
 // ===== QC PERFORMANCE BY STAGE =====
 
 // Get QC performance by stage
-router.get('/qc-by-stage', (req: Request, res: Response) => {
+router.get('/qc-by-stage', async (req: Request, res: Response) => {
     try {
-        const performance = db.prepare(`
+        const result = await pool.query(`
       SELECT stage_name, score_percentage, status
       FROM qc_performance_by_stage
       ORDER BY score_percentage DESC
-    `).all();
+    `);
 
-        res.json(performance);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching QC performance by stage:', error);
         res.status(500).json({ error: 'Failed to fetch QC performance by stage' });
@@ -271,15 +274,15 @@ router.get('/qc-by-stage', (req: Request, res: Response) => {
 // ===== SLA MISSES/DELAYS =====
 
 // Get SLA misses and delays
-router.get('/sla-misses', (req: Request, res: Response) => {
+router.get('/sla-misses', async (req: Request, res: Response) => {
     try {
-        const sla = db.prepare(`
+        const result = await pool.query(`
       SELECT team_name, missed_count, delay_days
       FROM sla_misses_delays
       ORDER BY missed_count DESC
-    `).all();
+    `);
 
-        res.json(sla);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching SLA misses:', error);
         res.status(500).json({ error: 'Failed to fetch SLA misses' });
@@ -289,18 +292,18 @@ router.get('/sla-misses', (req: Request, res: Response) => {
 // ===== KEYWORD ANALYTICS =====
 
 // Get top keywords
-router.get('/keywords/top', (req: Request, res: Response) => {
+router.get('/keywords/top', async (req: Request, res: Response) => {
     try {
         const { limit = 10 } = req.query;
 
-        const keywords = db.prepare(`
+        const result = await pool.query(`
       SELECT keyword, rank_position, search_volume, traffic_count, conversion_count
       FROM keyword_analytics
       ORDER BY traffic_count DESC
-      LIMIT ?
-    `).all(parseInt(limit as string));
+      LIMIT $1
+    `, [parseInt(limit as string)]);
 
-        res.json(keywords);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching top keywords:', error);
         res.status(500).json({ error: 'Failed to fetch top keywords' });
@@ -308,14 +311,14 @@ router.get('/keywords/top', (req: Request, res: Response) => {
 });
 
 // Get all keywords
-router.get('/keywords', (req: Request, res: Response) => {
+router.get('/keywords', async (req: Request, res: Response) => {
     try {
-        const keywords = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM keyword_analytics
       ORDER BY traffic_count DESC
-    `).all();
+    `);
 
-        res.json(keywords);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching keywords:', error);
         res.status(500).json({ error: 'Failed to fetch keywords' });
@@ -323,7 +326,7 @@ router.get('/keywords', (req: Request, res: Response) => {
 });
 
 // Create keyword
-router.post('/keywords', (req: Request, res: Response) => {
+router.post('/keywords', async (req: Request, res: Response) => {
     try {
         const { keyword, rank_position, search_volume, traffic_count, conversion_count } = req.body;
 
@@ -331,13 +334,14 @@ router.post('/keywords', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Keyword is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO keyword_analytics (keyword, rank_position, search_volume, traffic_count, conversion_count)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(keyword, rank_position || null, search_volume || 0, traffic_count || 0, conversion_count || 0);
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [keyword, rank_position || null, search_volume || 0, traffic_count || 0, conversion_count || 0]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Keyword created successfully'
         });
     } catch (error) {
@@ -349,9 +353,9 @@ router.post('/keywords', (req: Request, res: Response) => {
 // ===== DASHBOARD DATA =====
 
 // Get complete effort analytics dashboard
-router.get('/effort-dashboard', (req: Request, res: Response) => {
+router.get('/effort-dashboard', async (req: Request, res: Response) => {
     try {
-        const summary = db.prepare(`
+        const summaryResult = await pool.query(`
       SELECT 
         AVG(effort_completion_percentage) as completion,
         AVG(effort_pass_percentage) as pass_rate,
@@ -359,48 +363,48 @@ router.get('/effort-dashboard', (req: Request, res: Response) => {
         AVG(qc_compliance_percentage) as qc_compliance,
         AVG(rework_percentage) as rework
       FROM effort_analytics
-      WHERE date_recorded >= datetime('now', '-30 days')
-    `).get();
+      WHERE date_recorded >= NOW() - INTERVAL '30 days'
+    `);
 
-        const byDept = db.prepare(`
+        const byDeptResult = await pool.query(`
       SELECT department, AVG(effort_completion_percentage) as completion
       FROM effort_analytics
-      WHERE date_recorded >= datetime('now', '-30 days')
+      WHERE date_recorded >= NOW() - INTERVAL '30 days'
       GROUP BY department
-    `).all();
+    `);
 
-        const trends = db.prepare(`
+        const trendsResult = await pool.query(`
       SELECT week_number, effort_percentage
       FROM effort_trends
       ORDER BY week_number DESC
       LIMIT 12
-    `).all();
+    `);
 
-        const heatmap = db.prepare(`
+        const heatmapResult = await pool.query(`
       SELECT team_name, week_number, performance_percentage
       FROM team_performance_heatmap
       ORDER BY team_name, week_number
-    `).all();
+    `);
 
-        const qcStages = db.prepare(`
+        const qcStagesResult = await pool.query(`
       SELECT stage_name, score_percentage
       FROM qc_performance_by_stage
       ORDER BY score_percentage DESC
-    `).all();
+    `);
 
-        const sla = db.prepare(`
+        const slaResult = await pool.query(`
       SELECT team_name, missed_count, delay_days
       FROM sla_misses_delays
       ORDER BY missed_count DESC
-    `).all();
+    `);
 
         res.json({
-            summary,
-            byDepartment: byDept,
-            trends: trends.reverse(),
-            heatmap,
-            qcStages,
-            sla
+            summary: summaryResult.rows[0],
+            byDepartment: byDeptResult.rows,
+            trends: trendsResult.rows.reverse(),
+            heatmap: heatmapResult.rows,
+            qcStages: qcStagesResult.rows,
+            sla: slaResult.rows
         });
     } catch (error) {
         console.error('Error fetching effort dashboard:', error);
@@ -409,9 +413,9 @@ router.get('/effort-dashboard', (req: Request, res: Response) => {
 });
 
 // Get complete performance analytics dashboard
-router.get('/performance-dashboard', (req: Request, res: Response) => {
+router.get('/performance-dashboard', async (req: Request, res: Response) => {
     try {
-        const summary = db.prepare(`
+        const summaryResult = await pool.query(`
       SELECT 
         AVG(kpi_achievement_percentage) as kpi_achievement,
         AVG(ranking_improvement) as ranking_improvement,
@@ -420,25 +424,25 @@ router.get('/performance-dashboard', (req: Request, res: Response) => {
         AVG(traffic_growth_percentage) as traffic_growth,
         AVG(conversion_score) as conversion_score
       FROM performance_analytics
-      WHERE date_recorded >= datetime('now', '-30 days')
-    `).get();
+      WHERE date_recorded >= NOW() - INTERVAL '30 days'
+    `);
 
-        const kpiMetrics = db.prepare(`
+        const kpiMetricsResult = await pool.query(`
       SELECT * FROM kpi_metrics
       ORDER BY metric_name
-    `).all();
+    `);
 
-        const keywords = db.prepare(`
+        const keywordsResult = await pool.query(`
       SELECT keyword, rank_position, search_volume, traffic_count, conversion_count
       FROM keyword_analytics
       ORDER BY traffic_count DESC
       LIMIT 10
-    `).all();
+    `);
 
         res.json({
-            summary,
-            kpiMetrics,
-            topKeywords: keywords
+            summary: summaryResult.rows[0],
+            kpiMetrics: kpiMetricsResult.rows,
+            topKeywords: keywordsResult.rows
         });
     } catch (error) {
         console.error('Error fetching performance dashboard:', error);
@@ -449,54 +453,62 @@ router.get('/performance-dashboard', (req: Request, res: Response) => {
 // ===== DASHBOARD ACTIVITY TRACKING =====
 
 // Get dashboard stats (dynamic based on actual data)
-router.get('/dashboard/stats', (req: Request, res: Response) => {
+router.get('/dashboard/stats', async (req: Request, res: Response) => {
     try {
         // Active campaigns
-        const activeCampaigns = db.prepare(`
+        const activeCampaignsResult = await pool.query(`
       SELECT COUNT(*) as count FROM campaigns 
       WHERE status IN ('active', 'In Progress', 'Active')
-    `).get() as any;
+    `);
 
         // Content published
-        const contentPublished = db.prepare(`
+        const contentPublishedResult = await pool.query(`
       SELECT COUNT(*) as count FROM content 
       WHERE status = 'Published'
-    `).get() as any;
+    `);
 
         // Tasks completed
-        const tasksCompleted = db.prepare(`
+        const tasksCompletedResult = await pool.query(`
       SELECT COUNT(*) as count FROM tasks 
       WHERE status = 'completed'
-    `).get() as any;
+    `);
 
         // Team members
-        const teamMembers = db.prepare(`
+        const teamMembersResult = await pool.query(`
       SELECT COUNT(*) as count FROM users
-    `).get() as any;
+    `);
 
         // Calculate trends (comparing last 30 days with previous 30 days)
-        const campaignsTrend = db.prepare(`
+        const campaignsTrendResult = await pool.query(`
       SELECT 
-        (SELECT COUNT(*) FROM campaigns WHERE status IN ('active', 'In Progress', 'Active') AND created_at >= datetime('now', '-30 days')) as current,
-        (SELECT COUNT(*) FROM campaigns WHERE status IN ('active', 'In Progress', 'Active') AND created_at >= datetime('now', '-60 days') AND created_at < datetime('now', '-30 days')) as previous
-    `).get() as any;
+        (SELECT COUNT(*) FROM campaigns WHERE status IN ('active', 'In Progress', 'Active') AND created_at >= NOW() - INTERVAL '30 days') as current,
+        (SELECT COUNT(*) FROM campaigns WHERE status IN ('active', 'In Progress', 'Active') AND created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days') as previous
+    `);
 
-        const contentTrend = db.prepare(`
+        const contentTrendResult = await pool.query(`
       SELECT 
-        (SELECT COUNT(*) FROM content WHERE status = 'Published' AND created_at >= datetime('now', '-30 days')) as current,
-        (SELECT COUNT(*) FROM content WHERE status = 'Published' AND created_at >= datetime('now', '-60 days') AND created_at < datetime('now', '-30 days')) as previous
-    `).get() as any;
+        (SELECT COUNT(*) FROM content WHERE status = 'Published' AND created_at >= NOW() - INTERVAL '30 days') as current,
+        (SELECT COUNT(*) FROM content WHERE status = 'Published' AND created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days') as previous
+    `);
 
-        const tasksTrend = db.prepare(`
+        const tasksTrendResult = await pool.query(`
       SELECT 
-        (SELECT COUNT(*) FROM tasks WHERE status = 'completed' AND updated_at >= datetime('now', '-30 days')) as current,
-        (SELECT COUNT(*) FROM tasks WHERE status = 'completed' AND updated_at >= datetime('now', '-60 days') AND updated_at < datetime('now', '-30 days')) as previous
-    `).get() as any;
+        (SELECT COUNT(*) FROM tasks WHERE status = 'completed' AND updated_at >= NOW() - INTERVAL '30 days') as current,
+        (SELECT COUNT(*) FROM tasks WHERE status = 'completed' AND updated_at >= NOW() - INTERVAL '60 days' AND updated_at < NOW() - INTERVAL '30 days') as previous
+    `);
 
         const calculateTrendPercentage = (current: number, previous: number) => {
             if (previous === 0) return current > 0 ? 100 : 0;
             return Math.round(((current - previous) / previous) * 100);
         };
+
+        const activeCampaigns = activeCampaignsResult.rows[0];
+        const contentPublished = contentPublishedResult.rows[0];
+        const tasksCompleted = tasksCompletedResult.rows[0];
+        const teamMembers = teamMembersResult.rows[0];
+        const campaignsTrend = campaignsTrendResult.rows[0];
+        const contentTrend = contentTrendResult.rows[0];
+        const tasksTrend = tasksTrendResult.rows[0];
 
         res.json({
             activeCampaigns: activeCampaigns?.count || 0,
@@ -514,9 +526,9 @@ router.get('/dashboard/stats', (req: Request, res: Response) => {
 });
 
 // Get recent projects with progress
-router.get('/dashboard/projects', (req: Request, res: Response) => {
+router.get('/dashboard/projects', async (req: Request, res: Response) => {
     try {
-        const projects = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         id,
         name,
@@ -528,9 +540,9 @@ router.get('/dashboard/projects', (req: Request, res: Response) => {
       FROM projects
       ORDER BY updated_at DESC
       LIMIT 10
-    `).all();
+    `);
 
-        res.json(projects);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching dashboard projects:', error);
         res.status(500).json({ error: 'Failed to fetch dashboard projects' });
@@ -538,9 +550,9 @@ router.get('/dashboard/projects', (req: Request, res: Response) => {
 });
 
 // Get upcoming tasks
-router.get('/dashboard/tasks', (req: Request, res: Response) => {
+router.get('/dashboard/tasks', async (req: Request, res: Response) => {
     try {
-        const tasks = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         id,
         name,
@@ -554,9 +566,9 @@ router.get('/dashboard/tasks', (req: Request, res: Response) => {
       WHERE status != 'completed'
       ORDER BY priority DESC, due_date ASC
       LIMIT 10
-    `).all();
+    `);
 
-        res.json(tasks);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching dashboard tasks:', error);
         res.status(500).json({ error: 'Failed to fetch dashboard tasks' });
@@ -564,10 +576,10 @@ router.get('/dashboard/tasks', (req: Request, res: Response) => {
 });
 
 // Get recent activity
-router.get('/dashboard/activity', (req: Request, res: Response) => {
+router.get('/dashboard/activity', async (req: Request, res: Response) => {
     try {
         // Get recent task completions
-        const taskActivity = db.prepare(`
+        const taskActivityResult = await pool.query(`
       SELECT 
         t.id,
         u.name as user_name,
@@ -579,10 +591,10 @@ router.get('/dashboard/activity', (req: Request, res: Response) => {
       WHERE t.status = 'completed'
       ORDER BY t.updated_at DESC
       LIMIT 5
-    `).all();
+    `);
 
         // Get recent content published
-        const contentActivity = db.prepare(`
+        const contentActivityResult = await pool.query(`
       SELECT 
         c.id,
         u.name as user_name,
@@ -594,10 +606,10 @@ router.get('/dashboard/activity', (req: Request, res: Response) => {
       WHERE c.status = 'Published'
       ORDER BY c.created_at DESC
       LIMIT 5
-    `).all();
+    `);
 
         // Get recent campaign updates
-        const campaignActivity = db.prepare(`
+        const campaignActivityResult = await pool.query(`
       SELECT 
         c.id,
         u.name as user_name,
@@ -608,10 +620,10 @@ router.get('/dashboard/activity', (req: Request, res: Response) => {
       LEFT JOIN users u ON c.created_by = u.id
       ORDER BY c.updated_at DESC
       LIMIT 5
-    `).all();
+    `);
 
         // Combine and sort by timestamp
-        const allActivity = [...(taskActivity || []), ...(contentActivity || []), ...(campaignActivity || [])]
+        const allActivity = [...(taskActivityResult.rows || []), ...(contentActivityResult.rows || []), ...(campaignActivityResult.rows || [])]
             .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
             .slice(0, 10);
 
@@ -623,3 +635,4 @@ router.get('/dashboard/activity', (req: Request, res: Response) => {
 });
 
 export default router;
+

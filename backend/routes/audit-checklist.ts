@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
@@ -13,9 +13,9 @@ const MODULES = ['Content Campaign', 'SEO Campaign', 'Web Developer Campaign', '
 const OUTCOMES = ['Pass', 'Fail', 'Rework'];
 
 // Get all checklists
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const checklists = db.prepare(`
+        const result = await pool.query(`
       SELECT 
         ac.id,
         ac.checklist_name,
@@ -35,9 +35,9 @@ router.get('/', (req: Request, res: Response) => {
       LEFT JOIN audit_checklist_modules acm ON ac.id = acm.checklist_id
       GROUP BY ac.id
       ORDER BY ac.checklist_name
-    `).all();
+    `);
 
-        res.json(checklists);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching checklists:', error);
         res.status(500).json({ error: 'Failed to fetch checklists' });
@@ -45,49 +45,51 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Get checklist by ID with all details
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const checklist = db.prepare(`
-      SELECT * FROM audit_checklists WHERE id = ?
-    `).get(id) as any;
+        const checklistResult = await pool.query(`
+      SELECT * FROM audit_checklists WHERE id = $1
+    `, [id]);
+
+        const checklist = checklistResult.rows[0];
 
         if (!checklist) {
             return res.status(404).json({ error: 'Checklist not found' });
         }
 
-        const items = db.prepare(`
+        const itemsResult = await pool.query(`
       SELECT * FROM audit_checklist_items
-      WHERE checklist_id = ?
+      WHERE checklist_id = $1
       ORDER BY item_order
-    `).all(id);
+    `, [id]);
 
-        const modules = db.prepare(`
+        const modulesResult = await pool.query(`
       SELECT module_name FROM audit_checklist_modules
-      WHERE checklist_id = ?
+      WHERE checklist_id = $1
       ORDER BY module_name
-    `).all(id);
+    `, [id]);
 
-        const campaigns = db.prepare(`
+        const campaignsResult = await pool.query(`
       SELECT * FROM audit_linked_campaigns
-      WHERE checklist_id = ?
+      WHERE checklist_id = $1
       ORDER BY campaign_name
-    `).all(id);
+    `, [id]);
 
-        const scoreLogs = db.prepare(`
+        const scoreLogsResult = await pool.query(`
       SELECT * FROM audit_qc_score_logs
-      WHERE checklist_id = ?
+      WHERE checklist_id = $1
       ORDER BY review_date DESC
       LIMIT 10
-    `).all(id);
+    `, [id]);
 
         res.json({
-            ...(checklist as Record<string, any>),
-            items,
-            modules: modules.map((m: any) => m.module_name),
-            campaigns,
-            scoreLogs
+            ...checklist,
+            items: itemsResult.rows,
+            modules: modulesResult.rows.map((m: any) => m.module_name),
+            campaigns: campaignsResult.rows,
+            scoreLogs: scoreLogsResult.rows
         });
     } catch (error) {
         console.error('Error fetching checklist:', error);
@@ -96,7 +98,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // Create new checklist
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
         const {
             checklist_name,
@@ -119,14 +121,15 @@ router.post('/', (req: Request, res: Response) => {
         }
 
         // Insert checklist
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO audit_checklists (
         checklist_name, checklist_type, checklist_category, description,
         scoring_mode, pass_threshold, rework_threshold,
         auto_fail_required, auto_fail_critical, qc_output_type, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')
+      RETURNING id
+    `, [
             checklist_name,
             checklist_type,
             checklist_category,
@@ -134,56 +137,51 @@ router.post('/', (req: Request, res: Response) => {
             scoring_mode || 'weighted',
             pass_threshold || 85,
             rework_threshold || 70,
-            auto_fail_required ? 1 : 0,
-            auto_fail_critical ? 1 : 0,
+            auto_fail_required ? true : false,
+            auto_fail_critical ? true : false,
             qc_output_type || 'percentage'
-        );
+        ]);
 
-        const checklistId = result.lastInsertRowid;
+        const checklistId = result.rows[0].id;
 
         // Insert items
         if (items && Array.isArray(items)) {
-            const insertItem = db.prepare(`
+            for (let index = 0; index < items.length; index++) {
+                const item = items[index];
+                await pool.query(`
         INSERT INTO audit_checklist_items (
           checklist_id, item_order, item_name, severity, is_required, default_score
         )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-            items.forEach((item: any, index: number) => {
-                insertItem.run(
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
                     checklistId,
                     index + 1,
                     item.item_name,
                     item.severity,
-                    item.is_required ? 1 : 0,
+                    item.is_required ? true : false,
                     item.default_score || 1
-                );
-            });
+                ]);
+            }
         }
 
         // Insert modules
         if (modules && Array.isArray(modules)) {
-            const insertModule = db.prepare(`
+            for (const module of modules) {
+                await pool.query(`
         INSERT INTO audit_checklist_modules (checklist_id, module_name)
-        VALUES (?, ?)
-      `);
-
-            modules.forEach((module: string) => {
-                insertModule.run(checklistId, module);
-            });
+        VALUES ($1, $2)
+      `, [checklistId, module]);
+            }
         }
 
         // Insert campaigns
         if (campaigns && Array.isArray(campaigns)) {
-            const insertCampaign = db.prepare(`
+            for (const campaign of campaigns) {
+                await pool.query(`
         INSERT INTO audit_linked_campaigns (checklist_id, campaign_name, campaign_type, usage_type)
-        VALUES (?, ?, ?, ?)
-      `);
-
-            campaigns.forEach((campaign: any) => {
-                insertCampaign.run(checklistId, campaign.campaign_name, campaign.campaign_type || null, campaign.usage_type || null);
-            });
+        VALUES ($1, $2, $3, $4)
+      `, [checklistId, campaign.campaign_name, campaign.campaign_type || null, campaign.usage_type || null]);
+            }
         }
 
         res.status(201).json({
@@ -196,7 +194,7 @@ router.post('/', (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Error creating checklist:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
+        if (error.code === '23505' || error.message.includes('unique constraint')) {
             return res.status(400).json({ error: 'Checklist name already exists' });
         }
         res.status(500).json({ error: 'Failed to create checklist' });
@@ -204,7 +202,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // Update checklist
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const {
@@ -229,14 +227,14 @@ router.put('/:id', (req: Request, res: Response) => {
         }
 
         // Update checklist
-        db.prepare(`
+        await pool.query(`
       UPDATE audit_checklists
-      SET checklist_name = ?, checklist_type = ?, checklist_category = ?,
-          description = ?, status = ?, scoring_mode = ?, pass_threshold = ?,
-          rework_threshold = ?, auto_fail_required = ?, auto_fail_critical = ?,
-          qc_output_type = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(
+      SET checklist_name = $1, checklist_type = $2, checklist_category = $3,
+          description = $4, status = $5, scoring_mode = $6, pass_threshold = $7,
+          rework_threshold = $8, auto_fail_required = $9, auto_fail_critical = $10,
+          qc_output_type = $11, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $12
+    `, [
             checklist_name,
             checklist_type,
             checklist_category,
@@ -245,64 +243,59 @@ router.put('/:id', (req: Request, res: Response) => {
             scoring_mode || 'weighted',
             pass_threshold || 85,
             rework_threshold || 70,
-            auto_fail_required ? 1 : 0,
-            auto_fail_critical ? 1 : 0,
+            auto_fail_required ? true : false,
+            auto_fail_critical ? true : false,
             qc_output_type || 'percentage',
             id
-        );
+        ]);
 
         // Clear and re-insert items
-        db.prepare('DELETE FROM audit_checklist_items WHERE checklist_id = ?').run(id);
+        await pool.query('DELETE FROM audit_checklist_items WHERE checklist_id = $1', [id]);
         if (items && Array.isArray(items)) {
-            const insertItem = db.prepare(`
+            for (let index = 0; index < items.length; index++) {
+                const item = items[index];
+                await pool.query(`
         INSERT INTO audit_checklist_items (
           checklist_id, item_order, item_name, severity, is_required, default_score
         )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-            items.forEach((item: any, index: number) => {
-                insertItem.run(
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
                     id,
                     index + 1,
                     item.item_name,
                     item.severity,
-                    item.is_required ? 1 : 0,
+                    item.is_required ? true : false,
                     item.default_score || 1
-                );
-            });
+                ]);
+            }
         }
 
         // Clear and re-insert modules
-        db.prepare('DELETE FROM audit_checklist_modules WHERE checklist_id = ?').run(id);
+        await pool.query('DELETE FROM audit_checklist_modules WHERE checklist_id = $1', [id]);
         if (modules && Array.isArray(modules)) {
-            const insertModule = db.prepare(`
+            for (const module of modules) {
+                await pool.query(`
         INSERT INTO audit_checklist_modules (checklist_id, module_name)
-        VALUES (?, ?)
-      `);
-
-            modules.forEach((module: string) => {
-                insertModule.run(id, module);
-            });
+        VALUES ($1, $2)
+      `, [id, module]);
+            }
         }
 
         // Clear and re-insert campaigns
-        db.prepare('DELETE FROM audit_linked_campaigns WHERE checklist_id = ?').run(id);
+        await pool.query('DELETE FROM audit_linked_campaigns WHERE checklist_id = $1', [id]);
         if (campaigns && Array.isArray(campaigns)) {
-            const insertCampaign = db.prepare(`
+            for (const campaign of campaigns) {
+                await pool.query(`
         INSERT INTO audit_linked_campaigns (checklist_id, campaign_name, campaign_type, usage_type)
-        VALUES (?, ?, ?, ?)
-      `);
-
-            campaigns.forEach((campaign: any) => {
-                insertCampaign.run(id, campaign.campaign_name, campaign.campaign_type || null, campaign.usage_type || null);
-            });
+        VALUES ($1, $2, $3, $4)
+      `, [id, campaign.campaign_name, campaign.campaign_type || null, campaign.usage_type || null]);
+            }
         }
 
         res.json({ message: 'Checklist updated successfully' });
     } catch (error: any) {
         console.error('Error updating checklist:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
+        if (error.code === '23505' || error.message.includes('unique constraint')) {
             return res.status(400).json({ error: 'Checklist name already exists' });
         }
         res.status(500).json({ error: 'Failed to update checklist' });
@@ -310,20 +303,20 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // Delete checklist
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
         // Delete related data (cascade handled by DB)
-        db.prepare('DELETE FROM audit_checklist_items WHERE checklist_id = ?').run(id);
-        db.prepare('DELETE FROM audit_checklist_modules WHERE checklist_id = ?').run(id);
-        db.prepare('DELETE FROM audit_linked_campaigns WHERE checklist_id = ?').run(id);
-        db.prepare('DELETE FROM audit_qc_score_logs WHERE checklist_id = ?').run(id);
+        await pool.query('DELETE FROM audit_checklist_items WHERE checklist_id = $1', [id]);
+        await pool.query('DELETE FROM audit_checklist_modules WHERE checklist_id = $1', [id]);
+        await pool.query('DELETE FROM audit_linked_campaigns WHERE checklist_id = $1', [id]);
+        await pool.query('DELETE FROM audit_qc_score_logs WHERE checklist_id = $1', [id]);
 
         // Delete checklist
-        const result = db.prepare('DELETE FROM audit_checklists WHERE id = ?').run(id);
+        const result = await pool.query('DELETE FROM audit_checklists WHERE id = $1', [id]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Checklist not found' });
         }
 
@@ -335,7 +328,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // Reorder items
-router.put('/:id/reorder-items', (req: Request, res: Response) => {
+router.put('/:id/reorder-items', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { items } = req.body;
@@ -344,15 +337,13 @@ router.put('/:id/reorder-items', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Items array is required' });
         }
 
-        const updateItem = db.prepare(`
+        for (const item of items) {
+            await pool.query(`
       UPDATE audit_checklist_items
-      SET item_order = ?
-      WHERE id = ?
-    `);
-
-        items.forEach((item: any) => {
-            updateItem.run(item.item_order, item.id);
-        });
+      SET item_order = $1
+      WHERE id = $2
+    `, [item.item_order, item.id]);
+        }
 
         res.json({ message: 'Items reordered successfully' });
     } catch (error) {
@@ -362,7 +353,7 @@ router.put('/:id/reorder-items', (req: Request, res: Response) => {
 });
 
 // Add QC score log
-router.post('/:id/score-log', (req: Request, res: Response) => {
+router.post('/:id/score-log', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { asset_id, reviewed_by, score, outcome } = req.body;
@@ -371,13 +362,14 @@ router.post('/:id/score-log', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Asset ID, reviewer, score, and outcome are required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO audit_qc_score_logs (checklist_id, asset_id, reviewed_by, score, outcome)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, asset_id, reviewed_by, score, outcome);
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [id, asset_id, reviewed_by, score, outcome]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Score log created successfully'
         });
     } catch (error) {
@@ -416,3 +408,4 @@ router.get('/list/outcomes', (req: Request, res: Response) => {
 });
 
 export default router;
+

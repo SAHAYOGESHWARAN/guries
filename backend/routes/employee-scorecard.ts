@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
 // Get all employee scorecards
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const scorecards = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM employee_scorecards
       ORDER BY employee_name
-    `).all();
+    `);
 
-        res.json(scorecards);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching scorecards:', error);
         res.status(500).json({ error: 'Failed to fetch scorecards' });
@@ -19,57 +19,59 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Get employee scorecard by ID
-router.get('/:employeeId', (req: Request, res: Response) => {
+router.get('/:employeeId', async (req: Request, res: Response) => {
     try {
         const { employeeId } = req.params;
 
-        const scorecard = db.prepare(`
-      SELECT * FROM employee_scorecards WHERE employee_id = ?
-    `).get(employeeId) as any;
+        const scorecardResult = await pool.query(`
+      SELECT * FROM employee_scorecards WHERE employee_id = $1
+    `, [employeeId]);
+
+        const scorecard = scorecardResult.rows[0];
 
         if (!scorecard) {
             return res.status(404).json({ error: 'Employee scorecard not found' });
         }
 
-        const kpiContribution = db.prepare(`
-      SELECT * FROM kpi_contributions WHERE employee_id = ?
-    `).get(employeeId);
+        const kpiContributionResult = await pool.query(`
+      SELECT * FROM kpi_contributions WHERE employee_id = $1
+    `, [employeeId]);
 
-        const qcHistory = db.prepare(`
-      SELECT * FROM qc_performance_history WHERE employee_id = ?
+        const qcHistoryResult = await pool.query(`
+      SELECT * FROM qc_performance_history WHERE employee_id = $1
       ORDER BY date_recorded DESC
       LIMIT 10
-    `).all(employeeId);
+    `, [employeeId]);
 
-        const attendance = db.prepare(`
-      SELECT * FROM attendance_discipline WHERE employee_id = ?
-    `).get(employeeId);
+        const attendanceResult = await pool.query(`
+      SELECT * FROM attendance_discipline WHERE employee_id = $1
+    `, [employeeId]);
 
-        const monthlyContribution = db.prepare(`
-      SELECT * FROM monthly_contributions WHERE employee_id = ?
+        const monthlyContributionResult = await pool.query(`
+      SELECT * FROM monthly_contributions WHERE employee_id = $1
       ORDER BY month_year DESC
       LIMIT 12
-    `).all(employeeId);
+    `, [employeeId]);
 
-        const aiAnalysis = db.prepare(`
-      SELECT * FROM ai_performance_analysis WHERE employee_id = ?
+        const aiAnalysisResult = await pool.query(`
+      SELECT * FROM ai_performance_analysis WHERE employee_id = $1
       ORDER BY generated_at DESC
       LIMIT 1
-    `).get(employeeId);
+    `, [employeeId]);
 
-        const goals = db.prepare(`
-      SELECT * FROM performance_goals WHERE employee_id = ?
+        const goalsResult = await pool.query(`
+      SELECT * FROM performance_goals WHERE employee_id = $1
       ORDER BY due_date
-    `).all(employeeId);
+    `, [employeeId]);
 
         res.json({
-            ...(scorecard as Record<string, any>),
-            kpiContribution,
-            qcHistory,
-            attendance,
-            monthlyContribution,
-            aiAnalysis,
-            goals
+            ...scorecard,
+            kpiContribution: kpiContributionResult.rows[0] || null,
+            qcHistory: qcHistoryResult.rows,
+            attendance: attendanceResult.rows[0] || null,
+            monthlyContribution: monthlyContributionResult.rows,
+            aiAnalysis: aiAnalysisResult.rows[0] || null,
+            goals: goalsResult.rows
         });
     } catch (error) {
         console.error('Error fetching employee scorecard:', error);
@@ -507,3 +509,4 @@ router.delete('/:employeeId/goals/:goalId', (req: Request, res: Response) => {
 });
 
 export default router;
+

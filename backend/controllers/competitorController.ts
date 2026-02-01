@@ -146,3 +146,4 @@ export const deleteCompetitor = async (req: Request, res: Response) => {
     }
 };
 
+

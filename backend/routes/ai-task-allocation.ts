@@ -47,3 +47,4 @@ router.get('/skill-allocations', getSkillBasedAllocations);
 router.get('/metrics', getAllocationMetrics);
 
 export default router;
+

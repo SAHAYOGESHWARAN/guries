@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 // Employee Comparison Controller
 export const getEmployeeComparison = async (req: Request, res: Response) => {
@@ -340,4 +340,5 @@ export const getTeamPerformanceStats = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 // Team Leader Dashboard Controller
 export const getTeamLeaderDashboard = async (req: Request, res: Response) => {
@@ -413,4 +413,5 @@ export const getTeamCapacityForecast = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
 

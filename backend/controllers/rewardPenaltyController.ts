@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 // Reward & Penalty Controller
 export const getRewardsPenalties = async (req: Request, res: Response) => {
@@ -347,6 +347,7 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
 
 
 

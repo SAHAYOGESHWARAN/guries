@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 // Workload Prediction & Allocation Controller
 export const getWorkloadPrediction = async (req: Request, res: Response) => {
@@ -461,4 +461,5 @@ export const getCapacityForecast = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
+
 

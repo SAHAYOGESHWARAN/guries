@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
 // Get all countries
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const countries = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM country_master
       ORDER BY country_name
-    `).all();
+    `);
 
-        res.json(countries);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching countries:', error);
         res.status(500).json({ error: 'Failed to fetch countries' });
@@ -19,13 +19,15 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Get country by ID
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const country = db.prepare(`
-      SELECT * FROM country_master WHERE id = ?
-    `).get(id);
+        const result = await pool.query(`
+      SELECT * FROM country_master WHERE id = $1
+    `, [id]);
+
+        const country = result.rows[0];
 
         if (!country) {
             return res.status(404).json({ error: 'Country not found' });
@@ -39,7 +41,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // Create new country
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
     try {
         const {
             country_name,
@@ -60,7 +62,7 @@ router.post('/', (req: Request, res: Response) => {
         }
 
         // Insert country
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO country_master (
         country_name,
         iso_code,
@@ -71,20 +73,21 @@ router.post('/', (req: Request, res: Response) => {
         allowed_for_smm_targeting,
         status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [
             country_name,
             iso_code,
             region,
             default_language || null,
-            allowed_for_backlinks ? 1 : 0,
-            allowed_for_content_targeting ? 1 : 0,
-            allowed_for_smm_targeting ? 1 : 0,
+            allowed_for_backlinks ? true : false,
+            allowed_for_content_targeting ? true : false,
+            allowed_for_smm_targeting ? true : false,
             status || 'active'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             country_name,
             iso_code,
             region,
@@ -97,7 +100,7 @@ router.post('/', (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Error creating country:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
+        if (error.code === '23505' || error.message.includes('unique constraint')) {
             return res.status(400).json({
                 error: 'Country name or ISO code already exists'
             });
@@ -107,7 +110,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // Update country
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const {
@@ -129,39 +132,39 @@ router.put('/:id', (req: Request, res: Response) => {
         }
 
         // Update country
-        const result = db.prepare(`
+        const result = await pool.query(`
       UPDATE country_master
       SET
-        country_name = ?,
-        iso_code = ?,
-        region = ?,
-        default_language = ?,
-        allowed_for_backlinks = ?,
-        allowed_for_content_targeting = ?,
-        allowed_for_smm_targeting = ?,
-        status = ?,
+        country_name = $1,
+        iso_code = $2,
+        region = $3,
+        default_language = $4,
+        allowed_for_backlinks = $5,
+        allowed_for_content_targeting = $6,
+        allowed_for_smm_targeting = $7,
+        status = $8,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(
+      WHERE id = $9
+    `, [
             country_name,
             iso_code,
             region,
             default_language || null,
-            allowed_for_backlinks ? 1 : 0,
-            allowed_for_content_targeting ? 1 : 0,
-            allowed_for_smm_targeting ? 1 : 0,
+            allowed_for_backlinks ? true : false,
+            allowed_for_content_targeting ? true : false,
+            allowed_for_smm_targeting ? true : false,
             status || 'active',
             id
-        );
+        ]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Country not found' });
         }
 
         res.json({ message: 'Country updated successfully' });
     } catch (error: any) {
         console.error('Error updating country:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
+        if (error.code === '23505' || error.message.includes('unique constraint')) {
             return res.status(400).json({
                 error: 'Country name or ISO code already exists'
             });
@@ -171,13 +174,13 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // Delete country
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const result = db.prepare('DELETE FROM country_master WHERE id = ?').run(id);
+        const result = await pool.query('DELETE FROM country_master WHERE id = $1', [id]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Country not found' });
         }
 
@@ -189,17 +192,17 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // Get countries by region
-router.get('/region/:region', (req: Request, res: Response) => {
+router.get('/region/:region', async (req: Request, res: Response) => {
     try {
         const { region } = req.params;
 
-        const countries = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM country_master
-      WHERE region = ?
+      WHERE region = $1
       ORDER BY country_name
-    `).all(region);
+    `, [region]);
 
-        res.json(countries);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching countries by region:', error);
         res.status(500).json({ error: 'Failed to fetch countries' });
@@ -207,14 +210,14 @@ router.get('/region/:region', (req: Request, res: Response) => {
 });
 
 // Get available regions
-router.get('/list/regions', (req: Request, res: Response) => {
+router.get('/list/regions', async (req: Request, res: Response) => {
     try {
-        const regions = db.prepare(`
+        const result = await pool.query(`
       SELECT DISTINCT region FROM country_master
       ORDER BY region
-    `).all() as any[];
+    `);
 
-        res.json(regions.map(r => r.region));
+        res.json(result.rows.map((r: any) => r.region));
     } catch (error) {
         console.error('Error fetching regions:', error);
         res.status(500).json({ error: 'Failed to fetch regions' });
@@ -222,3 +225,4 @@ router.get('/list/regions', (req: Request, res: Response) => {
 });
 
 export default router;
+

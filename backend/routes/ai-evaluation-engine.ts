@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
 // Get all evaluation reports
-router.get('/reports', (req: Request, res: Response) => {
+router.get('/reports', async (req: Request, res: Response) => {
     try {
-        const reports = db.prepare(`
+        const result = await pool.query(`
       SELECT * FROM ai_evaluation_reports
       ORDER BY evaluation_date DESC
-    `).all();
+    `);
 
-        res.json(reports);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching evaluation reports:', error);
         res.status(500).json({ error: 'Failed to fetch evaluation reports' });
@@ -19,60 +19,62 @@ router.get('/reports', (req: Request, res: Response) => {
 });
 
 // Get evaluation report by ID
-router.get('/reports/:reportId', (req: Request, res: Response) => {
+router.get('/reports/:reportId', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const report = db.prepare(`
-      SELECT * FROM ai_evaluation_reports WHERE report_id = ?
-    `).get(reportId) as any;
+        const reportResult = await pool.query(`
+      SELECT * FROM ai_evaluation_reports WHERE report_id = $1
+    `, [reportId]);
+
+        const report = reportResult.rows[0];
 
         if (!report) {
             return res.status(404).json({ error: 'Report not found' });
         }
 
-        const dataSources = db.prepare(`
-      SELECT * FROM ai_input_data_sources WHERE report_id = ?
-    `).all(reportId);
+        const dataSourcesResult = await pool.query(`
+      SELECT * FROM ai_input_data_sources WHERE report_id = $1
+    `, [reportId]);
 
-        const performanceScores = db.prepare(`
-      SELECT * FROM ai_performance_scores WHERE report_id = ?
-    `).all(reportId);
+        const performanceScoresResult = await pool.query(`
+      SELECT * FROM ai_performance_scores WHERE report_id = $1
+    `, [reportId]);
 
-        const riskFactors = db.prepare(`
-      SELECT * FROM ai_risk_factors_detected WHERE report_id = ?
+        const riskFactorsResult = await pool.query(`
+      SELECT * FROM ai_risk_factors_detected WHERE report_id = $1
       ORDER BY severity DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        const opportunities = db.prepare(`
-      SELECT * FROM ai_improvement_opportunities WHERE report_id = ?
+        const opportunitiesResult = await pool.query(`
+      SELECT * FROM ai_improvement_opportunities WHERE report_id = $1
       ORDER BY priority DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        const recommendations = db.prepare(`
-      SELECT * FROM ai_recommendations WHERE report_id = ?
+        const recommendationsResult = await pool.query(`
+      SELECT * FROM ai_recommendations WHERE report_id = $1
       ORDER BY priority DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        const reasoning = db.prepare(`
-      SELECT * FROM ai_evaluation_reasoning WHERE report_id = ?
-    `).all(reportId);
+        const reasoningResult = await pool.query(`
+      SELECT * FROM ai_evaluation_reasoning WHERE report_id = $1
+    `, [reportId]);
 
-        const history = db.prepare(`
-      SELECT * FROM ai_evaluation_history WHERE report_id = ?
+        const historyResult = await pool.query(`
+      SELECT * FROM ai_evaluation_history WHERE report_id = $1
       ORDER BY evaluation_date DESC
       LIMIT 12
-    `).all(reportId);
+    `, [reportId]);
 
         res.json({
-            ...(report as Record<string, any>),
-            dataSources,
-            performanceScores,
-            riskFactors,
-            opportunities,
-            recommendations,
-            reasoning,
-            history
+            ...report,
+            dataSources: dataSourcesResult.rows,
+            performanceScores: performanceScoresResult.rows,
+            riskFactors: riskFactorsResult.rows,
+            opportunities: opportunitiesResult.rows,
+            recommendations: recommendationsResult.rows,
+            reasoning: reasoningResult.rows,
+            history: historyResult.rows
         });
     } catch (error) {
         console.error('Error fetching evaluation report:', error);
@@ -81,7 +83,7 @@ router.get('/reports/:reportId', (req: Request, res: Response) => {
 });
 
 // Create evaluation report
-router.post('/reports', (req: Request, res: Response) => {
+router.post('/reports', async (req: Request, res: Response) => {
     try {
         const {
             report_id,
@@ -94,26 +96,27 @@ router.post('/reports', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Report ID is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_evaluation_reports (
         report_id, evaluation_period, total_records, status
       )
-      VALUES (?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `, [
             report_id,
             evaluation_period || 'This Month',
             total_records || 0,
             status || 'Completed'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             report_id,
             message: 'Evaluation report created successfully'
         });
     } catch (error: any) {
         console.error('Error creating evaluation report:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
+        if (error.message.includes('unique constraint') || error.code === '23505') {
             return res.status(400).json({ error: 'Report ID already exists' });
         }
         res.status(500).json({ error: 'Failed to create evaluation report' });
@@ -121,16 +124,16 @@ router.post('/reports', (req: Request, res: Response) => {
 });
 
 // Update evaluation report
-router.put('/reports/:reportId', (req: Request, res: Response) => {
+router.put('/reports/:reportId', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const { evaluation_period, total_records, status } = req.body;
 
-        db.prepare(`
+        await pool.query(`
       UPDATE ai_evaluation_reports
-      SET evaluation_period = ?, total_records = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE report_id = ?
-    `).run(evaluation_period, total_records, status, reportId);
+      SET evaluation_period = $1, total_records = $2, status = $3, updated_at = CURRENT_TIMESTAMP
+      WHERE report_id = $4
+    `, [evaluation_period, total_records, status, reportId]);
 
         res.json({ message: 'Evaluation report updated successfully' });
     } catch (error) {
@@ -140,22 +143,22 @@ router.put('/reports/:reportId', (req: Request, res: Response) => {
 });
 
 // Delete evaluation report
-router.delete('/reports/:reportId', (req: Request, res: Response) => {
+router.delete('/reports/:reportId', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
         // Delete related data
-        db.prepare('DELETE FROM ai_input_data_sources WHERE report_id = ?').run(reportId);
-        db.prepare('DELETE FROM ai_performance_scores WHERE report_id = ?').run(reportId);
-        db.prepare('DELETE FROM ai_risk_factors_detected WHERE report_id = ?').run(reportId);
-        db.prepare('DELETE FROM ai_improvement_opportunities WHERE report_id = ?').run(reportId);
-        db.prepare('DELETE FROM ai_recommendations WHERE report_id = ?').run(reportId);
-        db.prepare('DELETE FROM ai_evaluation_reasoning WHERE report_id = ?').run(reportId);
-        db.prepare('DELETE FROM ai_evaluation_history WHERE report_id = ?').run(reportId);
+        await pool.query('DELETE FROM ai_input_data_sources WHERE report_id = $1', [reportId]);
+        await pool.query('DELETE FROM ai_performance_scores WHERE report_id = $1', [reportId]);
+        await pool.query('DELETE FROM ai_risk_factors_detected WHERE report_id = $1', [reportId]);
+        await pool.query('DELETE FROM ai_improvement_opportunities WHERE report_id = $1', [reportId]);
+        await pool.query('DELETE FROM ai_recommendations WHERE report_id = $1', [reportId]);
+        await pool.query('DELETE FROM ai_evaluation_reasoning WHERE report_id = $1', [reportId]);
+        await pool.query('DELETE FROM ai_evaluation_history WHERE report_id = $1', [reportId]);
 
-        const result = db.prepare('DELETE FROM ai_evaluation_reports WHERE report_id = ?').run(reportId);
+        const result = await pool.query('DELETE FROM ai_evaluation_reports WHERE report_id = $1', [reportId]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Report not found' });
         }
 
@@ -167,15 +170,15 @@ router.delete('/reports/:reportId', (req: Request, res: Response) => {
 });
 
 // Get input data sources
-router.get('/reports/:reportId/data-sources', (req: Request, res: Response) => {
+router.get('/reports/:reportId/data-sources', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const sources = db.prepare(`
-      SELECT * FROM ai_input_data_sources WHERE report_id = ?
-    `).all(reportId);
+        const result = await pool.query(`
+      SELECT * FROM ai_input_data_sources WHERE report_id = $1
+    `, [reportId]);
 
-        res.json(sources);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching data sources:', error);
         res.status(500).json({ error: 'Failed to fetch data sources' });
@@ -183,7 +186,7 @@ router.get('/reports/:reportId/data-sources', (req: Request, res: Response) => {
 });
 
 // Add input data source
-router.post('/reports/:reportId/data-sources', (req: Request, res: Response) => {
+router.post('/reports/:reportId/data-sources', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const { source_name, record_count, data_type, status } = req.body;
@@ -192,15 +195,16 @@ router.post('/reports/:reportId/data-sources', (req: Request, res: Response) => 
             return res.status(400).json({ error: 'Source name is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_input_data_sources (
         report_id, source_name, record_count, data_type, status
       )
-      VALUES (?, ?, ?, ?, ?)
-    `).run(reportId, source_name, record_count || 0, data_type || null, status || 'Active');
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [reportId, source_name, record_count || 0, data_type || null, status || 'Active']);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Data source added successfully'
         });
     } catch (error) {
@@ -210,15 +214,15 @@ router.post('/reports/:reportId/data-sources', (req: Request, res: Response) => 
 });
 
 // Get performance scores
-router.get('/reports/:reportId/performance-scores', (req: Request, res: Response) => {
+router.get('/reports/:reportId/performance-scores', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const scores = db.prepare(`
-      SELECT * FROM ai_performance_scores WHERE report_id = ?
-    `).all(reportId);
+        const result = await pool.query(`
+      SELECT * FROM ai_performance_scores WHERE report_id = $1
+    `, [reportId]);
 
-        res.json(scores);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching performance scores:', error);
         res.status(500).json({ error: 'Failed to fetch performance scores' });
@@ -226,7 +230,7 @@ router.get('/reports/:reportId/performance-scores', (req: Request, res: Response
 });
 
 // Add performance score
-router.post('/reports/:reportId/performance-scores', (req: Request, res: Response) => {
+router.post('/reports/:reportId/performance-scores', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const { metric_name, score, trend, status } = req.body;
@@ -235,15 +239,16 @@ router.post('/reports/:reportId/performance-scores', (req: Request, res: Respons
             return res.status(400).json({ error: 'Metric name is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_performance_scores (
         report_id, metric_name, score, trend, status
       )
-      VALUES (?, ?, ?, ?, ?)
-    `).run(reportId, metric_name, score || 0, trend || 'Stable', status || 'Active');
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [reportId, metric_name, score || 0, trend || 'Stable', status || 'Active']);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Performance score added successfully'
         });
     } catch (error) {
@@ -253,16 +258,16 @@ router.post('/reports/:reportId/performance-scores', (req: Request, res: Respons
 });
 
 // Get risk factors
-router.get('/reports/:reportId/risk-factors', (req: Request, res: Response) => {
+router.get('/reports/:reportId/risk-factors', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const factors = db.prepare(`
-      SELECT * FROM ai_risk_factors_detected WHERE report_id = ?
+        const result = await pool.query(`
+      SELECT * FROM ai_risk_factors_detected WHERE report_id = $1
       ORDER BY severity DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        res.json(factors);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching risk factors:', error);
         res.status(500).json({ error: 'Failed to fetch risk factors' });
@@ -270,7 +275,7 @@ router.get('/reports/:reportId/risk-factors', (req: Request, res: Response) => {
 });
 
 // Add risk factor
-router.post('/reports/:reportId/risk-factors', (req: Request, res: Response) => {
+router.post('/reports/:reportId/risk-factors', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const { risk_factor, severity, impact_percentage, description, recommendation, status } = req.body;
@@ -279,12 +284,13 @@ router.post('/reports/:reportId/risk-factors', (req: Request, res: Response) => 
             return res.status(400).json({ error: 'Risk factor is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_risk_factors_detected (
         report_id, risk_factor, severity, impact_percentage, description, recommendation, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `, [
             reportId,
             risk_factor,
             severity || 'Medium',
@@ -292,10 +298,10 @@ router.post('/reports/:reportId/risk-factors', (req: Request, res: Response) => 
             description || null,
             recommendation || null,
             status || 'Active'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Risk factor added successfully'
         });
     } catch (error) {
@@ -305,16 +311,16 @@ router.post('/reports/:reportId/risk-factors', (req: Request, res: Response) => 
 });
 
 // Get improvement opportunities
-router.get('/reports/:reportId/opportunities', (req: Request, res: Response) => {
+router.get('/reports/:reportId/opportunities', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const opportunities = db.prepare(`
-      SELECT * FROM ai_improvement_opportunities WHERE report_id = ?
+        const result = await pool.query(`
+      SELECT * FROM ai_improvement_opportunities WHERE report_id = $1
       ORDER BY priority DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        res.json(opportunities);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching opportunities:', error);
         res.status(500).json({ error: 'Failed to fetch opportunities' });
@@ -322,7 +328,7 @@ router.get('/reports/:reportId/opportunities', (req: Request, res: Response) => 
 });
 
 // Add improvement opportunity
-router.post('/reports/:reportId/opportunities', (req: Request, res: Response) => {
+router.post('/reports/:reportId/opportunities', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const {
@@ -340,13 +346,14 @@ router.post('/reports/:reportId/opportunities', (req: Request, res: Response) =>
             return res.status(400).json({ error: 'Opportunity name is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_improvement_opportunities (
         report_id, opportunity_name, category, potential_impact, priority,
         implementation_effort, description, action_items, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+    `, [
             reportId,
             opportunity_name,
             category || null,
@@ -356,10 +363,10 @@ router.post('/reports/:reportId/opportunities', (req: Request, res: Response) =>
             description || null,
             action_items || null,
             status || 'Active'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Improvement opportunity added successfully'
         });
     } catch (error) {
@@ -369,16 +376,16 @@ router.post('/reports/:reportId/opportunities', (req: Request, res: Response) =>
 });
 
 // Get recommendations
-router.get('/reports/:reportId/recommendations', (req: Request, res: Response) => {
+router.get('/reports/:reportId/recommendations', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const recommendations = db.prepare(`
-      SELECT * FROM ai_recommendations WHERE report_id = ?
+        const result = await pool.query(`
+      SELECT * FROM ai_recommendations WHERE report_id = $1
       ORDER BY priority DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        res.json(recommendations);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching recommendations:', error);
         res.status(500).json({ error: 'Failed to fetch recommendations' });
@@ -386,7 +393,7 @@ router.get('/reports/:reportId/recommendations', (req: Request, res: Response) =
 });
 
 // Add recommendation
-router.post('/reports/:reportId/recommendations', (req: Request, res: Response) => {
+router.post('/reports/:reportId/recommendations', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const {
@@ -402,13 +409,14 @@ router.post('/reports/:reportId/recommendations', (req: Request, res: Response) 
             return res.status(400).json({ error: 'Recommendation text is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_recommendations (
         report_id, recommendation_text, category, priority, estimated_impact,
         implementation_timeline, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `, [
             reportId,
             recommendation_text,
             category || null,
@@ -416,10 +424,10 @@ router.post('/reports/:reportId/recommendations', (req: Request, res: Response) 
             estimated_impact || 0,
             implementation_timeline || null,
             status || 'Active'
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Recommendation added successfully'
         });
     } catch (error) {
@@ -429,15 +437,15 @@ router.post('/reports/:reportId/recommendations', (req: Request, res: Response) 
 });
 
 // Get evaluation reasoning
-router.get('/reports/:reportId/reasoning', (req: Request, res: Response) => {
+router.get('/reports/:reportId/reasoning', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const reasoning = db.prepare(`
-      SELECT * FROM ai_evaluation_reasoning WHERE report_id = ?
-    `).all(reportId);
+        const result = await pool.query(`
+      SELECT * FROM ai_evaluation_reasoning WHERE report_id = $1
+    `, [reportId]);
 
-        res.json(reasoning);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching reasoning:', error);
         res.status(500).json({ error: 'Failed to fetch reasoning' });
@@ -445,7 +453,7 @@ router.get('/reports/:reportId/reasoning', (req: Request, res: Response) => {
 });
 
 // Add evaluation reasoning
-router.post('/reports/:reportId/reasoning', (req: Request, res: Response) => {
+router.post('/reports/:reportId/reasoning', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const {
@@ -460,22 +468,23 @@ router.post('/reports/:reportId/reasoning', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Reasoning section is required' });
         }
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_evaluation_reasoning (
         report_id, reasoning_section, reasoning_text, key_findings, methodology, confidence_score
       )
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `, [
             reportId,
             reasoning_section,
             reasoning_text || null,
             key_findings || null,
             methodology || null,
             confidence_score || 0
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'Reasoning added successfully'
         });
     } catch (error) {
@@ -485,16 +494,16 @@ router.post('/reports/:reportId/reasoning', (req: Request, res: Response) => {
 });
 
 // Get evaluation history
-router.get('/reports/:reportId/history', (req: Request, res: Response) => {
+router.get('/reports/:reportId/history', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
 
-        const history = db.prepare(`
-      SELECT * FROM ai_evaluation_history WHERE report_id = ?
+        const result = await pool.query(`
+      SELECT * FROM ai_evaluation_history WHERE report_id = $1
       ORDER BY evaluation_date DESC
-    `).all(reportId);
+    `, [reportId]);
 
-        res.json(history);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching history:', error);
         res.status(500).json({ error: 'Failed to fetch history' });
@@ -502,26 +511,27 @@ router.get('/reports/:reportId/history', (req: Request, res: Response) => {
 });
 
 // Add evaluation history entry
-router.post('/reports/:reportId/history', (req: Request, res: Response) => {
+router.post('/reports/:reportId/history', async (req: Request, res: Response) => {
     try {
         const { reportId } = req.params;
         const { evaluation_date, overall_score, trend, key_metrics } = req.body;
 
-        const result = db.prepare(`
+        const result = await pool.query(`
       INSERT INTO ai_evaluation_history (
         report_id, evaluation_date, overall_score, trend, key_metrics
       )
-      VALUES (?, ?, ?, ?, ?)
-    `).run(
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [
             reportId,
             evaluation_date || new Date().toISOString(),
             overall_score || 0,
             trend || 'Stable',
             key_metrics || null
-        );
+        ]);
 
         res.status(201).json({
-            id: result.lastInsertRowid,
+            id: result.rows[0].id,
             message: 'History entry added successfully'
         });
     } catch (error) {
@@ -531,3 +541,4 @@ router.post('/reports/:reportId/history', (req: Request, res: Response) => {
 });
 
 export default router;
+

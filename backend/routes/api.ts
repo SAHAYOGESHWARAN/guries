@@ -613,3 +613,4 @@ router.post('/bulk/duplicate', bulkOperationsController.bulkDuplicate);
 router.post('/bulk/export', bulkOperationsController.bulkExport);
 
 export default router;
+

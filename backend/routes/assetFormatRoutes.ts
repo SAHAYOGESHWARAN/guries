@@ -14,3 +14,4 @@ router.put('/:id', updateAssetFormat);
 router.delete('/:id', deleteAssetFormat);
 
 export default router;
+

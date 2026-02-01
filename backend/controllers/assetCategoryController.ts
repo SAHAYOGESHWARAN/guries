@@ -247,3 +247,4 @@ export const getRepositories = async (req: Request, res: Response) => {
         db.close();
     }
 };
+

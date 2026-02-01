@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db';
+import { pool } from "../config/db";
 
 const router = express.Router();
 
@@ -753,3 +753,4 @@ router.put('/capacity-forecast/:teamId/:forecastDate', (req: Request, res: Respo
 });
 
 export default router;
+
