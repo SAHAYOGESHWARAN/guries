@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 import { query, execute, queryOne } from '../utils/dbHelper';
 import { validateRequired, sanitizeObject, throwIfErrors } from '../utils/validation';
 import { getSocket } from '../socket';

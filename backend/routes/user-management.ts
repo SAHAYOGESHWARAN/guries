@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 const router = express.Router();
 

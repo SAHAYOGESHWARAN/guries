@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // AI Evaluation Engine Controller
 export const getAiEvaluation = async (req: Request, res: Response) => {

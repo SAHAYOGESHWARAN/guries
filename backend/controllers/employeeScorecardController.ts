@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // Employee Scorecard Controller
 export const getEmployeeScorecard = async (req: Request, res: Response) => {

@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 import { getSocket } from '../socket';
 
 // Helper to parse JSON/text fields from content_repository rows

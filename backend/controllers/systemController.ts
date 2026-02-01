@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 import os from 'os';
 
 export const getSystemStats = async (req: Request, res: Response) => {

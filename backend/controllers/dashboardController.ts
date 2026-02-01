@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
     try {

@@ -8,21 +8,22 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
 import migrationRoutes from './routes/migration';
-import { db, initDatabase } from './config/db-sqlite';
+import { pool } from './config/db';
 import { initSocket } from './socket';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { initializeDatabase, seedDatabase } from './database/init';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
-const PORT = parseInt(process.env.PORT || '3003', 10);
+const PORT = parseInt(process.env.PORT || process.env.API_PORT || '3001', 10);
 
 // Setup Socket.io
 const io = initSocket(httpServer, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     }
@@ -31,20 +32,29 @@ const io = initSocket(httpServer, {
 // Middleware
 app.use(helmet() as any);
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true
 }));
 app.use(morgan('dev') as any);
-app.use(express.json({ limit: '100mb' }) as any); // Increased limit for file uploads
+app.use(express.json({ limit: '100mb' }) as any);
 app.use(express.urlencoded({ limit: '100mb', extended: true }) as any);
 
-// Initialize SQLite Database
+// Initialize PostgreSQL Database
 const connectDB = async () => {
     try {
-        initDatabase();
-        console.log('✅ Connected to SQLite Database');
-    } catch (err) {
-        console.error('❌ Database initialization failed:', err);
+        // Test connection
+        const result = await pool.query('SELECT NOW()');
+        console.log('✅ Connected to PostgreSQL Database');
+
+        // Initialize schema on startup
+        if (process.env.NODE_ENV !== 'production' || process.env.INIT_DB === 'true') {
+            console.log('🔄 Initializing database schema...');
+            await initializeDatabase();
+            await seedDatabase();
+            console.log('✅ Database schema initialized');
+        }
+    } catch (err: any) {
+        console.error('❌ Database initialization failed:', err.message);
         (process as any).exit(1);
     }
 };
@@ -75,7 +85,7 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// API health endpoint expected by tests
+// API health endpoint
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -100,16 +110,13 @@ const startServer = (portToTry: number) => {
     });
 
     serverInstance.on('error', (err: any) => {
-        // If running tests, avoid async retries/logging that can occur after Jest finishes.
         const isTest = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
         if (err && err.code === 'EADDRINUSE') {
             if (isTest) {
-                // Let the test harness deal with port conflicts synchronously.
                 throw err;
             }
 
             console.warn(`Port ${portToTry} in use, trying ${portToTry + 1}...`);
-            // try next port
             setTimeout(() => startServer(portToTry + 1), 200);
         } else {
             console.error('Server error:', err);
@@ -118,8 +125,8 @@ const startServer = (portToTry: number) => {
     });
 };
 
-// Graceful shutdown to prevent open handles during tests or on process exit
-const gracefulShutdown = () => {
+// Graceful shutdown
+const gracefulShutdown = async () => {
     try {
         if (serverInstance && typeof serverInstance.close === 'function') {
             serverInstance.close();
@@ -127,8 +134,8 @@ const gracefulShutdown = () => {
         if (io && typeof (io as any).close === 'function') {
             (io as any).close();
         }
-        if (db && typeof (db as any).close === 'function') {
-            try { (db as any).close(); } catch {}
+        if (pool && typeof pool.end === 'function') {
+            await pool.end();
         }
     } catch (e) {
         // ignore errors during shutdown

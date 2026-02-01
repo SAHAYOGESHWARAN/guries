@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // Get all task allocation suggestions with filtering
 export const getTaskSuggestions = async (req: Request, res: Response) => {

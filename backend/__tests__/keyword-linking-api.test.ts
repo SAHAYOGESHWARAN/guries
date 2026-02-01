@@ -1,4 +1,4 @@
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 import * as keywordController from '../controllers/keywordController';
 
 describe('Keyword Linking API Endpoints', () => {

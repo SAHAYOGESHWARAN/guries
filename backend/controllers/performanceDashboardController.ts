@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // Performance Dashboard Controller
 export const getPerformanceDashboard = async (req: Request, res: Response) => {

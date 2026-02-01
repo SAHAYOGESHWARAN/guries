@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // Effort Dashboard Controller
 export const getEffortDashboard = async (req: Request, res: Response) => {

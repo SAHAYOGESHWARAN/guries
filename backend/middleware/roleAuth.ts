@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 
 // Extended Request interface with user info
 export interface AuthenticatedRequest extends Request {

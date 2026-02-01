@@ -1,9 +1,9 @@
 /**
- * Database Helper - Unified interface for SQLite operations
+ * Database Helper - Unified interface for PostgreSQL operations
  * Provides consistent API across all controllers
  */
 
-import { db } from '../config/db-sqlite';
+import { pool } from '../config/db';
 
 export interface QueryResult<T = any> {
     rows: T[];
@@ -13,13 +13,12 @@ export interface QueryResult<T = any> {
 /**
  * Execute SELECT query
  */
-export const query = <T = any>(sql: string, params: any[] = []): QueryResult<T> => {
+export const query = async <T = any>(sql: string, params: any[] = []): Promise<QueryResult<T>> => {
     try {
-        const stmt = db.prepare(sql);
-        const rows = stmt.all(...params) as T[];
+        const result = await pool.query(sql, params);
         return {
-            rows,
-            rowCount: rows.length
+            rows: result.rows as T[],
+            rowCount: result.rowCount || 0
         };
     } catch (error: any) {
         console.error('Database query error:', error.message, { sql, params });
@@ -30,13 +29,12 @@ export const query = <T = any>(sql: string, params: any[] = []): QueryResult<T> 
 /**
  * Execute INSERT/UPDATE/DELETE query
  */
-export const execute = (sql: string, params: any[] = []): { changes: number; lastID?: number } => {
+export const execute = async (sql: string, params: any[] = []): Promise<{ changes: number; lastID?: number }> => {
     try {
-        const stmt = db.prepare(sql);
-        const result = stmt.run(...params);
+        const result = await pool.query(sql, params);
         return {
-            changes: result.changes,
-            lastID: result.lastInsertRowid as number
+            changes: result.rowCount || 0,
+            lastID: result.rows[0]?.id
         };
     } catch (error: any) {
         console.error('Database execute error:', error.message, { sql, params });
@@ -47,11 +45,10 @@ export const execute = (sql: string, params: any[] = []): { changes: number; las
 /**
  * Get single row
  */
-export const queryOne = <T = any>(sql: string, params: any[] = []): T | null => {
+export const queryOne = async <T = any>(sql: string, params: any[] = []): Promise<T | null> => {
     try {
-        const stmt = db.prepare(sql);
-        const row = stmt.get(...params) as T | undefined;
-        return row || null;
+        const result = await pool.query(sql, params);
+        return (result.rows[0] as T) || null;
     } catch (error: any) {
         console.error('Database queryOne error:', error.message, { sql, params });
         throw error;
@@ -61,9 +58,9 @@ export const queryOne = <T = any>(sql: string, params: any[] = []): T | null => 
 /**
  * Begin transaction
  */
-export const beginTransaction = () => {
+export const beginTransaction = async () => {
     try {
-        db.exec('BEGIN TRANSACTION');
+        await pool.query('BEGIN TRANSACTION');
     } catch (error: any) {
         console.error('Transaction begin error:', error.message);
         throw error;
@@ -73,9 +70,9 @@ export const beginTransaction = () => {
 /**
  * Commit transaction
  */
-export const commit = () => {
+export const commit = async () => {
     try {
-        db.exec('COMMIT');
+        await pool.query('COMMIT');
     } catch (error: any) {
         console.error('Transaction commit error:', error.message);
         throw error;
@@ -85,9 +82,9 @@ export const commit = () => {
 /**
  * Rollback transaction
  */
-export const rollback = () => {
+export const rollback = async () => {
     try {
-        db.exec('ROLLBACK');
+        await pool.query('ROLLBACK');
     } catch (error: any) {
         console.error('Transaction rollback error:', error.message);
         throw error;
@@ -97,14 +94,14 @@ export const rollback = () => {
 /**
  * Execute transaction with callback
  */
-export const transaction = <T>(callback: () => T): T => {
+export const transaction = async <T>(callback: () => Promise<T>): Promise<T> => {
     try {
-        beginTransaction();
-        const result = callback();
-        commit();
+        await beginTransaction();
+        const result = await callback();
+        await commit();
         return result;
     } catch (error) {
-        rollback();
+        await rollback();
         throw error;
     }
 };

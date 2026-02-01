@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // Team Leader Dashboard Controller
 export const getTeamLeaderDashboard = async (req: Request, res: Response) => {

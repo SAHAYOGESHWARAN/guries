@@ -1,4 +1,4 @@
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 
 describe('Sub-Service Meta Keywords Linking', () => {
     const testSubServiceId = 999;

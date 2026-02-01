@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/db-sqlite';
+import { db } from '../config/db';
 
 // Workload Prediction & Allocation Controller
 export const getWorkloadPrediction = async (req: Request, res: Response) => {

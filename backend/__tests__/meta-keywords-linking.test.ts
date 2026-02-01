@@ -1,4 +1,4 @@
-import { pool } from '../config/db-sqlite';
+import { pool } from '../config/db';
 
 describe('Meta Keywords Linking with Keyword Master', () => {
     beforeAll(async () => {
