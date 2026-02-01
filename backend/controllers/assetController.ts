@@ -1030,7 +1030,16 @@ status = ?,
             }
         }
 
+        // Emit both a QC-specific event and a generic updated event so frontend listeners
+        // using `assetLibrary_updated` (used by `useData`) receive the updated asset
         getSocket().emit('assetLibrary_qc_reviewed', updatedAsset.rows[0]);
+        try {
+            // Try to emit a generic update event so the asset list updates in real-time
+            getSocket().emit('assetLibrary_updated', updatedAsset.rows[0]);
+        } catch (e) {
+            // Non-fatal: if socket emit fails, continue
+            console.error('Socket emit assetLibrary_updated failed:', e);
+        }
 
         // Log QC action for audit trail
         try {
