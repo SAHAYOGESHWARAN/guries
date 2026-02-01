@@ -291,8 +291,8 @@ export function useData<T>(collection: string) {
                 setData(prev => [newItem, ...prev]);
             };
 
-            const handleUpdate = (updatedItem: T & { id: number | string }) => {
-                setData(prev => prev.map(item => (item as any).id === updatedItem.id ? updatedItem : item));
+            const handleUpdate = (updatedItem: Partial<T> & { id: number | string }) => {
+                setData(prev => prev.map(item => (item as any).id === updatedItem.id ? { ...(item as any), ...(updatedItem as any) } : item));
             };
 
             const handleDelete = ({ id }: { id: number | string }) => {
