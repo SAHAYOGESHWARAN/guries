@@ -99,8 +99,12 @@ const QCReviewPage: React.FC = () => {
 
             setActionSuccess('Asset approved successfully!');
             setSelectedAsset(null);
-            fetchPendingAssets();
-            fetchStatistics();
+
+            // Refresh data after a short delay to ensure UI updates
+            setTimeout(() => {
+                fetchPendingAssets();
+                fetchStatistics();
+            }, 500);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to approve asset';
             setActionError(message);
@@ -136,8 +140,12 @@ const QCReviewPage: React.FC = () => {
 
             setActionSuccess('Asset rejected successfully!');
             setSelectedAsset(null);
-            fetchPendingAssets();
-            fetchStatistics();
+
+            // Refresh data after a short delay to ensure UI updates
+            setTimeout(() => {
+                fetchPendingAssets();
+                fetchStatistics();
+            }, 500);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to reject asset';
             setActionError(message);
@@ -173,8 +181,12 @@ const QCReviewPage: React.FC = () => {
 
             setActionSuccess('Rework requested successfully!');
             setSelectedAsset(null);
-            fetchPendingAssets();
-            fetchStatistics();
+
+            // Refresh data after a short delay to ensure UI updates
+            setTimeout(() => {
+                fetchPendingAssets();
+                fetchStatistics();
+            }, 500);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to request rework';
             setActionError(message);
