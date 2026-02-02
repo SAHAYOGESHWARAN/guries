@@ -54,6 +54,7 @@ import * as aiEvaluationController from '../controllers/aiEvaluationController';
 import * as rewardPenaltyController from '../controllers/rewardPenaltyController';
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import * as adminController from '../controllers/adminController';
+import * as urlController from '../controllers/urlController';
 
 import { requireAdmin, requirePermission, requireQCPermission } from '../middleware/roleAuth';
 import assetCategoryRoutes from './assetCategoryRoutes';
@@ -609,6 +610,24 @@ router.post('/bulk/duplicate', bulkOperationsController.bulkDuplicate);
 
 // Bulk Export
 router.post('/bulk/export', bulkOperationsController.bulkExport);
+
+// --- URL Management ---
+// Check slug existence
+router.post('/services/check-slug', asyncHandler(urlController.checkServiceSlugExists));
+router.post('/sub-services/check-slug', asyncHandler(urlController.checkSubServiceSlugExists));
+
+// Generate unique slugs
+router.post('/services/generate-slug', asyncHandler(urlController.generateUniqueServiceSlug));
+router.post('/sub-services/generate-slug', asyncHandler(urlController.generateUniqueSubServiceSlug));
+
+// Validate URL structure
+router.post('/urls/validate', asyncHandler(urlController.validateUrlStructureApi));
+
+// Get URL suggestions
+router.post('/urls/suggestions', asyncHandler(urlController.getUrlSuggestions));
+
+// Get URL analytics
+router.get('/urls/analytics', asyncHandler(urlController.getUrlAnalytics));
 
 export default router;
 

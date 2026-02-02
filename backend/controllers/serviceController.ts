@@ -1,13 +1,21 @@
-
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
-import { validateRequired, throwIfErrors } from '../utils/validation';
-import { getSocket } from '../socket';
+import { validateRequired } from '../utils/validation';
+
+// Socket.io instance (will be imported from app)
+let getSocket: () => any = () => ({ emit: () => {} });
+
+// Export function to set socket instance
+export const setSocketInstance = (socketGetter: () => any) => {
+    getSocket = socketGetter;
+};
 
 // Helper function to generate service code
-const generateServiceCode = (serviceName: string, serviceId?: number): string => {
-    // Format: SVC-XXXX (e.g., SVC-0001, SVC-0002)
-    // Or use initials: WD-001 for Web Development
+const generateServiceCode = (serviceName: string): string => {
+    if (!serviceName) {
+        return `SVC-${Date.now().toString().slice(-4)}`;
+    }
+
     const initials = serviceName
         .split(' ')
         .map(word => word[0])
@@ -20,8 +28,11 @@ const generateServiceCode = (serviceName: string, serviceId?: number): string =>
 };
 
 // Helper function to generate sub-service code
-const generateSubServiceCode = (subServiceName: string, parentServiceCode?: string): string => {
-    // Format: PARENT-XXXX (e.g., WD-0001, WD-0002)
+const generateSubServiceCode = (subServiceName: string): string => {
+    if (!subServiceName) {
+        return `SUB-${Date.now().toString().slice(-3)}`;
+    }
+
     const initials = subServiceName
         .split(' ')
         .map(word => word[0])
@@ -31,6 +42,37 @@ const generateSubServiceCode = (subServiceName: string, parentServiceCode?: stri
 
     const timestamp = Date.now().toString().slice(-3);
     return `${initials}-${timestamp}`;
+};
+
+// Helper function to generate URL slug
+const generateSlug = (text: string): string => {
+    if (!text) return '';
+    
+    return text
+        .toLowerCase()
+        .replace(/[&]/g, 'and')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 100);
+};
+
+// Helper function to generate full URL
+const generateFullUrl = (slug: string, type: 'service' | 'subservice', parentSlug?: string): string => {
+    if (!slug) return '';
+    
+    switch (type) {
+        case 'service':
+            return `/services/${slug}`;
+        case 'subservice':
+            if (parentSlug) {
+                return `/services/${parentSlug}/${slug}`;
+            }
+            return `/services/${slug}`;
+        default:
+            return `/${slug}`;
+    }
 };
 
 // Helper function to parse JSON fields for services
@@ -131,8 +173,7 @@ export const createService = async (req: Request, res: Response) => {
         linkedin_title, linkedin_description, linkedin_image_url,
         facebook_title, facebook_description, facebook_image_url,
         instagram_title, instagram_description, instagram_image_url,
-        social_meta,
-        schema_type_id, robots_index, robots_follow, robots_custom, canonical_url,
+        social_meta, schema_type_id, robots_index, robots_follow, robots_custom, canonical_url,
         redirect_from_urls, hreflang_group_id, core_web_vitals_status, tech_seo_status,
         faq_section_enabled, faq_content,
         has_subservices, subservice_count, primary_subservice_id, featured_asset_id, asset_count, knowledge_topic_id,
@@ -147,8 +188,40 @@ export const createService = async (req: Request, res: Response) => {
     }
 
     try {
+        // Generate service code
         const finalServiceCode = service_code || generateServiceCode(service_name);
-        const computedUrl = full_url || (slug ? `/services/${slug}` : '');
+        
+        // Auto-generate slug and full URL if not provided
+        let finalSlug = slug;
+        let finalFullUrl = full_url;
+        
+        if (!slug || !full_url) {
+            // Generate slug from title
+            let generatedSlug = generateSlug(service_name);
+            
+            // Check if slug already exists and make unique if needed
+            let attempt = 0;
+            const maxAttempts = 10;
+            
+            while (attempt < maxAttempts) {
+                const checkResult = await pool.query('SELECT id FROM services WHERE slug = ?', [generatedSlug]);
+                
+                if (checkResult.rows.length === 0) {
+                    break;
+                }
+                
+                attempt++;
+                generatedSlug = attempt === 1 ? `${generateSlug(service_name)}-1` : `${generateSlug(service_name)}-${attempt}`;
+            }
+            
+            if (attempt >= maxAttempts) {
+                return res.status(500).json({ error: 'Unable to generate unique slug' });
+            }
+            
+            finalSlug = generatedSlug;
+            finalFullUrl = generateFullUrl(finalSlug, 'service');
+        }
+        
         const generatedCreatedAt = new Date().toISOString();
         const generatedCreatedBy = created_by || 1;
 
@@ -178,7 +251,7 @@ export const createService = async (req: Request, res: Response) => {
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )`,
             [
-                service_name, finalServiceCode, slug, computedUrl, menu_heading, short_tagline, service_description,
+                service_name, finalServiceCode, finalSlug, finalFullUrl, menu_heading, short_tagline, service_description,
                 JSON.stringify(industry_ids || []), JSON.stringify(country_ids || []), language, status,
                 show_in_main_menu || 0, show_in_footer_menu || 0, menu_group, menu_position || 0, breadcrumb_label, parent_menu_section,
                 include_in_xml_sitemap || 1, sitemap_priority || 0.8, sitemap_changefreq || 'monthly',
