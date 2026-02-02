@@ -32,6 +32,9 @@ module.exports = function handler(req, res) {
         return assetCategoryMaster(req, res);
     } else if (url.includes('/services')) {
         return services(req, res);
+    } else if (url.includes('/qc-review')) {
+        // Handle QC review endpoint separately (must come before assetLibrary)
+        return handleQCReview(req, res);
     } else if (url.includes('/assetLibrary')) {
         return assetLibrary(req, res);
     } else if (url.includes('/notifications')) {
@@ -40,3 +43,53 @@ module.exports = function handler(req, res) {
         res.status(404).json({ error: 'Endpoint not found', url: url });
     }
 };
+
+// QC Review handler
+function handleQCReview(req, res) {
+    try {
+        if (req.method === 'POST') {
+            const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, user_role } = req.body;
+            
+            if (!qc_score || !qc_decision || !qc_reviewer_id) {
+                return res.status(400).json({
+                    error: 'Missing required fields: qc_score, qc_decision, qc_reviewer_id'
+                });
+            }
+
+            if (!['approved', 'rejected', 'rework'].includes(qc_decision)) {
+                return res.status(400).json({
+                    error: 'Invalid qc_decision. Must be: approved, rejected, or rework'
+                });
+            }
+
+            // Mock successful response
+            const response = {
+                success: true,
+                message: `Asset has been ${qc_decision}`,
+                data: {
+                    asset_id: 2, // Extract from URL or use default
+                    qc_score,
+                    qc_remarks: qc_remarks || '',
+                    qc_decision,
+                    qc_reviewer_id,
+                    user_role: user_role || 'unknown',
+                    status: qc_decision === 'approved' ? 'QC Approved' : 
+                           qc_decision === 'rejected' ? 'QC Rejected' : 'Rework Required',
+                    linking_active: qc_decision === 'approved' ? 1 : 0,
+                    reviewed_at: new Date().toISOString()
+                }
+            };
+
+            res.status(200).json(response);
+            return;
+        }
+
+        res.status(405).json({ error: 'Method not allowed' });
+    } catch (err) {
+        console.error('QC review handler error:', err);
+        res.status(500).json({ 
+            error: err?.message || 'Internal server error',
+            details: 'Failed to process QC review'
+        });
+    }
+}
