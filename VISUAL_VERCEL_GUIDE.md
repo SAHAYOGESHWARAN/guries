@@ -16,7 +16,8 @@
 ├── 📊 Overview
 ├── ⚙️  Settings  ← CLICK HERE
 ├── 📦 Deployments
-└── 📈 Analytics
+└── 📈 Analytics\
+
 ```
 
 ### **Step 3: Find Runtime Settings**
