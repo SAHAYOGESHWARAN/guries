@@ -1,0 +1,20 @@
+{
+  "name": "guires-marketing-control-center",
+  "private": true,
+  "version": "2.5.0",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "build": "npm run build:api && npm run build:frontend",
+    "build:api": "cd api && npm install && npx tsc",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "dev": "npm run build:api && cd frontend && npm run dev"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2"
+  }
+}
