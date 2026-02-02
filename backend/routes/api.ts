@@ -79,6 +79,7 @@ import aiTaskAllocationRoutes from './ai-task-allocation';
 import * as assetUsageController from '../controllers/assetUsageController';
 import * as seoAssetController from '../controllers/seoAssetController';
 import * as bulkOperationsController from '../controllers/bulkOperationsController';
+import qcReviewRoutes from './qcReview';
 
 const router = Router();
 
@@ -463,6 +464,9 @@ router.get('/qc-weightage-configs', qcController.getWeightageConfigs);
 router.post('/qc-weightage-configs', qcController.createWeightageConfig);
 router.put('/qc-weightage-configs/:id', qcController.updateWeightageConfig);
 router.delete('/qc-weightage-configs/:id', qcController.deleteWeightageConfig);
+
+// --- QC Review System ---
+router.use('/qc-review', qcReviewRoutes);
 
 // --- Configuration Masters ---
 router.get('/content-types', configController.getContentTypes);

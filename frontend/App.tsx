@@ -70,6 +70,7 @@ const GraphicsPlanView = React.lazy(() => import('./views/GraphicsPlanView'));
 const QcView = React.lazy(() => import('./views/QcView'));
 const AssetQCView = React.lazy(() => import('./views/AssetQCView'));
 const AdminQCAssetReviewView = React.lazy(() => import('./views/AdminQCAssetReviewView'));
+const QCReviewPage = React.lazy(() => import('./components/QCReviewPage'));
 const WebAssetUploadView = React.lazy(() => import('./views/WebAssetUploadView'));
 const SeoAssetUploadView = React.lazy(() => import('./views/SeoAssetUploadView'));
 const SeoAssetModuleView = React.lazy(() => import('./views/SeoAssetModuleView'));
@@ -196,6 +197,7 @@ const App: React.FC = () => {
       case 'asset-edit':
         return viewState.id ? <AssetEditView assetId={Number(viewState.id)} onNavigate={handleNavigate} /> : <AssetsView onNavigate={handleNavigate} />;
       case 'asset-qc': return <AssetQCView onNavigate={handleNavigate} />;
+      case 'qc-review': return <QCReviewPage />;
       case 'admin-qc-review': return <AdminQCAssetReviewView onNavigate={handleNavigate} />;
       case 'web-asset-upload': return <WebAssetUploadView onNavigate={handleNavigate} />;
       case 'web-asset-edit': return <WebAssetUploadView onNavigate={handleNavigate} editAssetId={viewState.id ? Number(viewState.id) : undefined} />;
