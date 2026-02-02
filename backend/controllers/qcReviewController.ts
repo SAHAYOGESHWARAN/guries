@@ -123,24 +123,43 @@ export const approveAsset = async (req: Request, res: Response) => {
         }
 
         // Check asset exists
-        const assetCheck = await pool.query('SELECT id FROM assets WHERE id = ?', [asset_id]);
+        const assetCheck = await pool.query('SELECT id, workflow_log FROM assets WHERE id = ?', [asset_id]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
-        // Update asset
+        // Parse existing workflow log
+        let workflowLog = [];
+        try {
+            workflowLog = JSON.parse(assetCheck.rows[0].workflow_log || '[]');
+        } catch (e) {
+            workflowLog = [];
+        }
+
+        // Add approval event to workflow log
+        workflowLog.push({
+            action: 'approved',
+            timestamp: new Date().toISOString(),
+            user_id: qc_reviewer_id,
+            status: 'Published',
+            workflow_stage: 'Approve',
+            remarks: qc_remarks
+        });
+
+        // Update asset - CRITICAL: Remove from review options by updating status
         await pool.query(
             `UPDATE assets 
-             SET qc_status = 'Pass',
+             SET qc_status = 'Approved',
                  workflow_stage = 'Approve',
                  linking_active = 1,
                  qc_reviewer_id = ?,
                  qc_reviewed_at = CURRENT_TIMESTAMP,
                  qc_remarks = ?,
                  qc_score = ?,
-                 status = 'Published'
+                 status = 'Published',
+                 workflow_log = ?
              WHERE id = ?`,
-            [qc_reviewer_id, qc_remarks || null, qc_score || null, asset_id]
+            [qc_reviewer_id, qc_remarks || null, qc_score || null, JSON.stringify(workflowLog), asset_id]
         );
 
         // Log status change
@@ -148,15 +167,16 @@ export const approveAsset = async (req: Request, res: Response) => {
 
         // Get updated asset
         const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [asset_id]);
+        const parsed = parseAssetRow(updatedAsset.rows[0]);
 
         res.status(200).json({
             message: 'Asset approved successfully',
             asset_id,
-            qc_status: 'Pass',
+            qc_status: 'Approved',
             workflow_stage: 'Approve',
             linking_active: 1,
             status: 'Published',
-            asset: updatedAsset.rows[0]
+            asset: parsed
         });
     } catch (error: any) {
         console.error('Error approving asset:', error);
@@ -179,24 +199,43 @@ export const rejectAsset = async (req: Request, res: Response) => {
         }
 
         // Check asset exists
-        const assetCheck = await pool.query('SELECT id FROM assets WHERE id = ?', [asset_id]);
+        const assetCheck = await pool.query('SELECT id, workflow_log FROM assets WHERE id = ?', [asset_id]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
+        // Parse existing workflow log
+        let workflowLog = [];
+        try {
+            workflowLog = JSON.parse(assetCheck.rows[0].workflow_log || '[]');
+        } catch (e) {
+            workflowLog = [];
+        }
+
+        // Add rejection event to workflow log
+        workflowLog.push({
+            action: 'rejected',
+            timestamp: new Date().toISOString(),
+            user_id: qc_reviewer_id,
+            status: 'Rejected',
+            workflow_stage: 'QC',
+            remarks: qc_remarks
+        });
+
         // Update asset
         await pool.query(
             `UPDATE assets 
-             SET qc_status = 'Fail',
+             SET qc_status = 'Rejected',
                  workflow_stage = 'QC',
                  linking_active = 0,
                  qc_reviewer_id = ?,
                  qc_reviewed_at = CURRENT_TIMESTAMP,
                  qc_remarks = ?,
                  qc_score = ?,
-                 status = 'Rejected'
+                 status = 'Rejected',
+                 workflow_log = ?
              WHERE id = ?`,
-            [qc_reviewer_id, qc_remarks, qc_score || null, asset_id]
+            [qc_reviewer_id, qc_remarks, qc_score || null, JSON.stringify(workflowLog), asset_id]
         );
 
         // Log status change
@@ -333,6 +372,29 @@ export const getQCStatistics = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Helper function to parse asset row with JSON fields
+function parseAssetRow(asset: any) {
+    if (!asset) return null;
+
+    const jsonFields = [
+        'keywords', 'content_keywords', 'seo_keywords', 'web_h3_tags',
+        'resource_files', 'qc_checklist_items', 'workflow_log', 'linked_service_ids',
+        'linked_sub_service_ids', 'static_service_links'
+    ];
+
+    const parsed = { ...asset };
+    jsonFields.forEach(field => {
+        if (parsed[field] && typeof parsed[field] === 'string') {
+            try {
+                parsed[field] = JSON.parse(parsed[field]);
+            } catch (e) {
+                parsed[field] = [];
+            }
+        }
+    });
+    return parsed;
+}
 
 // Helper function to log QC action
 async function logQCAction(
