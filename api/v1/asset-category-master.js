@@ -1,22 +1,37 @@
-const DEFAULT_TASKS = [
+const DEFAULT_ASSET_CATEGORIES = [
     {
         id: 1,
-        title: 'Review Asset QC',
-        description: 'QC review for marketing assets',
-        status: 'pending',
-        priority: 'high',
-        assigned_to: 'qc_team',
-        due_date: new Date().toISOString(),
+        name: 'Marketing Materials',
+        description: 'Marketing and promotional assets',
+        status: 'active',
         created_at: new Date().toISOString()
     },
     {
         id: 2,
-        title: 'Update Asset Library',
-        description: 'Add new assets to library',
-        status: 'in_progress',
-        priority: 'medium',
-        assigned_to: 'content_team',
-        due_date: new Date(Date.now() + 86400000).toISOString(),
+        name: 'Product Assets',
+        description: 'Product-related images and content',
+        status: 'active',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 3,
+        name: 'Brand Assets',
+        description: 'Brand guidelines and logos',
+        status: 'active',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 4,
+        name: 'Training Materials',
+        description: 'Educational and training content',
+        status: 'active',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 5,
+        name: 'Social Media',
+        description: 'Social media graphics and posts',
+        status: 'active',
         created_at: new Date().toISOString()
     }
 ];
@@ -36,43 +51,40 @@ module.exports = function handler(req, res) {
         if (req.method === 'GET') {
             res.status(200).json({
                 success: true,
-                data: DEFAULT_TASKS,
-                total: DEFAULT_TASKS.length
+                data: DEFAULT_ASSET_CATEGORIES,
+                total: DEFAULT_ASSET_CATEGORIES.length
             });
             return;
         }
 
         if (req.method === 'POST') {
-            const { title, description, priority, assigned_to } = req.body;
+            const { name, description } = req.body;
             
-            if (!title) {
+            if (!name) {
                 return res.status(400).json({
-                    error: 'Title is required'
+                    error: 'Name is required'
                 });
             }
 
-            const newTask = {
+            const newAssetCategory = {
                 id: Date.now(),
-                title,
+                name,
                 description: description || '',
-                status: 'pending',
-                priority: priority || 'medium',
-                assigned_to: assigned_to || 'unassigned',
-                due_date: new Date().toISOString(),
+                status: 'active',
                 created_at: new Date().toISOString()
             };
 
             res.status(201).json({
                 success: true,
-                message: 'Task created successfully',
-                data: newTask
+                message: 'Asset category created successfully',
+                data: newAssetCategory
             });
             return;
         }
 
         res.status(405).json({ error: 'Method not allowed' });
     } catch (err) {
-        console.error('Tasks handler error:', err);
+        console.error('Asset category master handler error:', err);
         res.status(500).json({ 
             error: err?.message || 'Internal server error'
         });

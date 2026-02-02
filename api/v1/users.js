@@ -2,8 +2,6 @@ const memoryStorage = {};
 
 const DEFAULT_USERS = [
     { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active' },
-    { id: 2, name: 'John Smith', email: 'john@example.com', role: 'SEO', status: 'active' },
-    { id: 3, name: 'Sarah Chen', email: 'sarah@example.com', role: 'Content', status: 'active' }
 ];
 
 function getUsers() {
@@ -14,21 +12,57 @@ function getUsers() {
 }
 
 module.exports = function handler(req, res) {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-User-Id, X-User-Role');
 
     if (req.method === 'OPTIONS') {
-        return res.status(200).json({ ok: true });
+        res.status(200).end();
+        return;
     }
 
     try {
         if (req.method === 'GET') {
-            return res.status(200).json(getUsers());
+            res.status(200).json({
+                success: true,
+                data: DEFAULT_USERS,
+                total: DEFAULT_USERS.length
+            });
+            return;
         }
-        return res.status(405).json({ error: 'Method not allowed' });
-    } catch (error) {
-        console.error('API Error:', error);
-        return res.status(500).json({ error: error.message || 'Server error' });
+
+        if (req.method === 'POST') {
+            const { name, email, role } = req.body;
+            
+            if (!name || !email) {
+                return res.status(400).json({
+                    error: 'Name and email are required'
+                });
+            }
+
+            const newUser = {
+                id: Date.now(),
+                name,
+                email,
+                role: role || 'user',
+                status: 'active',
+                created_at: new Date().toISOString()
+            };
+
+            res.status(201).json({
+                success: true,
+                message: 'User created successfully',
+                data: newUser
+            });
+            return;
+        }
+
+        res.status(405).json({ error: 'Method not allowed' });
+    } catch (err) {
+        console.error('Users handler error:', err);
+        res.status(500).json({ 
+            error: err?.message || 'Internal server error'
+        });
     }
 };

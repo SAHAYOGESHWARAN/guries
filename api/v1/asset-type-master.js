@@ -1,22 +1,37 @@
-const DEFAULT_TASKS = [
+const DEFAULT_ASSET_TYPES = [
     {
         id: 1,
-        title: 'Review Asset QC',
-        description: 'QC review for marketing assets',
-        status: 'pending',
-        priority: 'high',
-        assigned_to: 'qc_team',
-        due_date: new Date().toISOString(),
+        name: 'Image',
+        description: 'Static image assets',
+        status: 'active',
         created_at: new Date().toISOString()
     },
     {
         id: 2,
-        title: 'Update Asset Library',
-        description: 'Add new assets to library',
-        status: 'in_progress',
-        priority: 'medium',
-        assigned_to: 'content_team',
-        due_date: new Date(Date.now() + 86400000).toISOString(),
+        name: 'Video',
+        description: 'Video content assets',
+        status: 'active',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 3,
+        name: 'Document',
+        description: 'PDF and document assets',
+        status: 'active',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 4,
+        name: 'Audio',
+        description: 'Audio files and podcasts',
+        status: 'active',
+        created_at: new Date().toISOString()
+    },
+    {
+        id: 5,
+        name: 'Interactive',
+        description: 'Interactive content and tools',
+        status: 'active',
         created_at: new Date().toISOString()
     }
 ];
@@ -36,43 +51,40 @@ module.exports = function handler(req, res) {
         if (req.method === 'GET') {
             res.status(200).json({
                 success: true,
-                data: DEFAULT_TASKS,
-                total: DEFAULT_TASKS.length
+                data: DEFAULT_ASSET_TYPES,
+                total: DEFAULT_ASSET_TYPES.length
             });
             return;
         }
 
         if (req.method === 'POST') {
-            const { title, description, priority, assigned_to } = req.body;
+            const { name, description } = req.body;
             
-            if (!title) {
+            if (!name) {
                 return res.status(400).json({
-                    error: 'Title is required'
+                    error: 'Name is required'
                 });
             }
 
-            const newTask = {
+            const newAssetType = {
                 id: Date.now(),
-                title,
+                name,
                 description: description || '',
-                status: 'pending',
-                priority: priority || 'medium',
-                assigned_to: assigned_to || 'unassigned',
-                due_date: new Date().toISOString(),
+                status: 'active',
                 created_at: new Date().toISOString()
             };
 
             res.status(201).json({
                 success: true,
-                message: 'Task created successfully',
-                data: newTask
+                message: 'Asset type created successfully',
+                data: newAssetType
             });
             return;
         }
 
         res.status(405).json({ error: 'Method not allowed' });
     } catch (err) {
-        console.error('Tasks handler error:', err);
+        console.error('Asset type master handler error:', err);
         res.status(500).json({ 
             error: err?.message || 'Internal server error'
         });

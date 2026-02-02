@@ -1,23 +1,27 @@
-const DEFAULT_TASKS = [
+const DEFAULT_NOTIFICATIONS = [
     {
         id: 1,
-        title: 'Review Asset QC',
-        description: 'QC review for marketing assets',
-        status: 'pending',
-        priority: 'high',
-        assigned_to: 'qc_team',
-        due_date: new Date().toISOString(),
+        title: 'Asset QC Review Required',
+        message: 'Product Demo Video is ready for QC review',
+        type: 'info',
+        read: false,
         created_at: new Date().toISOString()
     },
     {
         id: 2,
-        title: 'Update Asset Library',
-        description: 'Add new assets to library',
-        status: 'in_progress',
-        priority: 'medium',
-        assigned_to: 'content_team',
-        due_date: new Date(Date.now() + 86400000).toISOString(),
-        created_at: new Date().toISOString()
+        title: 'Asset Approved',
+        message: 'Marketing Banner 2024 has been approved',
+        type: 'success',
+        read: false,
+        created_at: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+        id: 3,
+        title: 'New Asset Added',
+        message: 'Brand Guidelines PDF has been added to the library',
+        type: 'info',
+        read: true,
+        created_at: new Date(Date.now() - 7200000).toISOString()
     }
 ];
 
@@ -36,43 +40,41 @@ module.exports = function handler(req, res) {
         if (req.method === 'GET') {
             res.status(200).json({
                 success: true,
-                data: DEFAULT_TASKS,
-                total: DEFAULT_TASKS.length
+                data: DEFAULT_NOTIFICATIONS,
+                total: DEFAULT_NOTIFICATIONS.length
             });
             return;
         }
 
         if (req.method === 'POST') {
-            const { title, description, priority, assigned_to } = req.body;
+            const { title, message, type } = req.body;
             
-            if (!title) {
+            if (!title || !message) {
                 return res.status(400).json({
-                    error: 'Title is required'
+                    error: 'Title and message are required'
                 });
             }
 
-            const newTask = {
+            const newNotification = {
                 id: Date.now(),
                 title,
-                description: description || '',
-                status: 'pending',
-                priority: priority || 'medium',
-                assigned_to: assigned_to || 'unassigned',
-                due_date: new Date().toISOString(),
+                message,
+                type: type || 'info',
+                read: false,
                 created_at: new Date().toISOString()
             };
 
             res.status(201).json({
                 success: true,
-                message: 'Task created successfully',
-                data: newTask
+                message: 'Notification created successfully',
+                data: newNotification
             });
             return;
         }
 
         res.status(405).json({ error: 'Method not allowed' });
     } catch (err) {
-        console.error('Tasks handler error:', err);
+        console.error('Notifications handler error:', err);
         res.status(500).json({ 
             error: err?.message || 'Internal server error'
         });
