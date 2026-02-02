@@ -384,8 +384,29 @@ const ServiceMasterView: React.FC = () => {
     };
 
     const handleSlugChange = (val: string) => {
-        const slug = val.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
-        setFormData(prev => ({ ...prev, slug, full_url: `/services/${slug}` }));
+        // Use proper slug generation
+        const slug = val
+            .toLowerCase()
+            .trim()
+            .replace(/&/g, 'and')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .substring(0, 100);
+
+        const fullUrl = `/services/${slug}`;
+        setFormData(prev => ({ ...prev, slug, full_url: fullUrl }));
+    };
+
+    // Auto-generate slug when service name changes
+    const handleServiceNameChange = (val: string) => {
+        setFormData(prev => ({ ...prev, service_name: val }));
+
+        // Auto-generate slug if not manually edited
+        if (!formData.slug || formData.slug === '') {
+            handleSlugChange(val);
+        }
     };
 
     const handleCopyFullUrl = () => {
@@ -686,6 +707,9 @@ const ServiceMasterView: React.FC = () => {
                                                                     }
 
                                                                     setFormData({ ...formData, ...updates });
+
+                                                                    // Auto-generate slug on name change
+                                                                    handleServiceNameChange(newName);
                                                                 }}
                                                                 className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white placeholder:text-slate-400"
                                                                 placeholder="Enter service name"

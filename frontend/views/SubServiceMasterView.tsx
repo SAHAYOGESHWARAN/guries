@@ -384,12 +384,32 @@ const SubServiceMasterView: React.FC = () => {
     };
 
     const handleSlugChange = (val: string) => {
-        const slug = val.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+        // Use proper slug generation
+        const slug = val
+            .toLowerCase()
+            .trim()
+            .replace(/&/g, 'and')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .substring(0, 100);
+
         // Get parent service slug for URL generation
         const parentService = services.find(s => s.id === formData.parent_service_id);
         const parentSlug = parentService?.slug || 'service';
         const fullUrl = `/services/${parentSlug}/${slug}`;
         setFormData(prev => ({ ...prev, slug, full_url: fullUrl }));
+    };
+
+    // Auto-generate slug when sub-service name changes
+    const handleSubServiceNameChange = (val: string) => {
+        setFormData(prev => ({ ...prev, sub_service_name: val }));
+
+        // Auto-generate slug if not manually edited
+        if (!formData.slug || formData.slug === '') {
+            handleSlugChange(val);
+        }
     };
 
     const handleCopyFullUrl = () => {
@@ -971,6 +991,9 @@ const SubServiceMasterView: React.FC = () => {
                                                                     }
 
                                                                     setFormData({ ...formData, ...updates });
+
+                                                                    // Auto-generate slug on name change
+                                                                    handleSubServiceNameChange(newName);
                                                                 }}
                                                                 className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white placeholder:text-slate-400"
                                                                 placeholder="Enter sub-service name"
