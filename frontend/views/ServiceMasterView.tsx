@@ -186,7 +186,7 @@ const ServiceMasterView: React.FC = () => {
         return libraryAssets
             .filter(a => {
                 const staticLinks = Array.isArray(a.static_service_links) ? a.static_service_links : [];
-                return staticLinks.some((link: any) => 
+                return staticLinks.some((link: any) =>
                     link.type === 'service' && link.service_id === editingItem.id
                 );
             })
@@ -774,24 +774,8 @@ const ServiceMasterView: React.FC = () => {
                                         {/* Content */}
                                         <div className="p-10">
                                             <div className="space-y-8">
-                                                {/* Row 1 - Slug & Full URL */}
+                                                {/* Row 1 - Full URL & Slug */}
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <Tooltip content="URL-friendly identifier. Auto-generated from name if empty.">
-                                                        <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
-                                                            <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
-                                                                <span className="text-sm">🔤</span>
-                                                                URL Slug
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={formData.slug}
-                                                                onChange={(e) => handleSlugChange(e.target.value)}
-                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-slate-50 transition-all font-mono text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white placeholder:text-slate-400"
-                                                                placeholder="auto-generated-slug"
-                                                            />
-                                                        </div>
-                                                    </Tooltip>
-
                                                     <Tooltip content="Canonical URL path used on Guires Marketing OS.">
                                                         <div className="bg-white rounded-xl border-2 border-cyan-100 p-6 hover:border-cyan-300 transition-colors">
                                                             <label className="flex items-center gap-2 text-xs font-bold text-cyan-700 uppercase tracking-widest mb-3">
@@ -817,6 +801,22 @@ const ServiceMasterView: React.FC = () => {
                                                                     {copiedUrl ? '✓' : '📋'}
                                                                 </button>
                                                             </div>
+                                                        </div>
+                                                    </Tooltip>
+
+                                                    <Tooltip content="URL-friendly identifier. Auto-generated from name if empty.">
+                                                        <div className="bg-white rounded-xl border-2 border-blue-100 p-6 hover:border-blue-300 transition-colors">
+                                                            <label className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest mb-3">
+                                                                <span className="text-sm">🔤</span>
+                                                                URL Slug
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.slug}
+                                                                onChange={(e) => handleSlugChange(e.target.value)}
+                                                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-slate-50 transition-all font-mono text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white placeholder:text-slate-400"
+                                                                placeholder="auto-generated-slug"
+                                                            />
                                                         </div>
                                                     </Tooltip>
                                                 </div>
