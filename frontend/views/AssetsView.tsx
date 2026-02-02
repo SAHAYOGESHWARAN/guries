@@ -6626,18 +6626,35 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     </td>}
                                                                     {visibleColumns.workflowStage && <td className="px-2 py-3">
                                                                         {asset.workflow_stage ? (
-                                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${asset.workflow_stage === 'Published' ? 'bg-green-100 text-green-800' :
-                                                                                asset.workflow_stage === 'Sent to QC' ? 'bg-blue-100 text-blue-800' :
-                                                                                    asset.workflow_stage === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                                                                                        asset.workflow_stage === 'In Rework' ? 'bg-orange-100 text-orange-800' :
-                                                                                            asset.workflow_stage === 'Moved to CW' ? 'bg-purple-100 text-purple-800' :
-                                                                                                asset.workflow_stage === 'Moved to GD' ? 'bg-pink-100 text-pink-800' :
-                                                                                                    asset.workflow_stage === 'Moved to WD' ? 'bg-cyan-100 text-cyan-800' :
-                                                                                                        'bg-gray-100 text-gray-600'
+                                                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${asset.workflow_stage === 'Add' ? 'bg-gray-100 text-gray-800' :
+                                                                                asset.workflow_stage === 'Submit' ? 'bg-blue-100 text-blue-800' :
+                                                                                    asset.workflow_stage === 'Sent to QC' ? 'bg-indigo-100 text-indigo-800' :
+                                                                                        asset.workflow_stage === 'QC' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                            asset.workflow_stage === 'Approve' ? 'bg-green-100 text-green-800' :
+                                                                                                asset.workflow_stage === 'Publish' ? 'bg-emerald-100 text-emerald-800' :
+                                                                                                    asset.workflow_stage === 'Published' ? 'bg-emerald-100 text-emerald-800' :
+                                                                                                        asset.workflow_stage === 'In Progress' ? 'bg-orange-100 text-orange-800' :
+                                                                                                            asset.workflow_stage === 'In Rework' ? 'bg-red-100 text-red-800' :
+                                                                                                                asset.workflow_stage === 'Moved to CW' ? 'bg-purple-100 text-purple-800' :
+                                                                                                                    asset.workflow_stage === 'Moved to GD' ? 'bg-pink-100 text-pink-800' :
+                                                                                                                        asset.workflow_stage === 'Moved to WD' ? 'bg-cyan-100 text-cyan-800' :
+                                                                                                                            'bg-gray-100 text-gray-600'
                                                                                 }`}>
+                                                                                {asset.workflow_stage === 'Add' && '📝'}
+                                                                                {asset.workflow_stage === 'Submit' && '📤'}
+                                                                                {asset.workflow_stage === 'Sent to QC' && '📨'}
+                                                                                {asset.workflow_stage === 'QC' && '🔍'}
+                                                                                {asset.workflow_stage === 'Approve' && '✔️'}
+                                                                                {asset.workflow_stage === 'Publish' && '🚀'}
+                                                                                {asset.workflow_stage === 'Published' && '🚀'}
+                                                                                {asset.workflow_stage === 'In Progress' && '⏳'}
+                                                                                {asset.workflow_stage === 'In Rework' && '🔄'}
+                                                                                {asset.workflow_stage === 'Moved to CW' && '✍️'}
+                                                                                {asset.workflow_stage === 'Moved to GD' && '🎨'}
+                                                                                {asset.workflow_stage === 'Moved to WD' && '💻'}
                                                                                 {asset.workflow_stage}
                                                                             </span>
-                                                                        ) : <span className="text-sm text-gray-400">Add</span>}
+                                                                        ) : <span className="text-sm text-gray-400">📝 Add</span>}
                                                                     </td>}
                                                                     {visibleColumns.qcStatus && <td className="px-2 py-3">
                                                                         {qcStatus !== '-' ? (

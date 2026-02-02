@@ -188,6 +188,7 @@ export const rejectAsset = async (req: Request, res: Response) => {
         await pool.query(
             `UPDATE assets 
              SET qc_status = 'Fail',
+                 workflow_stage = 'QC',
                  linking_active = 0,
                  qc_reviewer_id = ?,
                  qc_reviewed_at = CURRENT_TIMESTAMP,
@@ -244,6 +245,7 @@ export const requestRework = async (req: Request, res: Response) => {
         await pool.query(
             `UPDATE assets 
              SET qc_status = 'Rework',
+                 workflow_stage = 'QC',
                  linking_active = 0,
                  qc_reviewer_id = ?,
                  qc_reviewed_at = CURRENT_TIMESTAMP,
