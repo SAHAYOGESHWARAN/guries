@@ -475,6 +475,50 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
         }
 
         const rawAsset = result.rows[0];
+        const assetId = rawAsset.id;
+
+        // Create static service links if services are selected during upload
+        if (linked_service_id || (linked_sub_service_ids && linked_sub_service_ids.length > 0)) {
+            try {
+                // Link to primary service with static flag
+                if (linked_service_id) {
+                    await pool.query(
+                        `INSERT OR IGNORE INTO service_asset_links 
+                         (asset_id, service_id, is_static, created_by) 
+                         VALUES (?, ?, 1, ?)`,
+                        [assetId, linked_service_id, created_by || submitted_by || null]
+                    );
+                }
+
+                // Link to sub-services with static flag
+                if (linked_sub_service_ids && linked_sub_service_ids.length > 0) {
+                    for (const subServiceId of linked_sub_service_ids) {
+                        await pool.query(
+                            `INSERT OR IGNORE INTO subservice_asset_links 
+                             (asset_id, sub_service_id, is_static, created_by) 
+                             VALUES (?, ?, 1, ?)`,
+                            [assetId, subServiceId, created_by || submitted_by || null]
+                        );
+                    }
+                }
+
+                // Update static_service_links field in assets table
+                const staticLinks = [];
+                if (linked_service_id) staticLinks.push({ service_id: linked_service_id, type: 'service' });
+                if (linked_sub_service_ids && linked_sub_service_ids.length > 0) {
+                    linked_sub_service_ids.forEach(id => staticLinks.push({ sub_service_id: id, type: 'subservice' }));
+                }
+
+                await pool.query(
+                    `UPDATE assets SET static_service_links = ? WHERE id = ?`,
+                    [JSON.stringify(staticLinks), assetId]
+                );
+            } catch (linkError) {
+                console.error('Error creating static service links:', linkError);
+                // Don't fail the asset creation if linking fails
+            }
+        }
+
         const newAsset = {
             ...rawAsset,
             name: rawAsset.asset_name || rawAsset.name,
@@ -490,7 +534,8 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             seo_keywords: rawAsset.seo_keywords ? JSON.parse(rawAsset.seo_keywords) : [],
             web_h3_tags: rawAsset.web_h3_tags ? JSON.parse(rawAsset.web_h3_tags) : [],
             resource_files: rawAsset.resource_files ? JSON.parse(rawAsset.resource_files) : [],
-            version_history: rawAsset.version_history ? JSON.parse(rawAsset.version_history) : []
+            version_history: rawAsset.version_history ? JSON.parse(rawAsset.version_history) : [],
+            static_service_links: rawAsset.static_service_links ? JSON.parse(rawAsset.static_service_links) : []
         };
 
         getSocket().emit('assetLibrary_created', newAsset);
@@ -702,6 +747,169 @@ export const deleteAssetLibraryItem = async (req: Request, res: Response) => {
         res.status(204).send();
     } catch (error: any) {
         console.error('Delete asset error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Link asset to service (with static check)
+export const linkAssetToService = async (req: Request, res: Response) => {
+    const { assetId, serviceId, subServiceId } = req.body;
+    const userId = (req as any).user?.id || 1;
+
+    try {
+        // Check if asset exists
+        const asset = await pool.query('SELECT * FROM assets WHERE id = ?', [assetId]);
+        if (asset.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        // Check if this is a static link (created during upload)
+        let isStatic = false;
+        const staticLinks = asset.rows[0].static_service_links ? JSON.parse(asset.rows[0].static_service_links) : [];
+        
+        if (serviceId) {
+            isStatic = staticLinks.some((link: any) => link.service_id === serviceId && link.type === 'service');
+        }
+        if (subServiceId) {
+            isStatic = staticLinks.some((link: any) => link.sub_service_id === subServiceId && link.type === 'subservice');
+        }
+
+        if (isStatic) {
+            return res.status(403).json({ error: 'Cannot modify static service link created during upload' });
+        }
+
+        // Create the link
+        if (serviceId && !subServiceId) {
+            await pool.query(
+                `INSERT OR IGNORE INTO service_asset_links 
+                 (asset_id, service_id, is_static, created_by) 
+                 VALUES (?, ?, 0, ?)`,
+                [assetId, serviceId, userId]
+            );
+        } else if (subServiceId) {
+            await pool.query(
+                `INSERT OR IGNORE INTO subservice_asset_links 
+                 (asset_id, sub_service_id, is_static, created_by) 
+                 VALUES (?, ?, 0, ?)`,
+                [assetId, subServiceId, userId]
+            );
+        }
+
+        res.status(200).json({ message: 'Asset linked successfully' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Unlink asset from service (with static check)
+export const unlinkAssetFromService = async (req: Request, res: Response) => {
+    const { assetId, serviceId, subServiceId } = req.body;
+
+    try {
+        // Check if asset exists
+        const asset = await pool.query('SELECT * FROM assets WHERE id = ?', [assetId]);
+        if (asset.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        // Check if this is a static link (created during upload)
+        let isStatic = false;
+        const staticLinks = asset.rows[0].static_service_links ? JSON.parse(asset.rows[0].static_service_links) : [];
+        
+        if (serviceId) {
+            isStatic = staticLinks.some((link: any) => link.service_id === serviceId && link.type === 'service');
+        }
+        if (subServiceId) {
+            isStatic = staticLinks.some((link: any) => link.sub_service_id === subServiceId && link.type === 'subservice');
+        }
+
+        if (isStatic) {
+            return res.status(403).json({ error: 'Cannot remove static service link created during upload' });
+        }
+
+        // Remove the link
+        if (serviceId && !subServiceId) {
+            await pool.query(
+                `DELETE FROM service_asset_links 
+                 WHERE asset_id = ? AND service_id = ? AND is_static = 0`,
+                [assetId, serviceId]
+            );
+        } else if (subServiceId) {
+            await pool.query(
+                `DELETE FROM subservice_asset_links 
+                 WHERE asset_id = ? AND sub_service_id = ? AND is_static = 0`,
+                [assetId, subServiceId]
+            );
+        }
+
+        res.status(200).json({ message: 'Asset unlinked successfully' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get assets linked to a service
+export const getServiceAssets = async (req: Request, res: Response) => {
+    const { serviceId } = req.params;
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                sal.is_static as link_is_static,
+                sal.created_at as linked_at
+            FROM assets a
+            INNER JOIN service_asset_links sal ON a.id = sal.asset_id
+            WHERE sal.service_id = ?
+            ORDER BY sal.created_at DESC
+        `, [serviceId]);
+
+        // Parse JSON fields for each asset
+        const assets = result.rows.map((asset: any) => ({
+            ...asset,
+            linked_service_ids: asset.linked_service_ids ? JSON.parse(asset.linked_service_ids) : [],
+            linked_sub_service_ids: asset.linked_sub_service_ids ? JSON.parse(asset.linked_sub_service_ids) : [],
+            static_service_links: asset.static_service_links ? JSON.parse(asset.static_service_links) : [],
+            keywords: asset.keywords ? JSON.parse(asset.keywords) : [],
+            content_keywords: asset.content_keywords ? JSON.parse(asset.content_keywords) : [],
+            seo_keywords: asset.seo_keywords ? JSON.parse(asset.seo_keywords) : []
+        }));
+
+        res.status(200).json(assets);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get assets linked to a sub-service
+export const getSubServiceAssets = async (req: Request, res: Response) => {
+    const { subServiceId } = req.params;
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                sal.is_static as link_is_static,
+                sal.created_at as linked_at
+            FROM assets a
+            INNER JOIN subservice_asset_links sal ON a.id = sal.asset_id
+            WHERE sal.sub_service_id = ?
+            ORDER BY sal.created_at DESC
+        `, [subServiceId]);
+
+        // Parse JSON fields for each asset
+        const assets = result.rows.map((asset: any) => ({
+            ...asset,
+            linked_service_ids: asset.linked_service_ids ? JSON.parse(asset.linked_service_ids) : [],
+            linked_sub_service_ids: asset.linked_sub_service_ids ? JSON.parse(asset.linked_sub_service_ids) : [],
+            static_service_links: asset.static_service_links ? JSON.parse(asset.static_service_links) : [],
+            keywords: asset.keywords ? JSON.parse(asset.keywords) : [],
+            content_keywords: asset.content_keywords ? JSON.parse(asset.content_keywords) : [],
+            seo_keywords: asset.seo_keywords ? JSON.parse(asset.seo_keywords) : []
+        }));
+
+        res.status(200).json(assets);
+    } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
 };
@@ -1341,131 +1549,4 @@ export const getSubServiceLinkedAssets = async (req: Request, res: Response) => 
     }
 };
 
-// Link asset to service
-export const linkAssetToService = async (req: Request, res: Response) => {
-    const { serviceId, assetId } = req.body;
-
-    try {
-        // Verify asset exists and is approved
-        const assetCheck = await pool.query(
-            'SELECT id, status, qc_status FROM assets WHERE id = ?',
-            [assetId]
-        );
-
-        if (assetCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
-        }
-
-        const asset = assetCheck.rows[0];
-        if (asset.qc_status !== 'Pass' && asset.qc_status !== 'Approved') {
-            return res.status(400).json({ error: 'Asset must be QC approved before linking' });
-        }
-
-        // Verify service exists
-        const serviceCheck = await pool.query(
-            'SELECT id FROM services WHERE id = ?',
-            [serviceId]
-        );
-
-        if (serviceCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Service not found' });
-        }
-
-        // Create link (INSERT OR IGNORE to prevent duplicates)
-        await pool.query(
-            'INSERT OR IGNORE INTO service_asset_links(service_id, asset_id) VALUES(?, ?)',
-            [serviceId, assetId]
-        );
-
-        // Update asset count
-        await pool.query(
-            'UPDATE services SET asset_count = COALESCE(asset_count, 0) + 1 WHERE id = ? AND NOT EXISTS (SELECT 1 FROM service_asset_links WHERE service_id = ? AND asset_id = ?)',
-            [serviceId, serviceId, assetId]
-        );
-
-        res.status(201).json({ success: true, message: 'Asset linked to service' });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Link asset to sub-service
-export const linkAssetToSubService = async (req: Request, res: Response) => {
-    const { subServiceId, assetId } = req.body;
-
-    try {
-        // Verify asset exists and is approved
-        const assetCheck = await pool.query(
-            'SELECT id, status, qc_status FROM assets WHERE id = ?',
-            [assetId]
-        );
-
-        if (assetCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
-        }
-
-        const asset = assetCheck.rows[0];
-        if (asset.qc_status !== 'Pass' && asset.qc_status !== 'Approved') {
-            return res.status(400).json({ error: 'Asset must be QC approved before linking' });
-        }
-
-        // Verify sub-service exists
-        const subServiceCheck = await pool.query(
-            'SELECT id FROM sub_services WHERE id = ?',
-            [subServiceId]
-        );
-
-        if (subServiceCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Sub-service not found' });
-        }
-
-        // Create link (INSERT OR IGNORE to prevent duplicates)
-        await pool.query(
-            'INSERT OR IGNORE INTO subservice_asset_links(sub_service_id, asset_id) VALUES(?, ?)',
-            [subServiceId, assetId]
-        );
-
-        res.status(201).json({ success: true, message: 'Asset linked to sub-service' });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Unlink asset from service
-export const unlinkAssetFromService = async (req: Request, res: Response) => {
-    const { serviceId, assetId } = req.body;
-
-    try {
-        await pool.query(
-            'DELETE FROM service_asset_links WHERE service_id = ? AND asset_id = ?',
-            [serviceId, assetId]
-        );
-
-        // Update asset count
-        await pool.query(
-            'UPDATE services SET asset_count = COALESCE(asset_count, 0) - 1 WHERE id = ?',
-            [serviceId]
-        );
-
-        res.status(200).json({ success: true, message: 'Asset unlinked from service' });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Unlink asset from sub-service
-export const unlinkAssetFromSubService = async (req: Request, res: Response) => {
-    const { subServiceId, assetId } = req.body;
-
-    try {
-        await pool.query(
-            'DELETE FROM subservice_asset_links WHERE sub_service_id = ? AND asset_id = ?',
-            [subServiceId, assetId]
-        );
-
-        res.status(200).json({ success: true, message: 'Asset unlinked from sub-service' });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-};
 

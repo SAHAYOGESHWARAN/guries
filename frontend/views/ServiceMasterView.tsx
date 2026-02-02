@@ -180,6 +180,19 @@ const ServiceMasterView: React.FC = () => {
         });
     }, [libraryAssets, editingItem]);
 
+    // Static links - assets that were linked during upload and cannot be unlinked
+    const staticLinkedAssets = useMemo(() => {
+        if (!editingItem) return [];
+        return libraryAssets
+            .filter(a => {
+                const staticLinks = Array.isArray(a.static_service_links) ? a.static_service_links : [];
+                return staticLinks.some((link: any) => 
+                    link.type === 'service' && link.service_id === editingItem.id
+                );
+            })
+            .map(a => a.id);
+    }, [libraryAssets, editingItem]);
+
     const availableLibraryAssets = useMemo(() => {
         // For new services (editingItem is null), show all assets
         // For existing services, filter out already linked assets
@@ -2045,6 +2058,7 @@ Lists:
                                         repositoryFilter={repositoryFilter}
                                         setRepositoryFilter={setRepositoryFilter}
                                         allAssets={libraryAssets}
+                                        staticLinks={staticLinkedAssets}
                                     />
 
                                     {/* 3. LINKING METADATA - SECOND */}

@@ -11,6 +11,7 @@ type Props = {
     repositoryFilter?: string;
     setRepositoryFilter?: (v: string) => void;
     allAssets?: AssetLibraryItem[];
+    staticLinks?: number[]; // Array of asset IDs that are statically linked
 };
 
 const ServiceAssetLinker: React.FC<Props> = ({
@@ -22,7 +23,8 @@ const ServiceAssetLinker: React.FC<Props> = ({
     totalAssets,
     repositoryFilter = 'All',
     setRepositoryFilter,
-    allAssets = []
+    allAssets = [],
+    staticLinks = []
 }) => {
     const [repositories, setRepositories] = React.useState<string[]>(['All', 'Web', 'SEO', 'SMM']);
     const [loading, setLoading] = React.useState(false);
@@ -179,20 +181,33 @@ const ServiceAssetLinker: React.FC<Props> = ({
                                                                 {asset.repository}
                                                             </span>
                                                             <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">ID: {asset.id}</span>
+                                                            {staticLinks.includes(asset.id) && (
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-[9px] font-bold uppercase bg-amber-100 text-amber-700 border border-amber-300">
+                                                                    🔒 Static
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Unlink Button */}
-                                                <button
-                                                    onClick={() => onToggle(asset)}
-                                                    className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-2 border-transparent hover:border-red-200"
-                                                    title="Unlink this asset"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
+                                                {/* Unlink Button - Disabled for static links */}
+                                                {staticLinks.includes(asset.id) ? (
+                                                    <div className="flex-shrink-0 p-2.5 text-amber-600 bg-amber-50 rounded-lg border-2 border-amber-200" title="Static link - cannot be removed (created during upload)">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                        </svg>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => onToggle(asset)}
+                                                        className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-2 border-transparent hover:border-red-200"
+                                                        title="Unlink this asset"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     )) : (

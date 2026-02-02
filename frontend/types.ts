@@ -866,6 +866,9 @@ export interface AssetLibraryItem {
     // Metadata timestamps
     updated_at?: string;
     created_at?: string;
+
+    // Static service links - assets linked during upload that cannot be unlinked
+    static_service_links?: Array<{ service_id?: number; sub_service_id?: number; type: 'service' | 'subservice' }>;
 }
 
 export interface Integration {
