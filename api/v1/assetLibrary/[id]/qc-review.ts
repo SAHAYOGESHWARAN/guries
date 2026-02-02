@@ -116,15 +116,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
 
                     console.log(`Proxying POST to ${targetPostUrl}`);
-                    const proxied = await fetch(targetPostUrl, {
-                        method: 'POST',
-                        headers: forwardPostHeaders as any,
-                        body: bodyToSend,
-                        timeout: 30000
-                    });
-                    const text = await proxied.text();
-                    res.status(proxied.status).send(text);
-                    return;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                    try {
+                        const proxied = await fetch(targetPostUrl, {
+                            method: 'POST',
+                            headers: forwardPostHeaders as any,
+                            body: bodyToSend,
+                            signal: controller.signal
+                        });
+                        const text = await proxied.text();
+                        res.status(proxied.status).send(text);
+                        return;
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
                 } catch (proxyErr: any) {
                     console.error('Proxy error for POST /qc-review:', proxyErr);
                     return res.status(502).json({
