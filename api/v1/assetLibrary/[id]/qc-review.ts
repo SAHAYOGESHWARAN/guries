@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL;
                 if (BACKEND_URL) {
                     // Forward a small, safe set of headers to the backend
-                    const targetGetUrl = `${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`;
+                    const targetGetUrl = `${BACKEND_URL.replace(/\/+$/, '')}/api/v1/assetLibrary/${assetId}/qc-review`;
                     const allowedGetHeaders = ['accept', 'authorization', 'cookie', 'x-user-id', 'x-user-role'];
                     const forwardGetHeaders: any = {};
                     Object.entries(req.headers || {}).forEach(([k, v]) => {
@@ -83,11 +83,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'POST') {
             if (!reviewAsset) {
                 // Proxy POST to external backend if available
-                const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL;
-                if (BACKEND_URL) {
+                const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+                if (!BACKEND_URL) {
+                    console.error('POST /qc-review: Backend controller not found and no BACKEND_URL configured');
+                    return res.status(503).json({
+                        error: 'Backend service unavailable',
+                        message: 'QC review service is not properly configured. Please contact support.'
+                    });
+                }
+
+                try {
                     // Forward headers and body
                     // Build a safe header set for forwarding and ensure JSON body is stringified
-                    const targetPostUrl = `${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`;
+                    const targetPostUrl = `${BACKEND_URL.replace(/\/+$/, '')}/api/v1/assetLibrary/${assetId}/qc-review`;
                     const allowedPostHeaders = ['content-type', 'authorization', 'cookie', 'x-user-id', 'x-user-role', 'accept'];
                     const forwardPostHeaders: any = {};
                     Object.entries(req.headers || {}).forEach(([k, v]) => {
@@ -107,16 +115,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         bodyToSend = undefined;
                     }
 
+                    console.log(`Proxying POST to ${targetPostUrl}`);
                     const proxied = await fetch(targetPostUrl, {
                         method: 'POST',
                         headers: forwardPostHeaders as any,
-                        body: bodyToSend
+                        body: bodyToSend,
+                        timeout: 30000
                     });
                     const text = await proxied.text();
                     res.status(proxied.status).send(text);
                     return;
+                } catch (proxyErr: any) {
+                    console.error('Proxy error for POST /qc-review:', proxyErr);
+                    return res.status(502).json({
+                        error: 'Backend service error',
+                        message: proxyErr.message || 'Failed to reach backend service'
+                    });
                 }
-                return res.status(501).json({ error: 'Backend controller unavailable' });
             }
 
             // Allow frontend-sent headers to seed reviewer info if not included in body
