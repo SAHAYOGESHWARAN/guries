@@ -1,0 +1,17 @@
+{
+  "name": "guires-marketing-api",
+  "version": "1.0.0",
+  "description": "API endpoints for Guries Marketing Control Center",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "typescript": "^5.1.6"
+  }
+}

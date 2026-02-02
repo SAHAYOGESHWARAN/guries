@@ -11,11 +11,12 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "build": "npm run build:all",
-    "build:all": "npm run build:frontend && npm run build:backend",
+    "build:all": "npm run build:api && npm run build:frontend && npm run build:backend",
+    "build:api": "cd api && npm install && npx tsc",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "cd backend && npm install && npm run build",
     "preview": "cd frontend && npm run preview",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../api && npm install",
     "vercel-build": "npm run build:all"
   },
   "dependencies": {
