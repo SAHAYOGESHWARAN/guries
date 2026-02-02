@@ -61,10 +61,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // If backend controller not present (e.g. on Vercel), proxy to external backend if configured
                 const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL;
                 if (BACKEND_URL) {
-                    const proxied = await fetch(`${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`, {
-                        method: 'GET',
-                        headers: req.headers as any
+                    // Forward a small, safe set of headers to the backend
+                    const targetGetUrl = `${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`;
+                    const allowedGetHeaders = ['accept', 'authorization', 'cookie', 'x-user-id', 'x-user-role'];
+                    const forwardGetHeaders: any = {};
+                    Object.entries(req.headers || {}).forEach(([k, v]) => {
+                        const lk = k.toLowerCase();
+                        if (allowedGetHeaders.includes(lk)) forwardGetHeaders[lk] = Array.isArray(v) ? v[0] : v;
                     });
+                    const proxied = await fetch(targetGetUrl, { method: 'GET', headers: forwardGetHeaders as any });
                     const text = await proxied.text();
                     res.status(proxied.status).send(text);
                     return;
@@ -81,10 +86,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const BACKEND_URL = process.env.BACKEND_URL || process.env.API_URL || process.env.VERCEL_BACKEND_URL;
                 if (BACKEND_URL) {
                     // Forward headers and body
-                    const proxied = await fetch(`${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`, {
+                    // Build a safe header set for forwarding and ensure JSON body is stringified
+                    const targetPostUrl = `${BACKEND_URL.replace(/\/+$/,'')}/api/v1/assetLibrary/${assetId}/qc-review`;
+                    const allowedPostHeaders = ['content-type', 'authorization', 'cookie', 'x-user-id', 'x-user-role', 'accept'];
+                    const forwardPostHeaders: any = {};
+                    Object.entries(req.headers || {}).forEach(([k, v]) => {
+                        const lk = k.toLowerCase();
+                        if (allowedPostHeaders.includes(lk)) forwardPostHeaders[lk] = Array.isArray(v) ? v[0] : v;
+                    });
+                    if (!forwardPostHeaders['content-type']) forwardPostHeaders['content-type'] = 'application/json';
+
+                    let bodyToSend: any = undefined;
+                    try {
+                        if (req.body && typeof req.body === 'object' && Object.keys(req.body).length) {
+                            bodyToSend = JSON.stringify(req.body);
+                        } else if (typeof req.body === 'string' && req.body.length) {
+                            bodyToSend = req.body;
+                        }
+                    } catch (e) {
+                        bodyToSend = undefined;
+                    }
+
+                    const proxied = await fetch(targetPostUrl, {
                         method: 'POST',
-                        headers: Object.assign({}, req.headers, { 'content-type': req.headers['content-type'] || 'application/json' }) as any,
-                        body: req.body && Object.keys(req.body).length ? JSON.stringify(req.body) : undefined
+                        headers: forwardPostHeaders as any,
+                        body: bodyToSend
                     });
                     const text = await proxied.text();
                     res.status(proxied.status).send(text);
