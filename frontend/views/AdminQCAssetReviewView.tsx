@@ -212,7 +212,18 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
         setSubmitting(true);
         try {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
-            const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
+            
+            // Determine the correct endpoint based on decision
+            let endpoint = '';
+            if (decision === 'approved') {
+                endpoint = `${apiUrl}/qcReview/assets/${selectedAsset.id}/approve`;
+            } else if (decision === 'rejected') {
+                endpoint = `${apiUrl}/qcReview/assets/${selectedAsset.id}/reject`;
+            } else if (decision === 'rework') {
+                endpoint = `${apiUrl}/qcReview/assets/${selectedAsset.id}/rework`;
+            }
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -222,12 +233,10 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                 body: JSON.stringify({
                     qc_score: qcScore || 0,
                     qc_remarks: qcRemarks || '',
-                    qc_decision: decision,
                     qc_reviewer_id: user.id,
                     user_role: user.role,
                     checklist_items: checklistItems,
-                    checklist_completion: Object.values(checklistItems).every(v => v),
-                    linking_active: decision === 'approved'
+                    checklist_completion: Object.values(checklistItems).every(v => v)
                 })
             });
 

@@ -81,6 +81,7 @@ import * as seoAssetController from '../controllers/seoAssetController';
 import * as bulkOperationsController from '../controllers/bulkOperationsController';
 import qcReviewRoutes from './qcReview';
 import assetUploadRoutes from './assetUpload';
+import assetServiceLinkingRoutes from './assetServiceLinking';
 import * as assetUploadController from '../controllers/assetUploadController';
 
 const router = Router();
@@ -469,6 +470,9 @@ router.delete('/qc-weightage-configs/:id', qcController.deleteWeightageConfig);
 
 // --- QC Review System ---
 router.use('/qc-review', qcReviewRoutes);
+
+// --- Asset Service Linking ---
+router.use('/assetServiceLinking', assetServiceLinkingRoutes);
 
 // --- Asset Upload with Service Linking ---
 router.use('/assets', assetUploadRoutes);

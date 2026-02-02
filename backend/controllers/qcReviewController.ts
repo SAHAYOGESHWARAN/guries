@@ -30,7 +30,7 @@ export const getPendingQCAssets = async (req: Request, res: Response) => {
                 asset_category,
                 keywords
             FROM assets 
-            WHERE qc_status IN ('Pending', 'Rework')
+            WHERE qc_status IN ('QC Pending', 'Rework')
         `;
 
         const params: any[] = [];
@@ -52,7 +52,7 @@ export const getPendingQCAssets = async (req: Request, res: Response) => {
         }));
 
         // Get total count
-        let countQuery = `SELECT COUNT(*) as total FROM assets WHERE qc_status IN ('Pending', 'Rework')`;
+        let countQuery = `SELECT COUNT(*) as total FROM assets WHERE qc_status IN ('QC Pending', 'Rework')`;
         if (status && status !== 'all') {
             countQuery = `SELECT COUNT(*) as total FROM assets WHERE qc_status = ?`;
         }
@@ -146,17 +146,17 @@ export const approveAsset = async (req: Request, res: Response) => {
             remarks: qc_remarks
         });
 
-        // Update asset - CRITICAL: Remove from review options by updating status
+        // Update asset - CRITICAL: Remove from review options by updating status and workflow stage
         await pool.query(
             `UPDATE assets 
              SET qc_status = 'Approved',
-                 workflow_stage = 'Approve',
+                 workflow_stage = 'Published',
                  linking_active = 1,
                  qc_reviewer_id = ?,
                  qc_reviewed_at = CURRENT_TIMESTAMP,
                  qc_remarks = ?,
                  qc_score = ?,
-                 status = 'Published',
+                 status = 'QC Approved',
                  workflow_log = ?
              WHERE id = ?`,
             [qc_reviewer_id, qc_remarks || null, qc_score || null, JSON.stringify(workflowLog), asset_id]
@@ -173,9 +173,9 @@ export const approveAsset = async (req: Request, res: Response) => {
             message: 'Asset approved successfully',
             asset_id,
             qc_status: 'Approved',
-            workflow_stage: 'Approve',
+            workflow_stage: 'Published',
             linking_active: 1,
-            status: 'Published',
+            status: 'QC Approved',
             asset: parsed
         });
     } catch (error: any) {
@@ -345,9 +345,9 @@ export const getQCStatistics = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT 
-                COUNT(CASE WHEN qc_status = 'Pending' THEN 1 END) as pending_count,
-                COUNT(CASE WHEN qc_status = 'Pass' THEN 1 END) as approved_count,
-                COUNT(CASE WHEN qc_status = 'Fail' THEN 1 END) as rejected_count,
+                COUNT(CASE WHEN qc_status = 'QC Pending' THEN 1 END) as pending_count,
+                COUNT(CASE WHEN qc_status = 'Approved' THEN 1 END) as approved_count,
+                COUNT(CASE WHEN qc_status = 'Reject' THEN 1 END) as rejected_count,
                 COUNT(CASE WHEN qc_status = 'Rework' THEN 1 END) as rework_count,
                 COUNT(*) as total_count,
                 ROUND(AVG(CASE WHEN qc_score IS NOT NULL THEN qc_score ELSE NULL END), 2) as avg_qc_score

@@ -85,8 +85,8 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     const [verifiedBy, setVerifiedBy] = useState<number | null>(null);
 
     // Section 4.9 & 4.10: Workflow & QC (SEPARATE fields)
-    const [workflowStage, setWorkflowStage] = useState('In Progress');
-    const [qcStatus, setQcStatus] = useState('');
+    const [workflowStage, setWorkflowStage] = useState<'Add' | 'In Progress' | 'Sent to QC' | 'Published' | 'In Rework' | 'Moved to CW' | 'Moved to GD' | 'Moved to WD'>('In Progress');
+    const [qcStatus, setQcStatus] = useState<'QC Pending' | 'Rework' | 'Approved' | 'Reject' | 'Pass' | 'Fail' | ''>('');
 
     // Section 4.11: Versioning
     const [versionHistory, setVersionHistory] = useState<Array<{ version: string; date: string; action: string; user: string }>>([]);
@@ -137,7 +137,12 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                 setPublishedBy(existing.published_by || null);
                 setVerifiedBy(existing.verified_by || null);
                 setH3Tags(existing.web_h3_tags?.length ? existing.web_h3_tags : ['']);
-                setVersionHistory(existing.version_history || []);
+                setVersionHistory((existing.version_history || []).map(entry => ({
+                    version: entry.version,
+                    date: entry.date,
+                    action: entry.action,
+                    user: entry.user || 'Unknown'
+                })));
                 setUploadedFileUrls(existing.resource_files || []);
                 setAiPlagiarismScore(existing.ai_plagiarism_score || 0);
                 if (bodyEditorRef.current && existing.web_body_content) {
@@ -156,14 +161,14 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     };
 
     // Section 4.10: Workflow Stage change with QC logic
-    const handleWorkflowStageChange = (newStage: string) => {
+    const handleWorkflowStageChange = (newStage: 'Add' | 'In Progress' | 'Sent to QC' | 'Published' | 'In Rework' | 'Moved to CW' | 'Moved to GD' | 'Moved to WD') => {
         setWorkflowStage(newStage);
         if (newStage === 'Sent to QC') setQcStatus('QC Pending');
         else if (newStage === 'In Progress') setQcStatus('');
     };
 
     // Section 4.10: QC Status change with workflow logic
-    const handleQcStatusChange = (newStatus: string) => {
+    const handleQcStatusChange = (newStatus: 'QC Pending' | 'Rework' | 'Approved' | 'Reject' | 'Pass' | 'Fail' | '') => {
         setQcStatus(newStatus);
         if (newStatus === 'Rework') setWorkflowStage('In Rework');
     };
@@ -274,7 +279,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
         return errors;
     };
 
-    // Form submission with versioning (Section 4.11)
+    // Form submission with versioning (Section 4.11) - Enhanced with auto-linking
     const handleSubmit = async (submitForQC: boolean = false) => {
         const errors = validateForm(submitForQC);
         if (errors.length > 0) { setValidationErrors(errors); return; }
@@ -284,25 +289,58 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
             const currentVersion = formData.version_number || 'v1.0';
             const newVersion = editAssetId ? `v${(parseFloat(currentVersion.replace('v', '')) + 0.1).toFixed(1)}` : 'v1.0';
             const newVersionEntry = { version: editAssetId ? newVersion : 'v1.0', date: new Date().toISOString(), action: submitForQC ? 'Submitted for QC' : editAssetId ? 'Updated' : 'Created', user: currentUser?.name || 'Unknown' };
-            let finalWorkflowStage = workflowStage, finalQcStatus = qcStatus, finalStatus = 'Draft';
+            let finalWorkflowStage: 'Add' | 'In Progress' | 'Sent to QC' | 'Published' | 'In Rework' | 'Moved to CW' | 'Moved to GD' | 'Moved to WD' = 'In Progress';
+            let finalQcStatus: 'QC Pending' | 'Rework' | 'Approved' | 'Reject' | 'Pass' | 'Fail' | undefined = undefined;
+            let finalStatus: 'Draft' | 'Pending QC Review' | 'QC Approved' | 'QC Rejected' | 'Rework Required' | 'Published' | 'Archived' = 'Draft';
             if (submitForQC) { finalWorkflowStage = 'Sent to QC'; finalQcStatus = 'QC Pending'; finalStatus = 'Pending QC Review'; }
             else if (workflowStage === 'In Progress' || !workflowStage) { finalWorkflowStage = 'In Progress'; }
 
             const assetData: Partial<AssetLibraryItem> = {
                 ...formData, name: formData.web_title || formData.name || 'Untitled Asset', application_type: 'web',
-                linked_repository_item_id: linkedRepositoryId, linked_task_id: linkedTaskId,
-                linked_campaign_id: linkedCampaignId, linked_project_id: linkedProjectId,
-                linked_service_id: linkedServiceId, linked_sub_service_ids: linkedSubServiceIds,
+                linked_repository_item_id: linkedRepositoryId || undefined, 
+                linked_task_id: linkedTaskId || undefined,
+                linked_campaign_id: linkedCampaignId || undefined, 
+                linked_project_id: linkedProjectId || undefined,
+                linked_service_id: linkedServiceId || undefined, 
+                linked_sub_service_ids: linkedSubServiceIds,
                 keywords: [...contentKeywords, ...seoKeywords], content_keywords: contentKeywords, seo_keywords: seoKeywords,
-                web_h3_tags: h3Tags.filter(t => t.trim()), designed_by: designedBy, published_by: publishedBy, verified_by: verifiedBy,
+                web_h3_tags: h3Tags.filter(t => t.trim()), 
+                designed_by: designedBy || undefined, 
+                published_by: publishedBy || undefined, 
+                verified_by: verifiedBy || undefined,
                 created_by: currentUser?.id, workflow_stage: finalWorkflowStage, status: finalStatus, qc_status: finalQcStatus,
                 web_body_content: bodyEditorRef.current?.innerHTML || formData.web_body_content,
                 version_number: editAssetId ? newVersion : 'v1.0', version_history: [...versionHistory, newVersionEntry],
                 ai_plagiarism_score: aiPlagiarismScore, resource_files: uploadedFileUrls, date: new Date().toISOString(), repository: 'Content'
             };
 
-            if (editAssetId) await updateAsset(editAssetId, assetData);
-            else await createAsset(assetData as AssetLibraryItem);
+            let createdAsset;
+            if (editAssetId) {
+                await updateAsset(editAssetId, assetData);
+                createdAsset = { ...assetData, id: editAssetId };
+            } else {
+                createdAsset = await createAsset(assetData as AssetLibraryItem);
+            }
+
+            // Auto-link asset to service if linked service is selected (Requirement 6)
+            if (linkedServiceId && !editAssetId) {
+                try {
+                    const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+                    await fetch(`${apiUrl}/assetServiceLinking/link-static`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            asset_id: createdAsset.id,
+                            service_id: linkedServiceId,
+                            sub_service_id: linkedSubServiceIds.length > 0 ? linkedSubServiceIds[0] : null,
+                            created_by: currentUser?.id
+                        })
+                    });
+                } catch (linkError) {
+                    console.warn('Auto-linking failed:', linkError);
+                }
+            }
+
             await refresh?.();
             alert(submitForQC ? 'Asset submitted for QC successfully!' : editAssetId ? 'Asset updated successfully!' : 'Asset saved successfully!');
             onNavigate?.('assets');
@@ -651,13 +689,13 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Workflow Stage</label>
-                                    <select value={workflowStage} onChange={e => handleWorkflowStageChange(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all">
+                                    <select value={workflowStage} onChange={e => handleWorkflowStageChange(e.target.value as 'Add' | 'In Progress' | 'Sent to QC' | 'Published' | 'In Rework' | 'Moved to CW' | 'Moved to GD' | 'Moved to WD')} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all">
                                         {WORKFLOW_STAGES.map(stage => <option key={stage.value} value={stage.value}>{stage.label}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">QC Status (Separate Field)</label>
-                                    <select value={qcStatus} onChange={e => handleQcStatusChange(e.target.value)} disabled={workflowStage !== 'Sent to QC' && workflowStage !== 'In Rework' && qcStatus !== 'Approved'} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all disabled:bg-slate-100 disabled:text-slate-400">
+                                    <select value={qcStatus} onChange={e => handleQcStatusChange(e.target.value as 'QC Pending' | 'Rework' | 'Approved' | 'Reject' | 'Pass' | 'Fail' | '')} disabled={workflowStage !== 'Sent to QC' && workflowStage !== 'In Rework' && qcStatus !== 'Approved'} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all disabled:bg-slate-100 disabled:text-slate-400">
                                         {QC_STATUS_OPTIONS.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}
                                     </select>
                                 </div>

@@ -34,43 +34,9 @@ if ((process.env.DB_CLIENT || '').toLowerCase() === 'pg' || process.env.USE_PG =
 
     pool = pgPool as any;
 } else {
-    // Default: use SQLite with better-sqlite3 and provide a pg-like `query` method
-    const Database = require('better-sqlite3');
-    const dbPath = path.join(__dirname, '..', 'mcc_db.sqlite');
-
-    try {
-        const dbDir = path.dirname(dbPath);
-        if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-    } catch (e) {
-        // ignore
-    }
-
-    const sqliteDb = new Database(dbPath);
-
-    pool = {
-        query: async (sql: string, params?: any[]) => {
-            try {
-                const stmt = sqliteDb.prepare(sql);
-                const lower = sql.trim().toLowerCase();
-                if (lower.startsWith('select') || lower.startsWith('pragma')) {
-                    const rows = stmt.all(params || []);
-                    return { rows };
-                }
-                const info = stmt.run(params || []);
-                return { rows: [], info };
-            } catch (err) {
-                throw err;
-            }
-        },
-        end: async () => {
-            try {
-                sqliteDb.close();
-            } catch (e) {
-                // ignore
-            }
-        },
-        on: (_: string, __: any) => { /* noop */ }
-    };
+    // Use mock database for testing purposes
+    const mockPool = require('./mockDb').mockPool;
+    pool = mockPool;
 }
 
 export { pool };
