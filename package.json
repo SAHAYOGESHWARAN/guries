@@ -15,6 +15,7 @@
     "build:api": "cd api && npm install && npx tsc",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "cd backend && npm install && npm run build",
+    "prebuild": "npm run build:api",
     "preview": "cd frontend && npm run preview",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../api && npm install",
     "vercel-build": "npm run build:all"

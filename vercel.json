@@ -1,9 +1,5 @@
 {
     "version": 2,
-    "buildCommand": "npm run build:all",
-    "env": {
-        "NODE_ENV": "production"
-    },
     "builds": [
         {
             "src": "frontend/package.json",
@@ -17,58 +13,14 @@
             "use": "@vercel/node"
         }
     ],
-    "rewrites": [
+    "routes": [
         {
-            "source": "/api/(.*)",
-            "destination": "/api/$1"
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
         },
         {
-            "source": "/static/(.*)",
-            "destination": "/frontend/dist/$1"
-        },
-        {
-            "source": "/(.*)\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)",
-            "destination": "/frontend/dist/$1"
-        },
-        {
-            "source": "/favicon.ico",
-            "destination": "/frontend/dist/favicon.ico"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/frontend/dist/index.html"
-        }
-    ],
-    "headers": [
-        {
-            "source": "/api/(.*)",
-            "headers": [
-                {
-                    "key": "Access-Control-Allow-Credentials",
-                    "value": "true"
-                },
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                },
-                {
-                    "key": "Access-Control-Allow-Methods",
-                    "value": "GET,HEAD,OPTIONS,PATCH,DELETE,POST,PUT"
-                },
-                {
-                    "key": "Access-Control-Allow-Headers",
-                    "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-User-Id, X-User-Role"
-                }
-            ]
-        },
-        {
-            "source": "/\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=31536000, immutable"
-                }
-            ]
+            "src": "/(.*)",
+            "dest": "/frontend/dist/$1"
         }
     ]
 }
