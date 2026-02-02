@@ -9,6 +9,14 @@
       }
     },
     {
+      "src": "api/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "installCommand": "npm install",
+        "buildCommand": "npm run build"
+      }
+    },
+    {
       "src": "api/dist/**/*.js",
       "use": "@vercel/node"
     }
