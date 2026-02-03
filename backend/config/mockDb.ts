@@ -4,21 +4,131 @@
 const mockServices = [
     {
         id: 1,
-        service_name: "Web Development Services",
-        service_code: "WD-001",
-        slug: "web-development-services",
-        full_url: "https://example.com/services/web-development-services",
-        status: "Active",
+        service_name: "SEO Optimization",
+        service_code: "SEO-001",
+        slug: "seo-optimization",
+        full_url: "/services/seo-optimization",
+        menu_heading: "SEO Services",
+        short_tagline: "Boost your online visibility",
+        service_description: "Comprehensive SEO services to improve your search rankings",
+        status: "Published",
+        language: "en",
+        show_in_main_menu: 1,
+        show_in_footer_menu: 0,
+        include_in_xml_sitemap: 1,
+        h1: "Professional SEO Optimization Services",
+        meta_title: "SEO Optimization Services | Expert Solutions",
+        meta_description: "Improve your search rankings with our professional SEO services",
+        content_type: "Pillar",
+        buyer_journey_stage: "Awareness",
+        industry_ids: "[]",
+        country_ids: "[]",
+        linked_assets_ids: "[]",
+        linked_insights_ids: "[]",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     },
     {
         id: 2,
-        service_name: "Digital Marketing",
-        service_code: "DM-001", 
-        slug: "digital-marketing",
-        full_url: "https://example.com/services/digital-marketing",
-        status: "Active",
+        service_name: "Content Marketing",
+        service_code: "CM-001",
+        slug: "content-marketing",
+        full_url: "/services/content-marketing",
+        menu_heading: "Content Services",
+        short_tagline: "Engage your audience with quality content",
+        service_description: "Strategic content creation and distribution services",
+        status: "Published",
+        language: "en",
+        show_in_main_menu: 1,
+        show_in_footer_menu: 0,
+        include_in_xml_sitemap: 1,
+        h1: "Content Marketing Solutions",
+        meta_title: "Content Marketing Services | Professional Writers",
+        meta_description: "High-quality content creation for your brand",
+        content_type: "Pillar",
+        buyer_journey_stage: "Consideration",
+        industry_ids: "[]",
+        country_ids: "[]",
+        linked_assets_ids: "[]",
+        linked_insights_ids: "[]",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    },
+    {
+        id: 3,
+        service_name: "Social Media Management",
+        service_code: "SMM-001",
+        slug: "social-media-management",
+        full_url: "/services/social-media-management",
+        menu_heading: "Social Media",
+        short_tagline: "Grow your social presence",
+        service_description: "Complete social media management and strategy services",
+        status: "Published",
+        language: "en",
+        show_in_main_menu: 1,
+        show_in_footer_menu: 0,
+        include_in_xml_sitemap: 1,
+        h1: "Social Media Management Services",
+        meta_title: "Social Media Management | Expert Strategy",
+        meta_description: "Grow your brand on social media with expert management",
+        content_type: "Pillar",
+        buyer_journey_stage: "Awareness",
+        industry_ids: "[]",
+        country_ids: "[]",
+        linked_assets_ids: "[]",
+        linked_insights_ids: "[]",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    },
+    {
+        id: 4,
+        service_name: "PPC Advertising",
+        service_code: "PPC-001",
+        slug: "ppc-advertising",
+        full_url: "/services/ppc-advertising",
+        menu_heading: "Paid Advertising",
+        short_tagline: "Maximize your ad ROI",
+        service_description: "Strategic PPC campaigns for Google Ads and social platforms",
+        status: "Published",
+        language: "en",
+        show_in_main_menu: 1,
+        show_in_footer_menu: 0,
+        include_in_xml_sitemap: 1,
+        h1: "PPC Advertising Services",
+        meta_title: "PPC Advertising Services | Google Ads Experts",
+        meta_description: "Maximize your advertising ROI with expert PPC management",
+        content_type: "Pillar",
+        buyer_journey_stage: "Decision",
+        industry_ids: "[]",
+        country_ids: "[]",
+        linked_assets_ids: "[]",
+        linked_insights_ids: "[]",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    },
+    {
+        id: 5,
+        service_name: "Email Marketing",
+        service_code: "EM-001",
+        slug: "email-marketing",
+        full_url: "/services/email-marketing",
+        menu_heading: "Email Services",
+        short_tagline: "Connect with your customers",
+        service_description: "Effective email marketing campaigns and automation",
+        status: "Published",
+        language: "en",
+        show_in_main_menu: 1,
+        show_in_footer_menu: 0,
+        include_in_xml_sitemap: 1,
+        h1: "Email Marketing Services",
+        meta_title: "Email Marketing Services | Campaign Experts",
+        meta_description: "Effective email marketing campaigns for your business",
+        content_type: "Cluster",
+        buyer_journey_stage: "Retention",
+        industry_ids: "[]",
+        country_ids: "[]",
+        linked_assets_ids: "[]",
+        linked_insights_ids: "[]",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     }
@@ -38,7 +148,7 @@ const mockSubServices = [
         sub_service_name: "SEO Optimization",
         sub_service_code: "SEO-001",
         parent_service_id: 2,
-        slug: "seo-optimization", 
+        slug: "seo-optimization",
         status: "Active"
     }
 ];
@@ -62,7 +172,7 @@ const mockAssets = [
         id: 2,
         name: "SEO Article",
         type: "Article",
-        application_type: "seo", 
+        application_type: "seo",
         status: "QC Approved",
         workflow_stage: "Published",
         qc_status: "Approved",
@@ -94,7 +204,7 @@ const mockServiceAssetLinks = [
 export const mockPool = {
     query: async (sql: string, params?: any[]) => {
         console.log(`Mock Query: ${sql}`, params);
-        
+
         // Simulate services query
         if (sql.includes('SELECT') && sql.includes('services')) {
             if (sql.includes('WHERE id =')) {
@@ -104,7 +214,7 @@ export const mockPool = {
             }
             return { rows: mockServices };
         }
-        
+
         // Simulate sub-services query
         if (sql.includes('SELECT') && sql.includes('sub_services')) {
             if (sql.includes('WHERE parent_service_id =')) {
@@ -114,7 +224,7 @@ export const mockPool = {
             }
             return { rows: mockSubServices };
         }
-        
+
         // Simulate assets query
         if (sql.includes('SELECT') && sql.includes('assets')) {
             if (sql.includes('WHERE id =')) {
@@ -124,7 +234,7 @@ export const mockPool = {
             }
             return { rows: mockAssets };
         }
-        
+
         // Simulate service asset links query
         if (sql.includes('SELECT') && sql.includes('service_asset_links')) {
             if (sql.includes('WHERE service_id =')) {
@@ -135,21 +245,21 @@ export const mockPool = {
             }
             return { rows: mockServiceAssetLinks };
         }
-        
+
         // Simulate INSERT operations
         if (sql.includes('INSERT')) {
             return { rows: [], insertId: Math.floor(Math.random() * 1000) + 1 };
         }
-        
+
         // Simulate UPDATE operations
         if (sql.includes('UPDATE')) {
             return { rows: [], changedRows: 1 };
         }
-        
+
         // Default response
         return { rows: [] };
     },
-    
+
     end: async () => {
         console.log('Mock database connection closed');
     }
