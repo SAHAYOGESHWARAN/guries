@@ -158,28 +158,107 @@ const mockAssets = [
         id: 1,
         name: "Website Banner Design",
         type: "Blog Banner",
+        asset_category: "Graphics",
+        content_type: "Web",
         application_type: "web",
         status: "Draft",
         workflow_stage: "In Progress",
         qc_status: "",
         linked_service_id: 1,
+        linked_service_ids: [1],
+        linked_sub_service_id: 1,
         linked_sub_service_ids: [1],
+        linked_task_id: 1,
+        linked_task: 1,
+        designed_by: 1,
+        submitted_by: 1,
+        created_by: 1,
+        qc_reviewer_id: null,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         file_url: "https://example.com/assets/banner1.jpg",
-        thumbnail_url: "https://example.com/assets/banner1_thumb.jpg"
+        thumbnail_url: "https://example.com/assets/banner1_thumb.jpg",
+        file_type: "jpg",
+        version_number: 1
     },
     {
         id: 2,
         name: "SEO Article",
         type: "Article",
+        asset_category: "Content",
+        content_type: "Blog",
         application_type: "seo",
         status: "QC Approved",
         workflow_stage: "Published",
         qc_status: "Approved",
         linked_service_id: 2,
+        linked_service_ids: [2],
+        linked_sub_service_id: 2,
         linked_sub_service_ids: [2],
+        linked_task_id: 2,
+        linked_task: 2,
+        designed_by: 2,
+        submitted_by: 2,
+        created_by: 2,
+        qc_reviewer_id: 1,
         created_at: new Date().toISOString(),
-        file_url: "https://example.com/assets/article1.pdf"
+        updated_at: new Date().toISOString(),
+        file_url: "https://example.com/assets/article1.pdf",
+        file_type: "pdf",
+        version_number: 1
+    },
+    {
+        id: 3,
+        name: "Social Media Post",
+        type: "Social Post",
+        asset_category: "Social Media",
+        content_type: "SMM",
+        application_type: "smm",
+        status: "Published",
+        workflow_stage: "Published",
+        qc_status: "Approved",
+        linked_service_id: 3,
+        linked_service_ids: [3],
+        linked_sub_service_id: null,
+        linked_sub_service_ids: [],
+        linked_task_id: 3,
+        linked_task: 3,
+        designed_by: 1,
+        submitted_by: 1,
+        created_by: 1,
+        qc_reviewer_id: 2,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        file_url: "https://example.com/assets/social1.png",
+        thumbnail_url: "https://example.com/assets/social1_thumb.png",
+        file_type: "png",
+        version_number: 1
+    },
+    {
+        id: 4,
+        name: "Email Template",
+        type: "Email",
+        asset_category: "Email",
+        content_type: "Email",
+        application_type: "email",
+        status: "Draft",
+        workflow_stage: "In Progress",
+        qc_status: "",
+        linked_service_id: 5,
+        linked_service_ids: [5],
+        linked_sub_service_id: null,
+        linked_sub_service_ids: [],
+        linked_task_id: 4,
+        linked_task: 4,
+        designed_by: 2,
+        submitted_by: 2,
+        created_by: 2,
+        qc_reviewer_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        file_url: "https://example.com/assets/email1.html",
+        file_type: "html",
+        version_number: 1
     }
 ];
 
@@ -197,6 +276,61 @@ const mockServiceAssetLinks = [
         asset_id: 2,
         is_static: 1,
         created_at: new Date().toISOString()
+    }
+];
+
+const mockUsers = [
+    {
+        id: 1,
+        name: "John Designer",
+        email: "john@example.com",
+        role: "designer",
+        status: "active"
+    },
+    {
+        id: 2,
+        name: "Sarah Writer",
+        email: "sarah@example.com",
+        role: "writer",
+        status: "active"
+    },
+    {
+        id: 3,
+        name: "Mike QC",
+        email: "mike@example.com",
+        role: "qc_reviewer",
+        status: "active"
+    }
+];
+
+const mockTasks = [
+    {
+        id: 1,
+        name: "Design Homepage Banner",
+        task_name: "Design Homepage Banner",
+        status: "In Progress",
+        project_id: 1
+    },
+    {
+        id: 2,
+        name: "Write SEO Article",
+        task_name: "Write SEO Article",
+        status: "Completed",
+        project_id: 1
+    },
+    {
+        id: 3,
+        name: "Create Social Posts",
+        task_name: "Create Social Posts",
+        status: "In Progress",
+        project_id: 2
+    },
+    {
+        id: 4,
+        name: "Design Email Template",
+        task_name: "Design Email Template",
+        status: "In Progress",
+        project_id: 2
     }
 ];
 
@@ -223,6 +357,26 @@ export const mockPool = {
                 return { rows: subServices };
             }
             return { rows: mockSubServices };
+        }
+
+        // Simulate users query
+        if (sql.includes('SELECT') && sql.includes('users')) {
+            if (sql.includes('WHERE id =')) {
+                const userId = params?.[0];
+                const user = mockUsers.find(u => u.id === userId);
+                return { rows: user ? [user] : [] };
+            }
+            return { rows: mockUsers };
+        }
+
+        // Simulate tasks query
+        if (sql.includes('SELECT') && sql.includes('tasks')) {
+            if (sql.includes('WHERE id =')) {
+                const taskId = params?.[0];
+                const task = mockTasks.find(t => t.id === taskId);
+                return { rows: task ? [task] : [] };
+            }
+            return { rows: mockTasks };
         }
 
         // Simulate assets query
