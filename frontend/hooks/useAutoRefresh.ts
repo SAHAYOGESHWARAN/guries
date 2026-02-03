@@ -3,15 +3,21 @@ import { useEffect, useRef, useCallback } from 'react';
 /**
  * Hook to automatically refresh data at regular intervals
  * Useful for keeping asset library and other data in sync
- * Optimized to prevent excessive API calls
+ * Aggressive refresh for real-time updates
  */
 export function useAutoRefresh(
     refreshCallback: () => void,
-    intervalMs: number = 10000, // Default 10 seconds (increased from 5s)
+    intervalMs: number = 3000, // Default 3 seconds for faster updates
     enabled: boolean = true
 ) {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const lastRefreshRef = useRef<number>(0);
+    const isRefreshingRef = useRef(false);
+    const refreshCallbackRef = useRef(refreshCallback);
+
+    // Keep callback ref in sync
+    useEffect(() => {
+        refreshCallbackRef.current = refreshCallback;
+    }, [refreshCallback]);
 
     useEffect(() => {
         if (!enabled) {
@@ -22,13 +28,25 @@ export function useAutoRefresh(
             return;
         }
 
+        // Call refresh immediately on mount
+        if (!isRefreshingRef.current) {
+            isRefreshingRef.current = true;
+            refreshCallbackRef.current();
+            // Reset flag after callback completes
+            setTimeout(() => {
+                isRefreshingRef.current = false;
+            }, 100);
+        }
+
         // Set up interval for auto-refresh
         intervalRef.current = setInterval(() => {
-            const now = Date.now();
-            // Only refresh if enough time has passed since last refresh
-            if (now - lastRefreshRef.current >= intervalMs) {
-                lastRefreshRef.current = now;
-                refreshCallback();
+            if (!isRefreshingRef.current) {
+                isRefreshingRef.current = true;
+                refreshCallbackRef.current();
+                // Reset flag after callback completes
+                setTimeout(() => {
+                    isRefreshingRef.current = false;
+                }, 100);
             }
         }, intervalMs);
 
@@ -39,7 +57,7 @@ export function useAutoRefresh(
                 intervalRef.current = null;
             }
         };
-    }, [refreshCallback, intervalMs, enabled]);
+    }, [intervalMs, enabled]);
 
     // Function to manually stop auto-refresh
     const stopAutoRefresh = useCallback(() => {
@@ -52,15 +70,24 @@ export function useAutoRefresh(
     // Function to manually start auto-refresh
     const startAutoRefresh = useCallback(() => {
         if (!intervalRef.current && enabled) {
+            if (!isRefreshingRef.current) {
+                isRefreshingRef.current = true;
+                refreshCallbackRef.current();
+                setTimeout(() => {
+                    isRefreshingRef.current = false;
+                }, 100);
+            }
             intervalRef.current = setInterval(() => {
-                const now = Date.now();
-                if (now - lastRefreshRef.current >= intervalMs) {
-                    lastRefreshRef.current = now;
-                    refreshCallback();
+                if (!isRefreshingRef.current) {
+                    isRefreshingRef.current = true;
+                    refreshCallbackRef.current();
+                    setTimeout(() => {
+                        isRefreshingRef.current = false;
+                    }, 100);
                 }
             }, intervalMs);
         }
-    }, [enabled, intervalMs, refreshCallback]);
+    }, [enabled, intervalMs]);
 
     return { stopAutoRefresh, startAutoRefresh };
 }

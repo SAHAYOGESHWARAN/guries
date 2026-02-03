@@ -208,7 +208,11 @@ export function useData<T>(collection: string) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s max wait
 
-            console.log(`[useData] Fetching ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+            if (isRefresh) {
+                console.log(`[useData] Refreshing ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+            } else {
+                console.log(`[useData] Fetching ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+            }
 
             const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
                 signal: controller.signal
@@ -217,20 +221,36 @@ export function useData<T>(collection: string) {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
+                // Silently handle 404 for optional endpoints
+                if (response.status === 404) {
+                    console.warn(`[useData] Endpoint not found for ${collection} (404) - this is optional`);
+                    setData([]);
+                    setIsOffline(false);
+                    setLoading(false);
+                    return;
+                }
                 console.error(`[useData] API Error for ${collection}: ${response.status} ${response.statusText}`);
                 throw new Error('API Error');
             }
 
             const result = await response.json();
-            console.log(`[useData] Received ${collection}:`, Array.isArray(result) ? `${result.length} items` : result);
+
+            // Handle both array and object responses
+            let dataArray = Array.isArray(result) ? result : (result?.data || []);
+
+            if (isRefresh) {
+                console.log(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+            } else {
+                console.log(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+            }
 
             // Only update data if we got a valid response (prevents flickering)
-            if (Array.isArray(result)) {
-                setData(result);
+            if (Array.isArray(dataArray)) {
+                setData(dataArray);
                 // Also save to localStorage for offline access
                 if ((db as any)[collection]) {
                     try {
-                        localStorage.setItem((db as any)[collection].key, JSON.stringify(result));
+                        localStorage.setItem((db as any)[collection].key, JSON.stringify(dataArray));
                     } catch (e) {
                         // Ignore localStorage errors
                     }

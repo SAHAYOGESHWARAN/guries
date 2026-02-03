@@ -104,8 +104,15 @@ const QCReviewPage: React.FC = () => {
             setActionSuccess('Asset approved successfully! Status updated to Published.');
             setSelectedAsset(null);
 
-            // Refresh both QC pending list and asset library
+            // Immediate refresh - no delay
+            console.log('[QCReviewPage] Immediate refresh after approval');
+            fetchPendingAssets();
+            fetchStatistics();
+            refreshAssetLibrary();
+
+            // Also refresh after a short delay to ensure backend has processed
             setTimeout(() => {
+                console.log('[QCReviewPage] Delayed refresh after approval (300ms)');
                 fetchPendingAssets();
                 fetchStatistics();
                 refreshAssetLibrary();
@@ -114,10 +121,11 @@ const QCReviewPage: React.FC = () => {
                 window.dispatchEvent(new CustomEvent('assetQCApproved', {
                     detail: { assetId, result }
                 }));
-            }, 500);
+            }, 300);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to approve asset';
             setActionError(message);
+            console.error('[QCReviewPage] Error approving asset:', err);
         } finally {
             setActionLoading(false);
         }
@@ -152,8 +160,15 @@ const QCReviewPage: React.FC = () => {
             setActionSuccess('Asset rejected successfully!');
             setSelectedAsset(null);
 
-            // Refresh both QC pending list and asset library
+            // Immediate refresh - no delay
+            console.log('[QCReviewPage] Immediate refresh after rejection');
+            fetchPendingAssets();
+            fetchStatistics();
+            refreshAssetLibrary();
+
+            // Also refresh after a short delay to ensure backend has processed
             setTimeout(() => {
+                console.log('[QCReviewPage] Delayed refresh after rejection (300ms)');
                 fetchPendingAssets();
                 fetchStatistics();
                 refreshAssetLibrary();
@@ -162,10 +177,11 @@ const QCReviewPage: React.FC = () => {
                 window.dispatchEvent(new CustomEvent('assetQCRejected', {
                     detail: { assetId }
                 }));
-            }, 500);
+            }, 300);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to reject asset';
             setActionError(message);
+            console.error('[QCReviewPage] Error rejecting asset:', err);
         } finally {
             setActionLoading(false);
         }
@@ -199,8 +215,15 @@ const QCReviewPage: React.FC = () => {
             setActionSuccess('Rework requested successfully!');
             setSelectedAsset(null);
 
-            // Refresh both QC pending list and asset library
+            // Immediate refresh - no delay
+            console.log('[QCReviewPage] Immediate refresh after rework request');
+            fetchPendingAssets();
+            fetchStatistics();
+            refreshAssetLibrary();
+
+            // Also refresh after a short delay to ensure backend has processed
             setTimeout(() => {
+                console.log('[QCReviewPage] Delayed refresh after rework request (300ms)');
                 fetchPendingAssets();
                 fetchStatistics();
                 refreshAssetLibrary();
@@ -209,10 +232,11 @@ const QCReviewPage: React.FC = () => {
                 window.dispatchEvent(new CustomEvent('assetQCRework', {
                     detail: { assetId }
                 }));
-            }, 500);
+            }, 300);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to request rework';
             setActionError(message);
+            console.error('[QCReviewPage] Error requesting rework:', err);
         } finally {
             setActionLoading(false);
         }
