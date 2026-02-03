@@ -156,18 +156,19 @@ const mockSubServices = [
 const mockAssets = [
     {
         id: 1,
-        name: "Website Banner Design",
-        type: "Blog Banner",
+        asset_name: "Website Banner Design",
+        asset_type: "Blog Banner",
         asset_category: "Graphics",
+        asset_format: "JPG",
         content_type: "Web",
         application_type: "web",
         status: "Draft",
         workflow_stage: "In Progress",
         qc_status: "",
         linked_service_id: 1,
-        linked_service_ids: [1],
+        linked_service_ids: "[1]",
         linked_sub_service_id: 1,
-        linked_sub_service_ids: [1],
+        linked_sub_service_ids: "[1]",
         linked_task_id: 1,
         linked_task: 1,
         designed_by: 1,
@@ -179,22 +180,25 @@ const mockAssets = [
         file_url: "https://example.com/assets/banner1.jpg",
         thumbnail_url: "https://example.com/assets/banner1_thumb.jpg",
         file_type: "jpg",
-        version_number: 1
+        version_number: 1,
+        tags: "Content Repository",
+        usage_status: "Available"
     },
     {
         id: 2,
-        name: "SEO Article",
-        type: "Article",
+        asset_name: "SEO Article",
+        asset_type: "Article",
         asset_category: "Content",
+        asset_format: "PDF",
         content_type: "Blog",
         application_type: "seo",
         status: "QC Approved",
         workflow_stage: "Published",
         qc_status: "Approved",
         linked_service_id: 2,
-        linked_service_ids: [2],
+        linked_service_ids: "[2]",
         linked_sub_service_id: 2,
-        linked_sub_service_ids: [2],
+        linked_sub_service_ids: "[2]",
         linked_task_id: 2,
         linked_task: 2,
         designed_by: 2,
@@ -205,22 +209,25 @@ const mockAssets = [
         updated_at: new Date().toISOString(),
         file_url: "https://example.com/assets/article1.pdf",
         file_type: "pdf",
-        version_number: 1
+        version_number: 1,
+        tags: "SEO",
+        usage_status: "Available"
     },
     {
         id: 3,
-        name: "Social Media Post",
-        type: "Social Post",
+        asset_name: "Social Media Post",
+        asset_type: "Social Post",
         asset_category: "Social Media",
+        asset_format: "PNG",
         content_type: "SMM",
         application_type: "smm",
         status: "Published",
         workflow_stage: "Published",
         qc_status: "Approved",
         linked_service_id: 3,
-        linked_service_ids: [3],
+        linked_service_ids: "[3]",
         linked_sub_service_id: null,
-        linked_sub_service_ids: [],
+        linked_sub_service_ids: "[]",
         linked_task_id: 3,
         linked_task: 3,
         designed_by: 1,
@@ -232,22 +239,25 @@ const mockAssets = [
         file_url: "https://example.com/assets/social1.png",
         thumbnail_url: "https://example.com/assets/social1_thumb.png",
         file_type: "png",
-        version_number: 1
+        version_number: 1,
+        tags: "SMM",
+        usage_status: "Available"
     },
     {
         id: 4,
-        name: "Email Template",
-        type: "Email",
+        asset_name: "Email Template",
+        asset_type: "Email",
         asset_category: "Email",
+        asset_format: "HTML",
         content_type: "Email",
         application_type: "email",
         status: "Draft",
         workflow_stage: "In Progress",
         qc_status: "",
         linked_service_id: 5,
-        linked_service_ids: [5],
+        linked_service_ids: "[5]",
         linked_sub_service_id: null,
-        linked_sub_service_ids: [],
+        linked_sub_service_ids: "[]",
         linked_task_id: 4,
         linked_task: 4,
         designed_by: 2,
@@ -258,7 +268,9 @@ const mockAssets = [
         updated_at: new Date().toISOString(),
         file_url: "https://example.com/assets/email1.html",
         file_type: "html",
-        version_number: 1
+        version_number: 1,
+        tags: "Content Repository",
+        usage_status: "Available"
     }
 ];
 
@@ -339,6 +351,16 @@ export const mockPool = {
     query: async (sql: string, params?: any[]) => {
         console.log(`Mock Query: ${sql}`, params);
 
+        // Simulate tasks query (MUST come BEFORE users query to avoid matching 'users' in LEFT JOIN)
+        if (sql.includes('FROM tasks')) {
+            if (sql.includes('WHERE id =')) {
+                const taskId = params?.[0];
+                const task = mockTasks.find(t => t.id === taskId);
+                return { rows: task ? [task] : [] };
+            }
+            return { rows: mockTasks };
+        }
+
         // Simulate services query
         if (sql.includes('SELECT') && sql.includes('services')) {
             if (sql.includes('WHERE id =')) {
@@ -367,16 +389,6 @@ export const mockPool = {
                 return { rows: user ? [user] : [] };
             }
             return { rows: mockUsers };
-        }
-
-        // Simulate tasks query
-        if (sql.includes('SELECT') && sql.includes('tasks')) {
-            if (sql.includes('WHERE id =')) {
-                const taskId = params?.[0];
-                const task = mockTasks.find(t => t.id === taskId);
-                return { rows: task ? [task] : [] };
-            }
-            return { rows: mockTasks };
         }
 
         // Simulate assets query
