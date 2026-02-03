@@ -83,7 +83,7 @@ const QCReviewPage: React.FC = () => {
         setActionSuccess(null);
 
         try {
-            const response = await fetch(`${apiUrl}/qc-review/assets/${assetId}/approve`, {
+            const response = await fetch(`${apiUrl}/qc-review/approve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -94,10 +94,12 @@ const QCReviewPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to approve asset');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to approve asset');
             }
 
-            setActionSuccess('Asset approved successfully!');
+            const result = await response.json();
+            setActionSuccess('Asset approved successfully! Status updated to Published.');
             setSelectedAsset(null);
 
             // Refresh data after a short delay to ensure UI updates
@@ -124,7 +126,7 @@ const QCReviewPage: React.FC = () => {
         setActionSuccess(null);
 
         try {
-            const response = await fetch(`${apiUrl}/qc-review/assets/${assetId}/reject`, {
+            const response = await fetch(`${apiUrl}/qc-review/reject`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -135,7 +137,8 @@ const QCReviewPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to reject asset');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to reject asset');
             }
 
             setActionSuccess('Asset rejected successfully!');

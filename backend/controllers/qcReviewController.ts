@@ -28,7 +28,9 @@ export const getPendingQCAssets = async (req: Request, res: Response) => {
                 thumbnail_url,
                 application_type,
                 asset_category,
-                keywords
+                keywords,
+                linked_service_id,
+                linked_sub_service_id
             FROM assets 
             WHERE qc_status IN ('QC Pending', 'Rework')
         `;
@@ -115,15 +117,17 @@ export const getAssetForQCReview = async (req: Request, res: Response) => {
 // Approve asset (QC Pass)
 export const approveAsset = async (req: Request, res: Response) => {
     const { asset_id, qc_remarks, qc_score } = req.body;
+    const assetIdParam = (req.params as any).asset_id;
+    const finalAssetId = assetIdParam || asset_id;
     const qc_reviewer_id = (req as any).user?.id;
 
     try {
-        if (!asset_id) {
+        if (!finalAssetId) {
             return res.status(400).json({ error: 'asset_id is required' });
         }
 
         // Check asset exists
-        const assetCheck = await pool.query('SELECT id, workflow_log FROM assets WHERE id = ?', [asset_id]);
+        const assetCheck = await pool.query('SELECT id, workflow_log FROM assets WHERE id = ?', [finalAssetId]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -159,19 +163,19 @@ export const approveAsset = async (req: Request, res: Response) => {
                  status = 'QC Approved',
                  workflow_log = ?
              WHERE id = ?`,
-            [qc_reviewer_id, qc_remarks || null, qc_score || null, JSON.stringify(workflowLog), asset_id]
+            [qc_reviewer_id, qc_remarks || null, qc_score || null, JSON.stringify(workflowLog), finalAssetId]
         );
 
         // Log status change
-        await logQCAction(asset_id, 'approved', qc_remarks, qc_reviewer_id);
+        await logQCAction(finalAssetId, 'approved', qc_remarks, qc_reviewer_id);
 
         // Get updated asset
-        const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [asset_id]);
+        const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [finalAssetId]);
         const parsed = parseAssetRow(updatedAsset.rows[0]);
 
         res.status(200).json({
             message: 'Asset approved successfully',
-            asset_id,
+            asset_id: finalAssetId,
             qc_status: 'Approved',
             workflow_stage: 'Published',
             linking_active: 1,
@@ -187,10 +191,12 @@ export const approveAsset = async (req: Request, res: Response) => {
 // Reject asset (QC Fail)
 export const rejectAsset = async (req: Request, res: Response) => {
     const { asset_id, qc_remarks, qc_score } = req.body;
+    const assetIdParam = (req.params as any).asset_id;
+    const finalAssetId = assetIdParam || asset_id;
     const qc_reviewer_id = (req as any).user?.id;
 
     try {
-        if (!asset_id) {
+        if (!finalAssetId) {
             return res.status(400).json({ error: 'asset_id is required' });
         }
 
@@ -199,7 +205,7 @@ export const rejectAsset = async (req: Request, res: Response) => {
         }
 
         // Check asset exists
-        const assetCheck = await pool.query('SELECT id, workflow_log FROM assets WHERE id = ?', [asset_id]);
+        const assetCheck = await pool.query('SELECT id, workflow_log FROM assets WHERE id = ?', [finalAssetId]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -235,18 +241,18 @@ export const rejectAsset = async (req: Request, res: Response) => {
                  status = 'Rejected',
                  workflow_log = ?
              WHERE id = ?`,
-            [qc_reviewer_id, qc_remarks, qc_score || null, JSON.stringify(workflowLog), asset_id]
+            [qc_reviewer_id, qc_remarks, qc_score || null, JSON.stringify(workflowLog), finalAssetId]
         );
 
         // Log status change
-        await logQCAction(asset_id, 'rejected', qc_remarks, qc_reviewer_id);
+        await logQCAction(finalAssetId, 'rejected', qc_remarks, qc_reviewer_id);
 
         // Get updated asset
-        const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [asset_id]);
+        const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [finalAssetId]);
 
         res.status(200).json({
             message: 'Asset rejected successfully',
-            asset_id,
+            asset_id: finalAssetId,
             qc_status: 'Fail',
             linking_active: 0,
             status: 'Rejected',
@@ -261,10 +267,12 @@ export const rejectAsset = async (req: Request, res: Response) => {
 // Request rework (QC Rework)
 export const requestRework = async (req: Request, res: Response) => {
     const { asset_id, qc_remarks, qc_score } = req.body;
+    const assetIdParam = (req.params as any).asset_id;
+    const finalAssetId = assetIdParam || asset_id;
     const qc_reviewer_id = (req as any).user?.id;
 
     try {
-        if (!asset_id) {
+        if (!finalAssetId) {
             return res.status(400).json({ error: 'asset_id is required' });
         }
 
@@ -273,7 +281,7 @@ export const requestRework = async (req: Request, res: Response) => {
         }
 
         // Check asset exists
-        const assetCheck = await pool.query('SELECT id, rework_count FROM assets WHERE id = ?', [asset_id]);
+        const assetCheck = await pool.query('SELECT id, rework_count FROM assets WHERE id = ?', [finalAssetId]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
@@ -293,18 +301,18 @@ export const requestRework = async (req: Request, res: Response) => {
                  rework_count = ?,
                  status = 'Rework Requested'
              WHERE id = ?`,
-            [qc_reviewer_id, qc_remarks, qc_score || null, currentReworkCount + 1, asset_id]
+            [qc_reviewer_id, qc_remarks, qc_score || null, currentReworkCount + 1, finalAssetId]
         );
 
         // Log status change
-        await logQCAction(asset_id, 'rework_requested', qc_remarks, qc_reviewer_id);
+        await logQCAction(finalAssetId, 'rework_requested', qc_remarks, qc_reviewer_id);
 
         // Get updated asset
-        const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [asset_id]);
+        const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [finalAssetId]);
 
         res.status(200).json({
             message: 'Rework requested successfully',
-            asset_id,
+            asset_id: finalAssetId,
             qc_status: 'Rework',
             linking_active: 0,
             status: 'Rework Requested',
