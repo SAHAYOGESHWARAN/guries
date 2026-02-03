@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { AssetLibraryItem } from '../types';
+import { useAssetLibraryRefresh } from '../hooks/useAssetLibraryRefresh';
 
 interface QCAsset extends AssetLibraryItem {
     submitted_by?: number;
@@ -31,6 +32,7 @@ const QCReviewPage: React.FC = () => {
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+    const { refreshAssetLibrary } = useAssetLibraryRefresh();
 
     useEffect(() => {
         fetchPendingAssets();
@@ -102,10 +104,16 @@ const QCReviewPage: React.FC = () => {
             setActionSuccess('Asset approved successfully! Status updated to Published.');
             setSelectedAsset(null);
 
-            // Refresh data after a short delay to ensure UI updates
+            // Refresh both QC pending list and asset library
             setTimeout(() => {
                 fetchPendingAssets();
                 fetchStatistics();
+                refreshAssetLibrary();
+
+                // Dispatch custom event to notify other components
+                window.dispatchEvent(new CustomEvent('assetQCApproved', {
+                    detail: { assetId, result }
+                }));
             }, 500);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to approve asset';
@@ -144,10 +152,16 @@ const QCReviewPage: React.FC = () => {
             setActionSuccess('Asset rejected successfully!');
             setSelectedAsset(null);
 
-            // Refresh data after a short delay to ensure UI updates
+            // Refresh both QC pending list and asset library
             setTimeout(() => {
                 fetchPendingAssets();
                 fetchStatistics();
+                refreshAssetLibrary();
+
+                // Dispatch custom event to notify other components
+                window.dispatchEvent(new CustomEvent('assetQCRejected', {
+                    detail: { assetId }
+                }));
             }, 500);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to reject asset';
@@ -168,7 +182,7 @@ const QCReviewPage: React.FC = () => {
         setActionSuccess(null);
 
         try {
-            const response = await fetch(`${apiUrl}/qc-review/assets/${assetId}/rework`, {
+            const response = await fetch(`${apiUrl}/qc-review/rework`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -185,10 +199,16 @@ const QCReviewPage: React.FC = () => {
             setActionSuccess('Rework requested successfully!');
             setSelectedAsset(null);
 
-            // Refresh data after a short delay to ensure UI updates
+            // Refresh both QC pending list and asset library
             setTimeout(() => {
                 fetchPendingAssets();
                 fetchStatistics();
+                refreshAssetLibrary();
+
+                // Dispatch custom event to notify other components
+                window.dispatchEvent(new CustomEvent('assetQCRework', {
+                    detail: { assetId }
+                }));
             }, 500);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to request rework';

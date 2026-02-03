@@ -9,6 +9,7 @@ import UploadAssetPopup from '../components/UploadAssetPopup';
 import AssetDetailSidePanel from '../components/AssetDetailSidePanel';
 import { useData } from '../hooks/useData';
 import { useAuth } from '../hooks/useAuth';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import { getStatusBadge } from '../constants';
 import type { AssetLibraryItem, Service, SubServiceItem, User, AssetCategoryMasterItem, AssetTypeMasterItem, Brand, Campaign, Project, Task, ContentRepositoryItem } from '../types';
 
@@ -125,6 +126,13 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     // Selected brand (used by master filters)
     const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
+
+    // Auto-refresh asset library every 5 seconds to keep QC status updated
+    const refreshCallback = useCallback(() => {
+        refresh();
+    }, [refresh]);
+
+    useAutoRefresh(refreshCallback, 5000, true);
 
     // Filtered master lists (by brand / active status)
     const filteredAssetCategories = useMemo(() => {
