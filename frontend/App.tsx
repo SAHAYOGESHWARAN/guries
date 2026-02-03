@@ -104,6 +104,75 @@ const LoadingSpinner = () => (
   </div>
 );
 
+// Error Boundary Component
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center h-full w-full bg-red-50">
+          <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Something Went Wrong</h2>
+            <p className="text-gray-600 mb-4">
+              {this.state.error?.message || 'An unexpected error occurred while loading this page.'}
+            </p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.href = '#dashboard';
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// 404 Not Found View
+const NotFoundView = ({ onNavigate }: { onNavigate: (view: string) => void }) => (
+  <div className="flex items-center justify-center h-full w-full bg-slate-50">
+    <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+      <h2 className="text-4xl font-bold text-gray-800 mb-2">404</h2>
+      <h3 className="text-2xl font-semibold text-gray-700 mb-4">Page Not Found</h3>
+      <p className="text-gray-600 mb-6">
+        The page you're looking for doesn't exist or has been moved.
+      </p>
+      <button
+        onClick={() => onNavigate('dashboard')}
+        className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+      >
+        Go to Dashboard
+      </button>
+    </div>
+  </div>
+);
+
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -113,7 +182,7 @@ const App: React.FC = () => {
     id: null,
   });
 
-  // Clear any existing session on mount - always require fresh login
+  // Restore session from localStorage on mount
   useEffect(() => {
     // Seed admin user to localStorage if not exists
     const existingUsers = localStorage.getItem('users');
@@ -134,9 +203,20 @@ const App: React.FC = () => {
       localStorage.setItem('users', JSON.stringify(users));
     }
 
-    localStorage.removeItem('currentUser');
-    setCurrentUser(null);
-    setIsAuthenticated(false);
+    // Restore session from localStorage instead of clearing it
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        localStorage.removeItem('currentUser');
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      }
+    }
     setIsLoading(false);
   }, []);
 
@@ -180,7 +260,52 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
   };
 
+  // Admin route protection
+  const adminRoutes = [
+    'admin-console',
+    'admin-console-config',
+    'role-permission-matrix',
+    'admin-qc-review',
+    'objective-master',
+    'kra-master',
+    'kpi-master',
+    'kpi-target-config',
+    'effort-unit-config',
+    'scoring-engine',
+    'qc-engine-config',
+    'repository-manager',
+    'competitor-intelligence',
+    'automation-notifications',
+    'dashboard-config',
+    'employee-management'
+  ];
+
+  const isAdminRoute = (view: string): boolean => adminRoutes.includes(view);
+
+  const checkAdminAccess = (view: string): boolean => {
+    if (!isAdminRoute(view)) return true;
+    return currentUser?.role === 'admin';
+  };
+
   const renderView = () => {
+    // Check admin access
+    if (!checkAdminAccess(viewState.view)) {
+      return (
+        <div className="flex items-center justify-center h-full w-full bg-red-50">
+          <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
+            <p className="text-gray-600 mb-4">You don't have permission to access this page.</p>
+            <button
+              onClick={() => handleNavigate('dashboard')}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (viewState.view) {
       // MAIN
       case 'dashboard': return <DashboardView onNavigate={handleNavigate} />;
@@ -286,6 +411,7 @@ const App: React.FC = () => {
       case 'team-leader-dashboard': return <TeamLeaderDashboard onNavigate={handleNavigate} />;
       case 'team-leader-dashboard-new': return <TeamLeaderDashboard onNavigate={handleNavigate} />;
       case 'ai-evaluation-engine': return <AIEvaluationEngineView />;
+      case 'ai-evaluation-dashboard': return <AIEvaluationEngineView onNavigate={handleNavigate} />;
       case 'workload-prediction': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
       case 'workload-prediction-dashboard': return <WorkloadPredictionDashboard onNavigate={handleNavigate} />;
       case 'ai-task-allocation': return <AITaskAllocationSuggestionsView onNavigate={handleNavigate} />;
@@ -295,7 +421,7 @@ const App: React.FC = () => {
       case 'my-profile': return <UserProfileView onNavigateBack={() => handleNavigate('dashboard')} />;
       case 'profile': return <UserProfileView onNavigateBack={() => handleNavigate('dashboard')} />;
 
-      default: return <DashboardView onNavigate={handleNavigate} />;
+      default: return <NotFoundView onNavigate={handleNavigate} />;
     }
   };
 
@@ -322,9 +448,11 @@ const App: React.FC = () => {
         {/* Main scroll container set to overflow-hidden to allow views to manage their own scrolling */}
         <main className="flex-1 overflow-hidden relative">
           <div className="h-full w-full">
-            <Suspense fallback={<LoadingSpinner />}>
-              {renderView()}
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                {renderView()}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
       </div>

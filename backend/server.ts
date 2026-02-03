@@ -3,12 +3,12 @@ import express from 'express';
 import path from 'path';
 import { createServer } from 'http';
 import cors from 'cors';
-import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
 import migrationRoutes from './routes/migration';
 import { pool } from './config/db';
+import { securityHeaders, httpsRedirect, removeSensitiveHeaders, validateSecurityConfig } from './config/security';
 import { initSocket } from './socket';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { initializeDatabase, seedDatabase } from './database/init';
@@ -16,25 +16,50 @@ import { initializeDatabase, seedDatabase } from './database/init';
 // Load environment variables
 dotenv.config();
 
+// Validate security configuration
+validateSecurityConfig();
+
 const app = express();
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || process.env.API_PORT || '3001', 10);
 
-// Setup Socket.io
+// Setup Socket.io with restricted CORS
+const socketAllowedOrigins = (process.env.SOCKET_CORS_ORIGINS || process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(origin => origin.trim());
+
 const io = initSocket(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: socketAllowedOrigins,
         methods: ["GET", "POST", "PUT", "DELETE"],
-        credentials: true
+        credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization']
     }
 });
 
 // Middleware
-app.use(helmet() as any);
+app.use(securityHeaders);
+app.use(httpsRedirect);
+app.use(removeSensitiveHeaders);
+
+// CORS Configuration - Restrict to specific origins
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(origin => origin.trim());
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400
 }));
+
 app.use(morgan('dev') as any);
 app.use(express.json({ limit: '100mb' }) as any);
 app.use(express.urlencoded({ limit: '100mb', extended: true }) as any);

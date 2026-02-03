@@ -1,5 +1,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
+import rateLimit from 'express-rate-limit';
 import * as campaignController from '../controllers/campaignController';
 import * as projectController from '../controllers/projectController';
 import * as analyticsController from '../controllers/analyticsController';
@@ -57,6 +58,7 @@ import * as adminController from '../controllers/adminController';
 import * as urlController from '../controllers/urlController';
 
 import { requireAdmin, requirePermission, requireQCPermission } from '../middleware/roleAuth';
+import { validateLoginRequest, validateOTPRequest, validateOTPVerification, sanitizeInput } from '../middleware/validation';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
 import assetCategoryMasterRoutes from './assetCategoryMasterRoutes';
@@ -86,6 +88,39 @@ import * as assetUploadController from '../controllers/assetUploadController';
 
 const router = Router();
 
+// Rate limiters
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: 'Too many login attempts, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => process.env.NODE_ENV === 'test'
+});
+
+const otpLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 3, // 3 attempts
+    message: 'Too many OTP requests, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => process.env.NODE_ENV === 'test'
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per 15 minutes
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => process.env.NODE_ENV === 'test'
+});
+
+// Apply global rate limiter to all routes
+router.use(apiLimiter);
+
+// Apply input sanitization to all routes
+router.use(sanitizeInput);
+
 // Async handler wrapper for Express routes
 const asyncHandler = (fn: (req: any, res: any, next?: any) => Promise<any>) =>
     (req: any, res: any, next: any) => {
@@ -94,9 +129,9 @@ const asyncHandler = (fn: (req: any, res: any, next?: any) => Promise<any>) =>
 
 // --- System & Auth ---
 router.get('/system/stats', systemController.getSystemStats);
-router.post('/auth/login', authController.login as any);
-router.post('/auth/send-otp', authController.sendOtp as any);
-router.post('/auth/verify-otp', authController.verifyOtp as any);
+router.post('/auth/login', loginLimiter, validateLoginRequest, authController.login as any);
+router.post('/auth/send-otp', otpLimiter, validateOTPRequest, authController.sendOtp as any);
+router.post('/auth/verify-otp', otpLimiter, validateOTPVerification, authController.verifyOtp as any);
 
 // --- Dashboard & Notifications ---
 router.get('/dashboard/stats', dashboardController.getDashboardStats);

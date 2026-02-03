@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db';
 import { validateRequired } from '../utils/validation';
 import twilio from 'twilio';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 // Initialize Twilio Client
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -10,9 +12,36 @@ const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
 
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
-// Hardcoded admin credentials
-const ADMIN_EMAIL = 'admin@example.com';
-const ADMIN_PASSWORD = 'admin123';
+// Get admin credentials from environment variables
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+// Validate required environment variables on startup
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    console.error('❌ CRITICAL: ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+    process.exit(1);
+}
+
+if (!JWT_SECRET) {
+    console.error('❌ CRITICAL: JWT_SECRET environment variable is required');
+    process.exit(1);
+}
+
+// Helper function to generate JWT token
+const generateJWT = (payload: { id: number; email: string; role: string }): string => {
+    return jwt.sign(payload, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN, algorithm: 'HS256' });
+};
+
+// Helper function to verify JWT token
+export const verifyJWT = (token: string): any => {
+    try {
+        return jwt.verify(token, JWT_SECRET!);
+    } catch (error) {
+        throw new Error('Invalid or expired token');
+    }
+};
 
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
@@ -24,7 +53,13 @@ export const login = async (req: Request, res: Response) => {
 
     try {
         // Check admin credentials
-        if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        if (email.toLowerCase() === ADMIN_EMAIL!.toLowerCase()) {
+            const isPasswordValid = await bcrypt.compare(password, ADMIN_PASSWORD!);
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: 'Invalid email or password' });
+            }
+
+            const token = generateJWT({ id: 1, email: ADMIN_EMAIL!, role: 'admin' });
             return res.status(200).json({
                 success: true,
                 user: {
@@ -37,7 +72,7 @@ export const login = async (req: Request, res: Response) => {
                     created_at: new Date().toISOString(),
                     last_login: new Date().toISOString()
                 },
-                token: 'admin-token-' + Date.now(),
+                token,
                 message: 'Login successful'
             });
         }
@@ -63,8 +98,17 @@ export const login = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'Your account is pending approval' });
         }
 
-        // In production, compare hashed passwords
-        // For now, accept any password for registered users
+        // Verify password hash
+        if (!user.password_hash) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const token = generateJWT({ id: user.id, email: user.email, role: user.role || 'user' });
         return res.status(200).json({
             success: true,
             user: {
@@ -77,7 +121,7 @@ export const login = async (req: Request, res: Response) => {
                 created_at: user.created_at,
                 last_login: new Date().toISOString()
             },
-            token: 'user-token-' + Date.now(),
+            token,
             message: 'Login successful'
         });
     } catch (error: any) {
