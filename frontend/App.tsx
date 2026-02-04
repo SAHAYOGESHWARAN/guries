@@ -217,24 +217,35 @@ const App: React.FC = () => {
       localStorage.setItem('users', JSON.stringify(users));
     }
 
-    // Comment out auto-login to always show login page
-    // const savedUser = localStorage.getItem('currentUser');
-    // if (savedUser) {
-    //   try {
-    //     const user = JSON.parse(savedUser);
-    //     setCurrentUser(user);
-    //     setIsAuthenticated(true);
-    //   } catch (error) {
-    //     console.error('Failed to restore session:', error);
-    //     localStorage.removeItem('currentUser');
-    //     setCurrentUser(null);
-    //     setIsAuthenticated(false);
-    //   }
-    // }
-    
-    // Always start with login page
-    setCurrentUser(null);
-    setIsAuthenticated(false);
+    // Check for existing session and auto-login
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        localStorage.removeItem('currentUser');
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      }
+    } else {
+      // Auto-login with admin for development
+      const adminUser = {
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@example.com',
+        role: 'admin',
+        status: 'active',
+        department: 'Administration',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      };
+      setCurrentUser(adminUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('currentUser', JSON.stringify(adminUser));
+    }
     setIsLoading(false);
   }, []);
 

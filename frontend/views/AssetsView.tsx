@@ -131,12 +131,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     // Selected brand (used by master filters)
     const [selectedBrand, setSelectedBrand] = useState<string>('Pubrica');
 
-    // Auto-refresh asset library every 3 seconds to keep QC status updated in real-time
+    // Auto-refresh asset library every 1 second for faster real-time updates
     const refreshCallback = useCallback(() => {
         refresh();
     }, [refresh]);
 
-    useAutoRefresh(refreshCallback, 3000, true);
+    useAutoRefresh(refreshCallback, 1000, true);
 
     // Filtered master lists (by brand / active status)
     const filteredAssetCategories = useMemo(() => {
