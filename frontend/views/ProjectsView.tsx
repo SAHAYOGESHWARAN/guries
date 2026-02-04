@@ -289,7 +289,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
                                     >
                                         <option value="">Select service</option>
-                                        {services.map(s => <option key={s.id} value={s.id}>{s.service_name || s.name}</option>)}
+                                        {services.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
                                     </select>
                                 </div>
                             </div>

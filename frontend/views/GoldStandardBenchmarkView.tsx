@@ -19,7 +19,7 @@ const GoldStandardBenchmarkView: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<GoldStandardMetric | null>(null);
     const [formData, setFormData] = useState<Partial<GoldStandardMetric>>({
-        metric_name: '', category: 'SEO', value: '', range: '', unit: '', evidence: '', status: 'active'
+        metric_name: '', category: 'SEO', gold_standard_value: '', acceptable_range_min: '', acceptable_range_max: '', unit: '', evidence_link: '', status: 'active'
     });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +50,7 @@ const GoldStandardBenchmarkView: React.FC = () => {
         }
         setIsModalOpen(false);
         setEditingItem(null);
-        setFormData({ metric_name: '', category: 'SEO', value: '', range: '', unit: '', evidence: '', status: 'active' });
+        setFormData({ metric_name: '', category: 'SEO', gold_standard_value: '', acceptable_range_min: '', acceptable_range_max: '', unit: '', evidence_link: '', status: 'active' });
     };
 
     const handleExport = () => {
@@ -99,12 +99,12 @@ const GoldStandardBenchmarkView: React.FC = () => {
                 </span>
             ) 
         },
-        { header: 'Gold Standard Value', accessor: 'value' as keyof GoldStandardMetric, className: 'font-bold text-emerald-600' },
-        { header: 'Range', accessor: 'range' as keyof GoldStandardMetric, className: 'text-xs font-mono' },
+        { header: 'Gold Standard Value', accessor: 'gold_standard_value' as keyof GoldStandardMetric, className: 'font-bold text-emerald-600' },
+        { header: 'Range', accessor: 'acceptable_range_min' as keyof GoldStandardMetric, className: 'text-xs font-mono' },
         { header: 'Unit', accessor: 'unit' as keyof GoldStandardMetric, className: 'text-xs text-slate-500' },
-        { header: 'Evidence', accessor: 'evidence' as keyof GoldStandardMetric, className: 'text-xs italic text-slate-500' },
+        { header: 'Evidence', accessor: 'evidence_link' as keyof GoldStandardMetric, className: 'text-xs italic text-slate-500' },
         { header: 'Updated On', accessor: 'updated_on' as keyof GoldStandardMetric, className: 'text-xs text-slate-400' },
-        { header: 'Status', accessor: (item: GoldStandardMetric) => getStatusBadge(item.status) },
+        { header: 'Status', accessor: (item: GoldStandardMetric) => getStatusBadge(item.status || '') },
         {
             header: 'Actions',
             accessor: (item: GoldStandardMetric) => (
@@ -198,14 +198,14 @@ const GoldStandardBenchmarkView: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Value</label>
-                            <input type="text" value={formData.value} onChange={(e) => setFormData({...formData, value: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <label className="block text-sm font-medium text-gray-700">Gold Standard Value</label>
+                            <input type="text" value={formData.gold_standard_value} onChange={(e) => setFormData({...formData, gold_standard_value: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Range</label>
-                            <input type="text" value={formData.range} onChange={(e) => setFormData({...formData, range: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <label className="block text-sm font-medium text-gray-700">Min Range</label>
+                            <input type="text" value={formData.acceptable_range_min} onChange={(e) => setFormData({...formData, acceptable_range_min: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Unit</label>
@@ -214,7 +214,7 @@ const GoldStandardBenchmarkView: React.FC = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Evidence / Source</label>
-                        <input type="text" value={formData.evidence} onChange={(e) => setFormData({...formData, evidence: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        <input type="text" value={formData.evidence_link} onChange={(e) => setFormData({...formData, evidence_link: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                     </div>
                     <div className="flex justify-end pt-4">
                         <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button>

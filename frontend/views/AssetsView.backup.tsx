@@ -18,17 +18,63 @@ interface AssetsViewProps {
 }
 
 const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
-    const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh, loading: assetsLoading } = useData<AssetLibraryItem>('assetLibrary');
-    
-    // Transform API data to match frontend interface
-    const transformedAssets = useMemo(() => {
-        return assets.map(asset => ({
-            ...asset,
-            name: asset.name || asset.asset_name || '', // Map asset_name to name
-            date: asset.date || asset.created_at || new Date().toISOString(), // Map created_at to date
-        }));
-    }, [assets]);
+    // Error boundary state
+    const [hasError, setHasError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
+    // Error handling
+    useEffect(() => {
+        const handleError = (event: ErrorEvent) => {
+            console.error('AssetsView Error:', event.error);
+            setErrorMessage(event.error?.message || 'Unknown error occurred');
+            setHasError(true);
+        };
+
+        const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+            console.error('AssetsView Unhandled Promise Rejection:', event.reason);
+            setErrorMessage(event.reason?.message || 'Promise rejection occurred');
+            setHasError(true);
+        };
+
+        window.addEventListener('error', handleError);
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+        return () => {
+            window.removeEventListener('error', handleError);
+            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        };
+    }, []);
+
+    // Show error state if there's an error
+    if (hasError) {
+        return (
+            <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+                <h2 className="text-lg font-bold text-red-800 mb-2">Error in AssetsView</h2>
+                <p className="text-red-600 mb-4">{errorMessage}</p>
+                <button 
+                    onClick={() => {
+                        setHasError(false);
+                        setErrorMessage('');
+                        window.location.reload();
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                    Reload Page
+                </button>
+            </div>
+        );
+    }
+
+    // Debug logging
+    useEffect(() => {
+        console.log('AssetsView mounted');
+        console.log('Assets count:', assets.length);
+        console.log('Assets loading:', assetsLoading);
+        console.log('Services count:', services.length);
+        console.log('Users count:', users.length);
+    }, [assets, assetsLoading, services, users]);
+
+    const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh, loading: assetsLoading } = useData<AssetLibraryItem>('assetLibrary');
     const { data: services = [] } = useData<Service>('services');
     const { data: subServices = [] } = useData<SubServiceItem>('subServices');
     const { data: users = [], loading: usersLoading } = useData<User>('users');
@@ -263,17 +309,17 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
     const uniqueAssetTypes = useMemo(() => {
         const types = new Set<string>();
-        transformedAssets.forEach(a => {
+        assets.forEach(a => {
             if (a.type) types.add(a.type);
         });
         return ['All', ...Array.from(types).sort()];
-    }, [transformedAssets]);
+    }, [assets]);
 
     // Memoize filtered assets for better performance
     const filteredAssets = useMemo(() => {
         const query = (searchQuery || '').toLowerCase().trim();
 
-        return transformedAssets.filter(a => {
+        return assets.filter(a => {
             // Asset Type filter (from Asset Type Master)
             if (assetTypeFilter !== 'All' && a.type !== assetTypeFilter) return false;
 
@@ -412,7 +458,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 projectName.includes(query) ||
                 repoName.includes(query);
         });
-    }, [transformedAssets, searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter, currentUser.id, services, subServices, tasks, campaigns, projects, repositoryItems]);
+    }, [assets, searchQuery, assetTypeFilter, assetCategoryFilter, contentTypeFilter, campaignTypeFilter, linkedServiceFilter, linkedSubServiceFilter, projectFilter, linkedTaskFilter, linkedRepositoryFilter, createdByFilter, dateRangeFilter, usageStatusFilter, currentUser.id, services, subServices, tasks, campaigns, projects, repositoryItems]);
 
     const handleFileSelect = useCallback((file: File) => {
         setSelectedFile(file);
@@ -633,12 +679,12 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 updated_by: viewMode === 'edit' ? currentUser.id : undefined, // Set updated_by when editing
                 linked_service_ids: linkedServiceIds,
                 linked_sub_service_ids: linkedSubServiceIds,
-                linked_service_id: selectedServiceId || undefined, // Single linked service ID
-                linked_task_id: newAsset.linked_task_id || newAsset.linked_task || undefined, // Linked task
+                linked_service_id: selectedServiceId || null, // Single linked service ID
+                linked_task_id: newAsset.linked_task_id || newAsset.linked_task || null, // Linked task
                 mapped_to: mappedToString || newAsset.mapped_to,
                 status: submitForQC ? 'Pending QC Review' : (newAsset.status || 'Draft'),
                 workflow_stage: submitForQC ? 'Sent to QC' : (newAsset.workflow_stage || 'Add'),
-                qc_status: submitForQC ? 'QC Pending' : (newAsset.qc_status || undefined),
+                qc_status: submitForQC ? 'QC Pending' : (newAsset.qc_status || null),
                 version_number: newAsset.version_number || 'v1.0',
                 submitted_by: submitForQC ? currentUser.id : undefined,
                 submitted_at: submitForQC ? new Date().toISOString() : undefined,
@@ -6639,23 +6685,31 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                                                     {visibleColumns.workflowStage && <td className="px-2 py-3">
                                                                         {asset.workflow_stage ? (
                                                                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${asset.workflow_stage === 'Add' ? 'bg-gray-100 text-gray-800' :
-                                                                                asset.workflow_stage === 'Sent to QC' ? 'bg-indigo-100 text-indigo-800' :
-                                                                                    asset.workflow_stage === 'Published' ? 'bg-emerald-100 text-emerald-800' :
-                                                                                        asset.workflow_stage === 'In Progress' ? 'bg-orange-100 text-orange-800' :
-                                                                                            asset.workflow_stage === 'In Rework' ? 'bg-red-100 text-red-800' :
-                                                                                                asset.workflow_stage === 'Moved to CW' ? 'bg-purple-100 text-purple-800' :
-                                                                                                    asset.workflow_stage === 'Moved to GD' ? 'bg-pink-100 text-pink-800' :
-                                                                                                        asset.workflow_stage === 'Moved to WD' ? 'bg-cyan-100 text-cyan-800' :
-                                                                                                            'bg-gray-100 text-gray-600'
+                                                                                asset.workflow_stage === 'Submit' ? 'bg-blue-100 text-blue-800' :
+                                                                                    asset.workflow_stage === 'Sent to QC' ? 'bg-indigo-100 text-indigo-800' :
+                                                                                        asset.workflow_stage === 'QC' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                            asset.workflow_stage === 'Approve' ? 'bg-green-100 text-green-800' :
+                                                                                                asset.workflow_stage === 'Publish' ? 'bg-emerald-100 text-emerald-800' :
+                                                                                                    asset.workflow_stage === 'Published' ? 'bg-emerald-100 text-emerald-800' :
+                                                                                                        asset.workflow_stage === 'In Progress' ? 'bg-orange-100 text-orange-800' :
+                                                                                                            asset.workflow_stage === 'In Rework' ? 'bg-red-100 text-red-800' :
+                                                                                                                asset.workflow_stage === 'Moved to CW' ? 'bg-purple-100 text-purple-800' :
+                                                                                                                    asset.workflow_stage === 'Moved to GD' ? 'bg-pink-100 text-pink-800' :
+                                                                                                                        asset.workflow_stage === 'Moved to WD' ? 'bg-cyan-100 text-cyan-800' :
+                                                                                                                            'bg-gray-100 text-gray-600'
                                                                                 }`}>
                                                                                 {asset.workflow_stage === 'Add' && '📝'}
+                                                                                {asset.workflow_stage === 'Submit' && '📤'}
                                                                                 {asset.workflow_stage === 'Sent to QC' && '📨'}
+                                                                                {asset.workflow_stage === 'QC' && '🔍'}
+                                                                                {asset.workflow_stage === 'Approve' && '✔️'}
+                                                                                {asset.workflow_stage === 'Publish' && '🚀'}
                                                                                 {asset.workflow_stage === 'Published' && '🚀'}
                                                                                 {asset.workflow_stage === 'In Progress' && '⏳'}
                                                                                 {asset.workflow_stage === 'In Rework' && '🔄'}
                                                                                 {asset.workflow_stage === 'Moved to CW' && '✍️'}
                                                                                 {asset.workflow_stage === 'Moved to GD' && '🎨'}
-                                                                                {asset.workflow_stage === 'Moved to WD' && '📄'}
+                                                                                {asset.workflow_stage === 'Moved to WD' && '💻'}
                                                                                 {asset.workflow_stage}
                                                                             </span>
                                                                         ) : <span className="text-sm text-gray-400">📝 Add</span>}

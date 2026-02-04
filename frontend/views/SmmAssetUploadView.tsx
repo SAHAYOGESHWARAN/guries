@@ -37,7 +37,7 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
 
     const [formData, setFormData] = useState<Partial<AssetLibraryItem>>({
         name: '', application_type: 'smm', type: 'Image Post', status: 'Draft',
-        smm_platform: 'Facebook', smm_content_type: 'Post', smm_caption: '', smm_hashtags: '',
+        smm_platform: 'facebook', smm_content_type: 'Post', smm_caption: '', smm_hashtags: '',
         smm_scheduled_date: '', smm_media_url: '', seo_score: 0, grammar_score: 0, version_number: 'v1.0'
     });
 
@@ -128,9 +128,9 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
             const newVersion = editAssetId ? `v${(parseFloat(formData.version_number?.replace('v', '') || '1.0') + 0.1).toFixed(1)}` : 'v1.0';
             const newVersionEntry = { version: newVersion, date: new Date().toISOString(), action: submitForQC ? 'Submitted for QC' : editAssetId ? 'Updated' : 'Created', user: currentUser?.name || 'Unknown' };
             const assetData: Partial<AssetLibraryItem> = {
-                ...formData, application_type: 'smm', linked_repository_item_id: linkedRepositoryId, linked_task_id: linkedTaskId,
-                created_by: currentUser?.id, workflow_stage: submitForQC ? 'Sent to QC' : workflowStage === 'Add' ? 'In Progress' : workflowStage,
-                status: submitForQC ? 'Pending QC Review' : 'Draft', qc_status: submitForQC ? 'QC Pending' : qcStatus,
+                ...formData, application_type: 'smm', linked_repository_item_id: linkedRepositoryId || undefined, linked_task_id: linkedTaskId || undefined,
+                created_by: currentUser?.id, workflow_stage: (submitForQC ? 'Sent to QC' : workflowStage === 'Add' ? 'In Progress' : workflowStage) as any,
+                status: (submitForQC ? 'Pending QC Review' : 'Draft') as any, qc_status: (submitForQC ? 'QC Pending' : qcStatus) as any,
                 version_number: editAssetId ? newVersion : 'v1.0', version_history: [...versionHistory, newVersionEntry],
                 date: new Date().toISOString(), repository: 'SMM'
             };
@@ -207,7 +207,7 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5"><span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Platform *</label>
-                                    <select value={formData.smm_platform || ''} onChange={e => setFormData({ ...formData, smm_platform: e.target.value })} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-fuchsia-500/20 focus:border-fuchsia-400">
+                                    <select value={formData.smm_platform || ''} onChange={e => setFormData({ ...formData, smm_platform: e.target.value as any })} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-fuchsia-500/20 focus:border-fuchsia-400">
                                         {SMM_PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
                                     </select>
                                 </div>

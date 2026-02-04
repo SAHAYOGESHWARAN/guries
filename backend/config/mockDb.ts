@@ -412,6 +412,117 @@ export const mockPool = {
             return { rows: mockServiceAssetLinks };
         }
 
+        // Simulate QC weightage configs query
+        if (sql.includes('SELECT') && sql.includes('qc_weightage_configs')) {
+            const mockQCWeightageConfigs = [
+                {
+                    id: 1,
+                    config_name: 'Default Content QC',
+                    description: 'Default weightage configuration for content quality checks',
+                    total_weight: 100,
+                    is_valid: 1,
+                    status: 'active',
+                    item_count: 7,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    config_name: 'Strict Quality Control',
+                    description: 'High-quality standards for critical content',
+                    total_weight: 100,
+                    is_valid: 1,
+                    status: 'active',
+                    item_count: 5,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }
+            ];
+            return { rows: mockQCWeightageConfigs };
+        }
+
+        // Simulate QC weightage items query
+        if (sql.includes('SELECT') && sql.includes('qc_weightage_items')) {
+            const mockQCWeightageItems = [
+                {
+                    id: 1,
+                    config_id: 1,
+                    checklist_id: 1,
+                    checklist_type: 'Content',
+                    weight_percentage: 25,
+                    is_mandatory: 1,
+                    applies_to_stage: null,
+                    item_order: 1,
+                    checklist_name: 'Content Quality Check'
+                },
+                {
+                    id: 2,
+                    config_id: 1,
+                    checklist_id: 2,
+                    checklist_type: 'SEO',
+                    weight_percentage: 20,
+                    is_mandatory: 1,
+                    applies_to_stage: null,
+                    item_order: 2,
+                    checklist_name: 'SEO Compliance'
+                },
+                {
+                    id: 3,
+                    config_id: 1,
+                    checklist_id: 3,
+                    checklist_type: 'Design',
+                    weight_percentage: 15,
+                    is_mandatory: 0,
+                    applies_to_stage: null,
+                    item_order: 3,
+                    checklist_name: 'Design Review'
+                }
+            ];
+            return { rows: mockQCWeightageItems };
+        }
+
+        // Simulate audit checklists query
+        if (sql.includes('SELECT') && sql.includes('audit_checklists')) {
+            const mockAuditChecklists = [
+                {
+                    id: 1,
+                    checklist_name: 'Content Quality Check',
+                    checklist_type: 'Content',
+                    checklist_category: 'Quality',
+                    status: 'active'
+                },
+                {
+                    id: 2,
+                    checklist_name: 'SEO Compliance',
+                    checklist_type: 'SEO',
+                    checklist_category: 'Technical',
+                    status: 'active'
+                },
+                {
+                    id: 3,
+                    checklist_name: 'Design Review',
+                    checklist_type: 'Design',
+                    checklist_category: 'Visual',
+                    status: 'active'
+                },
+                {
+                    id: 4,
+                    checklist_name: 'Grammar & Spelling',
+                    checklist_type: 'Content',
+                    checklist_category: 'Quality',
+                    status: 'active'
+                },
+                {
+                    id: 5,
+                    checklist_name: 'Brand Guidelines',
+                    checklist_type: 'Brand',
+                    checklist_category: 'Compliance',
+                    status: 'active'
+                }
+            ];
+            return { rows: mockAuditChecklists };
+        }
+
         // Simulate INSERT operations
         if (sql.includes('INSERT')) {
             return { rows: [], insertId: Math.floor(Math.random() * 1000) + 1 };

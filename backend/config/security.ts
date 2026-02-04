@@ -89,9 +89,17 @@ export const sensitiveHeaders = [
  * Remove sensitive headers from response
  */
 export const removeSensitiveHeaders = (req: Request, res: Response, next: NextFunction) => {
-    sensitiveHeaders.forEach(header => {
-        res.removeHeader(header);
-    });
+    try {
+        sensitiveHeaders.forEach(header => {
+            try {
+                res.removeHeader(header);
+            } catch (error) {
+                // Ignore errors when trying to remove non-existent headers
+            }
+        });
+    } catch (error) {
+        // Ignore any errors in header removal process
+    }
     next();
 };
 

@@ -150,7 +150,7 @@ export default function QCWeightageModal({ config, onClose, onSave }: QCWeightag
                 }))
             };
 
-            const url = config ? `/api/qc-weightage/${config.id}` : '/api/qc-weightage';
+            const url = config ? `${API_BASE_URL}/qc-weightage/${config.id}` : `${API_BASE_URL}/qc-weightage`;
             const method = config ? 'PUT' : 'POST';
 
             const response = await fetch(url, {

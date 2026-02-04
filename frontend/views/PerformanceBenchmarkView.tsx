@@ -26,9 +26,9 @@ const PerformanceBenchmarkView: React.FC = () => {
 
     // Filtering Logic
     const filteredOkrs = okrs.filter(item => {
-        const matchesSearch = item.objective.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.type.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (item.objective || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.owner || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.type || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCycle = selectedCycle === 'All Cycles' || item.cycle === selectedCycle;
 
         return matchesSearch && matchesCycle;
@@ -143,21 +143,21 @@ const PerformanceBenchmarkView: React.FC = () => {
             accessor: (item: OKRItem) => (
                 <div className="w-32">
                     <div className="flex justify-between text-xs mb-1">
-                        <span className="font-bold text-slate-700">{item.progress}%</span>
+                        <span className="font-bold text-slate-700">{item.progress || 0}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                            className={`h-2 rounded-full ${item.progress === 100 ? 'bg-green-500' :
-                                    item.progress > 60 ? 'bg-blue-500' :
-                                        item.progress > 30 ? 'bg-yellow-500' : 'bg-red-500'
+                            className={`h-2 rounded-full ${(item.progress || 0) === 100 ? 'bg-green-500' :
+                                    (item.progress || 0) > 60 ? 'bg-blue-500' :
+                                        (item.progress || 0) > 30 ? 'bg-yellow-500' : 'bg-red-500'
                                 }`}
-                            style={{ width: `${Math.min(item.progress, 100)}%` }}
+                            style={{ width: `${Math.min(item.progress || 0, 100)}%` }}
                         ></div>
                     </div>
                 </div>
             )
         },
-        { header: 'Status', accessor: (item: OKRItem) => getStatusBadge(item.status) },
+        { header: 'Status', accessor: (item: OKRItem) => getStatusBadge(item.status || '') },
         { header: 'Updated On', accessor: 'updated_on' as keyof OKRItem, className: 'text-xs text-slate-500' },
         {
             header: 'Actions',

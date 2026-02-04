@@ -39,9 +39,9 @@ const ServicesView: React.FC = () => {
       const matchesSearch = 
           item.page_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.service_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.service_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           (item.sub_service_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.primary_keyword.toLowerCase().includes(searchQuery.toLowerCase());
+          (item.primary_keyword || '').toLowerCase().includes(searchQuery.toLowerCase());
           
       const matchesStage = activeStage === 'All' || item.status === activeStage;
       return matchesSearch && matchesStage;
@@ -131,7 +131,7 @@ const ServicesView: React.FC = () => {
     { 
         header: 'SEO Score', 
         accessor: (item: ServicePageItem) => (
-            <div className={`text-xs font-bold px-2 py-1 rounded text-center ${getScoreColor(item.seo_score)}`}>
+            <div className={`text-xs font-bold px-2 py-1 rounded text-center ${getScoreColor(item.seo_score || 0)}`}>
                 {item.seo_score}
             </div>
         ),
@@ -140,7 +140,7 @@ const ServicesView: React.FC = () => {
     { 
         header: 'Audit Score', 
         accessor: (item: ServicePageItem) => (
-            <div className={`text-xs font-bold px-2 py-1 rounded text-center ${getScoreColor(item.audit_score)}`}>
+            <div className={`text-xs font-bold px-2 py-1 rounded text-center ${getScoreColor(item.audit_score || 0)}`}>
                 {item.audit_score}
             </div>
         ),

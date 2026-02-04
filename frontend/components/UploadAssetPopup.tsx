@@ -29,7 +29,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
         repository: 'Content',
         status: 'Draft',
         asset_category: '',
-        content_type: '',
+        content_type: 'Blog' as const,
         web_title: '',
         web_description: '',
         web_url: '',
@@ -181,7 +181,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                 repository: 'Content',
                 status: 'Draft',
                 asset_category: '',
-                content_type: '',
+                content_type: 'Blog' as const,
                 web_title: '',
                 web_description: '',
                 web_url: '',
@@ -492,7 +492,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
                                             <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Task...</option>
-                                                {tasks.map(task => (<option key={task.id} value={task.id}>{(task as any).task_name || task.name || task.title || `Task #${task.id}`}</option>))}
+                                                {tasks.map(task => (<option key={task.id} value={task.id}>{task.task_name || task.name || `Task #${task.id}`}</option>))}
                                             </select>
                                         </div>
                                     </div>
@@ -516,7 +516,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Category...</option>
                                                 {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => (
-                                                    <option key={cat.id} value={cat.category_name || cat.name}>{cat.category_name || cat.name}</option>
+                                                    <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -528,7 +528,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Type...</option>
                                                 {assetTypes.filter(t => !t.status || t.status === 'active').map(type => (
-                                                    <option key={type.id} value={type.asset_type_name || type.name}>{type.asset_type_name || type.name}</option>
+                                                    <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -940,7 +940,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                                             name: selectedAsset.name || '',
                                                             type: selectedAsset.type || '',
                                                             asset_category: selectedAsset.asset_category || '',
-                                                            content_type: selectedAsset.content_type || '',
+                                                            content_type: (selectedAsset.content_type || 'Blog') as any,
                                                         }));
                                                         setLinkedTaskId(selectedAsset.linked_task_id || null);
                                                         setLinkedCampaignId(selectedAsset.linked_campaign_id || null);
@@ -1010,14 +1010,14 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
                                             <select value={linkedTaskId || ''} onChange={e => setLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Task</option>
-                                                {tasks.map(t => <option key={t.id} value={t.id}>{(t as any).task_name || t.title || t.name || `Task #${t.id}`}</option>)}
+                                                {tasks.map(t => <option key={t.id} value={t.id}>{t.task_name || t.name || `Task #${t.id}`}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Campaign</label>
                                             <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={isAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Campaign</option>
-                                                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name || c.campaign_name}</option>)}
+                                                {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -1066,19 +1066,19 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Asset Type * <span className="text-[10px] text-slate-400">(Master)</span></label>
                                             <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm ">
                                                 <option value="">Select type...</option>
-                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => <option key={type.id} value={type.asset_type_name || type.name}>{type.asset_type_name || type.name}</option>)}
+                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Sector * <span className="text-[10px] text-slate-400">(Master)</span></label>
                                             <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm ">
                                                 <option value="">Select sector...</option>
-                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => <option key={cat.id} value={cat.category_name || cat.name}>{cat.category_name || cat.name}</option>)}
+                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Industry * <span className="text-[10px] text-slate-400">(Master)</span></label>
-                                            <select value={asset.content_type || ''} onChange={e => setAsset({ ...asset, content_type: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm ">
+                                            <select value={asset.content_type || ''} onChange={e => setAsset({ ...asset, content_type: e.target.value as any })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm ">
                                                 <option value="">Select industry...</option>
                                                 {contentTypes.map((ct: any) => <option key={ct.id} value={ct.content_type || ct.name}>{ct.content_type || ct.name}</option>)}
                                             </select>
@@ -1462,14 +1462,14 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Task</label>
                                             <select value={smmLinkedTaskId || ''} onChange={e => setSmmLinkedTaskId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Task</option>
-                                                {tasks.map(t => <option key={t.id} value={t.id}>{(t as any).task_name || t.title || t.name || `Task #${t.id}`}</option>)}
+                                                {tasks.map(t => <option key={t.id} value={t.id}>{t.task_name || t.name || `Task #${t.id}`}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Linked Campaign</label>
                                             <select value={smmLinkedCampaignId || ''} onChange={e => setSmmLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={isSmmAssetIdLocked} className={`w-full h-9 px-3 border border-slate-200 rounded-lg text-sm ${isSmmAssetIdLocked ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}>
                                                 <option value="">Select Campaign</option>
-                                                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name || c.campaign_name}</option>)}
+                                                {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -1517,14 +1517,14 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Asset Type * <span className="text-[10px] text-slate-400">(Master)</span></label>
                                             <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select type...</option>
-                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => <option key={type.id} value={type.asset_type_name || type.name}>{type.asset_type_name || type.name}</option>)}
+                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Asset Category * <span className="text-[10px] text-slate-400">(Master)</span></label>
                                             <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select category...</option>
-                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => <option key={cat.id} value={cat.category_name || cat.name}>{cat.category_name || cat.name}</option>)}
+                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>)}
                                             </select>
                                         </div>
                                     </div>

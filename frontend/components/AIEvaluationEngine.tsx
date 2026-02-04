@@ -13,7 +13,11 @@ interface EvaluationReport {
     updated_at: string;
 }
 
-export default function AIEvaluationEngine() {
+interface AIEvaluationEngineProps {
+    onNavigate?: (view: string, id?: string) => void;
+}
+
+export default function AIEvaluationEngine({ onNavigate }: AIEvaluationEngineProps) {
     const [reports, setReports] = useState<EvaluationReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);

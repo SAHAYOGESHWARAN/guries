@@ -48,6 +48,7 @@ export interface Keyword {
     language: string;
     search_volume: number;
     competition_score: string;
+    competition?: string; // Alternative competition field for backward compatibility
     mapped_service_id?: number;
     mapped_service?: string;
     mapped_sub_service_id?: number;
@@ -395,6 +396,7 @@ export interface ServicePageItem {
 export interface ContentRepositoryItem {
     id: number;
     content_title_clean: string;
+    title?: string; // Legacy title field for backward compatibility
     asset_type: 'article' | 'video' | 'graphic' | 'pdf' | 'guide' | 'blog' | 'service_page' | string;
     asset_category?: string;
     asset_format?: 'image' | 'video' | 'text';
@@ -558,6 +560,7 @@ export interface Task {
     project_name?: string;
     campaign_name?: string;
     assignee_name?: string;
+    linked_repository_id?: number;
 }
 
 export interface Notification {
@@ -743,6 +746,7 @@ export interface AssetLibraryItem {
     id: number;
     name: string;
     type: string; // Asset Type: Blog Banner, Infographic, Social Post, Reel/Video, Thumbnail, Diagram, Web Graphic, PDF
+    asset_type?: string; // Alternative asset type field for backward compatibility
     asset_category?: string; // e.g., "what science can do", "how to"
     asset_format?: string; // e.g., "image", "video", "pdf"
     content_type?: 'Blog' | 'Service Page' | 'Sub-Service Page' | 'SMM Post' | 'Backlink Asset' | 'Web UI Asset'; // Content classification type
@@ -794,7 +798,7 @@ export interface AssetLibraryItem {
 
     // Versioning
     version_number?: string; // Version number like "v1.0"
-    version_history?: Array<{ version: string; date: string; action: string; user?: string; user_id?: number }>;
+    version_history?: Array<{ version: string; date: string; action: string; user: string; user_id?: number }>;
 
     file_url?: string;
     thumbnail_url?: string;
@@ -849,6 +853,9 @@ export interface AssetLibraryItem {
     smm_campaign_type?: string; // Campaign type (awareness, engagement, traffic, conversions, lead-generation)
     smm_cta?: string; // Call to action text
     smm_target_audience?: string; // Target audience description
+    smm_content_type?: string; // SMM content type
+    smm_caption?: string; // SMM post caption
+    smm_scheduled_date?: string; // Scheduled post date
 
     // SEO Application Fields
     seo_title?: string;
@@ -1298,6 +1305,7 @@ export interface OKRItem {
     department?: string;
     owner_id?: number;
     owner_name?: string;
+    owner?: string; // For backward compatibility
     cycle?: string;
     objective_description?: string;
     why_this_matters?: string;

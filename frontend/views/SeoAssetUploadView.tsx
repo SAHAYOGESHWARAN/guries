@@ -88,6 +88,10 @@ const SeoAssetUploadView: React.FC<SeoAssetUploadViewProps> = ({ onNavigate, edi
 
     // ========== STEP 2: Asset Classification (REMOVED) ==========
     // Asset Type, Category, Sector, Industry removed
+    const [assetType, setAssetType] = useState('');
+    const [assetCategory, setAssetCategory] = useState('');
+    const [sector, setSector] = useState('');
+    const [industry, setIndustry] = useState('');
 
     // ========== STEP 3: SEO Metadata Fields & Anchor Text ==========
     const [seoTitle, setSeoTitle] = useState('');

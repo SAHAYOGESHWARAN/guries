@@ -28,7 +28,7 @@ const ProjectAnalyticsView: React.FC = () => {
     ];
 
     const okrProgress = okrs.length > 0 
-        ? Math.round(okrs.reduce((acc, item) => acc + item.progress, 0) / okrs.length)
+        ? Math.round(okrs.reduce((acc, item) => acc + (item.progress || 0), 0) / okrs.length)
         : 0;
 
     const metricsByStatus = [

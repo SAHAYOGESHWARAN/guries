@@ -12,8 +12,8 @@ interface ProjectDetailViewProps {
 }
 
 const CampaignCard: React.FC<{ campaign: Campaign }> = ({ campaign }) => {
-    const progress = campaign.backlinks_planned > 0 
-        ? Math.round((campaign.backlinks_completed / campaign.backlinks_planned) * 100) 
+    const progress = (campaign.backlinks_planned || 0) > 0 
+        ? Math.round(((campaign.backlinks_completed || 0) / (campaign.backlinks_planned || 0)) * 100) 
         : 0;
 
     return (
@@ -61,10 +61,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onNavi
 
   const timelineData = useMemo(() => {
       const projCampaignIds = campaigns.filter(c => c.project_id === projectId).map(c => c.id);
-      const projTasks = tasks.filter(t => projCampaignIds.includes(t.campaign_id));
+      const projTasks = tasks.filter(t => t.campaign_id && projCampaignIds.includes(t.campaign_id));
 
       const items = projTasks.map(t => {
-          const dueDate = new Date(t.due_date);
+          const dueDate = new Date(t.due_date || '');
           const startDate = new Date(dueDate);
           startDate.setDate(dueDate.getDate() - 5); 
           
@@ -75,7 +75,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onNavi
               id: t.id,
               name: t.name,
               start: startDate.toISOString().split('T')[0],
-              end: t.due_date,
+              end: t.due_date || '',
               status: t.status,
               owner: user?.name,
               ownerAvatar: user?.avatar_url,
@@ -88,7 +88,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onNavi
       
       projCampaignIds.forEach(cid => {
           const campaignTasks = items.filter(i => i.campaignId === cid)
-              .sort((a, b) => new Date(a.end).getTime() - new Date(b.end).getTime());
+              .sort((a, b) => new Date(a.end || '').getTime() - new Date(b.end || '').getTime());
           
           for(let i = 0; i < campaignTasks.length - 1; i++) {
               dependencies.push({
@@ -112,10 +112,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onNavi
 
   const projectCampaigns = campaigns.filter(c => c.project_id === projectId);
   const campaignIds = projectCampaigns.map(c => c.id);
-  const projectTasks = tasks.filter(t => campaignIds.includes(t.campaign_id));
+  const projectTasks = tasks.filter(t => t.campaign_id && campaignIds.includes(t.campaign_id));
 
-  const totalPlanned = projectCampaigns.reduce((sum, camp) => sum + camp.backlinks_planned, 0);
-  const totalCompleted = projectCampaigns.reduce((sum, camp) => sum + camp.backlinks_completed, 0);
+  const totalPlanned = projectCampaigns.reduce((sum, camp) => sum + (camp.backlinks_planned || 0), 0);
+  const totalCompleted = projectCampaigns.reduce((sum, camp) => sum + (camp.backlinks_completed || 0), 0);
   const progressPercentage = totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 100) : 0;
 
   const handleCreateTask = async () => {
@@ -215,7 +215,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onNavi
             <div>
                 <div className="flex items-center gap-2 mb-2">
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wide">ID: {project.id}</span>
-                    {getStatusBadge(project.project_status)}
+                    {getStatusBadge(project.project_status || '')}
                 </div>
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{project.project_name}</h1>
                 <p className="text-slate-500 mt-1 capitalize flex items-center text-sm">
