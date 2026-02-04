@@ -34,46 +34,10 @@ if ((process.env.DB_CLIENT || '').toLowerCase() === 'pg' || process.env.USE_PG =
 
     pool = pgPool as any;
 } else if (process.env.NODE_ENV === 'production') {
-    // Use SQLite for production
-    try {
-        const Database = require('better-sqlite3');
-        const dbPath = path.join('/tmp', 'mcc_db.sqlite');
-        
-        // Copy database from package if it doesn't exist
-        const fs = require('fs');
-        if (!fs.existsSync(dbPath)) {
-            const sourcePath = path.join(__dirname, '../../mcc_db.sqlite');
-            if (fs.existsSync(sourcePath)) {
-                fs.copyFileSync(sourcePath, dbPath);
-            }
-        }
-        
-        const sqliteDb = new Database(dbPath);
-        
-        // Create mock pool interface for SQLite
-        const sqlitePool = {
-            query: (sql: string, params?: any[]) => {
-                try {
-                    const stmt = sqliteDb.prepare(sql);
-                    const results = params ? stmt.all(...params) : stmt.all();
-                    return { rows: results };
-                } catch (error) {
-                    throw error;
-                }
-            },
-            end: () => {
-                sqliteDb.close();
-            }
-        };
-        
-        pool = sqlitePool;
-        console.log('✅ Connected to SQLite database (Production)');
-    } catch (error) {
-        console.error('❌ Failed to connect to SQLite:', error);
-        // Fallback to mock database
-        const mockPool = require('./mockDb').mockPool;
-        pool = mockPool;
-    }
+    // Use mock database for production to ensure compatibility
+    console.log('🔄 Using mock database for production deployment');
+    const mockPool = require('./mockDb').mockPool;
+    pool = mockPool;
 } else {
     // Use mock database for development/testing
     const mockPool = require('./mockDb').mockPool;
