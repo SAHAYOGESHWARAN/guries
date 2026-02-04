@@ -217,20 +217,20 @@ const App: React.FC = () => {
       localStorage.setItem('users', JSON.stringify(users));
     }
 
-    // Check for existing session and auto-login
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Failed to restore session:', error);
-        localStorage.removeItem('currentUser');
-        setCurrentUser(null);
-        setIsAuthenticated(false);
-      }
-    }
+    // Check for existing session and auto-login - REMOVED to force login every time
+    // const savedUser = localStorage.getItem('currentUser');
+    // if (savedUser) {
+    //   try {
+    //     const user = JSON.parse(savedUser);
+    //     setCurrentUser(user);
+    //     setIsAuthenticated(true);
+    //   } catch (error) {
+    //     console.error('Failed to restore session:', error);
+    //     localStorage.removeItem('currentUser');
+    //     setCurrentUser(null);
+    //     setIsAuthenticated(false);
+    //   }
+    // }
     setIsLoading(false);
   }, []);
 
