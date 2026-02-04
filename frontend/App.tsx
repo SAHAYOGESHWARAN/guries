@@ -230,21 +230,6 @@ const App: React.FC = () => {
         setCurrentUser(null);
         setIsAuthenticated(false);
       }
-    } else {
-      // Auto-login with admin for development
-      const adminUser = {
-        id: 1,
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'admin',
-        status: 'active',
-        department: 'Administration',
-        created_at: new Date().toISOString(),
-        last_login: new Date().toISOString()
-      };
-      setCurrentUser(adminUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('currentUser', JSON.stringify(adminUser));
     }
     setIsLoading(false);
   }, []);
