@@ -199,5 +199,6 @@ connectDB().then(() => {
     }
 });
 
+// Export app and httpServer for tests/imports
 export { app, httpServer };
 

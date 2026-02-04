@@ -1,350 +1,44 @@
 // Mock database for testing Service & Asset Linking features
 // This simulates the database operations without requiring actual database setup
 
-const mockServices = [
+const mockServices: any[] = [
     {
         id: 1,
-        service_name: "SEO Optimization",
-        service_code: "SEO-001",
-        slug: "seo-optimization",
-        full_url: "/services/seo-optimization",
-        menu_heading: "SEO Services",
-        short_tagline: "Boost your online visibility",
-        service_description: "Comprehensive SEO services to improve your search rankings",
-        status: "Published",
-        language: "en",
-        show_in_main_menu: 1,
-        show_in_footer_menu: 0,
-        include_in_xml_sitemap: 1,
-        h1: "Professional SEO Optimization Services",
-        meta_title: "SEO Optimization Services | Expert Solutions",
-        meta_description: "Improve your search rankings with our professional SEO services",
-        content_type: "Pillar",
-        buyer_journey_stage: "Awareness",
-        industry_ids: "[]",
-        country_ids: "[]",
-        linked_assets_ids: "[]",
-        linked_insights_ids: "[]",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: 2,
-        service_name: "Content Marketing",
-        service_code: "CM-001",
-        slug: "content-marketing",
-        full_url: "/services/content-marketing",
-        menu_heading: "Content Services",
-        short_tagline: "Engage your audience with quality content",
-        service_description: "Strategic content creation and distribution services",
-        status: "Published",
-        language: "en",
-        show_in_main_menu: 1,
-        show_in_footer_menu: 0,
-        include_in_xml_sitemap: 1,
-        h1: "Content Marketing Solutions",
-        meta_title: "Content Marketing Services | Professional Writers",
-        meta_description: "High-quality content creation for your brand",
-        content_type: "Pillar",
-        buyer_journey_stage: "Consideration",
-        industry_ids: "[]",
-        country_ids: "[]",
-        linked_assets_ids: "[]",
-        linked_insights_ids: "[]",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: 3,
-        service_name: "Social Media Management",
-        service_code: "SMM-001",
-        slug: "social-media-management",
-        full_url: "/services/social-media-management",
-        menu_heading: "Social Media",
-        short_tagline: "Grow your social presence",
-        service_description: "Complete social media management and strategy services",
-        status: "Published",
-        language: "en",
-        show_in_main_menu: 1,
-        show_in_footer_menu: 0,
-        include_in_xml_sitemap: 1,
-        h1: "Social Media Management Services",
-        meta_title: "Social Media Management | Expert Strategy",
-        meta_description: "Grow your brand on social media with expert management",
-        content_type: "Pillar",
-        buyer_journey_stage: "Awareness",
-        industry_ids: "[]",
-        country_ids: "[]",
-        linked_assets_ids: "[]",
-        linked_insights_ids: "[]",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: 4,
-        service_name: "PPC Advertising",
-        service_code: "PPC-001",
-        slug: "ppc-advertising",
-        full_url: "/services/ppc-advertising",
-        menu_heading: "Paid Advertising",
-        short_tagline: "Maximize your ad ROI",
-        service_description: "Strategic PPC campaigns for Google Ads and social platforms",
-        status: "Published",
-        language: "en",
-        show_in_main_menu: 1,
-        show_in_footer_menu: 0,
-        include_in_xml_sitemap: 1,
-        h1: "PPC Advertising Services",
-        meta_title: "PPC Advertising Services | Google Ads Experts",
-        meta_description: "Maximize your advertising ROI with expert PPC management",
-        content_type: "Pillar",
-        buyer_journey_stage: "Decision",
-        industry_ids: "[]",
-        country_ids: "[]",
-        linked_assets_ids: "[]",
-        linked_insights_ids: "[]",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: 5,
-        service_name: "Email Marketing",
-        service_code: "EM-001",
-        slug: "email-marketing",
-        full_url: "/services/email-marketing",
-        menu_heading: "Email Services",
-        short_tagline: "Connect with your customers",
-        service_description: "Effective email marketing campaigns and automation",
-        status: "Published",
-        language: "en",
-        show_in_main_menu: 1,
-        show_in_footer_menu: 0,
-        include_in_xml_sitemap: 1,
-        h1: "Email Marketing Services",
-        meta_title: "Email Marketing Services | Campaign Experts",
-        meta_description: "Effective email marketing campaigns for your business",
-        content_type: "Cluster",
-        buyer_journey_stage: "Retention",
-        industry_ids: "[]",
-        country_ids: "[]",
-        linked_assets_ids: "[]",
-        linked_insights_ids: "[]",
+        service_name: 'SEO Optimization',
+        service_code: 'SEO-001',
+        slug: 'seo-optimization',
+        meta_keywords: JSON.stringify(['seo', 'optimization']),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     }
 ];
 
-const mockSubServices = [
+const mockSubServices: any[] = [
     {
         id: 1,
-        sub_service_name: "Frontend Development",
-        sub_service_code: "FE-001",
+        sub_service_name: 'SEO Analysis',
         parent_service_id: 1,
-        slug: "frontend-development",
-        status: "Active"
-    },
-    {
-        id: 2,
-        sub_service_name: "SEO Optimization",
-        sub_service_code: "SEO-001",
-        parent_service_id: 2,
-        slug: "seo-optimization",
-        status: "Active"
+        slug: 'seo-analysis',
+        status: 'Active',
+        meta_keywords: JSON.stringify(['analysis'])
     }
 ];
 
-const mockAssets = [
-    {
-        id: 1,
-        asset_name: "Website Banner Design",
-        asset_type: "Blog Banner",
-        asset_category: "Graphics",
-        asset_format: "JPG",
-        content_type: "Web",
-        application_type: "web",
-        status: "Draft",
-        workflow_stage: "In Progress",
-        qc_status: "",
-        linked_service_id: 1,
-        linked_service_ids: "[1]",
-        linked_sub_service_id: 1,
-        linked_sub_service_ids: "[1]",
-        linked_task_id: 1,
-        linked_task: 1,
-        designed_by: 1,
-        submitted_by: 1,
-        created_by: 1,
-        qc_reviewer_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        file_url: "https://example.com/assets/banner1.jpg",
-        thumbnail_url: "https://example.com/assets/banner1_thumb.jpg",
-        file_type: "jpg",
-        version_number: 1,
-        tags: "Content Repository",
-        usage_status: "Available"
-    },
-    {
-        id: 2,
-        asset_name: "SEO Article",
-        asset_type: "Article",
-        asset_category: "Content",
-        asset_format: "PDF",
-        content_type: "Blog",
-        application_type: "seo",
-        status: "QC Approved",
-        workflow_stage: "Published",
-        qc_status: "Approved",
-        linked_service_id: 2,
-        linked_service_ids: "[2]",
-        linked_sub_service_id: 2,
-        linked_sub_service_ids: "[2]",
-        linked_task_id: 2,
-        linked_task: 2,
-        designed_by: 2,
-        submitted_by: 2,
-        created_by: 2,
-        qc_reviewer_id: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        file_url: "https://example.com/assets/article1.pdf",
-        file_type: "pdf",
-        version_number: 1,
-        tags: "SEO",
-        usage_status: "Available"
-    },
-    {
-        id: 3,
-        asset_name: "Social Media Post",
-        asset_type: "Social Post",
-        asset_category: "Social Media",
-        asset_format: "PNG",
-        content_type: "SMM",
-        application_type: "smm",
-        status: "Published",
-        workflow_stage: "Published",
-        qc_status: "Approved",
-        linked_service_id: 3,
-        linked_service_ids: "[3]",
-        linked_sub_service_id: null,
-        linked_sub_service_ids: "[]",
-        linked_task_id: 3,
-        linked_task: 3,
-        designed_by: 1,
-        submitted_by: 1,
-        created_by: 1,
-        qc_reviewer_id: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        file_url: "https://example.com/assets/social1.png",
-        thumbnail_url: "https://example.com/assets/social1_thumb.png",
-        file_type: "png",
-        version_number: 1,
-        tags: "SMM",
-        usage_status: "Available"
-    },
-    {
-        id: 4,
-        asset_name: "Email Template",
-        asset_type: "Email",
-        asset_category: "Email",
-        asset_format: "HTML",
-        content_type: "Email",
-        application_type: "email",
-        status: "Draft",
-        workflow_stage: "In Progress",
-        qc_status: "",
-        linked_service_id: 5,
-        linked_service_ids: "[5]",
-        linked_sub_service_id: null,
-        linked_sub_service_ids: "[]",
-        linked_task_id: 4,
-        linked_task: 4,
-        designed_by: 2,
-        submitted_by: 2,
-        created_by: 2,
-        qc_reviewer_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        file_url: "https://example.com/assets/email1.html",
-        file_type: "html",
-        version_number: 1,
-        tags: "Content Repository",
-        usage_status: "Available"
-    }
-];
+const mockAssets: any[] = [];
 
-const mockServiceAssetLinks = [
-    {
-        id: 1,
-        service_id: 1,
-        asset_id: 1,
-        is_static: 1,
-        created_at: new Date().toISOString()
-    },
-    {
-        id: 2,
-        service_id: 2,
-        asset_id: 2,
-        is_static: 1,
-        created_at: new Date().toISOString()
-    }
-];
+const mockServiceAssetLinks: any[] = [];
 
-const mockUsers = [
-    {
-        id: 1,
-        name: "John Designer",
-        email: "john@example.com",
-        role: "designer",
-        status: "active"
-    },
-    {
-        id: 2,
-        name: "Sarah Writer",
-        email: "sarah@example.com",
-        role: "writer",
-        status: "active"
-    },
-    {
-        id: 3,
-        name: "Mike QC",
-        email: "mike@example.com",
-        role: "qc_reviewer",
-        status: "active"
-    }
-];
+const mockAssetQcReviews: any[] = [];
 
-const mockTasks = [
-    {
-        id: 1,
-        name: "Design Homepage Banner",
-        task_name: "Design Homepage Banner",
-        status: "In Progress",
-        project_id: 1
-    },
-    {
-        id: 2,
-        name: "Write SEO Article",
-        task_name: "Write SEO Article",
-        status: "Completed",
-        project_id: 1
-    },
-    {
-        id: 3,
-        name: "Create Social Posts",
-        task_name: "Create Social Posts",
-        status: "In Progress",
-        project_id: 2
-    },
-    {
-        id: 4,
-        name: "Design Email Template",
-        task_name: "Design Email Template",
-        status: "In Progress",
-        project_id: 2
-    }
-];
+const mockUsers: any[] = [];
+
+const mockTasks: any[] = [];
+
+// Keywords table mock
+const mockKeywords: any[] = [];
+
+// Subservice asset links (used by some tests)
+const mockSubserviceAssetLinks: any[] = [];
 
 // Mock query function that simulates database responses
 export const mockPool = {
@@ -363,11 +57,27 @@ export const mockPool = {
 
         // Simulate services query
         if (sql.includes('SELECT') && sql.includes('services')) {
-            if (sql.includes('WHERE id =')) {
+            if (sql.includes("WHERE id =")) {
                 const serviceId = params?.[0];
                 const service = mockServices.find(s => s.id === serviceId);
                 return { rows: service ? [service] : [] };
             }
+
+            if (/WHERE\s+meta_keywords\s*=\s*'\[\]'/.test(sql)) {
+                const rows = mockServices.filter(s => s.meta_keywords === '[]');
+                return { rows };
+            }
+
+            if (/WHERE\s+meta_keywords\s+IS\s+NOT\s+NULL\s+AND\s+meta_keywords\s+!=\s*'\[\]'/.test(sql) || /meta_keywords\s+!=\s*'\[\]'/.test(sql)) {
+                const rows = mockServices.filter(s => s.meta_keywords && s.meta_keywords !== '[]');
+                return { rows };
+            }
+
+            if (/WHERE\s+meta_keywords\s+IS\s+NOT\s+NULL/.test(sql)) {
+                const rows = mockServices.filter(s => s.meta_keywords != null);
+                return { rows };
+            }
+
             return { rows: mockServices };
         }
 
@@ -378,6 +88,22 @@ export const mockPool = {
                 const subServices = mockSubServices.filter(ss => ss.parent_service_id === parentId);
                 return { rows: subServices };
             }
+
+            if (/WHERE\s+meta_keywords\s*=\s*'\[\]'/.test(sql)) {
+                const rows = mockSubServices.filter(s => s.meta_keywords === '[]');
+                return { rows };
+            }
+
+            if (/WHERE\s+meta_keywords\s+IS\s+NOT\s+NULL\s+AND\s+meta_keywords\s+!=\s*'\[\]'/.test(sql) || /meta_keywords\s+!=\s*'\[\]'/.test(sql)) {
+                const rows = mockSubServices.filter(s => s.meta_keywords && s.meta_keywords !== '[]');
+                return { rows };
+            }
+
+            if (/WHERE\s+meta_keywords\s+IS\s+NOT\s+NULL/.test(sql)) {
+                const rows = mockSubServices.filter(s => s.meta_keywords != null);
+                return { rows };
+            }
+
             return { rows: mockSubServices };
         }
 
@@ -391,13 +117,69 @@ export const mockPool = {
             return { rows: mockUsers };
         }
 
-        // Simulate assets query
-        if (sql.includes('SELECT') && sql.includes('assets')) {
-            if (sql.includes('WHERE id =')) {
-                const assetId = params?.[0];
+        // Simulate assets query with joins and filters
+        if (sql.includes('SELECT') && sql.toLowerCase().includes('from assets')) {
+            const q = sql;
+
+            // Handle JOIN with services and sub_services returning a.*, s.service_name, sub.sub_service_name WHERE a.id = ?
+            if (/join\s+services\s+/i.test(q) && /join\s+sub_services\s+/i.test(q) && /where\s+.*id\s*=\s*\?/i.test(q)) {
+                const idParam = params?.[params.length - 1] ?? params?.[0];
+                const asset = mockAssets.find(a => a.id === idParam);
+                if (!asset) return { rows: [] };
+                const service = mockServices.find(s => s.id === asset.linked_service_id) || null;
+                const sub = mockSubServices.find(ss => ss.id === asset.linked_sub_service_id) || null;
+                const row = { ...asset } as any;
+                if (service) row.service_name = service.service_name;
+                if (sub) row.sub_service_name = sub.sub_service_name;
+                return { rows: [row] };
+            }
+
+            // Handle SELECT a.* FROM assets a JOIN service_asset_links sal ON a.id = sal.asset_id WHERE sal.service_id = ? AND a.linking_active = 1
+            if (/service_asset_links\s+sal\s+ON\s+a\.id\s*=\s*sal\.asset_id/i.test(q) && /where\s+sal\.service_id\s*=\s*\?/i.test(q)) {
+                const serviceId = params?.[0];
+                const links = mockServiceAssetLinks.filter(l => l.service_id === serviceId);
+                const linkedAssets = links.map(l => {
+                    const a = mockAssets.find(a => a.id === l.asset_id);
+                    if (!a) return null;
+                    return { ...a, link_is_static: l.is_static, linked_at: l.created_at, service_id: l.service_id };
+                }).filter(Boolean).filter(a => Number(a.linking_active) === 1);
+                return { rows: linkedAssets };
+            }
+
+            // Handle subservice asset links join
+            if (/subservice_asset_links\s+sal\s+ON\s+a\.id\s*=\s*sal\.asset_id/i.test(q) && /where\s+sal\.sub_service_id\s*=\s*\?/i.test(q)) {
+                const subServiceId = params?.[0];
+                const links = mockSubserviceAssetLinks.filter(l => l.sub_service_id === subServiceId);
+                const linkedAssets = links.map(l => {
+                    const a = mockAssets.find(a => a.id === l.asset_id);
+                    if (!a) return null;
+                    return { ...a, link_is_static: l.is_static, linked_at: l.created_at, sub_service_id: l.sub_service_id };
+                }).filter(Boolean);
+                return { rows: linkedAssets };
+            }
+
+            // Handle qc_status IN (...) queries, possibly with AND id = ?
+            const qcInMatch = q.match(/WHERE\s+qc_status\s+IN\s*\(([^)]+)\)\s*(AND\s+id\s*=\s*\?)?/i);
+            if (qcInMatch) {
+                const statusesRaw = qcInMatch[1];
+                const statuses = statusesRaw.split(',').map(s => s.replace(/['"\s]/g, '').trim());
+                let rows = mockAssets.filter(a => statuses.includes((a.qc_status || '').toString()));
+                if (/AND\s+id\s*=\s*\?/i.test(q)) {
+                    const idParam = params?.[params.length - 1] ?? params?.[0];
+                    rows = rows.filter(r => r.id === idParam);
+                }
+                return { rows };
+            }
+
+            // Generic WHERE id = ? or WHERE a.id = ? handling
+            const idWhereMatch = q.match(/WHERE[\s\S]*?(?:\b|\W)(?:a\.)?id\s*=\s*\?/i);
+            if (idWhereMatch) {
+                const assetId = params?.[params.length - 1] ?? params?.[0];
                 const asset = mockAssets.find(a => a.id === assetId);
                 return { rows: asset ? [asset] : [] };
             }
+
+            // Default: return all assets (useful for summaries)
             return { rows: mockAssets };
         }
 
@@ -410,6 +192,47 @@ export const mockPool = {
                 return { rows: linkedAssets };
             }
             return { rows: mockServiceAssetLinks };
+        }
+
+        // Simulate keywords queries
+        if (sql.includes('keywords')) {
+            // SELECT id FROM keywords WHERE keyword = ?
+            if (/SELECT\s+id\s+FROM\s+keywords\s+WHERE\s+keyword\s*=\s*\?/i.test(sql)) {
+                const kw = params?.[0];
+                const found = mockKeywords.find(k => k.keyword === kw);
+                return { rows: found ? [{ id: found.id }] : [] };
+            }
+
+            // SELECT * FROM keywords WHERE mapped_sub_service_id = ?
+            if (/SELECT\s+\*\s+FROM\s+keywords\s+WHERE\s+mapped_sub_service_id\s*=\s*\?/i.test(sql)) {
+                const id = params?.[0];
+                const rows = mockKeywords.filter(k => k.mapped_sub_service_id === id);
+                return { rows };
+            }
+
+            // Generic keywords select
+            if (sql.toUpperCase().includes('SELECT')) {
+                return { rows: mockKeywords };
+            }
+        }
+
+        // Simulate asset_qc_reviews selects
+        if (sql.includes('asset_qc_reviews')) {
+            // SELECT ... FROM asset_qc_reviews WHERE asset_id = ?
+            if (/WHERE\s+asset_id\s*=\s*\?/i.test(sql)) {
+                const aid = params?.[0];
+                const rows = mockAssetQcReviews.filter(r => r.asset_id === aid).map(r => ({ ...r }));
+                // Add reviewer name/email if user exists
+                rows.forEach(r => {
+                    const u = mockUsers.find(u => u.id === r.qc_reviewer_id);
+                    if (u) {
+                        r.reviewer_name = u.name;
+                        r.reviewer_email = u.email;
+                    }
+                });
+                return { rows };
+            }
+            return { rows: mockAssetQcReviews };
         }
 
         // Simulate QC weightage configs query
@@ -523,14 +346,241 @@ export const mockPool = {
             return { rows: mockAuditChecklists };
         }
 
-        // Simulate INSERT operations
-        if (sql.includes('INSERT')) {
-            return { rows: [], insertId: Math.floor(Math.random() * 1000) + 1 };
+        // Generic SELECT COUNT(*) as count FROM <table>
+        const countMatch = sql.match(/SELECT\s+COUNT\(\*\)\s+AS\s+COUNT\s+FROM\s+([a-zA-Z0-9_]+)/i);
+        if (countMatch) {
+            const tableName = (countMatch[1] || '').toLowerCase();
+            let count = 0;
+            if (tableName === 'assets') count = mockAssets.length;
+            else if (tableName === 'services') count = mockServices.length;
+            else if (tableName === 'users') count = mockUsers.length;
+            else if (tableName === 'keywords') count = mockKeywords.length;
+            else if (tableName === 'service_asset_links') count = mockServiceAssetLinks.length;
+            return { rows: [{ count }] };
         }
 
-        // Simulate UPDATE operations
-        if (sql.includes('UPDATE')) {
-            return { rows: [], changedRows: 1 };
+        // Simulate INSERT operations - map column list to params and push into appropriate mock array
+        if (sql.toUpperCase().includes('INSERT')) {
+            const tableMatch = sql.match(/INSERT INTO\s+([a-zA-Z0-9_]+)/i);
+            const table = tableMatch ? tableMatch[1].toLowerCase() : null;
+
+            const getNextId = (arr: any[]) => (arr.reduce((m, it) => Math.max(m, Number(it.id || 0)), 0) + 1);
+
+            // parse column list if present
+            const colsMatch = sql.match(/INSERT INTO\s+[a-zA-Z0-9_]+\s*\(([^)]+)\)\s*VALUES/i);
+            const columns = colsMatch ? colsMatch[1].split(',').map((c: string) => c.trim()) : null;
+            const valuesMatch = sql.match(/VALUES\s*\(([^)]+)\)/i);
+            const valueTokens = valuesMatch ? valuesMatch[1].split(/,(?=(?:[^']*'[^']*')*[^']*$)/).map((v: string) => v.trim()) : null;
+
+            const buildObjFromParams = (cols: string[] | null, paramsArr: any[] = []) => {
+                const arrTarget = table === 'assets' ? mockAssets
+                    : table === 'services' ? mockServices
+                    : table === 'users' ? mockUsers
+                        : table === 'service_asset_links' ? mockServiceAssetLinks
+                        : table === 'subservice_asset_links' ? mockSubserviceAssetLinks
+                        : table === 'asset_qc_reviews' ? mockAssetQcReviews
+                        : table === 'keywords' ? mockKeywords
+                    : null;
+
+                const newId = arrTarget ? getNextId(arrTarget) : Math.floor(Math.random() * 1000) + 1;
+                const obj: any = { id: newId };
+
+                if (cols && cols.length) {
+                    let paramIndex = 0;
+                    cols.forEach((col: string, idx: number) => {
+                        const cleanCol = col.replace(/`/g, '').trim();
+                        const valToken = valueTokens && valueTokens[idx] ? valueTokens[idx] : '?';
+
+                        let val: any;
+                        if (/^\?$/.test(valToken)) {
+                            val = paramsArr[paramIndex++];
+                        } else if (/CURRENT_TIMESTAMP/i.test(valToken)) {
+                            val = new Date().toISOString();
+                        } else {
+                            const litMatch = valToken.match(/^'(.*)'$/s);
+                            if (litMatch) val = litMatch[1];
+                            else if (/^[0-9]+$/.test(valToken)) val = Number(valToken);
+                            else val = valToken;
+                        }
+
+                        if (Array.isArray(val) || typeof val === 'object') {
+                            try { val = JSON.stringify(val); } catch { }
+                        }
+
+                        obj[cleanCol] = val;
+                    });
+                }
+
+                // Set sensible defaults for certain tables/fields
+                if (table === 'assets') {
+                    if (obj.linking_active === undefined) obj.linking_active = 0;
+                    if (obj.rework_count === undefined) obj.rework_count = 0;
+                    if (obj.workflow_log === undefined || obj.workflow_log === '[]') {
+                        const createdEntry = {
+                            action: 'created',
+                            timestamp: new Date().toISOString(),
+                            user_id: obj.created_by || obj.submitted_by || null,
+                            status: obj.status || obj.qc_status || null,
+                            workflow_stage: obj.workflow_stage || null
+                        };
+                        obj.workflow_log = JSON.stringify([createdEntry]);
+                    }
+                }
+                if (table === 'service_asset_links') {
+                    if (obj.is_static === undefined) obj.is_static = 0;
+                }
+
+                if (arrTarget) arrTarget.push(obj);
+                return { obj, newId };
+            };
+
+            const paramsArr = Array.isArray(params) ? params : [];
+            const { obj, newId } = buildObjFromParams(columns, paramsArr);
+
+            // Return the inserted object so tests can read rows[0].id
+            return { rows: [obj], insertId: newId, lastID: newId, lastIDValue: newId };
+        }
+
+        // Simulate UPDATE operations - apply simple SET parsing for id-based updates
+        if (sql.toUpperCase().includes('UPDATE')) {
+            try {
+                const idMatch = /WHERE\s+id\s*=\s*\?/i.test(sql);
+                const keywordEqMatch = /WHERE\s+keyword\s*=\s*\?/i.test(sql);
+                const keywordInMatch = /WHERE\s+keyword\s+IN\s*\(/i.test(sql);
+                const keywordAndMappedMatch = /WHERE\s+keyword\s*=\s*\?\s+AND\s+mapped_sub_service_id\s*=\s*\?/i.test(sql);
+
+                // Determine target table and setClause
+                const tableMatch2 = sql.match(/UPDATE\s+([a-zA-Z0-9_]+)\s+SET\s+([\s\S]+?)\s+WHERE\s+/i);
+                const table = tableMatch2 ? tableMatch2[1].toLowerCase() : null;
+                const setClause = tableMatch2 ? tableMatch2[2] : null;
+
+                const targetArr = table === 'assets' ? mockAssets
+                    : table === 'services' ? mockServices
+                    : table === 'users' ? mockUsers
+                    : table === 'service_asset_links' ? mockServiceAssetLinks
+                    : table === 'keywords' ? mockKeywords
+                    : null;
+
+                if (targetArr && setClause) {
+                    // handle keywords IN (...) bulk nullification
+                    if (table === 'keywords' && keywordInMatch) {
+                        const kws: string[] = Array.isArray(params) ? params.filter(p => typeof p === 'string') : [];
+                        kws.forEach(kw => {
+                            const kitem = mockKeywords.find(k => k.keyword === kw);
+                            if (kitem) {
+                                kitem.mapped_sub_service_id = null;
+                                kitem.mapped_sub_service = null;
+                            }
+                        });
+                        return { rows: [], changedRows: kws.length };
+                    }
+
+                    let item: any = null;
+
+                    if (keywordAndMappedMatch) {
+                        const keywordParam = params?.[0];
+                        const mappedParam = params?.[1];
+                        item = mockKeywords.find(k => k.keyword === keywordParam && k.mapped_sub_service_id === mappedParam);
+                    } else if (keywordEqMatch) {
+                        // keyword = ? - keyword param is typically the last param
+                        const keywordParam = Array.isArray(params) ? params[params.length - 1] : undefined;
+                        item = mockKeywords.find(k => k.keyword === keywordParam);
+                    } else if (idMatch) {
+                        const idParam = Array.isArray(params) ? params[params.length - 1] : undefined;
+                        item = targetArr.find((it: any) => it.id === idParam);
+                    }
+
+                    if (item) {
+                        const parts = setClause.split(/,(?=(?:[^']*'[^']*')*[^']*$)/);
+                        const paramsCopy = Array.isArray(params) ? params.slice() : [];
+                        parts.forEach((p: string) => {
+                            const assign = p.split('=');
+                            if (assign.length >= 2) {
+                                let key = assign[0].trim().replace(/`/g, '');
+                                let valueRaw = assign.slice(1).join('=').trim();
+                                let value: any = undefined;
+
+                                if (/=\s*\?\s*$/i.test(p) || /^\?$/i.test(valueRaw)) {
+                                    value = paramsCopy.shift();
+                                } else if (/CURRENT_TIMESTAMP/i.test(valueRaw)) {
+                                    value = new Date().toISOString();
+                                } else {
+                                    const incMatch = valueRaw.match(/([a-zA-Z0-9_]+)\s*\+\s*(\d+)/);
+                                    if (incMatch && key === incMatch[1]) {
+                                        const inc = parseInt(incMatch[2], 10);
+                                        item[key] = (Number(item[key]) || 0) + inc;
+                                        return;
+                                    }
+
+                                    const stringMatch = valueRaw.match(/^'(.*)'$/s);
+                                    if (stringMatch) {
+                                        value = stringMatch[1];
+                                    } else if (/^[0-9]+$/.test(valueRaw)) {
+                                        value = Number(valueRaw);
+                                    } else if (/^\[.*\]$/.test(valueRaw)) {
+                                        try { value = JSON.parse(valueRaw); } catch { value = valueRaw; }
+                                    } else {
+                                        value = valueRaw;
+                                    }
+                                }
+
+                                // stringify objects for JSON fields
+                                if (typeof value === 'object') {
+                                    try { value = JSON.stringify(value); } catch { }
+                                }
+
+                                item[key] = value;
+                            }
+                        });
+
+                        return { rows: [], changedRows: 1 };
+                    }
+                }
+            } catch (e) {
+                // fallthrough to generic response
+            }
+
+            return { rows: [], changedRows: 0 };
+        }
+
+        // Simulate DELETE operations - remove from arrays when possible
+        if (/DELETE\s+FROM/i.test(sql)) {
+            const match = sql.match(/DELETE FROM\s+([a-zA-Z0-9_]+)\s+WHERE\s+id\s*=\s*\?/i);
+            const table = match ? match[1].toLowerCase() : null; 
+            const idParam = params?.[0];
+            const targetArr = table === 'assets' ? mockAssets
+                : table === 'services' ? mockServices
+                : table === 'users' ? mockUsers
+                : table === 'service_asset_links' ? mockServiceAssetLinks
+                : null;
+            if (targetArr) {
+                const idx = targetArr.findIndex((it: any) => it.id === idParam);
+                if (idx !== -1) targetArr.splice(idx, 1);
+            }
+            // Also remove any links pointing to deleted assets
+            if (table === 'assets') {
+                for (let i = mockServiceAssetLinks.length - 1; i >= 0; i--) {
+                    if (mockServiceAssetLinks[i].asset_id === idParam) mockServiceAssetLinks.splice(i, 1);
+                }
+                // Remove any subservice-asset links as well
+                for (let i = mockSubserviceAssetLinks.length - 1; i >= 0; i--) {
+                    if (mockSubserviceAssetLinks[i].asset_id === idParam) mockSubserviceAssetLinks.splice(i, 1);
+                }
+            }
+            return { rows: [], affectedRows: 1 };
+        }
+
+        // Support DELETE FROM <table> WHERE asset_id = ? (used for asset_qc_reviews cleanup)
+        if (/DELETE\s+FROM\s+([a-zA-Z0-9_]+)\s+WHERE\s+asset_id\s*=\s*\?/i.test(sql)) {
+            const match2 = sql.match(/DELETE FROM\s+([a-zA-Z0-9_]+)\s+WHERE\s+asset_id\s*=\s*\?/i);
+            const table2 = match2 ? match2[1].toLowerCase() : null;
+            const assetIdParam = params?.[0];
+            if (table2 === 'asset_qc_reviews') {
+                for (let i = mockAssetQcReviews.length - 1; i >= 0; i--) {
+                    if (mockAssetQcReviews[i].asset_id === assetIdParam) mockAssetQcReviews.splice(i, 1);
+                }
+            }
+            return { rows: [], affectedRows: 1 };
         }
 
         // Default response

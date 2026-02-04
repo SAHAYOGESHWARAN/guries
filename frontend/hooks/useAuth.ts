@@ -144,7 +144,9 @@ export function useAuth() {
       // Allow an app-level global override for testing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const globalAny: any = window as any;
-      if (globalAny.__APP_AUTH__ && typeof globalAny.__APP_AUTH__ === 'object') {
+      // Only honor an injected `__APP_AUTH__` in non-production builds (development/testing).
+      // Production deployments should not automatically authenticate via a global.
+      if (process.env.NODE_ENV !== 'production' && globalAny.__APP_AUTH__ && typeof globalAny.__APP_AUTH__ === 'object') {
         const authUser = globalAny.__APP_AUTH__ as AuthUser;
         authUser.permissions = getPermissionsByRole(authUser.role as UserRole);
         setUser(authUser);
@@ -164,17 +166,9 @@ export function useAuth() {
       // ignore
     }
 
-    // default guest user with user role (for demo purposes)
-    const defaultUser: AuthUser = {
-      id: 1,
-      name: 'Guest',
-      email: 'guest@example.com',
-      role: 'user',
-      status: 'active',
-      created_at: new Date().toISOString(),
-      permissions: getPermissionsByRole('user'),
-    };
-    setUser(defaultUser);
+    // Do not auto-authenticate as a guest in production or on deploy.
+    // Leave `user` as `null` so callers can show a proper login screen.
+    setUser(null);
     setLoading(false);
   }, []);
 

@@ -170,7 +170,8 @@ describe('QC Review Functionality', () => {
                 });
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toContain('approved', 'rejected', 'rework');
+            // Ensure the error message mentions one of the allowed decisions
+            expect(['approved', 'rejected', 'rework'].some(s => typeof response.body.error === 'string' && response.body.error.includes(s))).toBe(true);
         });
 
         test('should return 404 for non-existent asset', async () => {
