@@ -462,7 +462,7 @@ const EditAssetForm: React.FC<EditAssetFormProps> = ({ asset, onSave, onCancel, 
                     <div className="max-w-md">
                         <select
                             value={formData.status || 'Draft'}
-                            onChange={e => setFormData({ ...formData, status: e.target.value })}
+                            onChange={e => setFormData({ ...formData, status: e.target.value as any })}
                             className="w-full h-11 px-4 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                             <option value="Draft">Draft</option>

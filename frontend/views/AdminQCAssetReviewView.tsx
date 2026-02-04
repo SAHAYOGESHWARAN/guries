@@ -102,7 +102,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
         const serviceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
         if (!serviceId) return '-';
         const service = services.find(s => s.id === serviceId);
-        return service?.service_name || service?.name || '-';
+        return service?.service_name || '-';
     };
 
     const getLinkedTaskName = (asset: AssetLibraryItem): string => {
@@ -113,7 +113,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
     };
 
     const getDesignerName = (asset: AssetLibraryItem): string => {
-        const designerId = asset.designed_by || asset.created_by || asset.uploaded_by;
+        const designerId = asset.designed_by || asset.created_by;
         if (!designerId) return '-';
         return usersMap.get(designerId)?.name || '-';
     };
@@ -708,7 +708,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                         <td className="px-4 py-4">
                                             <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
                                                 {asset.thumbnail_url || asset.file_url ? (
-                                                    <img src={asset.thumbnail_url || asset.file_url} alt={asset.asset_name || asset.name} className="w-full h-full object-cover" />
+                                                    <img src={asset.thumbnail_url || asset.file_url} alt={asset.name || asset.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -718,7 +718,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                         </td>
                                         <td className="px-4 py-4">
                                             <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline">
-                                                {asset.asset_name || asset.name}
+                                                {asset.name || asset.name}
                                             </button>
                                         </td>
                                         <td className="px-4 py-4 text-gray-700 text-sm">{getSubmitterName(asset)}</td>

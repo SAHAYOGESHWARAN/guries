@@ -288,7 +288,7 @@ const UploadAssetModal: React.FC<UploadAssetModalProps> = ({ isOpen, onClose, on
                         </div>
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
-                            <select value={asset.status || 'Draft'} onChange={e => setAsset({ ...asset, status: e.target.value })} className="w-full h-12 px-4 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            <select value={asset.status || 'Draft'} onChange={e => setAsset({ ...asset, status: e.target.value as any })} className="w-full h-12 px-4 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                                 <option value="Draft">Draft</option>
                                 <option value="Pending QC Review">Pending QC Review</option>
                                 <option value="Approved">Approved</option>

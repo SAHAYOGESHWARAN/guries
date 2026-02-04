@@ -473,7 +473,7 @@ const AssetFormImproved: React.FC<AssetFormImprovedProps> = ({
                             <label className="block text-sm font-medium text-slate-700 mb-2">Current Status</label>
                             <select
                                 value={formData.status || 'Draft'}
-                                onChange={e => setFormData({ ...formData, status: e.target.value })}
+                                onChange={e => setFormData({ ...formData, status: e.target.value as any })}
                                 className="w-full h-11 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                             >
                                 <option value="Draft">Draft</option>

@@ -323,18 +323,18 @@ const QCReviewPage: React.FC = () => {
                                 <tbody>
                                     {assets.map(asset => (
                                         <tr key={asset.id} className={selectedAsset?.id === asset.id ? 'selected' : ''}>
-                                            <td className="asset-name">{asset.asset_name}</td>
+                                            <td className="asset-name">{asset.name}</td>
                                             <td>{asset.asset_type}</td>
                                             <td>{asset.asset_category}</td>
                                             <td>{new Date(asset.submitted_at || '').toLocaleDateString()}</td>
                                             <td>
-                                                <span className={`score ${asset.seo_score >= 80 ? 'high' : asset.seo_score >= 60 ? 'medium' : 'low'}`}>
-                                                    {asset.seo_score}/100
+                                                <span className={`score ${(asset.seo_score || 0) >= 80 ? 'high' : (asset.seo_score || 0) >= 60 ? 'medium' : 'low'}`}>
+                                                    {asset.seo_score || 0}/100
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`score ${asset.grammar_score >= 80 ? 'high' : asset.grammar_score >= 60 ? 'medium' : 'low'}`}>
-                                                    {asset.grammar_score}/100
+                                                <span className={`score ${(asset.grammar_score || 0) >= 80 ? 'high' : (asset.grammar_score || 0) >= 60 ? 'medium' : 'low'}`}>
+                                                    {asset.grammar_score || 0}/100
                                                 </span>
                                             </td>
                                             <td>{asset.rework_count || 0}</td>
@@ -611,7 +611,7 @@ const QCReviewPanel: React.FC<QCReviewPanelProps> = ({
                 <div className="asset-info">
                     <div className="info-item">
                         <span className="label">Name:</span>
-                        <span className="value">{asset.asset_name}</span>
+                        <span className="value">{asset.name}</span>
                     </div>
                     <div className="info-item">
                         <span className="label">Type:</span>
@@ -619,11 +619,11 @@ const QCReviewPanel: React.FC<QCReviewPanelProps> = ({
                     </div>
                     <div className="info-item">
                         <span className="label">SEO Score:</span>
-                        <span className="value">{asset.seo_score}/100</span>
+                        <span className="value">{asset.seo_score || 0}/100</span>
                     </div>
                     <div className="info-item">
                         <span className="label">Grammar Score:</span>
-                        <span className="value">{asset.grammar_score}/100</span>
+                        <span className="value">{asset.grammar_score || 0}/100</span>
                     </div>
                 </div>
 

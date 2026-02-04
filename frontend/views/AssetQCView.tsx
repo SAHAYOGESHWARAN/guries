@@ -101,7 +101,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
         const serviceId = asset.linked_service_id || (asset.linked_service_ids && asset.linked_service_ids[0]);
         if (!serviceId) return '-';
         const service = services.find(s => s.id === serviceId);
-        return service?.service_name || service?.name || '-';
+        return service?.service_name || '-';
     };
 
     // Helper: Get linked task name
@@ -273,12 +273,15 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                 handleRefresh();
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.error || 'Failed to submit QC review';
-                alert(`Error: ${errorMessage}`);
+                const errorMessage = errorData.error || errorData.message || 'Failed to submit QC review';
+                const errorCode = errorData.code || 'UNKNOWN_ERROR';
+                console.error('QC Submit failed:', { status: response.status, errorCode, errorMessage, errorData });
+                alert(`Error (${response.status}): ${errorMessage}`);
             }
         } catch (error: any) {
             console.error('QC Submit error:', error);
-            alert(`Failed to submit QC review: ${error.message || 'Network error'}`);
+            const errorMessage = error.message || error.error || 'Network error occurred';
+            alert(`Failed to submit QC review: ${errorMessage}`);
         } finally {
             setSubmitting(false);
         }
@@ -286,7 +289,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
 
     // USER: Send asset to QC stage
     const handleSendToQC = async (asset: AssetLibraryItem) => {
-        if (!confirm(`Send "${asset.asset_name || asset.name}" to QC Review?`)) return;
+        if (!confirm(`Send "${asset.name || asset.name}" to QC Review?`)) return;
         try {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const res = await fetch(`${apiUrl}/assetLibrary/${asset.id}/submit-qc`, {
@@ -303,16 +306,20 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                 handleRefresh();
             } else {
                 const errorData = await res.json().catch(() => ({}));
-                alert(`Failed to submit: ${errorData.error || 'Unknown error'}`);
+                const errorMessage = errorData.error || errorData.message || 'Unknown error';
+                console.error('Send to QC failed:', { status: res.status, errorData });
+                alert(`Failed to submit (${res.status}): ${errorMessage}`);
             }
         } catch (error: any) {
-            alert(`Failed to submit: ${error.message || 'Network error'}`);
+            console.error('Send to QC error:', error);
+            const errorMessage = error.message || 'Network error occurred';
+            alert(`Failed to submit: ${errorMessage}`);
         }
     };
 
     // USER: Resubmit asset after rework
     const handleResubmitForQC = async (asset: AssetLibraryItem) => {
-        if (!confirm(`Resubmit "${asset.asset_name || asset.name}" for QC review?`)) return;
+        if (!confirm(`Resubmit "${asset.name || asset.name}" for QC review?`)) return;
         try {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const res = await fetch(`${apiUrl}/assetLibrary/${asset.id}/submit-qc`, {
@@ -330,10 +337,14 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                 handleRefresh();
             } else {
                 const errorData = await res.json().catch(() => ({}));
-                alert(`Failed to resubmit: ${errorData.error || 'Unknown error'}`);
+                const errorMessage = errorData.error || errorData.message || 'Unknown error';
+                console.error('Resubmit QC failed:', { status: res.status, errorData });
+                alert(`Failed to resubmit (${res.status}): ${errorMessage}`);
             }
         } catch (error: any) {
-            alert(`Failed to resubmit: ${error.message || 'Network error'}`);
+            console.error('Resubmit QC error:', error);
+            const errorMessage = error.message || 'Network error occurred';
+            alert(`Failed to resubmit: ${errorMessage}`);
         }
     };
 
@@ -359,7 +370,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                         <div className="flex items-start justify-between mb-4">
                             <div>
                                 <p className="text-gray-400 text-sm mb-1">#{selectedAsset.id}</p>
-                                <h1 className="text-2xl font-bold text-gray-900">{selectedAsset.asset_name || selectedAsset.name}</h1>
+                                <h1 className="text-2xl font-bold text-gray-900">{selectedAsset.name || selectedAsset.name}</h1>
                                 <div className="flex items-center gap-2 mt-3">
                                     <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                                         {selectedAsset.application_type?.toUpperCase() || 'WEB'}
@@ -386,7 +397,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                         {/* Media Preview Box - loads from stored thumbnail URL */}
                         <div className="bg-gray-50 rounded-lg border border-gray-200 h-72 flex items-center justify-center mb-6">
                             {selectedAsset.thumbnail_url || selectedAsset.file_url ? (
-                                <img src={selectedAsset.thumbnail_url || selectedAsset.file_url} alt={selectedAsset.asset_name || selectedAsset.name} className="max-h-full max-w-full object-contain" />
+                                <img src={selectedAsset.thumbnail_url || selectedAsset.file_url} alt={selectedAsset.name || selectedAsset.name} className="max-h-full max-w-full object-contain" />
                             ) : (
                                 <span className="text-gray-400 text-sm">No media attached</span>
                             )}
@@ -734,14 +745,14 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                                         <td className="px-4 py-4">
                                             <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
                                                 {asset.thumbnail_url || asset.file_url ? (
-                                                    <img src={asset.thumbnail_url || asset.file_url} alt={asset.asset_name || asset.name} className="w-full h-full object-cover" />
+                                                    <img src={asset.thumbnail_url || asset.file_url} alt={asset.name || asset.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="px-4 py-4">
-                                            <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline whitespace-nowrap">{asset.asset_name || asset.name}</button>
+                                            <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline whitespace-nowrap">{asset.name || asset.name}</button>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap"><span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">{getAssetTypeName(asset)}</span></td>
                                         <td className="px-4 py-4 whitespace-nowrap"><span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">{getAssetCategoryName(asset)}</span></td>
