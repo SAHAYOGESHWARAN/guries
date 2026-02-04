@@ -2,23 +2,6 @@
   "version": 2,
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "buildCommand": "npm run build"
-      }
-    },
-    {
-      "src": "api/api.js",
-      "use": "@vercel/node",
-      "config": {
-        "runtime": "nodejs24.x"
-      }
-    }
-  ],
   "functions": {
     "api/index.js": {
       "runtime": "nodejs24.x"
