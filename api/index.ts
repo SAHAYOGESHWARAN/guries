@@ -135,15 +135,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
-        // Assets endpoints
+        // Assets endpoints - unified handling
         if (path.startsWith('/api/v1/assets') || path.startsWith('/api/v1/assetLibrary')) {
             if (method === 'GET') {
-                return res.status(200).json(mockAssets);
+                return res.status(200).json({
+                    success: true,
+                    data: mockAssets,
+                    total: mockAssets.length
+                });
             }
             if (method === 'POST') {
-                const newAsset = { ...req.body, id: mockAssets.length + 1 };
-                mockAssets.push(newAsset);
-                return res.status(201).json(newAsset);
+                const newAsset = {
+                    id: Date.now(),
+                    ...req.body,
+                    created_at: new Date().toISOString(),
+                    status: 'Draft',
+                    qc_score: 0
+                };
+                return res.status(201).json({
+                    success: true,
+                    message: 'Asset created successfully',
+                    data: newAsset
+                });
             }
         }
 
@@ -165,6 +178,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (path.startsWith('/api/v1/tasks')) {
             if (method === 'GET') {
                 return res.status(200).json(mockTasks);
+            }
+        }
+
+        // QC Reviews endpoints
+        if (path.startsWith('/api/v1/qc-reviews')) {
+            if (method === 'GET') {
+                const mockQCReviews = [
+                    {
+                        id: 1,
+                        asset_id: 1,
+                        reviewer_id: 1,
+                        qc_score: 95,
+                        qc_status: 'Pass',
+                        qc_remarks: 'Excellent quality work',
+                        review_date: new Date().toISOString()
+                    },
+                    {
+                        id: 2,
+                        asset_id: 2,
+                        reviewer_id: 1,
+                        qc_score: 0,
+                        qc_status: 'Pending',
+                        qc_remarks: null,
+                        review_date: null
+                    }
+                ];
+                return res.status(200).json({
+                    success: true,
+                    data: mockQCReviews,
+                    total: mockQCReviews.length
+                });
+            }
+            if (method === 'POST') {
+                const newReview = {
+                    id: Date.now(),
+                    ...req.body,
+                    review_date: new Date().toISOString()
+                };
+                return res.status(201).json({
+                    success: true,
+                    message: 'QC review submitted successfully',
+                    data: newReview
+                });
             }
         }
 
@@ -197,6 +253,131 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     pendingTasks: mockTasks.filter(t => t.status === 'In Progress').length
                 }
             });
+        }
+
+        // Additional mock data for missing endpoints
+        const mockNotifications = [
+            { id: 1, title: 'New asset uploaded', message: 'A new asset requires your review', type: 'info', read: false, created_at: new Date().toISOString() },
+            { id: 2, title: 'QC review completed', message: 'Asset QC review has been completed', type: 'success', read: true, created_at: new Date().toISOString() }
+        ];
+
+        const mockKeywords = [
+            { id: 1, keyword: 'digital marketing', search_volume: 1000, competition: 'high' },
+            { id: 2, keyword: 'seo services', search_volume: 800, competition: 'medium' }
+        ];
+
+        const mockBrands = [
+            { id: 1, name: 'TechCorp', industry: 'Technology', website: 'https://techcorp.com', status: 'active' },
+            { id: 2, name: 'HealthPlus', industry: 'Healthcare', website: 'https://healthplus.com', status: 'active' }
+        ];
+
+        const mockBacklinks = [
+            { id: 1, url: 'https://example.com', domain_authority: 45, status: 'active' },
+            { id: 2, url: 'https://blog.example.com', domain_authority: 32, status: 'pending' }
+        ];
+
+        const mockContentTypes = [
+            { id: 1, name: 'Blog Post', description: 'Blog content' },
+            { id: 2, name: 'Article', description: 'Article content' }
+        ];
+
+        const mockAssetCategories = [
+            { id: 1, name: 'Graphics', description: 'Graphic assets' },
+            { id: 2, name: 'Content', description: 'Content assets' }
+        ];
+
+        const mockAssetTypes = [
+            { id: 1, name: 'Image', description: 'Image files' },
+            { id: 2, name: 'Document', description: 'Document files' }
+        ];
+
+        const mockSubServices = [
+            { id: 1, name: 'SEO Audit', service_id: 1 },
+            { id: 2, name: 'Content Writing', service_id: 2 }
+        ];
+
+        const mockContent = [
+            { id: 1, title: 'Marketing Guide', type: 'blog', status: 'published' },
+            { id: 2, title: 'SEO Tips', type: 'article', status: 'draft' }
+        ];
+
+        // Handle all missing endpoints with mock data
+        if (path.startsWith('/api/v1/notifications')) {
+            return res.status(200).json(mockNotifications);
+        }
+        if (path.startsWith('/api/v1/keywords')) {
+            return res.status(200).json(mockKeywords);
+        }
+        if (path.startsWith('/api/v1/brands')) {
+            return res.status(200).json(mockBrands);
+        }
+        if (path.startsWith('/api/v1/backlinks')) {
+            return res.status(200).json(mockBacklinks);
+        }
+        if (path.startsWith('/api/v1/content-types')) {
+            return res.status(200).json(mockContentTypes);
+        }
+        if (path.startsWith('/api/v1/asset-category-master')) {
+            return res.status(200).json(mockAssetCategories);
+        }
+        if (path.startsWith('/api/v1/asset-type-master')) {
+            return res.status(200).json(mockAssetTypes);
+        }
+        if (path.startsWith('/api/v1/sub-services')) {
+            return res.status(200).json(mockSubServices);
+        }
+        if (path.startsWith('/api/v1/content')) {
+            return res.status(200).json(mockContent);
+        }
+
+        // Additional missing endpoints from our test
+        if (path.startsWith('/api/v1/service-pages')) {
+            return res.status(200).json([
+                { id: 1, title: 'SEO Services', content: 'Professional SEO optimization', status: 'published' },
+                { id: 2, title: 'Content Marketing', content: 'Quality content creation', status: 'draft' }
+            ]);
+        }
+        if (path.startsWith('/api/v1/smm')) {
+            return res.status(200).json([
+                { id: 1, platform: 'Facebook', post_type: 'Image', status: 'Scheduled', date: '2024-02-05' },
+                { id: 2, platform: 'Twitter', post_type: 'Text', status: 'Published', date: '2024-02-04' }
+            ]);
+        }
+        if (path.startsWith('/api/v1/graphics')) {
+            return res.status(200).json([
+                { id: 1, name: 'Facebook Banner', type: 'Social Media', status: 'Completed' },
+                { id: 2, name: 'Website Header', type: 'Web', status: 'In Progress' }
+            ]);
+        }
+        if (path.startsWith('/api/v1/competitors')) {
+            return res.status(200).json([
+                { id: 1, name: 'Competitor A', domain: 'competitor-a.com', industry: 'Marketing' },
+                { id: 2, name: 'Competitor B', domain: 'competitor-b.com', industry: 'SEO' }
+            ]);
+        }
+        if (path.startsWith('/api/v1/asset-categories')) {
+            return res.status(200).json(mockAssetCategories);
+        }
+        if (path.startsWith('/api/v1/asset-types')) {
+            return res.status(200).json(mockAssetTypes);
+        }
+        if (path.startsWith('/api/v1/platforms') || path.startsWith('/api/v1/platform-master')) {
+            return res.status(200).json([
+                { id: 1, name: 'Facebook', type: 'Social Media' },
+                { id: 2, name: 'Google', type: 'Search Engine' }
+            ]);
+        }
+        if (path.startsWith('/api/v1/country-master')) {
+            return res.status(200).json([
+                { id: 1, name: 'United States', code: 'US' },
+                { id: 2, name: 'United Kingdom', code: 'UK' }
+            ]);
+        }
+        if (path.startsWith('/api/v1/industry-sectors')) {
+            return res.status(200).json([
+                { id: 1, name: 'Technology', description: 'Tech companies' },
+                { id: 2, name: 'Healthcare', description: 'Healthcare industry' }
+            ]);
         }
 
         // Authentication endpoint

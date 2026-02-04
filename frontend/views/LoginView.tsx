@@ -152,6 +152,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 return;
             }
 
+            // Check password match
+            if (existingUser.password && existingUser.password !== formData.password) {
+                setError('Invalid email or password');
+                setIsLoading(false);
+                return;
+            }
+
             if (existingUser.status === 'inactive') {
                 setError('Your account has been deactivated. Contact an administrator.');
                 setIsLoading(false);
@@ -255,7 +262,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-brand-600/10 rounded-full blur-[120px]"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-violet-600/10 rounded-full blur-[120px]"></div>
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-100/5 to-slate-200/5"></div>
             </div>
 
             {/* --- Card --- */}

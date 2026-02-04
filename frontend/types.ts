@@ -4,8 +4,10 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    password?: string;
+    phone?: string;
     role: string;
-    status: 'active' | 'inactive';
+    status: 'active' | 'inactive' | 'pending';
     created_at: string;
     avatar_url?: string;
     department?: string;

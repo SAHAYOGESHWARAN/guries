@@ -5,6 +5,19 @@ import LoginView from './views/LoginView';
 import Chatbot from './components/Chatbot';
 import { AuthUser } from './hooks/useAuth';
 
+// Global error handler for unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  // Suppress browser extension and external resource errors
+  if (event.reason && typeof event.reason === 'string') {
+    if (event.reason.includes('webpage_content_reporter') ||
+        event.reason.includes('grainy-gradients') ||
+        event.reason.includes('402')) {
+      event.preventDefault();
+      return;
+    }
+  }
+});
+
 // Lazy Load Views
 const DashboardView = React.lazy(() => import('./views/DashboardView'));
 const CampaignsView = React.lazy(() => import('./views/CampaignsView'));
@@ -194,6 +207,7 @@ const App: React.FC = () => {
         id: 1,
         name: 'Admin User',
         email: 'admin@example.com',
+        password: 'admin123', // Store password hash in real app
         role: 'admin',
         status: 'active',
         department: 'Administration',
@@ -203,20 +217,24 @@ const App: React.FC = () => {
       localStorage.setItem('users', JSON.stringify(users));
     }
 
-    // Restore session from localStorage instead of clearing it
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Failed to restore session:', error);
-        localStorage.removeItem('currentUser');
-        setCurrentUser(null);
-        setIsAuthenticated(false);
-      }
-    }
+    // Comment out auto-login to always show login page
+    // const savedUser = localStorage.getItem('currentUser');
+    // if (savedUser) {
+    //   try {
+    //     const user = JSON.parse(savedUser);
+    //     setCurrentUser(user);
+    //     setIsAuthenticated(true);
+    //   } catch (error) {
+    //     console.error('Failed to restore session:', error);
+    //     localStorage.removeItem('currentUser');
+    //     setCurrentUser(null);
+    //     setIsAuthenticated(false);
+    //   }
+    // }
+    
+    // Always start with login page
+    setCurrentUser(null);
+    setIsAuthenticated(false);
     setIsLoading(false);
   }, []);
 

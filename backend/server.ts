@@ -141,7 +141,8 @@ let serverInstance: any = null;
 const startServer = (portToTry: number) => {
     // Only start server if not in Vercel serverless environment
     if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        console.log('🚀 Running in Vercel serverless mode');
+        console.log('🚀 Running in Vercel serverless mode - not starting HTTP server');
+        // Export the app for serverless use
         return;
     }
     
