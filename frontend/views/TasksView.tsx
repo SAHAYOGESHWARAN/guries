@@ -87,40 +87,10 @@ const TasksView: React.FC = () => {
     const { data: campaigns } = useData<Campaign>('campaigns');
     const { data: projects } = useData<Project>('projects');
     const { data: services = [] } = useData<Service>('services');
-    const { data: subServices = [] } = useData<SubServiceItem>('subServices');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [priorityFilter, setPriorityFilter] = useState('all');
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [formData, setFormData] = useState({
-        task_name: '',
-        description: '',
-        project_id: '',
-        campaign_id: '',
-        campaign_type: '',
-        service_id: '',
-        sub_campaign: '',
-        assigned_to: '',
-        priority: 'Medium',
-        due_date: '',
-        estimated_hours: '',
-        progress_stage: 'Not Started',
-        qc_stage: 'Pending',
-        tags: '',
-    });
-
-    const filteredSubServices = useMemo(() => {
-        if (!formData.service_id) return [];
-        const serviceId = parseInt(formData.service_id);
-        return subServices.filter(ss => ss.parent_service_id === serviceId);
-    }, [formData.service_id, subServices]);
-
-    const campaignTypeOptions = ['SEO', 'Content', 'SMM', 'Web', 'Backlink'];
-    const progressStageOptions = ['Not Started', 'In Progress', 'Review', 'Completed'];
-    const qcStageOptions = ['Pending', 'In Review', 'Approved', 'Rejected', 'Rework'];
 
     const filteredTasks = tasks.filter(task => {
         const taskName = task.name || task.task_name || '';
@@ -129,49 +99,6 @@ const TasksView: React.FC = () => {
         const matchesPriority = priorityFilter === 'all' || task.priority?.toLowerCase() === priorityFilter.toLowerCase();
         return matchesSearch && matchesStatus && matchesPriority;
     });
-
-    const handleCreate = async () => {
-        if (!formData.task_name) {
-            alert('Please enter a task title');
-            return;
-        }
-        setIsSubmitting(true);
-        try {
-            await createTask({
-                task_name: formData.task_name,
-                description: formData.description,
-                project_id: formData.project_id ? parseInt(formData.project_id) : null,
-                campaign_id: formData.campaign_id ? parseInt(formData.campaign_id) : null,
-                campaign_type: formData.campaign_type || null,
-                sub_campaign: formData.sub_campaign || null,
-                assigned_to: formData.assigned_to ? parseInt(formData.assigned_to) : null,
-                priority: formData.priority,
-                due_date: formData.due_date || null,
-                estimated_hours: formData.estimated_hours ? parseInt(formData.estimated_hours) : null,
-                progress_stage: formData.progress_stage,
-                qc_stage: formData.qc_stage,
-                tags: formData.tags || null,
-                status: 'pending',
-            } as any);
-            setShowCreateModal(false);
-            resetForm();
-            refresh();
-        } catch (error) {
-            if (process.env.NODE_ENV === 'development') {
-                console.error('Failed to create task:', error);
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const resetForm = () => {
-        setFormData({
-            task_name: '', description: '', project_id: '', campaign_id: '', campaign_type: '',
-            service_id: '', sub_campaign: '', assigned_to: '', priority: 'Medium', due_date: '', estimated_hours: '',
-            progress_stage: 'Not Started', qc_stage: 'Pending', tags: '',
-        });
-    };
 
     const handleExport = () => {
         exportToCSV(filteredTasks, 'tasks_export');
@@ -198,15 +125,6 @@ const TasksView: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                         Export
-                    </button>
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Create Task
                     </button>
                 </div>
             </div>
@@ -332,200 +250,14 @@ const TasksView: React.FC = () => {
                                             </td>
                                         </tr>
                                     );
-            </div>
-        </div>
-
-        {/* Create Task Modal */}
-        {showCreateModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <div className="p-6 border-b border-gray-200">
-                        <h2 className="text-xl font-semibold text-gray-900">Create New Task</h2>
-                    </div>
-                    <div className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Task Title *</label>
-                            <input
-                                type="text"
-                                value={formData.task_name}
-                                onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Enter task title"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                rows={3}
-                                placeholder="Enter task description"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                                <select
-                                    value={formData.project_id}
-                                    onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">Select Project</option>
-                                    {projects.map(project => (
-                                        <option key={project.id} value={project.id}>
-                                            {project.name || project.project_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign</label>
-                                <select
-                                    value={formData.campaign_id}
-                                    onChange={(e) => setFormData({ ...formData, campaign_id: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">Select Campaign</option>
-                                    {campaigns.map(campaign => (
-                                        <option key={campaign.id} value={campaign.id}>
-                                            {campaign.name || campaign.campaign_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Type</label>
-                                <select
-                                    value={formData.campaign_type}
-                                    onChange={(e) => setFormData({ ...formData, campaign_type: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">Select Type</option>
-                                    {campaignTypeOptions.map(type => (
-                                        <option key={type} value={type}>{type}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                                <select
-                                    value={formData.priority}
-                                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="Low">Low</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="High">High</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
-                                <select
-                                    value={formData.assigned_to}
-                                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">Select User</option>
-                                    {users.map(user => (
-                                        <option key={user.id} value={user.id}>
-                                            {user.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                                <input
-                                    type="date"
-                                    value={formData.due_date}
-                                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Progress Stage</label>
-                                <select
-                                    value={formData.progress_stage}
-                                    onChange={(e) => setFormData({ ...formData, progress_stage: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    {progressStageOptions.map(stage => (
-                                        <option key={stage} value={stage}>{stage}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">QC Stage</label>
-                                <select
-                                    value={formData.qc_stage}
-                                    onChange={(e) => setFormData({ ...formData, qc_stage: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    {qcStageOptions.map(stage => (
-                                        <option key={stage} value={stage}>{stage}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Hours</label>
-                            <input
-                                type="number"
-                                value={formData.estimated_hours}
-                                onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                placeholder="Enter estimated hours"
-                                min="0"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-                            <input
-                                type="text"
-                                value={formData.tags}
-                                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                placeholder="Enter tags (comma separated)"
-                            />
-                        </div>
-                    </div>
-                    <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-                        <button
-                            onClick={() => setShowCreateModal(false)}
-                            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleCreate}
-                            disabled={isSubmitting}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting ? 'Creating...' : 'Create Task'}
-                        </button>
-                    </div>
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        )}
-    </div>
-);
+        </div>
+    );
+};
 
 export default TasksView;
