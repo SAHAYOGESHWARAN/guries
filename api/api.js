@@ -82,6 +82,30 @@ const mockData = {
   notifications: [
     { id: 1, title: "New asset uploaded", message: "A new asset requires your review", type: "info", read: false },
     { id: 2, title: "QC review completed", message: "Asset QC review has been completed", type: "success", read: true }
+  ],
+  
+  // QC Reviews data
+  qcReviews: [
+    {
+      id: 1,
+      asset_id: 1,
+      reviewer_id: 1,
+      reviewer_name: "John Designer",
+      qc_score: 85,
+      qc_status: "Pass",
+      qc_remarks: "Good quality design, meets standards",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      asset_id: 2,
+      reviewer_id: 2,
+      reviewer_name: "Sarah Writer",
+      qc_score: 92,
+      qc_status: "Pass",
+      qc_remarks: "Excellent content, well-written",
+      created_at: new Date().toISOString()
+    }
   ]
 };
 
@@ -154,6 +178,105 @@ module.exports = async function handler(req, res) {
     }
     if (path === '/api/v1/notifications') {
       return res.status(200).json(mockData.notifications);
+    }
+
+    // Asset QC specific endpoints
+    if (path === '/api/v1/assetLibrary/qc/pending') {
+      const pendingAssets = mockData.assets.filter(asset => 
+        asset.qc_status === 'Pending' || asset.workflow_stage === 'QC Review'
+      );
+      return res.status(200).json({
+        success: true,
+        data: pendingAssets,
+        total: pendingAssets.length
+      });
+    }
+
+    if (path.startsWith('/api/v1/assetLibrary/') && path.includes('/submit-qc')) {
+      const parts = path.split('/').filter(part => part); // Filter out empty strings
+      const assetId = parseInt(parts[3], 10); // Convert to integer with base 10
+      console.log(`Submit QC - Asset ID: ${assetId}, Type: ${typeof assetId}, Parts: ${JSON.stringify(parts)}`);
+      const asset = mockData.assets.find(a => a.id === assetId);
+      if (asset) {
+        asset.qc_status = 'Submitted';
+        asset.workflow_stage = 'QC Review';
+        asset.updated_at = new Date().toISOString();
+        return res.status(200).json({
+          success: true,
+          message: 'Asset submitted for QC successfully',
+          data: asset
+        });
+      }
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        assetId: assetId,
+        availableIds: mockData.assets.map(a => a.id)
+      });
+    }
+
+    if (path.startsWith('/api/v1/assetLibrary/') && path.includes('/qc-reviews')) {
+      const parts = path.split('/').filter(part => part); // Filter out empty strings
+      const assetId = parseInt(parts[3], 10); // Convert to integer with base 10
+      console.log(`QC Reviews - Asset ID: ${assetId}, Type: ${typeof assetId}, Parts: ${JSON.stringify(parts)}`);
+      const reviews = mockData.qcReviews.filter(review => review.asset_id === assetId);
+      return res.status(200).json({
+        success: true,
+        data: reviews,
+        total: reviews.length
+      });
+    }
+
+    if (path === '/api/v1/admin/qc/assets') {
+      const qcAssets = mockData.assets.filter(asset => 
+        asset.qc_status === 'Pending' || asset.qc_status === 'Submitted' || asset.workflow_stage === 'QC Review'
+      );
+      return res.status(200).json({
+        success: true,
+        data: qcAssets,
+        total: qcAssets.length
+      });
+    }
+
+    if (path.startsWith('/api/v1/assetLibrary/') && path.includes('/qc-review')) {
+      const parts = path.split('/');
+      const assetId = parseInt(parts[3]); // Convert to integer
+      console.log(`QC Review - Asset ID: ${assetId}, Type: ${typeof assetId}`);
+      const { qc_status, qc_score, qc_remarks } = req.body || {};
+      const asset = mockData.assets.find(a => a.id === assetId);
+      
+      if (asset) {
+        asset.qc_status = qc_status || 'Reviewed';
+        asset.qc_score = qc_score || 0;
+        asset.qc_remarks = qc_remarks || '';
+        asset.workflow_stage = qc_status === 'Pass' ? 'Completed' : 'Rework';
+        asset.updated_at = new Date().toISOString();
+        
+        // Add to QC reviews
+        const review = {
+          id: mockData.qcReviews.length + 1,
+          asset_id: assetId,
+          reviewer_id: 1,
+          reviewer_name: "Admin",
+          qc_score: qc_score || 0,
+          qc_status: qc_status || 'Reviewed',
+          qc_remarks: qc_remarks || '',
+          created_at: new Date().toISOString()
+        };
+        mockData.qcReviews.push(review);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'QC review completed successfully',
+          data: asset
+        });
+      }
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        assetId: assetId,
+        availableIds: mockData.assets.map(a => a.id)
+      });
     }
 
     // Additional endpoints
