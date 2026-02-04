@@ -157,6 +157,61 @@ module.exports = async function handler(req, res) {
         ]);
     }
 
+    if (url.includes('/country-master')) {
+        if (url.includes('/list/regions')) {
+            return res.status(200).json([
+                "North America",
+                "Europe", 
+                "Asia Pacific",
+                "Latin America",
+                "Middle East",
+                "Africa"
+            ]);
+        } else {
+            return res.status(200).json([
+                {
+                    id: 1,
+                    country_name: "United States",
+                    iso_code: "US",
+                    region: "North America",
+                    default_language: "English",
+                    allowed_for_backlinks: 1,
+                    allowed_for_content_targeting: 1,
+                    allowed_for_smm_targeting: 1,
+                    status: "active",
+                    created_at: "2024-01-01T00:00:00Z",
+                    updated_at: "2024-01-01T00:00:00Z"
+                },
+                {
+                    id: 2,
+                    country_name: "United Kingdom",
+                    iso_code: "UK",
+                    region: "Europe",
+                    default_language: "English",
+                    allowed_for_backlinks: 1,
+                    allowed_for_content_targeting: 1,
+                    allowed_for_smm_targeting: 1,
+                    status: "active",
+                    created_at: "2024-01-01T00:00:00Z",
+                    updated_at: "2024-01-01T00:00:00Z"
+                },
+                {
+                    id: 3,
+                    country_name: "Canada",
+                    iso_code: "CA",
+                    region: "North America",
+                    default_language: "English",
+                    allowed_for_backlinks: 1,
+                    allowed_for_content_targeting: 1,
+                    allowed_for_smm_targeting: 1,
+                    status: "active",
+                    created_at: "2024-01-01T00:00:00Z",
+                    updated_at: "2024-01-01T00:00:00Z"
+                }
+            ]);
+        }
+    }
+
     if (url.includes('/regions')) {
         return res.status(200).json([
             { id: 1, name: "North America", code: "NA", country_id: 1, status: "active" },
@@ -194,10 +249,58 @@ module.exports = async function handler(req, res) {
         ]);
     }
 
+    if (url.includes('/dashboards/performance')) {
+        return res.status(200).json({
+            success: true,
+            data: {
+                kpis: [
+                    { name: "Task Completion Rate", value: 85, target: 90, unit: "%" },
+                    { name: "Quality Score", value: 92, target: 95, unit: "%" },
+                    { name: "Productivity Index", value: 78, target: 80, unit: "%" },
+                    { name: "On-Time Delivery", value: 88, target: 85, unit: "%" }
+                ],
+                trends: [
+                    { month: "Jan", actual: 82, target: 85 },
+                    { month: "Feb", actual: 85, target: 85 },
+                    { month: "Mar", actual: 88, target: 90 },
+                    { month: "Apr", actual: 85, target: 90 }
+                ],
+                topPerformers: [
+                    { name: "John Doe", score: 95, tasks: 45 },
+                    { name: "Jane Smith", score: 92, tasks: 42 },
+                    { name: "Mike Johnson", score: 88, tasks: 38 }
+                ]
+            }
+        });
+    }
+
+    if (url.includes('/dashboards/effort')) {
+        return res.status(200).json({
+            success: true,
+            data: {
+                totalEffort: 1250,
+                plannedEffort: 1400,
+                efficiency: 89,
+                breakdown: [
+                    { category: "Development", hours: 450, percentage: 36 },
+                    { category: "Design", hours: 320, percentage: 26 },
+                    { category: "Testing", hours: 280, percentage: 22 },
+                    { category: "Documentation", hours: 200, percentage: 16 }
+                ],
+                trends: [
+                    { week: "W1", planned: 350, actual: 320 },
+                    { week: "W2", planned: 350, actual: 340 },
+                    { week: "W3", planned: 350, actual: 310 },
+                    { week: "W4", planned: 350, actual: 380 }
+                ]
+            }
+        });
+    }
+
     // Default response
     res.status(404).json({ 
         error: 'Endpoint not found', 
         url: url,
-        availableEndpoints: ['/health', '/assets', '/users', '/services', '/projects', '/campaigns', '/dashboard/stats', '/auth/login', '/platforms', '/master-data', '/countries', '/regions', '/qc-weightage']
+        availableEndpoints: ['/health', '/assets', '/users', '/services', '/projects', '/campaigns', '/dashboard/stats', '/auth/login', '/platforms', '/master-data', '/countries', '/regions', '/qc-weightage', '/dashboards/performance', '/dashboards/effort', '/country-master']
     });
 };
