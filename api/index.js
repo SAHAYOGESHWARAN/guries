@@ -46,6 +46,8 @@ module.exports = function handler(req, res) {
         return handleQCReview(req, res);
     } else if (url.includes('/assetLibrary')) {
         return assetLibrary(req, res);
+    } else if (url.includes('/assets')) {
+        return assetLibrary(req, res); // Route /assets to the same handler as /assetLibrary
     } else if (url.includes('/notifications')) {
         return notifications(req, res);
     } else if (url.includes('/campaigns')) {
@@ -53,6 +55,36 @@ module.exports = function handler(req, res) {
             return res.status(200).json([
                 { id: 1, name: "Q1 Marketing Campaign", status: "Active", budget: 50000, start_date: "2024-01-01" },
                 { id: 2, name: "Product Launch Campaign", status: "Planning", budget: 75000, start_date: "2024-02-01" }
+            ]);
+        }
+    } else if (url.includes('/projects')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, name: "Website Redesign", status: "In Progress", client: "ABC Corp", deadline: "2024-03-01" },
+                { id: 2, name: "Marketing Automation", status: "Planning", client: "XYZ Inc", deadline: "2024-04-01" }
+            ]);
+        }
+    } else if (url.includes('/keywords')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, keyword: "digital marketing", search_volume: 10000, competition: "high" },
+                { id: 2, keyword: "content marketing", search_volume: 8000, competition: "medium" }
+            ]);
+        }
+    } else if (url.includes('/asset-type-master')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, asset_type_name: "Image", status: "active" },
+                { id: 2, asset_type_name: "Video", status: "active" },
+                { id: 3, asset_type_name: "Document", status: "active" }
+            ]);
+        }
+    } else if (url.includes('/asset-category-master')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, category_name: "Marketing Materials", status: "active" },
+                { id: 2, category_name: "Product Assets", status: "active" },
+                { id: 3, category_name: "Brand Assets", status: "active" }
             ]);
         }
     } else if (url.includes('/dashboard/stats')) {
