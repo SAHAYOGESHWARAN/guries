@@ -24,7 +24,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const transformedAssets = useMemo(() => {
         return assets.map(asset => ({
             ...asset,
-            name: asset.name || asset.asset_name || '', // Map asset_name to name
+            name: asset.name || asset.asset_name || 'Untitled Asset', // Map asset_name to name with fallback
             date: asset.date || asset.created_at || new Date().toISOString(), // Map created_at to date
         }));
     }, [assets]);

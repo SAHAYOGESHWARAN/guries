@@ -57,6 +57,15 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
 
     // Use the useData hook for real-time data
     const { data: assetsForQC = [], loading: dataLoading, refresh: refreshAssets } = useData<AssetLibraryItem>('assetLibrary');
+    
+    // Transform API data to match frontend interface
+    const transformedAssets = useMemo(() => {
+        return assetsForQC.map(asset => ({
+            ...asset,
+            name: asset.name || asset.asset_name || 'Untitled Asset', // Map asset_name to name with fallback
+        }));
+    }, [assetsForQC]);
+    
     const { data: users = [] } = useData<User>('users');
     const { data: services = [] } = useData<Service>('services');
     const { data: tasks = [] } = useData<Task>('tasks');
@@ -190,7 +199,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     // Filter assets based on view mode and role
     const filteredAssets = useMemo(() => {
         // First filter by role - admins see all, non-admins see only their own
-        let roleFiltered = isAdmin ? assetsForQC : assetsForQC.filter(isUserAsset);
+        let roleFiltered = isAdmin ? transformedAssets : transformedAssets.filter(isUserAsset);
 
         switch (viewMode) {
             case 'pending': return roleFiltered.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status);
@@ -199,11 +208,11 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
             case 'rejected': return roleFiltered.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail');
             default: return roleFiltered;
         }
-    }, [assetsForQC, viewMode, isAdmin, isUserAsset]);
+    }, [transformedAssets, viewMode, isAdmin, isUserAsset]);
 
     // Status counts for tabs (respecting role-based filtering)
     const statusCounts = useMemo(() => {
-        const roleFiltered = isAdmin ? assetsForQC : assetsForQC.filter(isUserAsset);
+        const roleFiltered = isAdmin ? transformedAssets : transformedAssets.filter(isUserAsset);
         return {
             all: roleFiltered.length,
             pending: roleFiltered.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status).length,
@@ -211,7 +220,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
             approved: roleFiltered.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published').length,
             rejected: roleFiltered.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail').length,
         };
-    }, [assetsForQC, isAdmin, isUserAsset]);
+    }, [transformedAssets, isAdmin, isUserAsset]);
 
     // Check if non-admin has rework assets (for tab highlighting)
     const hasReworkAssets = !isAdmin && statusCounts.rework > 0;

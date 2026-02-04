@@ -747,6 +747,7 @@ export interface QcChecklistItemResult {
 export interface AssetLibraryItem {
     id: number;
     name: string;
+    asset_name?: string; // Backend asset name field for backward compatibility
     type: string; // Asset Type: Blog Banner, Infographic, Social Post, Reel/Video, Thumbnail, Diagram, Web Graphic, PDF
     asset_type?: string; // Alternative asset type field for backward compatibility
     asset_category?: string; // e.g., "what science can do", "how to"
