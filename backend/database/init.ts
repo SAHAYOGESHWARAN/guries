@@ -93,6 +93,17 @@ export const seedDatabase = async () => {
         `);
         console.log('  ✅ SEO error types seeded');
 
+        // Seed a service and sub-service with meta_keywords for tests
+        await pool.query(`
+            INSERT INTO services (service_name, service_code, slug, status, meta_keywords) VALUES
+            ('Seed Service', 'SEED-001', 'seed-service', 'active', '\n["seed","service"]\n')
+        `);
+        await pool.query(`
+            INSERT INTO sub_services (sub_service_name, parent_service_id, slug, status, meta_keywords) VALUES
+            ('Seed Sub-Service', 1, 'seed-sub-service', 'active', '\n["seed","sub"]\n')
+        `);
+        console.log('  ✅ Seed service and sub-service with meta_keywords');
+
         console.log('✅ Database seeding completed successfully');
         return true;
     } catch (error: any) {

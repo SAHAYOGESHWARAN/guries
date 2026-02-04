@@ -1,28 +1,9 @@
 // Mock database for testing Service & Asset Linking features
 // This simulates the database operations without requiring actual database setup
 
-const mockServices: any[] = [
-    {
-        id: 1,
-        service_name: 'SEO Optimization',
-        service_code: 'SEO-001',
-        slug: 'seo-optimization',
-        meta_keywords: JSON.stringify(['seo', 'optimization']),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    }
-];
+const mockServices: any[] = [];
 
-const mockSubServices: any[] = [
-    {
-        id: 1,
-        sub_service_name: 'SEO Analysis',
-        parent_service_id: 1,
-        slug: 'seo-analysis',
-        status: 'Active',
-        meta_keywords: JSON.stringify(['analysis'])
-    }
-];
+const mockSubServices: any[] = [];
 
 const mockAssets: any[] = [];
 
@@ -57,9 +38,10 @@ export const mockPool = {
 
         // Simulate services query
         if (sql.includes('SELECT') && sql.includes('services')) {
+            
             if (sql.includes("WHERE id =")) {
                 const serviceId = params?.[0];
-                const service = mockServices.find(s => s.id === serviceId);
+                const service = mockServices.find(s => Number(s.id) === Number(serviceId));
                 return { rows: service ? [service] : [] };
             }
 
@@ -85,7 +67,7 @@ export const mockPool = {
         if (sql.includes('SELECT') && sql.includes('sub_services')) {
             if (sql.includes('WHERE parent_service_id =')) {
                 const parentId = params?.[0];
-                const subServices = mockSubServices.filter(ss => ss.parent_service_id === parentId);
+                const subServices = mockSubServices.filter(ss => Number(ss.parent_service_id) === Number(parentId));
                 return { rows: subServices };
             }
 
@@ -111,7 +93,7 @@ export const mockPool = {
         if (sql.includes('SELECT') && sql.includes('users')) {
             if (sql.includes('WHERE id =')) {
                 const userId = params?.[0];
-                const user = mockUsers.find(u => u.id === userId);
+                const user = mockUsers.find(u => Number(u.id) === Number(userId));
                 return { rows: user ? [user] : [] };
             }
             return { rows: mockUsers };
@@ -124,10 +106,11 @@ export const mockPool = {
             // Handle JOIN with services and sub_services returning a.*, s.service_name, sub.sub_service_name WHERE a.id = ?
             if (/join\s+services\s+/i.test(q) && /join\s+sub_services\s+/i.test(q) && /where\s+.*id\s*=\s*\?/i.test(q)) {
                 const idParam = params?.[params.length - 1] ?? params?.[0];
-                const asset = mockAssets.find(a => a.id === idParam);
+                const asset = mockAssets.find(a => Number(a.id) === Number(idParam));
                 if (!asset) return { rows: [] };
-                const service = mockServices.find(s => s.id === asset.linked_service_id) || null;
-                const sub = mockSubServices.find(ss => ss.id === asset.linked_sub_service_id) || null;
+                // Coerce id types to Number to avoid string/number mismatches from different inserts
+                const service = mockServices.find(s => Number(s.id) === Number(asset.linked_service_id)) || null;
+                const sub = mockSubServices.find(ss => Number(ss.id) === Number(asset.linked_sub_service_id)) || null;
                 const row = { ...asset } as any;
                 if (service) row.service_name = service.service_name;
                 if (sub) row.sub_service_name = sub.sub_service_name;
@@ -137,9 +120,9 @@ export const mockPool = {
             // Handle SELECT a.* FROM assets a JOIN service_asset_links sal ON a.id = sal.asset_id WHERE sal.service_id = ? AND a.linking_active = 1
             if (/service_asset_links\s+sal\s+ON\s+a\.id\s*=\s*sal\.asset_id/i.test(q) && /where\s+sal\.service_id\s*=\s*\?/i.test(q)) {
                 const serviceId = params?.[0];
-                const links = mockServiceAssetLinks.filter(l => l.service_id === serviceId);
+                const links = mockServiceAssetLinks.filter(l => Number(l.service_id) === Number(serviceId));
                 const linkedAssets = links.map(l => {
-                    const a = mockAssets.find(a => a.id === l.asset_id);
+                    const a = mockAssets.find(a => Number(a.id) === Number(l.asset_id));
                     if (!a) return null;
                     return { ...a, link_is_static: l.is_static, linked_at: l.created_at, service_id: l.service_id };
                 }).filter(Boolean).filter(a => Number(a.linking_active) === 1);
@@ -149,9 +132,9 @@ export const mockPool = {
             // Handle subservice asset links join
             if (/subservice_asset_links\s+sal\s+ON\s+a\.id\s*=\s*sal\.asset_id/i.test(q) && /where\s+sal\.sub_service_id\s*=\s*\?/i.test(q)) {
                 const subServiceId = params?.[0];
-                const links = mockSubserviceAssetLinks.filter(l => l.sub_service_id === subServiceId);
+                const links = mockSubserviceAssetLinks.filter(l => Number(l.sub_service_id) === Number(subServiceId));
                 const linkedAssets = links.map(l => {
-                    const a = mockAssets.find(a => a.id === l.asset_id);
+                    const a = mockAssets.find(a => Number(a.id) === Number(l.asset_id));
                     if (!a) return null;
                     return { ...a, link_is_static: l.is_static, linked_at: l.created_at, sub_service_id: l.sub_service_id };
                 }).filter(Boolean);
@@ -166,7 +149,7 @@ export const mockPool = {
                 let rows = mockAssets.filter(a => statuses.includes((a.qc_status || '').toString()));
                 if (/AND\s+id\s*=\s*\?/i.test(q)) {
                     const idParam = params?.[params.length - 1] ?? params?.[0];
-                    rows = rows.filter(r => r.id === idParam);
+                    rows = rows.filter(r => Number(r.id) === Number(idParam));
                 }
                 return { rows };
             }
@@ -175,7 +158,7 @@ export const mockPool = {
             const idWhereMatch = q.match(/WHERE[\s\S]*?(?:\b|\W)(?:a\.)?id\s*=\s*\?/i);
             if (idWhereMatch) {
                 const assetId = params?.[params.length - 1] ?? params?.[0];
-                const asset = mockAssets.find(a => a.id === assetId);
+                const asset = mockAssets.find(a => Number(a.id) === Number(assetId));
                 return { rows: asset ? [asset] : [] };
             }
 
@@ -184,11 +167,11 @@ export const mockPool = {
         }
 
         // Simulate service asset links query
-        if (sql.includes('SELECT') && sql.includes('service_asset_links')) {
+            if (sql.includes('SELECT') && sql.includes('service_asset_links')) {
             if (sql.includes('WHERE service_id =')) {
                 const serviceId = params?.[0];
-                const links = mockServiceAssetLinks.filter(link => link.service_id === serviceId);
-                const linkedAssets = links.map(link => mockAssets.find(asset => asset.id === link.asset_id)).filter(Boolean);
+                const links = mockServiceAssetLinks.filter(link => Number(link.service_id) === Number(serviceId));
+                const linkedAssets = links.map(link => mockAssets.find(asset => Number(asset.id) === Number(link.asset_id))).filter(Boolean);
                 return { rows: linkedAssets };
             }
             return { rows: mockServiceAssetLinks };
@@ -206,7 +189,7 @@ export const mockPool = {
             // SELECT * FROM keywords WHERE mapped_sub_service_id = ?
             if (/SELECT\s+\*\s+FROM\s+keywords\s+WHERE\s+mapped_sub_service_id\s*=\s*\?/i.test(sql)) {
                 const id = params?.[0];
-                const rows = mockKeywords.filter(k => k.mapped_sub_service_id === id);
+                const rows = mockKeywords.filter(k => Number(k.mapped_sub_service_id) === Number(id));
                 return { rows };
             }
 
@@ -221,10 +204,10 @@ export const mockPool = {
             // SELECT ... FROM asset_qc_reviews WHERE asset_id = ?
             if (/WHERE\s+asset_id\s*=\s*\?/i.test(sql)) {
                 const aid = params?.[0];
-                const rows = mockAssetQcReviews.filter(r => r.asset_id === aid).map(r => ({ ...r }));
+                const rows = mockAssetQcReviews.filter(r => Number(r.asset_id) === Number(aid)).map(r => ({ ...r }));
                 // Add reviewer name/email if user exists
                 rows.forEach(r => {
-                    const u = mockUsers.find(u => u.id === r.qc_reviewer_id);
+                    const u = mockUsers.find(u => Number(u.id) === Number(r.qc_reviewer_id));
                     if (u) {
                         r.reviewer_name = u.name;
                         r.reviewer_email = u.email;
@@ -375,6 +358,7 @@ export const mockPool = {
             const buildObjFromParams = (cols: string[] | null, paramsArr: any[] = []) => {
                 const arrTarget = table === 'assets' ? mockAssets
                     : table === 'services' ? mockServices
+                    : table === 'sub_services' ? mockSubServices
                     : table === 'users' ? mockUsers
                         : table === 'service_asset_links' ? mockServiceAssetLinks
                         : table === 'subservice_asset_links' ? mockSubserviceAssetLinks
@@ -480,14 +464,14 @@ export const mockPool = {
                     if (keywordAndMappedMatch) {
                         const keywordParam = params?.[0];
                         const mappedParam = params?.[1];
-                        item = mockKeywords.find(k => k.keyword === keywordParam && k.mapped_sub_service_id === mappedParam);
+                            item = mockKeywords.find(k => k.keyword === keywordParam && Number(k.mapped_sub_service_id) === Number(mappedParam));
                     } else if (keywordEqMatch) {
                         // keyword = ? - keyword param is typically the last param
                         const keywordParam = Array.isArray(params) ? params[params.length - 1] : undefined;
                         item = mockKeywords.find(k => k.keyword === keywordParam);
                     } else if (idMatch) {
                         const idParam = Array.isArray(params) ? params[params.length - 1] : undefined;
-                        item = targetArr.find((it: any) => it.id === idParam);
+                        item = targetArr.find((it: any) => Number(it.id) === Number(idParam));
                     }
 
                     if (item) {
@@ -554,7 +538,7 @@ export const mockPool = {
                 : table === 'service_asset_links' ? mockServiceAssetLinks
                 : null;
             if (targetArr) {
-                const idx = targetArr.findIndex((it: any) => it.id === idParam);
+                const idx = targetArr.findIndex((it: any) => Number(it.id) === Number(idParam));
                 if (idx !== -1) targetArr.splice(idx, 1);
             }
             // Also remove any links pointing to deleted assets

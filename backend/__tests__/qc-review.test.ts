@@ -1,12 +1,11 @@
 import request from 'supertest';
+import { app } from '../server';
 import { pool } from '../config/db';
-
-const API_BASE = 'http://localhost:3001/api/v1';
 
 describe('QC Review Functionality', () => {
     let testAssetId: number;
-    let adminUserId = 1;
-    let testUserId = 2;
+    const adminUserId = 1;
+    const testUserId = 2;
 
     beforeAll(async () => {
         // Create test asset
@@ -30,8 +29,8 @@ describe('QC Review Functionality', () => {
 
     describe('POST /assetLibrary/:id/qc-review', () => {
         test('should reject QC review without admin role', async () => {
-            const response = await request(API_BASE)
-                .post(`/assetLibrary/${testAssetId}/qc-review`)
+            const response = await request(app)
+                .post(`/api/v1/assetLibrary/${testAssetId}/qc-review`)
                 .set('X-User-Id', String(testUserId))
                 .set('X-User-Role', 'user')
                 .send({
@@ -47,8 +46,8 @@ describe('QC Review Functionality', () => {
         });
 
         test('should approve asset with valid admin request', async () => {
-            const response = await request(API_BASE)
-                .post(`/assetLibrary/${testAssetId}/qc-review`)
+            const response = await request(app)
+                .post(`/api/v1/assetLibrary/${testAssetId}/qc-review`)
                 .set('X-User-Id', String(adminUserId))
                 .set('X-User-Role', 'admin')
                 .send({
@@ -85,8 +84,8 @@ describe('QC Review Functionality', () => {
             );
             const rejectAssetId = assetResult.lastID;
 
-            const response = await request(API_BASE)
-                .post(`/assetLibrary/${rejectAssetId}/qc-review`)
+            const response = await request(app)
+                .post(`/api/v1/assetLibrary/${rejectAssetId}/qc-review`)
                 .set('X-User-Id', String(adminUserId))
                 .set('X-User-Role', 'admin')
                 .send({
@@ -126,8 +125,8 @@ describe('QC Review Functionality', () => {
             );
             const reworkAssetId = assetResult.lastID;
 
-            const response = await request(API_BASE)
-                .post(`/assetLibrary/${reworkAssetId}/qc-review`)
+            const response = await request(app)
+                .post(`/api/v1/assetLibrary/${reworkAssetId}/qc-review`)
                 .set('X-User-Id', String(adminUserId))
                 .set('X-User-Role', 'admin')
                 .send({
@@ -157,8 +156,8 @@ describe('QC Review Functionality', () => {
         });
 
         test('should reject invalid QC decision', async () => {
-            const response = await request(API_BASE)
-                .post(`/assetLibrary/${testAssetId}/qc-review`)
+            const response = await request(app)
+                .post(`/api/v1/assetLibrary/${testAssetId}/qc-review`)
                 .set('X-User-Id', String(adminUserId))
                 .set('X-User-Role', 'admin')
                 .send({
@@ -175,8 +174,8 @@ describe('QC Review Functionality', () => {
         });
 
         test('should return 404 for non-existent asset', async () => {
-            const response = await request(API_BASE)
-                .post(`/assetLibrary/99999/qc-review`)
+            const response = await request(app)
+                .post(`/api/v1/assetLibrary/99999/qc-review`)
                 .set('X-User-Id', String(adminUserId))
                 .set('X-User-Role', 'admin')
                 .send({
@@ -194,8 +193,8 @@ describe('QC Review Functionality', () => {
 
     describe('GET /assetLibrary/:id/qc-reviews', () => {
         test('should retrieve QC reviews for an asset', async () => {
-            const response = await request(API_BASE)
-                .get(`/assetLibrary/${testAssetId}/qc-reviews`)
+            const response = await request(app)
+                .get(`/api/v1/assetLibrary/${testAssetId}/qc-reviews`)
                 .set('X-User-Id', String(testUserId))
                 .set('X-User-Role', 'user');
 
