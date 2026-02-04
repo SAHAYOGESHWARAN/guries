@@ -48,6 +48,41 @@ module.exports = function handler(req, res) {
         return assetLibrary(req, res);
     } else if (url.includes('/notifications')) {
         return notifications(req, res);
+    } else if (url.includes('/campaigns')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, name: "Q1 Marketing Campaign", status: "Active", budget: 50000, start_date: "2024-01-01" },
+                { id: 2, name: "Product Launch Campaign", status: "Planning", budget: 75000, start_date: "2024-02-01" }
+            ]);
+        }
+    } else if (url.includes('/dashboard/stats')) {
+        if (req.method === 'GET') {
+            return res.status(200).json({
+                stats: {
+                    activeCampaigns: 1,
+                    activeCampaignsChange: 12,
+                    contentPublished: 1,
+                    contentPublishedChange: 8,
+                    tasksCompleted: 1,
+                    tasksCompletedChange: -3,
+                    teamMembers: 3,
+                    teamMembersChange: 2,
+                    pendingTasks: 1
+                }
+            });
+        }
+    } else if (url.includes('/auth/login')) {
+        if (req.method === 'POST') {
+            const { email, password } = req.body;
+            if (email === 'admin@example.com' && password === 'admin123') {
+                return res.status(200).json({
+                    success: true,
+                    user: { id: 3, name: "Admin User", email: "admin@example.com", role: "admin", status: "active" },
+                    token: 'mock-jwt-token'
+                });
+            }
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
     } else {
         res.status(404).json({ error: 'Endpoint not found', url: url });
     }

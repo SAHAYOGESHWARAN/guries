@@ -24,14 +24,8 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: users = [], loading: usersLoading } = useData<User>('users');
     const { data: keywords = [] } = useData<any>('keywords');
 
-    // Debug: Log assets data state (development only)
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
-            console.log('[AssetsView] Assets data:', {
-                count: assets.length,
-                loading: assetsLoading,
-                sample: assets[0] || null
-            });
         }
     }, [assets, assetsLoading]);
 

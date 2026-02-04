@@ -45,27 +45,28 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3003/api/v1';
+                const apiUrl = import.meta.env.VITE_API_URL || 'https://guries.vercel.app/api/v1';
 
                 // Fetch stats
-                const statsRes = await fetch(`${apiUrl}/analytics/dashboard/stats`);
+                const statsRes = await fetch(`${apiUrl}/dashboard/stats`);
                 const statsData = await statsRes.json();
                 setStats(statsData);
 
                 // Fetch projects
-                const projectsRes = await fetch(`${apiUrl}/analytics/dashboard/projects`);
+                const projectsRes = await fetch(`${apiUrl}/projects`);
                 const projectsData = await projectsRes.json();
                 setProjects(Array.isArray(projectsData) ? projectsData.slice(0, 4) : []);
 
                 // Fetch tasks
-                const tasksRes = await fetch(`${apiUrl}/analytics/dashboard/tasks`);
+                const tasksRes = await fetch(`${apiUrl}/tasks`);
                 const tasksData = await tasksRes.json();
                 setTasks(Array.isArray(tasksData) ? tasksData.slice(0, 4) : []);
 
-                // Fetch activity
-                const activityRes = await fetch(`${apiUrl}/analytics/dashboard/activity`);
-                const activityData = await activityRes.json();
-                setActivity(Array.isArray(activityData) ? activityData.slice(0, 2) : []);
+                // Fetch activity (mock data for now)
+                setActivity([
+                    { id: 1, action: 'Asset created', user: 'John Designer', time: '2 hours ago' },
+                    { id: 2, action: 'QC review completed', user: 'Sarah Writer', time: '4 hours ago' }
+                ]);
             } catch (error) {
                 if (process.env.NODE_ENV === 'development') {
                     console.error('Error fetching dashboard data:', error);

@@ -209,9 +209,13 @@ export function useData<T>(collection: string) {
             const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s max wait
 
             if (isRefresh) {
-                console.log(`[useData] Refreshing ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[useData] Refreshing ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+                }
             } else {
-                console.log(`[useData] Fetching ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[useData] Fetching ${collection} from ${API_BASE_URL}/${resource.endpoint}`);
+                }
             }
 
             const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
@@ -239,9 +243,13 @@ export function useData<T>(collection: string) {
             let dataArray = Array.isArray(result) ? result : (result?.data || []);
 
             if (isRefresh) {
-                console.log(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+                }
             } else {
-                console.log(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+                }
             }
 
             // Only update data if we got a valid response (prevents flickering)
