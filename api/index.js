@@ -115,6 +115,99 @@ module.exports = function handler(req, res) {
             }
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
+    } else if (url.includes('/platforms')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, name: "Facebook", status: "active", icon: "facebook" },
+                { id: 2, name: "Instagram", status: "active", icon: "instagram" },
+                { id: 3, name: "Twitter", status: "active", icon: "twitter" },
+                { id: 4, name: "LinkedIn", status: "active", icon: "linkedin" },
+                { id: 5, name: "YouTube", status: "active", icon: "youtube" }
+            ]);
+        }
+    } else if (url.includes('/master-data')) {
+        if (req.method === 'GET') {
+            return res.status(200).json({
+                asset_types: [
+                    { id: 1, name: "Image", status: "active" },
+                    { id: 2, name: "Video", status: "active" },
+                    { id: 3, name: "Document", status: "active" },
+                    { id: 4, name: "Infographic", status: "active" }
+                ],
+                categories: [
+                    { id: 1, name: "Marketing Materials", status: "active" },
+                    { id: 2, name: "Product Assets", status: "active" },
+                    { id: 3, name: "Brand Assets", status: "active" }
+                ],
+                priorities: [
+                    { id: 1, name: "Low", value: "low" },
+                    { id: 2, name: "Medium", value: "medium" },
+                    { id: 3, name: "High", value: "high" }
+                ]
+            });
+        }
+    } else if (url.includes('/countries')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, name: "United States", code: "US", status: "active" },
+                { id: 2, name: "United Kingdom", code: "UK", status: "active" },
+                { id: 3, name: "Canada", code: "CA", status: "active" },
+                { id: 4, name: "Australia", code: "AU", status: "active" },
+                { id: 5, name: "India", code: "IN", status: "active" }
+            ]);
+        }
+    } else if (url.includes('/regions')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                { id: 1, name: "North America", code: "NA", country_id: 1, status: "active" },
+                { id: 2, name: "Europe", code: "EU", country_id: 2, status: "active" },
+                { id: 3, name: "Asia Pacific", code: "APAC", country_id: 5, status: "active" },
+                { id: 4, name: "North America East", code: "NAE", country_id: 3, status: "active" },
+                { id: 5, name: "Oceania", code: "OC", country_id: 4, status: "active" }
+            ]);
+        }
+    } else if (url.includes('/qc-weightage')) {
+        if (req.method === 'GET') {
+            return res.status(200).json([
+                {
+                    id: 1,
+                    config_name: "Standard QC Weightage",
+                    description: "Default quality control weightage configuration",
+                    total_weight: 100,
+                    is_valid: true,
+                    status: "active",
+                    item_count: 5,
+                    created_at: "2024-01-01T00:00:00Z",
+                    updated_at: "2024-01-01T00:00:00Z"
+                },
+                {
+                    id: 2,
+                    config_name: "Strict QC Weightage",
+                    description: "Strict quality control weightage for critical assets",
+                    total_weight: 100,
+                    is_valid: true,
+                    status: "active",
+                    item_count: 7,
+                    created_at: "2024-01-02T00:00:00Z",
+                    updated_at: "2024-01-02T00:00:00Z"
+                }
+            ]);
+        } else if (req.method === 'POST') {
+            return res.status(201).json({
+                success: true,
+                message: "QC weightage configuration created successfully"
+            });
+        } else if (req.method === 'PUT') {
+            return res.status(200).json({
+                success: true,
+                message: "QC weightage configuration updated successfully"
+            });
+        } else if (req.method === 'DELETE') {
+            return res.status(200).json({
+                success: true,
+                message: "QC weightage configuration deleted successfully"
+            });
+        }
     } else {
         res.status(404).json({ error: 'Endpoint not found', url: url });
     }

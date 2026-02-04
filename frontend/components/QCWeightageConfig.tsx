@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit2, Plus, Search, AlertCircle, CheckCircle } from 'lucide-react';
 import QCWeightageModal from './QCWeightageModal';
+import { API_BASE_URL } from '../constants';
 
 interface Config {
     id: number;
@@ -29,7 +30,7 @@ export default function QCWeightageConfig() {
     const fetchConfigs = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/qc-weightage');
+            const response = await fetch(`${API_BASE_URL}/qc-weightage`);
             const data = await response.json();
             setConfigs(data);
         } catch (error) {
