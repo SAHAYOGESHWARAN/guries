@@ -21,6 +21,15 @@ module.exports = function handler(req, res) {
         return;
     }
     
+    // Health check endpoints
+    if (url === '/health' || url === '/api/health' || url === '/api/v1/health') {
+        return res.status(200).json({ 
+            status: 'ok', 
+            timestamp: new Date().toISOString(),
+            message: 'Marketing Control Center API is running'
+        });
+    }
+    
     // Route to appropriate handler based on URL path
     if (url.includes('/tasks')) {
         return tasks(req, res);

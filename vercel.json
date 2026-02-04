@@ -12,18 +12,17 @@
       }
     },
     {
-      "src": "api/index.ts",
+      "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "runtime": "nodejs24.x",
-        "includeFiles": "mcc_db.sqlite"
+        "runtime": "nodejs24.x"
       }
     }
   ],
   "routes": [
     {
       "src": "/api/v1/(.*)",
-      "dest": "/api/index.ts",
+      "dest": "/api/index.js",
       "methods": [
         "GET",
         "POST",
@@ -35,15 +34,15 @@
     },
     {
       "src": "/socket.io/(.*)",
-      "dest": "/api/index.ts"
+      "dest": "/api/index.js"
     },
     {
       "src": "/health",
-      "dest": "/api/index.ts"
+      "dest": "/api/index.js"
     },
     {
       "src": "/api/health",
-      "dest": "/api/index.ts"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
