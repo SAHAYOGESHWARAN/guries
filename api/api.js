@@ -223,30 +223,120 @@ module.exports = async function handler(req, res) {
     }
 
     if (url.includes('/qc-weightage')) {
-        return res.status(200).json([
-            {
+        if (url.includes('/list/checklists')) {
+            return res.status(200).json([
+                {
+                    id: 1,
+                    checklist_name: "Content Quality Check",
+                    checklist_type: "Content",
+                    checklist_category: "Quality",
+                    status: "active"
+                },
+                {
+                    id: 2,
+                    checklist_name: "SEO Compliance",
+                    checklist_type: "SEO",
+                    checklist_category: "Technical",
+                    status: "active"
+                },
+                {
+                    id: 3,
+                    checklist_name: "Design Review",
+                    checklist_type: "Design",
+                    checklist_category: "Visual",
+                    status: "active"
+                },
+                {
+                    id: 4,
+                    checklist_name: "Performance Metrics",
+                    checklist_type: "Performance",
+                    checklist_category: "Analytics",
+                    status: "active"
+                }
+            ]);
+        } else if (url.match(/\/qc-weightage\/\d+/)) {
+            // Return specific config details with items
+            return res.status(200).json({
                 id: 1,
                 config_name: "Standard QC Weightage",
                 description: "Default quality control weightage configuration",
                 total_weight: 100,
                 is_valid: true,
                 status: "active",
-                item_count: 5,
+                item_count: 3,
                 created_at: "2024-01-01T00:00:00Z",
-                updated_at: "2024-01-01T00:00:00Z"
-            },
-            {
-                id: 2,
-                config_name: "Strict QC Weightage",
-                description: "Strict quality control weightage for critical assets",
-                total_weight: 100,
-                is_valid: true,
-                status: "active",
-                item_count: 7,
-                created_at: "2024-01-02T00:00:00Z",
-                updated_at: "2024-01-02T00:00:00Z"
-            }
-        ]);
+                updated_at: "2024-01-01T00:00:00Z",
+                items: [
+                    {
+                        id: 1,
+                        checklist_id: 1,
+                        checklist_name: "Content Quality Check",
+                        checklist_type: "Content",
+                        weight_percentage: 40,
+                        is_mandatory: true,
+                        applies_to_stage: "Review"
+                    },
+                    {
+                        id: 2,
+                        checklist_id: 2,
+                        checklist_name: "SEO Compliance",
+                        checklist_type: "SEO",
+                        weight_percentage: 35,
+                        is_mandatory: true,
+                        applies_to_stage: "Approved"
+                    },
+                    {
+                        id: 3,
+                        checklist_id: 3,
+                        checklist_name: "Design Review",
+                        checklist_type: "Design",
+                        weight_percentage: 25,
+                        is_mandatory: false,
+                        applies_to_stage: "Draft"
+                    }
+                ]
+            });
+        } else if (req.method === 'GET') {
+            return res.status(200).json([
+                {
+                    id: 1,
+                    config_name: "Standard QC Weightage",
+                    description: "Default quality control weightage configuration",
+                    total_weight: 100,
+                    is_valid: true,
+                    status: "active",
+                    item_count: 3,
+                    created_at: "2024-01-01T00:00:00Z",
+                    updated_at: "2024-01-01T00:00:00Z"
+                },
+                {
+                    id: 2,
+                    config_name: "Strict QC Weightage",
+                    description: "Strict quality control weightage for critical assets",
+                    total_weight: 100,
+                    is_valid: true,
+                    status: "active",
+                    item_count: 4,
+                    created_at: "2024-01-02T00:00:00Z",
+                    updated_at: "2024-01-02T00:00:00Z"
+                }
+            ]);
+        } else if (req.method === 'POST') {
+            return res.status(201).json({
+                success: true,
+                message: "QC weightage configuration created successfully"
+            });
+        } else if (req.method === 'PUT') {
+            return res.status(200).json({
+                success: true,
+                message: "QC weightage configuration updated successfully"
+            });
+        } else if (req.method === 'DELETE') {
+            return res.status(200).json({
+                success: true,
+                message: "QC weightage configuration deleted successfully"
+            });
+        }
     }
 
     if (url.includes('/dashboards/performance')) {

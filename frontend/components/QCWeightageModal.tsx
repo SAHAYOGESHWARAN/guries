@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { API_BASE_URL } from '../constants';
 
 interface Config {
     id?: number;
@@ -62,7 +63,7 @@ export default function QCWeightageModal({ config, onClose, onSave }: QCWeightag
 
     const fetchConfigDetails = async (id: number) => {
         try {
-            const response = await fetch(`/api/qc-weightage/${id}`);
+            const response = await fetch(`${API_BASE_URL}/qc-weightage/${id}`);
             const data = await response.json();
             setItems(data.items || []);
         } catch (error) {
@@ -72,7 +73,7 @@ export default function QCWeightageModal({ config, onClose, onSave }: QCWeightag
 
     const fetchChecklists = async () => {
         try {
-            const response = await fetch('/api/qc-weightage/list/checklists');
+            const response = await fetch(`${API_BASE_URL}/qc-weightage/list/checklists`);
             const data = await response.json();
             setChecklists(data);
         } catch (error) {

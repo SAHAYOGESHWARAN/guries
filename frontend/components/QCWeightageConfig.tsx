@@ -53,7 +53,7 @@ export default function QCWeightageConfig() {
     const handleDeleteConfig = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this configuration?')) {
             try {
-                await fetch(`/api/qc-weightage/${id}`, { method: 'DELETE' });
+                await fetch(`${API_BASE_URL}/qc-weightage/${id}`, { method: 'DELETE' });
                 fetchConfigs();
             } catch (error) {
                 console.error('Error deleting config:', error);
