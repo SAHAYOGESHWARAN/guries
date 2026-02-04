@@ -158,6 +158,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     data: newAsset
                 });
             }
+            if (method === 'PUT') {
+                const { id } = req.query;
+                const updatedAsset = {
+                    ...req.body,
+                    updated_at: new Date().toISOString()
+                };
+                return res.status(200).json({
+                    success: true,
+                    message: 'Asset updated successfully',
+                    data: updatedAsset
+                });
+            }
         }
 
         // Users endpoints

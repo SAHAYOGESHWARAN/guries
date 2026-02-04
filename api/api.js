@@ -38,22 +38,30 @@ const mockData = {
       asset_name: "Website Banner Design",
       asset_type: "Blog Banner",
       asset_category: "Graphics",
-      status: "Draft",
+      status: "Pending QC Review",  // Changed to match frontend expectation
       workflow_stage: "Design",
       qc_status: "Pending",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      submitted_at: new Date().toISOString(), // Added submitted_at
+      created_by: 1,
+      submitted_by: 1,
+      designed_by: 1
     },
     {
       id: 2,
       asset_name: "SEO Article Content",
       asset_type: "Article",
       asset_category: "Content",
-      status: "QC Approved",
+      status: "QC Approved",  // Changed to match frontend expectation
       workflow_stage: "Review",
       qc_status: "Pass",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      submitted_at: new Date().toISOString(),
+      created_by: 2,
+      submitted_by: 2,
+      designed_by: 2
     }
   ],
   
@@ -159,11 +167,52 @@ module.exports = async function handler(req, res) {
     if (path === '/api/v1/assets') {
       return res.status(200).json(mockData.assets);
     }
-    if (path === '/api/v1/assetLibrary') {
+    // GET individual asset by ID
+    if (path.startsWith('/api/v1/assetLibrary/') && method === 'GET' && !path.includes('/qc-') && !path.includes('/submit-')) {
+      const parts = path.split('/').filter(part => part);
+      const assetId = parseInt(parts[3], 10);
+      const asset = mockData.assets.find(a => a.id === assetId);
+      
+      if (asset) {
+        return res.status(200).json({
+          success: true,
+          data: asset
+        });
+      }
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        assetId: assetId,
+        availableIds: mockData.assets.map(a => a.id)
+      });
+    }
+
+    // GET all assets for assetLibrary
+    if (path === '/api/v1/assetLibrary' && method === 'GET') {
       return res.status(200).json({
         success: true,
         data: mockData.assets,
         total: mockData.assets.length
+      });
+    }
+
+    // GET individual asset by ID (assets endpoint)
+    if (path.startsWith('/api/v1/assets/') && method === 'GET') {
+      const parts = path.split('/').filter(part => part);
+      const assetId = parseInt(parts[3], 10);
+      const asset = mockData.assets.find(a => a.id === assetId);
+      
+      if (asset) {
+        return res.status(200).json({
+          success: true,
+          data: asset
+        });
+      }
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        assetId: assetId,
+        availableIds: mockData.assets.map(a => a.id)
       });
     }
 
@@ -239,9 +288,9 @@ module.exports = async function handler(req, res) {
     }
 
     if (path.startsWith('/api/v1/assetLibrary/') && path.includes('/qc-review')) {
-      const parts = path.split('/');
-      const assetId = parseInt(parts[3]); // Convert to integer
-      console.log(`QC Review - Asset ID: ${assetId}, Type: ${typeof assetId}`);
+      const parts = path.split('/').filter(part => part);
+      const assetId = parseInt(parts[3], 10); // Convert to integer with base 10
+      console.log(`QC Review - Asset ID: ${assetId}, Type: ${typeof assetId}, Parts: ${JSON.stringify(parts)}`);
       const { qc_status, qc_score, qc_remarks } = req.body || {};
       const asset = mockData.assets.find(a => a.id === assetId);
       
@@ -279,8 +328,43 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Additional endpoints
-    if (path.startsWith('/api/v1/')) {
+    // POST endpoints for form submissions
+    if (method === 'POST') {
+      // Handle assetLibrary creation specially
+      if (path === '/api/v1/assetLibrary') {
+        const newAsset = {
+          id: mockData.assets.length + 1,
+          ...req.body,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          submitted_at: new Date().toISOString(),
+          created_by: 1,
+          submitted_by: 1,
+          designed_by: 1
+        };
+        
+        // Add to mock data
+        mockData.assets.push(newAsset);
+        
+        return res.status(201).json({
+          success: true,
+          message: 'Asset created successfully',
+          data: newAsset // Return only the new item, not the whole array
+        });
+      }
+      
+      // Handle all other POST requests with success response
+      if (path.startsWith('/api/v1/')) {
+        return res.status(201).json({
+          success: true,
+          message: 'Data submitted successfully',
+          data: { ...req.body, id: Date.now(), created_at: new Date().toISOString() }
+        });
+      }
+    }
+
+    // Additional endpoints (only for GET requests)
+    if (path.startsWith('/api/v1/') && method === 'GET') {
       // Return mock data for any other endpoint
       return res.status(200).json({
         success: true,

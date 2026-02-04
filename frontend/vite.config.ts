@@ -22,7 +22,9 @@ export default defineConfig(({ mode }) => {
             host: true,
             watch: {
                 usePolling: true,
+                interval: 1000,
             },
+            livereload: true,
             proxy: {
                 '/api': {
                     target: 'http://localhost:3001',
