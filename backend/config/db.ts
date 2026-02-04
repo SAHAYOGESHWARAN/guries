@@ -37,7 +37,17 @@ if ((process.env.DB_CLIENT || '').toLowerCase() === 'pg' || process.env.USE_PG =
     // Use SQLite for production
     try {
         const Database = require('better-sqlite3');
-        const dbPath = path.join(process.cwd(), 'mcc_db.sqlite');
+        const dbPath = path.join('/tmp', 'mcc_db.sqlite');
+        
+        // Copy database from package if it doesn't exist
+        const fs = require('fs');
+        if (!fs.existsSync(dbPath)) {
+            const sourcePath = path.join(__dirname, '../../mcc_db.sqlite');
+            if (fs.existsSync(sourcePath)) {
+                fs.copyFileSync(sourcePath, dbPath);
+            }
+        }
+        
         const sqliteDb = new Database(dbPath);
         
         // Create mock pool interface for SQLite

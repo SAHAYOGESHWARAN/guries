@@ -135,10 +135,16 @@ app.use(notFoundHandler);
 // Global Error Handler (must be last)
 app.use(errorHandler);
 
-// Start Server
+// Start Server (only for local development)
 let serverInstance: any = null;
 
 const startServer = (portToTry: number) => {
+    // Only start server if not in Vercel serverless environment
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        console.log('🚀 Running in Vercel serverless mode');
+        return;
+    }
+    
     serverInstance = httpServer.listen(portToTry);
 
     serverInstance.on('listening', () => {
