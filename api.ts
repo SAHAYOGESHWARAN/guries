@@ -1,11 +1,12 @@
 /**
- * Vercel Serverless Function Entry Point
- * Provides robust API functionality with mock data for immediate deployment
+ * Vercel Serverless Function - Production API Handler
+ * Consolidated API for Guries Marketing Control Center
+ * Handles all routes in a single function to stay within Vercel Hobby Plan limits
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Mock data for immediate functionality
+// Mock data
 const mockAssets = [
     {
         id: 1,
@@ -59,8 +60,6 @@ const mockAssets = [
     }
 ];
 
-const mockUsers: any[] = [];
-
 const mockServices = [
     {
         id: 1,
@@ -99,39 +98,56 @@ const mockProjects = [
     { id: 2, name: "Marketing Automation", status: "Planning", client: "XYZ Inc", deadline: "2024-04-01" }
 ];
 
-// Helper function to set CORS headers
+// Helper: Set CORS headers
 function setCorsHeaders(res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-User-Role');
+    res.setHeader('Content-Type', 'application/json');
 }
 
-// Main handler function
+// Helper: Parse request body
+async function parseBody(req: VercelRequest): Promise<any> {
+    return new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', chunk => data += chunk);
+        req.on('end', () => {
+            try {
+                resolve(data ? JSON.parse(data) : {});
+            } catch (e) {
+                reject(new Error('Invalid JSON'));
+            }
+        });
+    });
+}
+
+// Main handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Set CORS headers for all requests
     setCorsHeaders(res);
 
-    // Handle preflight OPTIONS requests
+    // Handle OPTIONS
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
     try {
-        const { url, method } = req;
-        const path = url?.split('?')[0] || '';
+        const url = req.url || '';
+        const path = url.split('?')[0];
+        const method = req.method || 'GET';
 
-        console.log(`🚀 API Request: ${method} ${path}`);
+        console.log(`[${new Date().toISOString()}] ${method} ${path}`);
 
-        // Health check endpoints
+        // Health check
         if (path === '/health' || path === '/api/health' || path === '/api/v1/health') {
             return res.status(200).json({
                 status: 'ok',
                 timestamp: new Date().toISOString(),
-                message: 'Marketing Control Center API is running'
+                message: 'Marketing Control Center API is running',
+                version: '2.5.0'
             });
         }
 
-        // Assets endpoints - unified handling
+        // Assets endpoints
         if (path.startsWith('/api/v1/assets') || path.startsWith('/api/v1/assetLibrary')) {
             if (method === 'GET') {
                 return res.status(200).json({
@@ -141,9 +157,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
             if (method === 'POST') {
+                const body = await parseBody(req);
                 const newAsset = {
                     id: Date.now(),
-                    ...req.body,
+                    ...body,
                     created_at: new Date().toISOString(),
                     status: 'Draft',
                     qc_score: 0
@@ -154,42 +171,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     data: newAsset
                 });
             }
-            if (method === 'PUT') {
-                const { id } = req.query;
-                const updatedAsset = {
-                    ...req.body,
-                    updated_at: new Date().toISOString()
-                };
-                return res.status(200).json({
-                    success: true,
-                    message: 'Asset updated successfully',
-                    data: updatedAsset
-                });
-            }
         }
 
-        // Users endpoints
-        if (path.startsWith('/api/v1/users')) {
-            if (method === 'GET') {
-                return res.status(200).json(mockUsers);
-            }
-        }
-
-        // Services endpoints
-        if (path.startsWith('/api/v1/services')) {
-            if (method === 'GET') {
-                return res.status(200).json(mockServices);
-            }
-        }
-
-        // Tasks endpoints
-        if (path.startsWith('/api/v1/tasks')) {
-            if (method === 'GET') {
-                return res.status(200).json(mockTasks);
-            }
-        }
-
-        // QC Reviews endpoints
+        // QC Reviews
         if (path.startsWith('/api/v1/qc-reviews')) {
             if (method === 'GET') {
                 const mockQCReviews = [
@@ -219,9 +203,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
             if (method === 'POST') {
+                const body = await parseBody(req);
                 const newReview = {
                     id: Date.now(),
-                    ...req.body,
+                    ...body,
                     review_date: new Date().toISOString()
                 };
                 return res.status(201).json({
@@ -232,23 +217,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
         }
 
-        // Campaigns endpoints
+        // Services
+        if (path.startsWith('/api/v1/services')) {
+            return res.status(200).json({
+                success: true,
+                data: mockServices,
+                total: mockServices.length
+            });
+        }
+
+        // Tasks
+        if (path.startsWith('/api/v1/tasks')) {
+            return res.status(200).json({
+                success: true,
+                data: mockTasks,
+                total: mockTasks.length
+            });
+        }
+
+        // Campaigns
         if (path.startsWith('/api/v1/campaigns')) {
-            if (method === 'GET') {
-                return res.status(200).json(mockCampaigns);
-            }
+            return res.status(200).json({
+                success: true,
+                data: mockCampaigns,
+                total: mockCampaigns.length
+            });
         }
 
-        // Projects endpoints
+        // Projects
         if (path.startsWith('/api/v1/projects')) {
-            if (method === 'GET') {
-                return res.status(200).json(mockProjects);
-            }
+            return res.status(200).json({
+                success: true,
+                data: mockProjects,
+                total: mockProjects.length
+            });
         }
 
-        // Dashboard stats endpoint
+        // Users
+        if (path.startsWith('/api/v1/users')) {
+            return res.status(200).json({
+                success: true,
+                data: [],
+                total: 0
+            });
+        }
+
+        // Dashboard stats
         if (path.includes('/dashboard/stats')) {
             return res.status(200).json({
+                success: true,
                 stats: {
                     activeCampaigns: mockCampaigns.filter(c => c.status === 'Active').length,
                     activeCampaignsChange: 12,
@@ -256,143 +273,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     contentPublishedChange: 8,
                     tasksCompleted: mockTasks.filter(t => t.status === 'Completed').length,
                     tasksCompletedChange: -3,
-                    teamMembers: mockUsers.length,
+                    teamMembers: 5,
                     teamMembersChange: 2,
                     pendingTasks: mockTasks.filter(t => t.status === 'In Progress').length
                 }
             });
         }
 
-        // Additional mock data for missing endpoints
-        const mockNotifications = [
-            { id: 1, title: 'New asset uploaded', message: 'A new asset requires your review', type: 'info', read: false, created_at: new Date().toISOString() },
-            { id: 2, title: 'QC review completed', message: 'Asset QC review has been completed', type: 'success', read: true, created_at: new Date().toISOString() }
-        ];
-
-        const mockKeywords = [
-            { id: 1, keyword: 'digital marketing', search_volume: 1000, competition: 'high' },
-            { id: 2, keyword: 'seo services', search_volume: 800, competition: 'medium' }
-        ];
-
-        const mockBrands = [
-            { id: 1, name: 'TechCorp', industry: 'Technology', website: 'https://techcorp.com', status: 'active' },
-            { id: 2, name: 'HealthPlus', industry: 'Healthcare', website: 'https://healthplus.com', status: 'active' }
-        ];
-
-        const mockBacklinks = [
-            { id: 1, url: 'https://example.com', domain_authority: 45, status: 'active' },
-            { id: 2, url: 'https://blog.example.com', domain_authority: 32, status: 'pending' }
-        ];
-
-        const mockContentTypes = [
-            { id: 1, name: 'Blog Post', description: 'Blog content' },
-            { id: 2, name: 'Article', description: 'Article content' }
-        ];
-
-        const mockAssetCategories = [
-            { id: 1, name: 'Graphics', description: 'Graphic assets' },
-            { id: 2, name: 'Content', description: 'Content assets' }
-        ];
-
-        const mockAssetTypes = [
-            { id: 1, name: 'Image', description: 'Image files' },
-            { id: 2, name: 'Document', description: 'Document files' }
-        ];
-
-        const mockSubServices = [
-            { id: 1, name: 'SEO Audit', service_id: 1 },
-            { id: 2, name: 'Content Writing', service_id: 2 }
-        ];
-
-        const mockContent = [
-            { id: 1, title: 'Marketing Guide', type: 'blog', status: 'published' },
-            { id: 2, title: 'SEO Tips', type: 'article', status: 'draft' }
-        ];
-
-        // Handle all missing endpoints with mock data
-        if (path.startsWith('/api/v1/notifications')) {
-            return res.status(200).json(mockNotifications);
-        }
-        if (path.startsWith('/api/v1/keywords')) {
-            return res.status(200).json(mockKeywords);
-        }
-        if (path.startsWith('/api/v1/brands')) {
-            return res.status(200).json(mockBrands);
-        }
-        if (path.startsWith('/api/v1/backlinks')) {
-            return res.status(200).json(mockBacklinks);
-        }
-        if (path.startsWith('/api/v1/content-types')) {
-            return res.status(200).json(mockContentTypes);
-        }
-        if (path.startsWith('/api/v1/asset-category-master')) {
-            return res.status(200).json(mockAssetCategories);
-        }
-        if (path.startsWith('/api/v1/asset-type-master')) {
-            return res.status(200).json(mockAssetTypes);
-        }
-        if (path.startsWith('/api/v1/sub-services')) {
-            return res.status(200).json(mockSubServices);
-        }
-        if (path.startsWith('/api/v1/content')) {
-            return res.status(200).json(mockContent);
-        }
-
-        // Additional missing endpoints from our test
-        if (path.startsWith('/api/v1/service-pages')) {
-            return res.status(200).json([
-                { id: 1, title: 'SEO Services', content: 'Professional SEO optimization', status: 'published' },
-                { id: 2, title: 'Content Marketing', content: 'Quality content creation', status: 'draft' }
-            ]);
-        }
-        if (path.startsWith('/api/v1/smm')) {
-            return res.status(200).json([
-                { id: 1, platform: 'Facebook', post_type: 'Image', status: 'Scheduled', date: '2024-02-05' },
-                { id: 2, platform: 'Twitter', post_type: 'Text', status: 'Published', date: '2024-02-04' }
-            ]);
-        }
-        if (path.startsWith('/api/v1/graphics')) {
-            return res.status(200).json([
-                { id: 1, name: 'Facebook Banner', type: 'Social Media', status: 'Completed' },
-                { id: 2, name: 'Website Header', type: 'Web', status: 'In Progress' }
-            ]);
-        }
-        if (path.startsWith('/api/v1/competitors')) {
-            return res.status(200).json([
-                { id: 1, name: 'Competitor A', domain: 'competitor-a.com', industry: 'Marketing' },
-                { id: 2, name: 'Competitor B', domain: 'competitor-b.com', industry: 'SEO' }
-            ]);
-        }
-        if (path.startsWith('/api/v1/asset-categories')) {
-            return res.status(200).json(mockAssetCategories);
-        }
-        if (path.startsWith('/api/v1/asset-types')) {
-            return res.status(200).json(mockAssetTypes);
-        }
-        if (path.startsWith('/api/v1/platforms') || path.startsWith('/api/v1/platform-master')) {
-            return res.status(200).json([
-                { id: 1, name: 'Facebook', type: 'Social Media' },
-                { id: 2, name: 'Google', type: 'Search Engine' }
-            ]);
-        }
-        if (path.startsWith('/api/v1/country-master')) {
-            return res.status(200).json([
-                { id: 1, name: 'United States', code: 'US' },
-                { id: 2, name: 'United Kingdom', code: 'UK' }
-            ]);
-        }
-        if (path.startsWith('/api/v1/industry-sectors')) {
-            return res.status(200).json([
-                { id: 1, name: 'Technology', description: 'Tech companies' },
-                { id: 2, name: 'Healthcare', description: 'Healthcare industry' }
-            ]);
-        }
-
-        // Authentication endpoint
+        // Login endpoint
         if (path.includes('/auth/login')) {
-            const { email, password } = req.body;
+            const body = await parseBody(req);
+            const { email, password } = body;
 
-            // Admin credentials - plain text comparison
             if (email === 'admin@example.com' && password === 'admin123') {
                 return res.status(200).json({
                     success: true,
@@ -411,19 +303,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            return res.status(401).json({ error: 'Invalid email or password' });
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid email or password'
+            });
         }
 
-        // Default response for unhandled routes
+        // Catch-all for missing endpoints
         return res.status(404).json({
             success: false,
             error: 'Route not found',
             path: path,
+            method: method,
             timestamp: new Date().toISOString()
         });
 
     } catch (error: any) {
-        console.error('❌ API Error:', error);
+        console.error('API Error:', error);
         return res.status(500).json({
             success: false,
             error: 'Internal server error',
@@ -432,4 +328,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
     }
 }
+
 
