@@ -225,16 +225,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                         </p>
                     </div>
 
-                    {/* Demo Credentials Info */}
-                    {mode === 'signin' && (
-                        <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                            <p className="text-blue-300 text-xs font-medium mb-2">📧 Demo Credentials:</p>
-                            <div className="space-y-1 text-xs text-blue-200">
-                                <p><strong>Email:</strong> admin@example.com</p>
-                                <p><strong>Password:</strong> admin123</p>
-                            </div>
-                        </div>
-                    )}
+
 
 
 
