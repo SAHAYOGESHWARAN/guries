@@ -87,7 +87,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         if (authMethod === 'phone') {
             setMode('otp');
@@ -96,9 +96,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setOtp(['', '', '', '', '', '']);
             setIsLoading(false);
         } else {
-            // No hardcoded/demo credentials. Proceed to API/local checks.
-
-            // Try backend API for other users
+            // Try backend API first
             const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
             try {
                 const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -118,52 +116,16 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                     onLogin(authUser);
                     setIsLoading(false);
                     return;
+                } else {
+                    setError(data.error || 'Invalid email or password');
+                    setIsLoading(false);
+                    return;
                 }
             } catch (apiError) {
-                // API not available, continue with localStorage check
-            }
-
-            // Fallback: Check localStorage for registered users
-            const existingUsers = db.users.getAll();
-            const existingUser = existingUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
-
-            if (!existingUser) {
-                setError('Invalid email or password');
+                console.error('API Error:', apiError);
+                setError('Unable to connect to server. Please try again.');
                 setIsLoading(false);
                 return;
-            }
-
-            // Check password match
-            if (existingUser.password && existingUser.password !== formData.password) {
-                setError('Invalid email or password');
-                setIsLoading(false);
-                return;
-            }
-
-            if (existingUser.status === 'inactive') {
-                setError('Your account has been deactivated. Contact an administrator.');
-                setIsLoading(false);
-                return;
-            }
-
-            if (existingUser.status === 'pending') {
-                setError('Your account is pending approval.');
-                setIsLoading(false);
-                return;
-            }
-
-            if (existingUser.status === 'active') {
-                const authUser: AuthUser = {
-                    ...existingUser,
-                    role: existingUser.role as UserRole,
-                    last_login: new Date().toISOString()
-                };
-                db.users.update(existingUser.id, { last_login: new Date().toISOString() });
-                onLogin(authUser);
-                setIsLoading(false);
-            } else {
-                setError('Access denied. Contact an administrator.');
-                setIsLoading(false);
             }
         }
     };
@@ -262,6 +224,17 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                             Marketing Operating System
                         </p>
                     </div>
+
+                    {/* Demo Credentials Info */}
+                    {mode === 'signin' && (
+                        <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <p className="text-blue-300 text-xs font-medium mb-2">📧 Demo Credentials:</p>
+                            <div className="space-y-1 text-xs text-blue-200">
+                                <p><strong>Email:</strong> admin@example.com</p>
+                                <p><strong>Password:</strong> admin123</p>
+                            </div>
+                        </div>
+                    )}
 
 
 
