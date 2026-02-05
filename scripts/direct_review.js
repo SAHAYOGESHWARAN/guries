@@ -30,8 +30,9 @@
       name: 'Direct Test Asset',
       type: 'Document',
       application_type: 'web',
-      status: 'Draft',
       qc_status: 'QC Pending',
+      linked_service_ids: [],
+      linked_sub_service_ids: [],
       submitted_by: 1
     }};
 

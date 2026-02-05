@@ -406,7 +406,7 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             action: status === 'Pending QC Review' ? 'submitted' : 'created',
             timestamp: new Date().toISOString(),
             user_id: submitted_by || created_by,
-            status: status || 'Draft',
+            status: status || null,
             workflow_stage: workflow_stage || 'Add'
         }];
 
@@ -433,7 +433,7 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
         workflow_log, version_history, linking_active
     ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) `,
             [
-                name, type, asset_category, asset_format, content_type || null, repository, status || 'Draft',
+                name, type, asset_category, asset_format, content_type || null, repository, status || null,
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
