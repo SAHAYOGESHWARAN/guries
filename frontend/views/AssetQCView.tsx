@@ -56,7 +56,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
     const [checklistItems, setChecklistItems] = useState<{ [key: string]: boolean }>(getChecklistForApplicationType('web'));
 
     // Use the useData hook for real-time data
-    const { data: assetsForQC = [], loading: dataLoading, refresh: refreshAssets } = useData<AssetLibraryItem>('assetLibrary');
+    const { data: assetsForQC = [], loading: dataLoading, refresh: refreshAssets, update: updateAsset } = useData<AssetLibraryItem>('assetLibrary');
     
     // Transform API data to match frontend interface
     const transformedAssets = useMemo(() => {
@@ -274,6 +274,30 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
                     : decision === 'rework'
                         ? 'Asset sent for rework!'
                         : 'Asset rejected!';
+
+                // Optimistically update the local asset record so the list reflects the new QC status immediately.
+                try {
+                    if (updateAsset && selectedAsset && selectedAsset.id) {
+                        const updates: Partial<AssetLibraryItem> = {};
+                        if (decision === 'approved') {
+                            updates.qc_status = 'Pass';
+                            updates.status = 'QC Approved';
+                        } else if (decision === 'rejected') {
+                            updates.qc_status = 'Fail';
+                            updates.status = 'QC Rejected';
+                        } else if (decision === 'rework') {
+                            updates.qc_status = 'Rework';
+                            updates.status = 'Rework Required';
+                        }
+                        updates.qc_score = qcScore || 0;
+                        updates.qc_remarks = qcRemarks || '';
+                        // Fire update (will attempt server sync and also update local state)
+                        await updateAsset(selectedAsset.id, updates as any);
+                    }
+                } catch (e) {
+                    console.warn('Optimistic update failed:', e);
+                }
+
                 alert(message);
                 setSelectedAsset(null);
                 setQcScore(0);
