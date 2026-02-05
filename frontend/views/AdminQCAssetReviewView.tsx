@@ -137,13 +137,13 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
 
     const getQCStatusBadge = (asset: AssetLibraryItem) => {
         const status = asset.qc_status || asset.status || 'Pending';
-        if (['Pass', 'QC Approved', 'Published'].includes(status)) {
-            return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Pass</span>;
+        if (['Approved', 'QC Approved', 'Published'].includes(status)) {
+            return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Approved</span>;
         }
-        if (['Fail', 'QC Rejected'].includes(status)) {
-            return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Fail</span>;
+        if (['Rejected'].includes(status)) {
+            return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Rejected</span>;
         }
-        if (['Rework', 'Rework Required'].includes(status)) {
+        if (['Rework'].includes(status)) {
             return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">Rework</span>;
         }
         return <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending</span>;
@@ -159,10 +159,10 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
     // Filter assets based on view mode - Admin sees ALL assets
     const filteredAssets = useMemo(() => {
         switch (viewMode) {
-            case 'pending': return assetsForQC.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status);
-            case 'rework': return assetsForQC.filter(a => a.status === 'Rework Required' || a.qc_status === 'Rework');
-            case 'approved': return assetsForQC.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published');
-            case 'rejected': return assetsForQC.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail');
+            case 'pending': return assetsForQC.filter(a => a.qc_status === 'QC Pending' || a.status === 'Pending QC Review' || a.status === 'Draft' || !a.qc_status);
+            case 'rework': return assetsForQC.filter(a => a.qc_status === 'Rework' || a.status === 'Rework Requested');
+            case 'approved': return assetsForQC.filter(a => a.qc_status === 'Approved' || a.status === 'QC Approved' || a.status === 'Published');
+            case 'rejected': return assetsForQC.filter(a => a.qc_status === 'Rejected' || a.status === 'Rejected');
             default: return assetsForQC;
         }
     }, [assetsForQC, viewMode]);
@@ -170,10 +170,10 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
     // Status counts
     const statusCounts = useMemo(() => ({
         all: assetsForQC.length,
-        pending: assetsForQC.filter(a => a.status === 'Pending QC Review' || a.status === 'Draft' || !a.status).length,
-        rework: assetsForQC.filter(a => a.status === 'Rework Required' || a.qc_status === 'Rework').length,
-        approved: assetsForQC.filter(a => a.status === 'QC Approved' || a.qc_status === 'Pass' || a.status === 'Published').length,
-        rejected: assetsForQC.filter(a => a.status === 'QC Rejected' || a.qc_status === 'Fail').length,
+        pending: assetsForQC.filter(a => a.qc_status === 'QC Pending' || a.status === 'Pending QC Review' || a.status === 'Draft' || !a.qc_status).length,
+        rework: assetsForQC.filter(a => a.qc_status === 'Rework' || a.status === 'Rework Requested').length,
+        approved: assetsForQC.filter(a => a.qc_status === 'Approved' || a.status === 'QC Approved' || a.status === 'Published').length,
+        rejected: assetsForQC.filter(a => a.qc_status === 'Rejected' || a.status === 'Rejected').length,
     }), [assetsForQC]);
 
     // Handlers
@@ -213,15 +213,15 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
         setSubmitting(true);
         try {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
-            
+
             // Determine the correct endpoint based on decision
             let endpoint = '';
             if (decision === 'approved') {
-                endpoint = `${apiUrl}/qcReview/assets/${selectedAsset.id}/approve`;
+                endpoint = `${apiUrl}/qc-review/approve`;
             } else if (decision === 'rejected') {
-                endpoint = `${apiUrl}/qcReview/assets/${selectedAsset.id}/reject`;
+                endpoint = `${apiUrl}/qc-review/reject`;
             } else if (decision === 'rework') {
-                endpoint = `${apiUrl}/qcReview/assets/${selectedAsset.id}/rework`;
+                endpoint = `${apiUrl}/qc-review/rework`;
             }
 
             const response = await fetch(endpoint, {
@@ -232,6 +232,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                     'X-User-Role': user.role
                 },
                 body: JSON.stringify({
+                    asset_id: selectedAsset.id,
                     qc_score: qcScore || 0,
                     qc_remarks: qcRemarks || '',
                     qc_reviewer_id: user.id,

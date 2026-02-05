@@ -36,27 +36,65 @@ const deleteMaster = async (table: string, id: string, res: any, eventName?: str
 // --- Industry / Sector ---
 export const getIndustries = (req: any, res: any) => getMaster('industry_sectors', res);
 export const createIndustry = async (req: Request, res: Response) => {
-    const { industry, sector, application, country, status } = req.body;
+    const { industry, sector, application, country, description, status } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO industry_sectors (industry, sector, application, country, status) VALUES (?, ?, ?, ?, ?)',
-            [industry, sector, application, country, status]
+            'INSERT INTO industry_sectors (industry, sector, application, country, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+            [industry, sector, application, country, description || null, status || 'active']
         );
-        res.status(201).json(result.rows[0]);
-    } catch (e: any) { res.status(500).json({ error: e.message }); }
+
+        // Fetch the created record
+        const createdRecord = await pool.query(
+            'SELECT * FROM industry_sectors WHERE id = ?',
+            [result.lastID || result.rows[0]?.id]
+        );
+
+        // Emit socket event for real-time updates
+        try {
+            const io = getSocket();
+            io.emit('industry_sector_created', createdRecord.rows[0]);
+            console.log('✅ Socket event emitted: industry_sector_created');
+        } catch (e) {
+            console.warn('⚠️  Socket not available for industry_sector_created event');
+        }
+
+        res.status(201).json(createdRecord.rows[0]);
+    } catch (e: any) {
+        console.error('❌ Error creating industry sector:', e.message);
+        res.status(500).json({ error: e.message });
+    }
 };
 export const updateIndustry = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { industry, sector, application, country, status } = req.body;
+    const { industry, sector, application, country, description, status } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE industry_sectors SET industry=?, sector=?, application=?, country=?, status=? WHERE id=?',
-            [industry, sector, application, country, status, id]
+            'UPDATE industry_sectors SET industry=?, sector=?, application=?, country=?, description=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            [industry, sector, application, country, description || null, status || 'active', id]
         );
-        res.status(200).json(result.rows[0]);
-    } catch (e: any) { res.status(500).json({ error: e.message }); }
+
+        // Fetch the updated record
+        const updatedRecord = await pool.query(
+            'SELECT * FROM industry_sectors WHERE id = ?',
+            [id]
+        );
+
+        // Emit socket event for real-time updates
+        try {
+            const io = getSocket();
+            io.emit('industry_sector_updated', updatedRecord.rows[0]);
+            console.log('✅ Socket event emitted: industry_sector_updated');
+        } catch (e) {
+            console.warn('⚠️  Socket not available for industry_sector_updated event');
+        }
+
+        res.status(200).json(updatedRecord.rows[0]);
+    } catch (e: any) {
+        console.error('❌ Error updating industry sector:', e.message);
+        res.status(500).json({ error: e.message });
+    }
 };
-export const deleteIndustry = (req: any, res: any) => deleteMaster('industry_sectors', req.params.id, res);
+export const deleteIndustry = (req: any, res: any) => deleteMaster('industry_sectors', req.params.id, res, 'industry_sector');
 
 // --- Content Types ---
 export const getContentTypes = (req: any, res: any) => getMaster('content_types', res);

@@ -293,7 +293,7 @@ export const rejectAsset = async (req: Request, res: Response) => {
         res.status(200).json({
             message: 'Asset rejected successfully',
             asset_id: finalAssetId,
-            qc_status: 'Fail',
+            qc_status: 'Rejected',
             linking_active: 0,
             status: 'Rejected',
             asset: parsed
@@ -321,12 +321,31 @@ export const requestRework = async (req: Request, res: Response) => {
         }
 
         // Check asset exists
-        const assetCheck = await pool.query('SELECT id, rework_count FROM assets WHERE id = ?', [finalAssetId]);
+        const assetCheck = await pool.query('SELECT id, rework_count, workflow_log FROM assets WHERE id = ?', [finalAssetId]);
         if (assetCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
         }
 
         const currentReworkCount = assetCheck.rows[0].rework_count || 0;
+
+        // Parse existing workflow log
+        let workflowLog = [];
+        try {
+            workflowLog = JSON.parse(assetCheck.rows[0].workflow_log || '[]');
+        } catch (e) {
+            workflowLog = [];
+        }
+
+        // Add rework event to workflow log
+        workflowLog.push({
+            action: 'rework_requested',
+            timestamp: new Date().toISOString(),
+            user_id: qc_reviewer_id,
+            status: 'Rework Requested',
+            workflow_stage: 'QC',
+            remarks: qc_remarks,
+            rework_count: currentReworkCount + 1
+        });
 
         // Update asset
         await pool.query(
@@ -339,9 +358,10 @@ export const requestRework = async (req: Request, res: Response) => {
                  qc_remarks = ?,
                  qc_score = ?,
                  rework_count = ?,
-                 status = 'Rework Requested'
+                 status = 'Rework Requested',
+                 workflow_log = ?
              WHERE id = ?`,
-            [qc_reviewer_id, qc_remarks, qc_score || null, currentReworkCount + 1, finalAssetId]
+            [qc_reviewer_id, qc_remarks, qc_score || null, currentReworkCount + 1, JSON.stringify(workflowLog), finalAssetId]
         );
 
         // Log status change
@@ -413,7 +433,7 @@ export const getQCStatistics = async (req: Request, res: Response) => {
             SELECT 
                 COUNT(CASE WHEN qc_status = 'QC Pending' THEN 1 END) as pending_count,
                 COUNT(CASE WHEN qc_status = 'Approved' THEN 1 END) as approved_count,
-                COUNT(CASE WHEN qc_status = 'Reject' THEN 1 END) as rejected_count,
+                COUNT(CASE WHEN qc_status = 'Rejected' THEN 1 END) as rejected_count,
                 COUNT(CASE WHEN qc_status = 'Rework' THEN 1 END) as rework_count,
                 COUNT(*) as total_count,
                 ROUND(AVG(CASE WHEN qc_score IS NOT NULL THEN qc_score ELSE NULL END), 2) as avg_qc_score
@@ -471,7 +491,7 @@ async function logQCAction(
 ) {
     try {
         await pool.query(
-            `INSERT INTO qc_audit_log (asset_id, user_id, qc_decision, qc_remarks, created_at)
+            `INSERT INTO qc_audit_log (asset_id, user_id, action, details, created_at)
              VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
             [assetId, userId || null, action, remarks || null]
         );
