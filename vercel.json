@@ -4,9 +4,9 @@
   "outputDirectory": ".",
   "env": {
     "NODE_ENV": "production",
-    "ADMIN_EMAIL": "@ADMIN_EMAIL",
-    "ADMIN_PASSWORD": "@ADMIN_PASSWORD",
-    "JWT_SECRET": "@JWT_SECRET",
+    "ADMIN_EMAIL": "admin@example.com",
+    "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
+    "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-12345",
     "JWT_EXPIRES_IN": "7d",
     "DB_CLIENT": "mock",
     "USE_PG": "false"
