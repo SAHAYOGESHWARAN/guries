@@ -392,7 +392,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (path.includes('/auth/login')) {
             const { email, password } = req.body;
 
-            // Admin credentials
+            // Admin credentials - plain text comparison
             if (email === 'admin@example.com' && password === 'admin123') {
                 return res.status(200).json({
                     success: true,
