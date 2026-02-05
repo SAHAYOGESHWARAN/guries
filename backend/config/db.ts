@@ -1,48 +1,73 @@
-
-import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import Database from 'better-sqlite3';
 
 dotenv.config();
 
-type PoolLike = {
-    query: (sql: string, params?: any[]) => Promise<{ rows?: any[]; info?: any }>;
-    end: () => Promise<void> | void;
-    on?: (evt: string, cb: any) => void;
+const dbPath = path.join(__dirname, '..', 'mcc_db.sqlite');
+const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
+
+const pool = {
+    query: async (sql: string, params?: any[]) => {
+        try {
+            const trimmedSql = sql.trim().toUpperCase();
+
+            if (trimmedSql.startsWith('CREATE') || trimmedSql.startsWith('DROP') || trimmedSql.startsWith('ALTER')) {
+                try {
+                    const statements = sql.split(';').filter(s => s.trim());
+                    for (const stmt of statements) {
+                        if (stmt.trim()) {
+                            db.prepare(stmt).run();
+                        }
+                    }
+                    return { rows: [], rowCount: 0 };
+                } catch (e: any) {
+                    if (!e.message.includes('already exists')) throw e;
+                    return { rows: [], rowCount: 0 };
+                }
+            }
+
+            if (trimmedSql.startsWith('SELECT')) {
+                const stmt = db.prepare(sql);
+                const rows = params ? stmt.all(...params) : stmt.all();
+                return { rows, rowCount: rows.length };
+            }
+
+            if (trimmedSql.startsWith('INSERT')) {
+                const stmt = db.prepare(sql);
+                const result = params ? stmt.run(...params) : stmt.run();
+                return {
+                    rows: [{ id: Number(result.lastInsertRowid) }],
+                    lastID: Number(result.lastInsertRowid),
+                    changes: result.changes,
+                    rowCount: result.changes
+                };
+            }
+
+            if (trimmedSql.startsWith('UPDATE')) {
+                const stmt = db.prepare(sql);
+                const result = params ? stmt.run(...params) : stmt.run();
+                return { rows: [], changes: result.changes, rowCount: result.changes };
+            }
+
+            if (trimmedSql.startsWith('DELETE')) {
+                const stmt = db.prepare(sql);
+                const result = params ? stmt.run(...params) : stmt.run();
+                return { rows: [], changes: result.changes, rowCount: result.changes };
+            }
+
+            const stmt = db.prepare(sql);
+            const rows = params ? stmt.all(...params) : stmt.all();
+            return { rows, rowCount: rows.length };
+        } catch (error: any) {
+            console.error('Database error:', error.message);
+            throw error;
+        }
+    },
+    end: async () => {
+        db.close();
+    }
 };
 
-let pool: any;
-
-if ((process.env.DB_CLIENT || '').toLowerCase() === 'pg' || process.env.USE_PG === 'true') {
-    // Use Postgres Pool when explicitly requested
-    const { Pool } = require('pg');
-    const pgPool = new Pool({
-        user: process.env.DB_USER || 'postgres',
-        host: process.env.DB_HOST || 'localhost',
-        database: process.env.DB_NAME || 'mcc_db',
-        password: process.env.DB_PASSWORD || 'password',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-    });
-
-    pgPool.on('error', (err: any) => {
-        console.error('Unexpected Postgres pool error', err);
-        if (process.env.NODE_ENV === 'production') (process as any).exit(-1);
-    });
-
-    pool = pgPool as any;
-} else if (process.env.NODE_ENV === 'production') {
-    // Use mock database for production to ensure compatibility
-    console.log('🔄 Using mock database for production deployment');
-    const mockPool = require('./mockDb').mockPool;
-    pool = mockPool;
-} else {
-    // Use mock database for development/testing
-    const mockPool = require('./mockDb').mockPool;
-    pool = mockPool;
-}
-
 export { pool };
-

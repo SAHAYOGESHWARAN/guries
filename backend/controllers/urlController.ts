@@ -99,13 +99,13 @@ export const generateUniqueServiceSlug = async (req: Request, res: Response) => 
 
         while (attempt < maxAttempts) {
             const exists = await checkExisting(slug);
-            
+
             if (!exists) {
                 break;
             }
 
             attempt++;
-            
+
             if (attempt === 1) {
                 slug = `${baseSlug}-1`;
             } else {
@@ -183,13 +183,13 @@ export const generateUniqueSubServiceSlug = async (req: Request, res: Response) 
 
         while (attempt < maxAttempts) {
             const exists = await checkExisting(slug);
-            
+
             if (!exists) {
                 break;
             }
 
             attempt++;
-            
+
             if (attempt === 1) {
                 slug = `${baseSlug}-1`;
             } else {
@@ -205,9 +205,9 @@ export const generateUniqueSubServiceSlug = async (req: Request, res: Response) 
         const fullUrl = `/services/${parentSlug}/${slug}`;
 
         // Validate
-        const validation = validateUrl(slug, fullUrl, { 
-            type: 'subservice', 
-            parentSlug 
+        const validation = validateUrl(slug, fullUrl, {
+            type: 'subservice',
+            parentSlug
         });
 
         res.status(200).json({
@@ -232,9 +232,9 @@ export const validateUrlStructureApi = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Slug, full URL, and type are required' });
         }
 
-        const validation = validateUrl(slug, fullUrl, { 
-            type: type as 'service' | 'subservice' | 'page' | 'asset', 
-            parentSlug 
+        const validation = validateUrl(slug, fullUrl, {
+            type: type as 'service' | 'subservice' | 'page' | 'asset',
+            parentSlug
         });
 
         res.status(200).json(validation);
@@ -256,7 +256,7 @@ export const getUrlSuggestions = async (req: Request, res: Response) => {
 
         // Generate multiple suggestions
         const suggestions = [];
-        
+
         // SEO-friendly suggestion
         const seoSlug = generateSlug(title, {
             maxLength: 60,
@@ -274,9 +274,9 @@ export const getUrlSuggestions = async (req: Request, res: Response) => {
 
         suggestions.push({
             slug: seoSlug,
-            fullUrl: type === 'subservice' && parentServiceId 
-                ? `/services/${parentServiceId}/${seoSlug}` 
-                : type === 'service' 
+            fullUrl: type === 'subservice' && parentServiceId
+                ? `/services/${parentServiceId}/${seoSlug}`
+                : type === 'service'
                     ? `/services/${seoSlug}`
                     : `/${seoSlug}`,
             type: 'SEO Friendly',
@@ -295,9 +295,9 @@ export const getUrlSuggestions = async (req: Request, res: Response) => {
         if (shortSlug !== seoSlug) {
             suggestions.push({
                 slug: shortSlug,
-                fullUrl: type === 'subservice' && parentServiceId 
-                    ? `/services/${parentServiceId}/${shortSlug}` 
-                    : type === 'service' 
+                fullUrl: type === 'subservice' && parentServiceId
+                    ? `/services/${parentServiceId}/${shortSlug}`
+                    : type === 'service'
                         ? `/services/${shortSlug}`
                         : `/${shortSlug}`,
                 type: 'Short',
@@ -317,9 +317,9 @@ export const getUrlSuggestions = async (req: Request, res: Response) => {
         if (techSlug !== seoSlug) {
             suggestions.push({
                 slug: techSlug,
-                fullUrl: type === 'subservice' && parentServiceId 
-                    ? `/services/${parentServiceId}/${techSlug}` 
-                    : type === 'service' 
+                fullUrl: type === 'subservice' && parentServiceId
+                    ? `/services/${parentServiceId}/${techSlug}`
+                    : type === 'service'
                         ? `/services/${techSlug}`
                         : `/${techSlug}`,
                 type: 'Technical',
@@ -370,8 +370,8 @@ export const getUrlAnalytics = async (req: Request, res: Response) => {
             totalServices: serviceResult.rows.length,
             totalSubServices: subServiceResult.rows.length,
             averageSlugLength: {
-                services: serviceResult.rows.reduce((sum: number, row: any) => sum + row.slug_length, 0) / serviceResult.rows.length || 0,
-                subServices: subServiceResult.rows.reduce((sum: number, row: any) => sum + row.slug_length, 0) / subServiceResult.rows.length || 0
+                services: (serviceResult.rows as any[]).reduce((sum: number, row: any) => sum + (row.slug_length || 0), 0) / serviceResult.rows.length || 0,
+                subServices: (subServiceResult.rows as any[]).reduce((sum: number, row: any) => sum + (row.slug_length || 0), 0) / subServiceResult.rows.length || 0
             },
             commonPatterns: {
                 hyphenated: serviceResult.rows.filter((row: any) => row.slug.includes('-')).length,

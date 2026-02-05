@@ -255,7 +255,7 @@ router.post('/:id/validate', async (req: Request, res: Response) => {
       SELECT weight_percentage FROM qc_weightage_items WHERE config_id = $1
     `, [id]);
 
-        const totalWeight = itemsResult.rows.reduce((sum: number, item: any) => sum + item.weight_percentage, 0);
+        const totalWeight = (itemsResult.rows as any[]).reduce((sum: number, item: any) => sum + (item.weight_percentage || 0), 0);
         const isValid = totalWeight === 100;
 
         // Update config validity
