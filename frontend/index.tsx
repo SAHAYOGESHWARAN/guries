@@ -19,6 +19,44 @@ console.error = (...args) => {
   originalError.apply(console, args);
 };
 
+// Attach JWT to API calls automatically
+const originalFetch = window.fetch.bind(window);
+window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      return originalFetch(input as any, init);
+    }
+
+    const url = typeof input === 'string'
+      ? input
+      : (input instanceof URL ? input.toString() : (input as Request).url);
+
+    const isApiCall =
+      url.startsWith('/api/') ||
+      url.includes('/api/v1/') ||
+      url.includes('/api/v1');
+
+    const isAuthCall =
+      url.includes('/auth/login') ||
+      url.includes('/auth/send-otp') ||
+      url.includes('/auth/verify-otp');
+
+    if (!isApiCall || isAuthCall) {
+      return originalFetch(input as any, init);
+    }
+
+    const mergedHeaders = new Headers(init?.headers || (typeof input !== 'string' && !(input instanceof URL) ? (input as Request).headers : undefined));
+    if (!mergedHeaders.has('Authorization')) {
+      mergedHeaders.set('Authorization', `Bearer ${token}`);
+    }
+
+    return originalFetch(input as any, { ...init, headers: mergedHeaders });
+  } catch {
+    return originalFetch(input as any, init);
+  }
+};
+
 const rootElement = document.getElementById('root');
 if (rootElement) {
   const root = createRoot(rootElement);

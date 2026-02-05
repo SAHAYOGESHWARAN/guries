@@ -57,7 +57,8 @@ import * as workloadPredictionController from '../controllers/workloadPrediction
 import * as adminController from '../controllers/adminController';
 import * as urlController from '../controllers/urlController';
 
-import { requireAdmin, requirePermission, requireQCPermission } from '../middleware/roleAuth';
+import { verifyToken, requireAdmin as requireAdminJWT } from '../middleware/authMiddleware';
+import { requirePermission, requireQCPermission } from '../middleware/roleAuth';
 import { validateLoginRequest, validateOTPRequest, validateOTPVerification, sanitizeInput } from '../middleware/validation';
 import assetCategoryRoutes from './assetCategoryRoutes';
 import assetFormatRoutes from './assetFormatRoutes';
@@ -132,6 +133,9 @@ router.get('/system/stats', systemController.getSystemStats);
 router.post('/auth/login', loginLimiter, validateLoginRequest, authController.login as any);
 router.post('/auth/send-otp', otpLimiter, validateOTPRequest, authController.sendOtp as any);
 router.post('/auth/verify-otp', otpLimiter, validateOTPVerification, authController.verifyOtp as any);
+
+// Require JWT authentication for all routes below
+router.use(verifyToken as any);
 
 // --- Dashboard & Notifications ---
 router.get('/dashboard/stats', dashboardController.getDashboardStats);
@@ -245,8 +249,8 @@ router.post('/assetLibrary/:id/qc-review', asyncHandler(assetController.reviewAs
 router.post('/assetLibrary/ai-scores', asyncHandler(assetController.generateAIScores));
 
 // Admin QC Asset Review - Admin only endpoints
-router.get('/admin/qc/assets', requireAdmin, asyncHandler(assetController.getAssetsForQC));
-router.get('/admin/qc/audit-log', requireAdmin, asyncHandler(async (req, res) => {
+router.get('/admin/qc/assets', requireAdminJWT as any, asyncHandler(assetController.getAssetsForQC));
+router.get('/admin/qc/audit-log', requireAdminJWT as any, asyncHandler(async (req, res) => {
     // Get QC audit log for admin review
     const { pool } = require('../config/db-sqlite');
     const result = await pool.query(`
@@ -470,20 +474,20 @@ router.put('/roles/:id', userController.updateRole);
 router.delete('/roles/:id', userController.deleteRole);
 
 // --- Admin Console - Employee Management (Admin only) ---
-router.get('/admin/employees', requireAdmin, adminController.getEmployees);
-router.get('/admin/employees/metrics', requireAdmin, adminController.getEmployeeMetrics);
-router.get('/admin/employees/pending', requireAdmin, adminController.getPendingRegistrations);
-router.get('/admin/employees/role/:role', requireAdmin, adminController.getEmployeesByRole);
-router.get('/admin/roles/stats', requireAdmin, adminController.getRoleStats);
-router.post('/admin/employees', requireAdmin, adminController.createEmployee);
-router.put('/admin/employees/:id', requireAdmin, adminController.updateEmployee);
-router.post('/admin/employees/:id/reset-password', requireAdmin, adminController.resetPassword);
-router.post('/admin/employees/:id/deactivate', requireAdmin, adminController.deactivateEmployee);
-router.post('/admin/employees/:id/activate', requireAdmin, adminController.activateEmployee);
-router.post('/admin/employees/:id/toggle-status', requireAdmin, adminController.toggleEmployeeStatus);
-router.post('/admin/employees/:id/approve', requireAdmin, adminController.approveRegistration);
-router.post('/admin/employees/:id/reject', requireAdmin, adminController.rejectRegistration);
-router.delete('/admin/employees/:id', requireAdmin, adminController.deleteEmployee);
+router.get('/admin/employees', requireAdminJWT as any, adminController.getEmployees);
+router.get('/admin/employees/metrics', requireAdminJWT as any, adminController.getEmployeeMetrics);
+router.get('/admin/employees/pending', requireAdminJWT as any, adminController.getPendingRegistrations);
+router.get('/admin/employees/role/:role', requireAdminJWT as any, adminController.getEmployeesByRole);
+router.get('/admin/roles/stats', requireAdminJWT as any, adminController.getRoleStats);
+router.post('/admin/employees', requireAdminJWT as any, adminController.createEmployee);
+router.put('/admin/employees/:id', requireAdminJWT as any, adminController.updateEmployee);
+router.post('/admin/employees/:id/reset-password', requireAdminJWT as any, adminController.resetPassword);
+router.post('/admin/employees/:id/deactivate', requireAdminJWT as any, adminController.deactivateEmployee);
+router.post('/admin/employees/:id/activate', requireAdminJWT as any, adminController.activateEmployee);
+router.post('/admin/employees/:id/toggle-status', requireAdminJWT as any, adminController.toggleEmployeeStatus);
+router.post('/admin/employees/:id/approve', requireAdminJWT as any, adminController.approveRegistration);
+router.post('/admin/employees/:id/reject', requireAdminJWT as any, adminController.rejectRegistration);
+router.delete('/admin/employees/:id', requireAdminJWT as any, adminController.deleteEmployee);
 router.post('/admin/auth/login', adminController.validateLogin);
 
 // --- QC ---

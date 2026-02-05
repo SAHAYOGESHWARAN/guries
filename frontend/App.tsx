@@ -195,6 +195,18 @@ const App: React.FC = () => {
     id: null,
   });
 
+  const parseHash = (rawHash: string): { view: string; id: string | number | null } => {
+    const hash = rawHash.startsWith('#') ? rawHash.slice(1) : rawHash;
+    if (!hash) return { view: 'dashboard', id: null };
+
+    const [view, idPart] = hash.split('/');
+    if (!idPart) return { view, id: null };
+
+    const numericId = Number(idPart);
+    const id: string | number = Number.isFinite(numericId) ? numericId : idPart;
+    return { view, id };
+  };
+
   // Restore session from localStorage on mount
   useEffect(() => {
     // Auto-seeding of demo/admin users disabled
@@ -213,20 +225,21 @@ const App: React.FC = () => {
     //     setIsAuthenticated(false);
     //   }
     // }
+
+    const initialRoute = parseHash(window.location.hash);
+    setViewState(initialRoute);
     setIsLoading(false);
   }, []);
 
   // Listen for hash changes from ServiceMasterView and other components
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.slice(1); // Remove '#'
-      if (hash) {
-        // Small delay to ensure sessionStorage is set before component renders
-        setTimeout(() => {
-          setViewState({ view: hash, id: null });
-          window.scrollTo(0, 0);
-        }, 50);
-      }
+      const nextRoute = parseHash(window.location.hash);
+      // Small delay to ensure sessionStorage is set before component renders
+      setTimeout(() => {
+        setViewState(nextRoute);
+        window.scrollTo(0, 0);
+      }, 50);
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -235,9 +248,13 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
     setCurrentUser(null);
     setIsAuthenticated(false);
     setViewState({ view: 'dashboard', id: null });
+    if (window.location.hash !== '#dashboard') {
+      window.location.hash = 'dashboard';
+    }
   };
 
   const handleNavigate = (view: string, id: string | number | null = null) => {
@@ -245,6 +262,10 @@ const App: React.FC = () => {
       handleLogout();
     } else {
       setViewState({ view, id });
+      const nextHash = id !== null && id !== undefined ? `${view}/${id}` : view;
+      if (window.location.hash.slice(1) !== nextHash) {
+        window.location.hash = nextHash;
+      }
       window.scrollTo(0, 0);
     }
   };

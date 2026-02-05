@@ -66,7 +66,12 @@ export const hasPermission = (role: UserRole, permission: string): boolean => {
 // Middleware to check if user is authenticated
 export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        // Get user info from request headers or body
+        // Prefer JWT-authenticated user (set by authMiddleware.verifyToken)
+        if (req.user && req.user.id && req.user.role) {
+            return next();
+        }
+
+        // Fallback (legacy) - header/body based auth
         const userId = req.headers['x-user-id'] || req.body.user_id;
         const userRole = req.headers['x-user-role'] || req.body.user_role;
 
@@ -94,7 +99,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
 
 // Middleware to require admin role
 export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const userRole = (req.headers['x-user-role'] || req.body.user_role || '').toString().toLowerCase();
+    const userRole = (req.user?.role || req.headers['x-user-role'] || req.body.user_role || '').toString().toLowerCase();
 
     if (userRole !== 'admin') {
         return res.status(403).json({
@@ -109,7 +114,7 @@ export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: Nex
 // Middleware to require specific permission
 export const requirePermission = (permission: string) => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-        const userRole = (req.headers['x-user-role'] || req.body.user_role || 'guest').toString().toLowerCase() as UserRole;
+        const userRole = (req.user?.role || req.headers['x-user-role'] || req.body.user_role || 'guest').toString().toLowerCase() as UserRole;
 
         if (!hasPermission(userRole, permission)) {
             return res.status(403).json({
@@ -125,7 +130,7 @@ export const requirePermission = (permission: string) => {
 
 // Middleware to require QC review permission (admin or qc role)
 export const requireQCPermission = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const userRole = (req.headers['x-user-role'] || req.body.user_role || '').toString().toLowerCase() as UserRole;
+    const userRole = (req.user?.role || req.headers['x-user-role'] || req.body.user_role || '').toString().toLowerCase() as UserRole;
 
     if (!hasPermission(userRole, 'perform_qc_review')) {
         return res.status(403).json({

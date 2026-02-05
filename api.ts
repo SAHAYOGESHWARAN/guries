@@ -5,6 +5,8 @@
  */
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 // Mock data
 const mockAssets = [
@@ -121,6 +123,47 @@ async function parseBody(req: VercelRequest): Promise<any> {
     });
 }
 
+type AuthUser = {
+    id: number;
+    email: string;
+    role: string;
+};
+
+function getBearerToken(req: VercelRequest): string | null {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return null;
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+    return parts[1];
+}
+
+function getJwtSecret(): string {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+    return secret;
+}
+
+function signToken(payload: AuthUser): string {
+    const secret = getJwtSecret();
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    return jwt.sign(payload, secret, { expiresIn, algorithm: 'HS256' });
+}
+
+function verifyToken(token: string): AuthUser {
+    const secret = getJwtSecret();
+    const decoded = jwt.verify(token, secret);
+    if (!decoded || typeof decoded !== 'object') {
+        throw new Error('Invalid token');
+    }
+    const obj = decoded as any;
+    if (!obj.id || !obj.email || !obj.role) {
+        throw new Error('Invalid token payload');
+    }
+    return { id: Number(obj.id), email: String(obj.email), role: String(obj.role) };
+}
+
 // Main handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     setCorsHeaders(res);
@@ -145,6 +188,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 message: 'Marketing Control Center API is running',
                 version: '2.5.0'
             });
+        }
+
+        const isApiV1 = path.startsWith('/api/v1/');
+        const isAuthRoute = path.includes('/auth/login') || path.includes('/auth/send-otp') || path.includes('/auth/verify-otp');
+        const requiresAuth = isApiV1 && !isAuthRoute;
+        const requiresAdmin = path.startsWith('/api/v1/admin/');
+
+        let authUser: AuthUser | null = null;
+        if (requiresAuth) {
+            const token = getBearerToken(req);
+            if (!token) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'No authorization header provided'
+                });
+            }
+
+            try {
+                authUser = verifyToken(token);
+            } catch (e: any) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Invalid or expired token'
+                });
+            }
+
+            if (requiresAdmin && authUser.role !== 'admin') {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Admin privileges required'
+                });
+            }
         }
 
         // Assets endpoints
@@ -285,20 +360,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const body = await parseBody(req);
             const { email, password } = body;
 
-            if (email === 'admin@example.com' && password === 'admin123') {
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+            const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+            const isAdminEmail = typeof email === 'string' && email.toLowerCase() === adminEmail.toLowerCase();
+            const isPasswordValid = typeof password === 'string'
+                ? (adminPassword.startsWith('$2') ? await bcrypt.compare(password, adminPassword) : password === adminPassword)
+                : false;
+
+            if (isAdminEmail && isPasswordValid) {
+                const token = signToken({ id: 1, email: adminEmail, role: 'admin' });
                 return res.status(200).json({
                     success: true,
                     user: {
                         id: 1,
                         name: 'Admin User',
-                        email: 'admin@example.com',
+                        email: adminEmail,
                         role: 'admin',
                         status: 'active',
                         department: 'Administration',
                         created_at: new Date().toISOString(),
                         last_login: new Date().toISOString()
                     },
-                    token: 'mock-jwt-token-' + Date.now(),
+                    token,
                     message: 'Login successful'
                 });
             }

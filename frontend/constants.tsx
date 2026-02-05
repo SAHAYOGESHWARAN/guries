@@ -2,7 +2,7 @@
 import React from 'react';
 
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://guries.vercel.app/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 // Sidebar Navigation Types
 export interface NavItem {

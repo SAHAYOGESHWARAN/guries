@@ -49,6 +49,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             const data = await response.json();
 
             if (response.ok && data.user) {
+                if (data.token && typeof data.token === 'string') {
+                    localStorage.setItem('authToken', data.token);
+                }
                 const authUser: AuthUser = {
                     ...data.user,
                     role: data.user.role as UserRole,

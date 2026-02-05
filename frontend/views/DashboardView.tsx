@@ -45,13 +45,13 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const apiUrl = import.meta.env.VITE_API_URL || 'https://guries.vercel.app/api/v1';
+                const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
 
                 // Fetch stats with error handling
                 try {
-                    const statsRes = await fetch(`${apiUrl}/dashboard/stats`);
-                    if (statsRes.ok) {
-                        const statsData = await statsRes.json();
+                    const statsResponse = await fetch(`${apiUrl}/dashboard/stats`);
+                    if (statsResponse.ok) {
+                        const statsData = await statsResponse.json();
                         setStats(statsData);
                     } else {
                         // Fallback stats
