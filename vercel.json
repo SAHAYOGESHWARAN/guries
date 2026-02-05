@@ -11,17 +11,26 @@
     "DB_CLIENT": "mock",
     "USE_PG": "false"
   },
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
+      }
+    }
+  ],
   "routes": [
     {
-      "src": "/api/v1/(.*)",
+      "src": "/api/(.*)",
       "dest": "/api/index.ts"
     },
     {
       "src": "/health",
-      "dest": "/api/index.ts"
-    },
-    {
-      "src": "/api/health",
       "dest": "/api/index.ts"
     },
     {
