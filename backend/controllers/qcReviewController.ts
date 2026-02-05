@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
+import { getSocket } from '../socket';
 
 /**
  * QC Review Controller
@@ -173,6 +174,27 @@ export const approveAsset = async (req: Request, res: Response) => {
         const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [finalAssetId]);
         const parsed = parseAssetRow(updatedAsset.rows[0]);
 
+        // Emit socket event so frontend lists update in real-time
+        try {
+            getSocket().emit('assetLibrary_updated', parsed);
+        } catch (e) {
+            console.warn('Failed to emit assetLibrary_updated socket event', e);
+        }
+
+        // Create a notification for the asset owner (best-effort)
+        try {
+            const userId = parsed.created_by || parsed.submitted_by || null;
+            const title = 'Asset Approved';
+            const message = `Your asset "${parsed.asset_name || parsed.name || parsed.id}" was approved by QC.`;
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)',
+                [userId, title, message, 'qc']
+            );
+            try { getSocket().emit('notification_created', { user_id: userId, title, message, type: 'qc' }); } catch (e) { /* noop */ }
+        } catch (e) {
+            console.warn('Failed to create notification for approval', e);
+        }
+
         res.status(200).json({
             message: 'Asset approved successfully',
             asset_id: finalAssetId,
@@ -249,6 +271,24 @@ export const rejectAsset = async (req: Request, res: Response) => {
 
         // Get updated asset
         const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [finalAssetId]);
+        const parsed = parseAssetRow(updatedAsset.rows[0]);
+
+        // Emit socket event
+        try { getSocket().emit('assetLibrary_updated', parsed); } catch (e) { /* noop */ }
+
+        // Notification for rejection
+        try {
+            const userId = parsed.created_by || parsed.submitted_by || null;
+            const title = 'Asset Rejected';
+            const message = `Your asset "${parsed.asset_name || parsed.name || parsed.id}" was rejected in QC. Remarks: ${qc_remarks}`;
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)',
+                [userId, title, message, 'qc']
+            );
+            try { getSocket().emit('notification_created', { user_id: userId, title, message, type: 'qc' }); } catch (e) { /* noop */ }
+        } catch (e) {
+            console.warn('Failed to create notification for rejection', e);
+        }
 
         res.status(200).json({
             message: 'Asset rejected successfully',
@@ -256,7 +296,7 @@ export const rejectAsset = async (req: Request, res: Response) => {
             qc_status: 'Fail',
             linking_active: 0,
             status: 'Rejected',
-            asset: updatedAsset.rows[0]
+            asset: parsed
         });
     } catch (error: any) {
         console.error('Error rejecting asset:', error);
@@ -309,6 +349,24 @@ export const requestRework = async (req: Request, res: Response) => {
 
         // Get updated asset
         const updatedAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [finalAssetId]);
+        const parsed = parseAssetRow(updatedAsset.rows[0]);
+
+        // Emit socket event
+        try { getSocket().emit('assetLibrary_updated', parsed); } catch (e) { /* noop */ }
+
+        // Notification for rework
+        try {
+            const userId = parsed.created_by || parsed.submitted_by || null;
+            const title = 'Rework Requested';
+            const message = `Rework requested for your asset "${parsed.asset_name || parsed.name || parsed.id}". Remarks: ${qc_remarks}`;
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)',
+                [userId, title, message, 'qc']
+            );
+            try { getSocket().emit('notification_created', { user_id: userId, title, message, type: 'qc' }); } catch (e) { /* noop */ }
+        } catch (e) {
+            console.warn('Failed to create notification for rework', e);
+        }
 
         res.status(200).json({
             message: 'Rework requested successfully',
@@ -317,7 +375,7 @@ export const requestRework = async (req: Request, res: Response) => {
             linking_active: 0,
             status: 'Rework Requested',
             rework_count: currentReworkCount + 1,
-            asset: updatedAsset.rows[0]
+            asset: parsed
         });
     } catch (error: any) {
         console.error('Error requesting rework:', error);

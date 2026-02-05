@@ -24,13 +24,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    // Resolve compiled backend controller relative to this file with multiple fallback paths
+    // Resolve compiled backend QC controller relative to this file with multiple fallback paths
     const possiblePaths = [
-        path.resolve(__dirname, '../../../backend/dist/controllers/assetController.js'),
-        path.resolve(__dirname, '../../../../backend/dist/controllers/assetController.js'),
-        path.resolve(process.cwd(), 'backend/dist/controllers/assetController.js'),
-        path.resolve(__dirname, '../../backend/dist/controllers/assetController.js'),
-        path.resolve(__dirname, '../../../backend/dist/controllers/assetController.js')
+        path.resolve(__dirname, '../../../backend/dist/controllers/qcReviewController.js'),
+        path.resolve(__dirname, '../../../backend/dist/controllers/qcReviewController.cjs'),
+        path.resolve(__dirname, '../../../backend/dist/controllers/qcReviewController.ts'),
+        path.resolve(__dirname, '../../../../backend/dist/controllers/qcReviewController.js'),
+        path.resolve(process.cwd(), 'backend/dist/controllers/qcReviewController.js'),
+        path.resolve(process.cwd(), 'backend/dist/controllers/qcReviewController.cjs')
     ];
 
     let controllerPath = '';
@@ -41,22 +42,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    let reviewAsset: any = null;
+    let qcModule: any = null;
     try {
-        if (fs.existsSync(controllerPath)) {
+        if (controllerPath && fs.existsSync(controllerPath)) {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const mod: any = require(controllerPath);
-            reviewAsset = mod.reviewAsset || (mod.default && mod.default.reviewAsset) || mod.default;
-            console.log('Successfully loaded backend controller from:', controllerPath);
-        }
-        else {
-            console.error('Backend controller not found. Attempted paths:', possiblePaths);
+            qcModule = mod.qcReviewController || mod || (mod.default && mod.default);
+            console.log('Successfully loaded QC backend controller from:', controllerPath);
+        } else {
+            console.error('Backend QC controller not found. Attempted paths:', possiblePaths);
             console.error('Current working directory:', process.cwd());
             console.error('__dirname:', __dirname);
         }
-    }
-    catch (err) {
-        console.error('Error loading backend controller at', controllerPath, err);
+    } catch (err) {
+        console.error('Error loading QC backend controller at', controllerPath, err);
     }
 
     const expressReq: any = {
@@ -76,12 +75,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     try {
-        if (!reviewAsset) {
-            // Fallback inline implementation for Vercel deployment
+        if (!qcModule) {
+            // Fallback inline implementation for Vercel deployment (no backend available)
             console.log('Using fallback inline QC review POST implementation');
-            
+
             const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, user_role } = req.body;
-            
+
             if (!qc_score || !qc_decision || !qc_reviewer_id) {
                 return res.status(400).json({
                     error: 'Missing required fields: qc_score, qc_decision, qc_reviewer_id'
@@ -94,7 +93,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            // Mock successful response (in real implementation, this would update the database)
             const response = {
                 success: true,
                 message: `Asset ${id} has been ${qc_decision}`,
@@ -115,8 +113,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             res.status(200).json(response);
             return;
         }
-        
-        await reviewAsset(expressReq, expressRes);
+
+        // If qcModule is present, dispatch to the appropriate controller method
+        const decision = (req.body && req.body.qc_decision) ? String(req.body.qc_decision).toLowerCase() : null;
+        if (!decision) {
+            return res.status(400).json({ error: 'Missing qc_decision in request body' });
+        }
+
+        if (decision === 'approved' && typeof qcModule.approveAsset === 'function') {
+            await qcModule.approveAsset(expressReq, expressRes);
+            return;
+        }
+
+        if (decision === 'rejected' && typeof qcModule.rejectAsset === 'function') {
+            await qcModule.rejectAsset(expressReq, expressRes);
+            return;
+        }
+
+        if (decision === 'rework' && typeof qcModule.requestRework === 'function') {
+            await qcModule.requestRework(expressReq, expressRes);
+            return;
+        }
+
+        // If none matched, attempt a generic handler name
+        if (typeof qcModule.reviewAsset === 'function') {
+            await qcModule.reviewAsset(expressReq, expressRes);
+            return;
+        }
+
+        return res.status(500).json({ error: 'QC handler function not found in backend controller' });
     }
     catch (err: any) {
         console.error('qc-review handler error:', err);
