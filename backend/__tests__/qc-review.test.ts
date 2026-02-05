@@ -1,13 +1,30 @@
 import request from 'supertest';
 import { app } from '../server';
 import { pool } from '../config/db';
+import jwt from 'jsonwebtoken';
+
+// Helper to generate valid JWT tokens for testing
+const generateTestToken = (userId: number, role: string) => {
+    const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production-12345';
+    return jwt.sign(
+        { id: userId, email: `user${userId}@test.com`, role },
+        JWT_SECRET,
+        { expiresIn: '7d', algorithm: 'HS256' }
+    );
+};
 
 describe('QC Review Functionality', () => {
     let testAssetId: number;
     const adminUserId = 1;
     const testUserId = 2;
+    let adminToken: string;
+    let userToken: string;
 
     beforeAll(async () => {
+        // Generate test tokens
+        adminToken = generateTestToken(adminUserId, 'admin');
+        userToken = generateTestToken(testUserId, 'user');
+
         // Create test asset
         const assetResult = await pool.query(
             `INSERT INTO assets (
@@ -31,8 +48,7 @@ describe('QC Review Functionality', () => {
         test('should reject QC review without admin role', async () => {
             const response = await request(app)
                 .post(`/api/v1/assetLibrary/${testAssetId}/qc-review`)
-                .set('X-User-Id', String(testUserId))
-                .set('X-User-Role', 'user')
+                .set('Authorization', `Bearer ${userToken}`)
                 .send({
                     qc_score: 85,
                     qc_remarks: 'Good quality',
@@ -48,8 +64,7 @@ describe('QC Review Functionality', () => {
         test('should approve asset with valid admin request', async () => {
             const response = await request(app)
                 .post(`/api/v1/assetLibrary/${testAssetId}/qc-review`)
-                .set('X-User-Id', String(adminUserId))
-                .set('X-User-Role', 'admin')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     qc_score: 90,
                     qc_remarks: 'Excellent quality',
@@ -86,8 +101,7 @@ describe('QC Review Functionality', () => {
 
             const response = await request(app)
                 .post(`/api/v1/assetLibrary/${rejectAssetId}/qc-review`)
-                .set('X-User-Id', String(adminUserId))
-                .set('X-User-Role', 'admin')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     qc_score: 40,
                     qc_remarks: 'Quality below standards',
@@ -127,8 +141,7 @@ describe('QC Review Functionality', () => {
 
             const response = await request(app)
                 .post(`/api/v1/assetLibrary/${reworkAssetId}/qc-review`)
-                .set('X-User-Id', String(adminUserId))
-                .set('X-User-Role', 'admin')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     qc_score: 65,
                     qc_remarks: 'Needs minor revisions',
@@ -158,8 +171,7 @@ describe('QC Review Functionality', () => {
         test('should reject invalid QC decision', async () => {
             const response = await request(app)
                 .post(`/api/v1/assetLibrary/${testAssetId}/qc-review`)
-                .set('X-User-Id', String(adminUserId))
-                .set('X-User-Role', 'admin')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     qc_score: 85,
                     qc_remarks: 'Test',
@@ -176,8 +188,7 @@ describe('QC Review Functionality', () => {
         test('should return 404 for non-existent asset', async () => {
             const response = await request(app)
                 .post(`/api/v1/assetLibrary/99999/qc-review`)
-                .set('X-User-Id', String(adminUserId))
-                .set('X-User-Role', 'admin')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     qc_score: 85,
                     qc_remarks: 'Test',
@@ -195,11 +206,11 @@ describe('QC Review Functionality', () => {
         test('should retrieve QC reviews for an asset', async () => {
             const response = await request(app)
                 .get(`/api/v1/assetLibrary/${testAssetId}/qc-reviews`)
-                .set('X-User-Id', String(testUserId))
-                .set('X-User-Role', 'user');
+                .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(200);
-            expect(Array.isArray(response.body)).toBe(true);
+            expect(response.body).toHaveProperty('reviews');
+            expect(Array.isArray(response.body.reviews)).toBe(true);
         });
     });
 });
