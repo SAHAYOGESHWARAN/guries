@@ -33,4 +33,16 @@ SECURITY_SETUP.md
 .DS_Store
 Thumbs.db
 backend/
+frontend/hooks/
+frontend/utils/
+frontend/data/
+frontend/vite.config.ts
+frontend/vitest.config.ts
+frontend/vite-env.d.ts
+frontend/types.ts
+frontend/seed-admin.ts
+frontend/src/
+frontend/styles/
+frontend/tests/
+frontend/components/__tests__/
 
