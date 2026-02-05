@@ -74,25 +74,10 @@ try {
     }
 
     // Ensure default admin user exists
-    const adminUser = db.prepare("SELECT * FROM users WHERE email = 'admin@example.com'").get();
-    if (!adminUser) {
-        // Create default admin with hashed password 'admin123'
-        const crypto = require('crypto');
-        const defaultPassword = crypto.createHash('sha256').update('admin123').digest('hex');
-
-        db.prepare(`
-            INSERT INTO users (name, email, role, status, password_hash, department, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-        `).run('Admin User', 'admin@example.com', 'admin', 'active', defaultPassword, 'Administration');
-
-        console.log('  ✅ Created default admin user (admin@example.com / admin123)');
-    } else {
-        // Update existing admin to have admin role if not set
-        if (adminUser.role !== 'admin') {
-            db.prepare("UPDATE users SET role = 'admin' WHERE email = 'admin@example.com'").run();
-            console.log('  ✅ Updated admin user role');
-        }
-    }
+    // NOTE: Automatic creation of a demo admin account has been disabled.
+    // If you need to create an admin manually, run a dedicated script or use the admin console.
+    // const adminUser = db.prepare("SELECT * FROM users WHERE email = 'admin@example.com'").get();
+    // (Admin creation intentionally disabled)
 
     console.log('✅ Admin Console migration completed successfully!');
 

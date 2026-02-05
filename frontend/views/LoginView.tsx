@@ -96,26 +96,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             setOtp(['', '', '', '', '', '']);
             setIsLoading(false);
         } else {
-            // Hardcoded admin credentials for testing
-            const ADMIN_EMAIL = 'admin@example.com';
-            const ADMIN_PASSWORD = 'admin123';
-
-            // Check if credentials match admin
-            if (formData.email.toLowerCase() === ADMIN_EMAIL && formData.password === ADMIN_PASSWORD) {
-                const adminUser: AuthUser = {
-                    id: 1,
-                    name: 'Admin User',
-                    email: ADMIN_EMAIL,
-                    role: 'admin' as UserRole,
-                    status: 'active',
-                    created_at: new Date().toISOString(),
-                    department: 'Administration',
-                    last_login: new Date().toISOString()
-                };
-                onLogin(adminUser);
-                setIsLoading(false);
-                return;
-            }
+            // No hardcoded/demo credentials. Proceed to API/local checks.
 
             // Try backend API for other users
             const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';

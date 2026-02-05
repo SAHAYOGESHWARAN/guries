@@ -59,11 +59,7 @@ const mockAssets = [
     }
 ];
 
-const mockUsers = [
-    { id: 1, name: "John Designer", email: "john@example.com", role: "designer", status: "active" },
-    { id: 2, name: "Sarah Writer", email: "sarah@example.com", role: "writer", status: "active" },
-    { id: 3, name: "Admin User", email: "admin@example.com", role: "admin", status: "active" }
-];
+const mockUsers: any[] = [];
 
 const mockServices = [
     {
@@ -392,16 +388,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ]);
         }
 
-        // Authentication endpoint
+        // Authentication endpoint (no demo backdoor)
         if (path.includes('/auth/login')) {
-            const { email, password } = req.body;
-            if (email === 'admin@example.com' && password === 'admin123') {
-                const user = mockUsers.find(u => u.email === email);
-                return res.status(200).json({
-                    success: true,
-                    user: user,
-                    token: 'mock-jwt-token'
-                });
+            const { email } = req.body;
+            const user = mockUsers.find(u => u.email === email);
+            if (user) {
+                return res.status(200).json({ success: true, user: user, token: 'mock-jwt-token' });
             }
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }

@@ -197,25 +197,7 @@ const App: React.FC = () => {
 
   // Restore session from localStorage on mount
   useEffect(() => {
-    // Seed admin user to localStorage if not exists
-    const existingUsers = localStorage.getItem('users');
-    let users = existingUsers ? JSON.parse(existingUsers) : [];
-
-    const adminExists = users.some((u: any) => u.email === 'admin@example.com');
-    if (!adminExists) {
-      users.push({
-        id: 1,
-        name: 'Admin User',
-        email: 'admin@example.com',
-        password: 'admin123', // Store password hash in real app
-        role: 'admin',
-        status: 'active',
-        department: 'Administration',
-        created_at: new Date().toISOString(),
-        last_login: new Date().toISOString()
-      });
-      localStorage.setItem('users', JSON.stringify(users));
-    }
+    // Auto-seeding of demo/admin users disabled
 
     // Check for existing session and auto-login - REMOVED to force login every time
     // const savedUser = localStorage.getItem('currentUser');

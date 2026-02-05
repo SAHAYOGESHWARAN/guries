@@ -34,5 +34,5 @@ export function seedAdminUser() {
     return adminUser;
 }
 
-// Auto-seed on import
-seedAdminUser();
+// Auto-seed on import (disabled)
+// seedAdminUser();
