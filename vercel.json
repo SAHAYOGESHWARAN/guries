@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
   "env": {
     "ADMIN_EMAIL": "admin@example.com",
     "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
