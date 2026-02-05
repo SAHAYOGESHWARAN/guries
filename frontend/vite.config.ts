@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
             },
         },
         build: {
-            outDir: 'dist',
+            outDir: path.resolve(__dirname, 'dist'),
             sourcemap: process.env.NODE_ENV === 'development',
             minify: 'esbuild',
             cssMinify: true,
