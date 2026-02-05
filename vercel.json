@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "echo 'Skipping build - using pre-built assets'",
+  "outputDirectory": ".",
   "env": {
     "ADMIN_EMAIL": "admin@example.com",
     "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
