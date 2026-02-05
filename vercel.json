@@ -3,15 +3,13 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "env": {
-    "ADMIN_EMAIL": "@admin_email",
-    "ADMIN_PASSWORD": "@admin_password",
-    "JWT_SECRET": "@jwt_secret"
-  },
-  "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
+    "ADMIN_EMAIL": "admin@example.com",
+    "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
+    "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production",
+    "JWT_EXPIRES_IN": "7d",
+    "NODE_ENV": "production",
+    "DB_CLIENT": "mock",
+    "USE_PG": "false"
   },
   "routes": [
     {
