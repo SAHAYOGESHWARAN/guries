@@ -29,6 +29,13 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
+// Log environment variables on startup (for debugging)
+console.log('🔐 Auth Configuration Loaded:');
+console.log('   ADMIN_EMAIL:', ADMIN_EMAIL);
+console.log('   ADMIN_PASSWORD:', ADMIN_PASSWORD ? '✅ SET' : '❌ NOT SET');
+console.log('   JWT_SECRET:', JWT_SECRET ? '✅ SET' : '❌ NOT SET');
+console.log('   JWT_EXPIRES_IN:', JWT_EXPIRES_IN);
+
 // Helper function to generate JWT token
 const generateJWT = (payload: { id: number; email: string; role: string }): string => {
     return jwt.sign(payload, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN, algorithm: 'HS256' });
@@ -52,14 +59,24 @@ export const login = async (req: Request, res: Response) => {
     }
 
     try {
+        console.log('🔐 Login attempt:', { email, adminEmail: ADMIN_EMAIL });
+
         // Check admin credentials
         if (email.toLowerCase() === ADMIN_EMAIL!.toLowerCase()) {
+            console.log('✅ Email matches admin email');
+            console.log('🔑 Comparing password with hash...');
+
             const isPasswordValid = await bcrypt.compare(password, ADMIN_PASSWORD!);
+            console.log('🔐 Password valid:', isPasswordValid);
+
             if (!isPasswordValid) {
+                console.log('❌ Password mismatch');
                 return res.status(401).json({ error: 'Invalid email or password' });
             }
 
             const token = generateJWT({ id: 1, email: ADMIN_EMAIL!, role: 'admin' });
+            console.log('✅ Login successful, token generated');
+
             return res.status(200).json({
                 success: true,
                 user: {
@@ -76,6 +93,8 @@ export const login = async (req: Request, res: Response) => {
                 message: 'Login successful'
             });
         }
+
+        console.log('❌ Email does not match admin email');
 
         // Check database for other users
         const result = await pool.query(

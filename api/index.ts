@@ -124,8 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Health check endpoints
         if (path === '/health' || path === '/api/health' || path === '/api/v1/health') {
-            return res.status(200).json({ 
-                status: 'ok', 
+            return res.status(200).json({
+                status: 'ok',
                 timestamp: new Date().toISOString(),
                 message: 'Marketing Control Center API is running'
             });
@@ -388,19 +388,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ]);
         }
 
-        // Authentication endpoint (no demo backdoor)
+        // Authentication endpoint
         if (path.includes('/auth/login')) {
-            const { email } = req.body;
-            const user = mockUsers.find(u => u.email === email);
-            if (user) {
-                return res.status(200).json({ success: true, user: user, token: 'mock-jwt-token' });
+            const { email, password } = req.body;
+
+            // Admin credentials
+            if (email === 'admin@example.com' && password === 'admin123') {
+                return res.status(200).json({
+                    success: true,
+                    user: {
+                        id: 1,
+                        name: 'Admin User',
+                        email: 'admin@example.com',
+                        role: 'admin',
+                        status: 'active',
+                        department: 'Administration',
+                        created_at: new Date().toISOString(),
+                        last_login: new Date().toISOString()
+                    },
+                    token: 'mock-jwt-token-' + Date.now(),
+                    message: 'Login successful'
+                });
             }
-            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
 
         // Default response for unhandled routes
-        return res.status(404).json({ 
-            success: false, 
+        return res.status(404).json({
+            success: false,
             error: 'Route not found',
             path: path,
             timestamp: new Date().toISOString()
