@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "echo 'Build skipped - using pre-built assets'",
   "outputDirectory": ".",
   "env": {
     "NODE_ENV": "production",
@@ -11,24 +11,10 @@
     "DB_CLIENT": "mock",
     "USE_PG": "false"
   },
-  "functions": {
-    "api.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api.ts",
-      "methods": [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-        "PATCH",
-        "OPTIONS"
-      ]
+      "dest": "/api.ts"
     },
     {
       "src": "/health",
