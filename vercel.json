@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm run build:frontend",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && cd ..",
+  "installCommand": "npm ci --legacy-peer-deps",
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1",
