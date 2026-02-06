@@ -138,7 +138,7 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
                 if (process.env.NODE_ENV === 'development') {
                     console.error('Error fetching dashboard data:', error);
                 }
-                
+
                 // Set fallback data on any error
                 setStats({
                     stats: {
@@ -233,9 +233,9 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
     }
 
     return (
-        <div className="h-full w-full flex flex-col bg-slate-50">
+        <div className="h-full w-full flex flex-col bg-slate-50 overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-8 py-6">
+            <div className="bg-white border-b border-slate-200 px-8 py-6 flex-shrink-0">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
                     <p className="text-sm text-slate-500 mt-1">Search campaigns, tasks, content...</p>
@@ -243,7 +243,7 @@ const DashboardView: React.FC<{ onNavigate?: (view: any, id?: any) => void }> = 
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-8">
+            <div className="flex-1 overflow-y-auto p-8 w-full">
                 <div className="max-w-7xl mx-auto space-y-8">
 
                     {/* Stats Grid */}

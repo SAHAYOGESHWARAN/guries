@@ -10,8 +10,8 @@ window.addEventListener('unhandledrejection', (event) => {
   // Suppress browser extension and external resource errors
   if (event.reason && typeof event.reason === 'string') {
     if (event.reason.includes('webpage_content_reporter') ||
-        event.reason.includes('grainy-gradients') ||
-        event.reason.includes('402')) {
+      event.reason.includes('grainy-gradients') ||
+      event.reason.includes('402')) {
       event.preventDefault();
       return;
     }
@@ -447,7 +447,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       {/* Sidebar - Compact Width */}
       <Sidebar
         currentView={viewState.view}
@@ -456,15 +456,15 @@ const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-slate-50/50">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-slate-50/50 h-screen w-full">
         <Header
           onNavigate={(view, id) => handleNavigate(view, id)}
           onLogout={handleLogout}
         />
 
-        {/* Main scroll container set to overflow-hidden to allow views to manage their own scrolling */}
-        <main className="flex-1 overflow-hidden relative">
-          <div className="h-full w-full">
+        {/* Main scroll container - fills remaining space */}
+        <main className="flex-1 overflow-auto relative w-full h-full">
+          <div className="w-full h-full min-h-full">
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
                 {renderView()}
