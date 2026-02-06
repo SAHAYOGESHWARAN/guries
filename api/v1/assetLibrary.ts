@@ -19,6 +19,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const pool = getPool();
 
+        // Parse request body - handle multiple formats
+        let body = req.body || {};
+
+        if (typeof body === 'string') {
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                console.error('[API] Failed to parse string body:', body);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid JSON in request body',
+                    details: e instanceof Error ? e.message : 'Unknown error'
+                });
+            }
+        } else if (typeof body === 'object' && body !== null) {
+            // Body is already an object, use as-is
+        } else {
+            body = {};
+        }
+
         if (req.method === 'GET') {
             // Get all assets
             const result = await pool.query(
@@ -44,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 application_type,
                 name,
                 type
-            } = req.body;
+            } = body;
 
             const assetNameValue = asset_name || name;
 
@@ -83,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'PUT') {
             // Update asset
             const { id } = req.query;
-            const { asset_name, status } = req.body;
+            const { asset_name, status } = body;
 
             if (!id) {
                 return res.status(400).json({

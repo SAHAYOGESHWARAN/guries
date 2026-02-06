@@ -13,7 +13,13 @@
     "DB_CLIENT": "pg",
     "USE_PG": "true",
     "SUPABASE_URL": "https://nouyqizbqgoyscryexeg.supabase.co",
-    "SUPABASE_ANON_KEY": "sb_publishable_fzIkuQRYsy9TlRL0yY3l9w_AmREcEvk"
+    "SUPABASE_ANON_KEY": "sb_publishable_fzIkuQRYsy9TlRL0yY3l9w_AmREcEvk",
+    "DATABASE_URL": "postgresql://postgres:HeiWPgZkRkBWhWtr@db.nouyqizbqgoyscryexeg.supabase.co:5432/postgres",
+    "DB_HOST": "db.nouyqizbqgoyscryexeg.supabase.co",
+    "DB_PORT": "5432",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "HeiWPgZkRkBWhWtr",
+    "DB_NAME": "postgres"
   },
   "functions": {
     "api/**/*.ts": {
