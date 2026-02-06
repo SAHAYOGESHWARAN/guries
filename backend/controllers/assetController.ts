@@ -7,64 +7,41 @@ import { getSocket } from '../socket';
 
 export const getAssets = async (req: Request, res: Response) => {
     try {
-        const result = query('SELECT * FROM assets ORDER BY created_at DESC');
-        res.status(200).json((await result).rows);
+        const result = await pool.query('SELECT * FROM assets ORDER BY created_at DESC LIMIT 100');
+        res.status(200).json(result.rows || []);
     } catch (error: any) {
+        console.error('getAssets error:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
 export const createAsset = async (req: Request, res: Response) => {
-    const { name, type, repository, application_type, linked_task, owner_id, usage_status, social_meta, status, qc_status, linking_active } = req.body;
+    const { asset_name, asset_type, asset_category, asset_format, status } = req.body;
 
-    // Validate required fields
-    const errors = validateRequired(req.body, ['name', 'type']);
-    throwIfErrors(errors);
+    if (!asset_name || !asset_type) {
+        return res.status(400).json({ error: 'asset_name and asset_type are required' });
+    }
 
     try {
-        const sanitized = sanitizeObject(req.body);
-
-        // Determine application_type from repository or application_type field
-        let appType = application_type;
-        if (!appType && repository) {
-            const repoMap: Record<string, string> = {
-                'Web': 'web',
-                'SEO': 'seo',
-                'SMM': 'smm',
-                'web': 'web',
-                'seo': 'seo',
-                'smm': 'smm'
-            };
-            appType = repoMap[repository] || 'web';
-        }
-        appType = appType || 'web'; // Default to web
-
-        const sql = `INSERT INTO assets (
-            asset_name, asset_type, file_url, description, tags, social_meta, application_type, status, qc_status, linking_active, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
-
-        const result = execute(sql, [
-            sanitized.name,
-            sanitized.type,
-            repository || '',
-            '',
-            sanitized.repository || '',
-            JSON.stringify(social_meta || {}),
-            appType,
-            status || 'Draft',
-            qc_status || 'Pending',
-            linking_active !== undefined ? linking_active : 1
-        ]);
-
-        // Fetch the created asset
-        const newAsset = queryOne(
-            'SELECT * FROM assets WHERE id = ?',
-            [(await result).lastID]
+        const result = await pool.query(
+            `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+            [asset_name, asset_type, asset_category || null, asset_format || null, status || 'draft']
         );
 
-        getSocket().emit('asset_created', newAsset);
+        const newAsset = {
+            id: result.rows?.[0]?.id || result.lastID,
+            asset_name,
+            asset_type,
+            asset_category,
+            asset_format,
+            status: status || 'draft',
+            created_at: new Date().toISOString()
+        };
+
         res.status(201).json(newAsset);
     } catch (error: any) {
+        console.error('createAsset error:', error);
         res.status(500).json({ error: error.message });
     }
 };
