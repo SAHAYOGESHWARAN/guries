@@ -22,7 +22,7 @@ export const createAsset = async (req: Request, res: Response) => {
     }
 
     try {
-        await pool.query(
+        const result = await pool.query(
             `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, created_at)
              VALUES ($1, $2, $3, $4, $5, NOW())`,
             [asset_name, asset_type, asset_category || null, asset_format || null, status || 'draft']
@@ -34,13 +34,14 @@ export const createAsset = async (req: Request, res: Response) => {
             asset_category,
             asset_format,
             status: status || 'draft',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            message: 'Asset created successfully'
         };
 
         res.status(201).json(newAsset);
     } catch (error: any) {
-        console.error('createAsset error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('createAsset error:', error.message);
+        res.status(500).json({ error: error.message, hint: 'Check if assets table exists' });
     }
 };
 
