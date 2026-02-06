@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../constants';
 import '../styles/AssetManager.css';
 
 interface Asset {
@@ -27,7 +28,7 @@ export function AssetManager() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/v1/assetLibrary');
+            const response = await fetch(`${API_BASE_URL}/assetLibrary`);
             if (!response.ok) throw new Error('Failed to fetch assets');
             const data = await response.json();
             setAssets(data.data || []);
@@ -50,7 +51,7 @@ export function AssetManager() {
         setError(null);
 
         try {
-            const response = await fetch('/api/v1/assetLibrary', {
+            const response = await fetch(`${API_BASE_URL}/assetLibrary`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -85,7 +86,7 @@ export function AssetManager() {
         setError(null);
 
         try {
-            const response = await fetch(`/api/v1/assetLibrary/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/assetLibrary/${id}`, {
                 method: 'DELETE'
             });
 
@@ -106,7 +107,7 @@ export function AssetManager() {
         setError(null);
 
         try {
-            const response = await fetch(`/api/v1/assetLibrary/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/assetLibrary/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })

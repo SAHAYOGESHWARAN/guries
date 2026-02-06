@@ -1,30 +1,33 @@
 import { Pool, PoolClient } from 'pg';
 
-let pool: Pool | null = null;
+// Global pool for serverless environments
+const globalForPg = global as any;
 
 export const getPool = (): Pool => {
-    if (!pool) {
+    if (!globalForPg.pgPool) {
         const connectionString = process.env.DATABASE_URL;
 
         if (!connectionString) {
             throw new Error('DATABASE_URL environment variable is not set');
         }
 
-        pool = new Pool({
+        console.log('[DB] Creating new pool with DATABASE_URL');
+
+        globalForPg.pgPool = new Pool({
             connectionString,
             ssl: { rejectUnauthorized: false },
-            max: 10,
+            max: 5,
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 5000,
         });
 
-        pool.on('error', (err) => {
+        globalForPg.pgPool.on('error', (err: any) => {
             console.error('[DB] Pool error:', err);
-            pool = null;
+            globalForPg.pgPool = null;
         });
     }
 
-    return pool;
+    return globalForPg.pgPool;
 };
 
 export const initializeDatabase = async (): Promise<void> => {

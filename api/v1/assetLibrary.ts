@@ -101,8 +101,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (req.method === 'PUT') {
-            // Update asset
-            const { id } = req.query;
+            // Update asset - handle both /assetLibrary/:id and /assetLibrary?id=:id
+            let id = req.query.id;
+            if (!id && req.url) {
+                const match = req.url.match(/\/(\d+)(?:\?|$)/);
+                if (match) id = match[1];
+            }
+
             const { asset_name, status } = body;
 
             if (!id) {
@@ -135,8 +140,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (req.method === 'DELETE') {
-            // Delete asset
-            const { id } = req.query;
+            // Delete asset - handle both /assetLibrary/:id and /assetLibrary?id=:id
+            let id = req.query.id;
+            if (!id && req.url) {
+                const match = req.url.match(/\/(\d+)(?:\?|$)/);
+                if (match) id = match[1];
+            }
 
             if (!id) {
                 return res.status(400).json({
