@@ -5,6 +5,7 @@
   "installCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && cd ..",
   "env": {
     "NODE_ENV": "production",
+    "VITE_API_URL": "/api/v1",
     "ADMIN_EMAIL": "admin@example.com",
     "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
     "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-12345",
@@ -23,19 +24,28 @@
     },
     {
       "src": "/(.*\\.js)$",
-      "dest": "/frontend/dist/$1"
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8"
+      }
+    },
+    {
+      "src": "/(.*\\.mjs)$",
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8"
+      }
     },
     {
       "src": "/(.*\\.css)$",
-      "dest": "/frontend/dist/$1"
+      "headers": {
+        "Content-Type": "text/css; charset=utf-8"
+      }
     },
     {
-      "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
-      "dest": "/frontend/dist/$1"
+      "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/dist/index.html"
+      "dest": "/index.html"
     }
   ]
 }

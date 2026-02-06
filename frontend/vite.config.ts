@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
     // Determine API URL based on environment
     const isProduction = mode === 'production';
     const apiUrl = isProduction
-        ? '' // Use relative path in production (same domain)
+        ? (env.VITE_API_URL || '/api/v1') // Use relative path in production
         : (env.VITE_API_URL || 'http://localhost:3003/api/v1');
 
     return {
