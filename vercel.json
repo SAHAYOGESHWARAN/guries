@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "node backend/init-vercel-db.js && npm run vercel-build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
