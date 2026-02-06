@@ -147,7 +147,7 @@ const KeywordMasterView: React.FC = () => {
     ];
 
     return (
-        <div className="space-y-6 h-full overflow-y-auto w-full pr-1 animate-fade-in">
+        <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50 animate-fade-in">
             <div className="flex justify-between items-start">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Keyword Master</h1>

@@ -331,7 +331,7 @@ const ContentRepositoryView: React.FC = () => {
 
 
     return (
-        <div className="h-full flex flex-col w-full p-6 overflow-hidden bg-slate-50">
+        <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50">
             {showCreateModal && renderCreateModal()}
 
             {/* Header */}

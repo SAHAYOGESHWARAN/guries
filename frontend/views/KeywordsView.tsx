@@ -12,12 +12,12 @@ const COMPETITIONS = ['All Competition', 'High', 'Medium', 'Low'];
 
 const KeywordsView: React.FC = () => {
     const { data: keywords, create, update, remove } = useData<Keyword>('keywords');
-    
+
     const [searchQuery, setSearchQuery] = useState('');
     const [intentFilter, setIntentFilter] = useState('All Intent');
     const [typeFilter, setTypeFilter] = useState('All Types');
     const [competitionFilter, setCompetitionFilter] = useState('All Competition');
-    
+
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [editingItem, setEditingItem] = useState<Keyword | null>(null);
     const [formData, setFormData] = useState<Partial<Keyword>>({
@@ -55,7 +55,7 @@ const KeywordsView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if(confirm('Delete this keyword?')) await remove(id);
+        if (confirm('Delete this keyword?')) await remove(id);
     };
 
     const handleSave = async () => {
@@ -80,9 +80,9 @@ const KeywordsView: React.FC = () => {
         { header: 'Volume', accessor: (item: Keyword) => item.search_volume.toLocaleString(), className: "font-mono text-slate-700" },
         { header: 'Comp', accessor: (item: Keyword) => <span className={getCompetitionColor(item.competition)}>{item.competition}</span> },
         { header: 'Service', accessor: 'mapped_service' as keyof Keyword, className: "text-sm text-blue-600" },
-        { 
-            header: 'Usage', 
-            accessor: 'usage_count' as keyof Keyword, 
+        {
+            header: 'Usage',
+            accessor: 'usage_count' as keyof Keyword,
             className: "text-center font-bold text-indigo-600",
             tooltip: "Number of times this keyword is used in Services, Sub-services, or Content"
         },
@@ -113,14 +113,14 @@ const KeywordsView: React.FC = () => {
                         <Tooltip content="The search term to track.">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Keyword</label>
-                                <input type="text" value={formData.keyword} onChange={(e) => setFormData({...formData, keyword: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. digital marketing services" />
+                                <input type="text" value={formData.keyword} onChange={(e) => setFormData({ ...formData, keyword: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. digital marketing services" />
                             </div>
                         </Tooltip>
                         <div className="grid grid-cols-2 gap-6">
                             <Tooltip content="User intent (Informational, Navigational, Transactional).">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Intent</label>
-                                    <select value={formData.intent} onChange={(e) => setFormData({...formData, intent: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                    <select value={formData.intent} onChange={(e) => setFormData({ ...formData, intent: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                         <option>Trans</option><option>Info</option><option>Nav</option><option>Comm</option>
                                     </select>
                                 </div>
@@ -128,7 +128,7 @@ const KeywordsView: React.FC = () => {
                             <Tooltip content="Priority level of the keyword.">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Type</label>
-                                    <select value={formData.keyword_type} onChange={(e) => setFormData({...formData, keyword_type: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                    <select value={formData.keyword_type} onChange={(e) => setFormData({ ...formData, keyword_type: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                         <option>Primary</option><option>Secondary</option><option>Branded</option>
                                     </select>
                                 </div>
@@ -138,13 +138,13 @@ const KeywordsView: React.FC = () => {
                             <Tooltip content="Average monthly searches.">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Search Volume</label>
-                                    <input type="number" value={formData.search_volume} onChange={(e) => setFormData({...formData, search_volume: parseInt(e.target.value)})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                                    <input type="number" value={formData.search_volume} onChange={(e) => setFormData({ ...formData, search_volume: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                                 </div>
                             </Tooltip>
                             <Tooltip content="Difficulty to rank for this keyword.">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Competition</label>
-                                    <select value={formData.competition} onChange={(e) => setFormData({...formData, competition: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                    <select value={formData.competition} onChange={(e) => setFormData({ ...formData, competition: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                         <option>High</option><option>Medium</option><option>Low</option>
                                     </select>
                                 </div>
@@ -153,7 +153,7 @@ const KeywordsView: React.FC = () => {
                         <Tooltip content="Optional: Associate this keyword with a specific service offering.">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Mapped Service (Optional)</label>
-                                <input type="text" value={formData.mapped_service} onChange={(e) => setFormData({...formData, mapped_service: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. SEO Services" />
+                                <input type="text" value={formData.mapped_service} onChange={(e) => setFormData({ ...formData, mapped_service: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. SEO Services" />
                             </div>
                         </Tooltip>
                     </div>
@@ -163,11 +163,11 @@ const KeywordsView: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col w-full p-6 animate-fade-in">
+        <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50 animate-fade-in">
             <div className="flex justify-between items-start flex-shrink-0">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Keyword Master</h1>
                 <div className="flex space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >

@@ -518,152 +518,154 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
 
     // Main List View
     return (
-        <div className="h-full flex flex-col w-full p-6 overflow-hidden bg-slate-50">
+        <div className="h-full flex flex-col w-full overflow-hidden bg-slate-50">
             {viewMode === 'create' && renderCreateModal()}
 
             {/* Header */}
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage multi-campaign marketing projects.</p>
+            <div className="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
+                        <p className="text-sm text-slate-500 mt-1">Manage multi-campaign marketing projects.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-white">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            Filter
+                        </button>
+                        <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-white">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Export
+                        </button>
+                        <button
+                            onClick={() => setViewMode('create')}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Create Project
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-white">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+
+                {/* Search */}
+                <div className="mb-4">
+                    <div className="relative max-w-md">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        Filter
-                    </button>
-                    <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-white">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Export
-                    </button>
-                    <button
-                        onClick={() => setViewMode('create')}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Create Project
-                    </button>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search projects..."
+                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {/* Search */}
-            <div className="mb-4">
-                <div className="relative max-w-md">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search projects..."
-                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                </div>
-            </div>
-
-            {/* Table */}
-            <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Name</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Brand</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Linked Service(s)</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Objective Summary</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Campaign Count</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks Open vs Closed</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress (%)</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cycle Dates</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Owner</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Updated</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filteredProjects.length > 0 ? (
-                                filteredProjects.map((project) => {
-                                    const owner = users.find(u => u.id === project.owner_id);
-                                    const brand = brands.find(b => b.id === project.brand_id);
-                                    const linkedCampaigns = campaigns.filter(c => c.project_id === project.id);
-                                    const progress = project.progress || Math.floor(Math.random() * 60) + 30;
-                                    const openTasks = Math.floor(Math.random() * 15) + 5;
-                                    const closedTasks = Math.floor(Math.random() * 50) + 10;
-
-                                    return (
-                                        <tr key={project.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => onProjectSelect && onProjectSelect(project.id)}>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                        </svg>
-                                                    </div>
-                                                    <span className="font-medium text-slate-900 text-sm">{project.project_name || project.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{brand?.name || 'TechCorp'}</td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex gap-1">
-                                                    <ServiceTag name="Content" type="Content" />
-                                                    <ServiceTag name="SEO" type="SEO" />
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2 max-w-xs">
-                                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                                    <span className="text-sm text-slate-600 truncate">{project.description || 'Increase organic traffic by 40% through strategic content publishing'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className="text-sm font-medium text-slate-900">{linkedCampaigns.length || Math.floor(Math.random() * 10) + 2}</span>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <span className="text-amber-600">△ {openTasks}</span>
-                                                    <span className="text-emerald-600">✓ {closedTasks}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <ProgressBar value={progress} />
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="text-xs text-slate-600">
-                                                    <div>{formatDate(project.start_date)}</div>
-                                                    <div className="text-slate-400">{formatDate(project.end_date)}</div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar name={owner?.name || 'Sarah Johnson'} />
-                                                    <span className="text-sm text-slate-700">{owner?.name || 'Sarah Johnson'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <StatusBadge status={project.status || 'In Progress'} />
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-slate-500">
-                                                {formatDate(project.updated_at)}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            ) : (
+                {/* Table */}
+                <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
-                                    <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
-                                        No projects found. Create your first project to get started.
-                                    </td>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Brand</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Linked Service(s)</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Objective Summary</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Campaign Count</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks Open vs Closed</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress (%)</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cycle Dates</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Owner</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Updated</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredProjects.length > 0 ? (
+                                    filteredProjects.map((project) => {
+                                        const owner = users.find(u => u.id === project.owner_id);
+                                        const brand = brands.find(b => b.id === project.brand_id);
+                                        const linkedCampaigns = campaigns.filter(c => c.project_id === project.id);
+                                        const progress = project.progress || Math.floor(Math.random() * 60) + 30;
+                                        const openTasks = Math.floor(Math.random() * 15) + 5;
+                                        const closedTasks = Math.floor(Math.random() * 50) + 10;
+
+                                        return (
+                                            <tr key={project.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => onProjectSelect && onProjectSelect(project.id)}>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                            </svg>
+                                                        </div>
+                                                        <span className="font-medium text-slate-900 text-sm">{project.project_name || project.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-slate-600">{brand?.name || 'TechCorp'}</td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex gap-1">
+                                                        <ServiceTag name="Content" type="Content" />
+                                                        <ServiceTag name="SEO" type="SEO" />
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2 max-w-xs">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                                        <span className="text-sm text-slate-600 truncate">{project.description || 'Increase organic traffic by 40% through strategic content publishing'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className="text-sm font-medium text-slate-900">{linkedCampaigns.length || Math.floor(Math.random() * 10) + 2}</span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <span className="text-amber-600">△ {openTasks}</span>
+                                                        <span className="text-emerald-600">✓ {closedTasks}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <ProgressBar value={progress} />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="text-xs text-slate-600">
+                                                        <div>{formatDate(project.start_date)}</div>
+                                                        <div className="text-slate-400">{formatDate(project.end_date)}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar name={owner?.name || 'Sarah Johnson'} />
+                                                        <span className="text-sm text-slate-700">{owner?.name || 'Sarah Johnson'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <StatusBadge status={project.status || 'In Progress'} />
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-slate-500">
+                                                    {formatDate(project.updated_at)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
+                                            No projects found. Create your first project to get started.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

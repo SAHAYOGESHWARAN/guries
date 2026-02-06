@@ -429,7 +429,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
     ];
 
     return (
-        <div className="h-full flex flex-col animate-fade-in w-full overflow-hidden">
+        <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50 animate-fade-in">
             {/* Mobile Header */}
             <div className="lg:hidden px-4 py-4 bg-white border-b border-slate-200">
                 <h1 className="text-xl font-bold text-slate-800">Settings</h1>

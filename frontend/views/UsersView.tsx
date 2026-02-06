@@ -178,7 +178,7 @@ const UsersView: React.FC = () => {
     );
 
     return (
-        <div className="space-y-6 relative h-full flex flex-col p-6 overflow-y-auto w-full pr-1 animate-fade-in">
+        <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50 animate-fade-in">
             <div className="flex justify-between items-center flex-shrink-0">
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Users & Teams</h1>
                 <div className="flex space-x-3">

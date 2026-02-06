@@ -19,7 +19,7 @@ interface AssetsViewProps {
 
 const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
     const { data: assets = [], create: createAsset, update: updateAsset, remove: removeAsset, refresh, loading: assetsLoading } = useData<AssetLibraryItem>('assetLibrary');
-    
+
     // Transform API data to match frontend interface
     const transformedAssets = useMemo(() => {
         return assets.map(asset => ({
@@ -4451,7 +4451,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                     ];
 
                     return (
-                        <div className="h-full flex flex-col w-full p-6 overflow-hidden">
+                        <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50">
                             <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full h-full">
                                 <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 w-full flex-shrink-0">
                                     <div>
