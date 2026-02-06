@@ -1,0 +1,117 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { pool } from '../../backend/config/db';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Content-Type', 'application/json');
+
+    // Handle OPTIONS
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    try {
+        if (req.method === 'GET') {
+            // Get all assets
+            const result = await pool.query('SELECT * FROM assets LIMIT 100');
+            return res.status(200).json({
+                success: true,
+                data: result.rows,
+                count: result.rows.length
+            });
+        }
+
+        if (req.method === 'POST') {
+            // Create new asset
+            const { asset_name, asset_type, asset_category, asset_format, status } = req.body;
+
+            if (!asset_name) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'asset_name is required'
+                });
+            }
+
+            const result = await pool.query(
+                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         RETURNING *`,
+                [asset_name, asset_type || null, asset_category || null, asset_format || null, status || 'draft']
+            );
+
+            return res.status(201).json({
+                success: true,
+                data: result.rows[0],
+                message: 'Asset created successfully'
+            });
+        }
+
+        if (req.method === 'PUT') {
+            // Update asset
+            const { id } = req.query;
+            const { asset_name, status } = req.body;
+
+            if (!id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'id is required'
+                });
+            }
+
+            const result = await pool.query(
+                `UPDATE assets SET asset_name = $1, status = $2, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $3
+         RETURNING *`,
+                [asset_name, status, id]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Asset not found'
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: result.rows[0],
+                message: 'Asset updated successfully'
+            });
+        }
+
+        if (req.method === 'DELETE') {
+            // Delete asset
+            const { id } = req.query;
+
+            if (!id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'id is required'
+                });
+            }
+
+            await pool.query('DELETE FROM assets WHERE id = $1', [id]);
+
+            return res.status(200).json({
+                success: true,
+                message: 'Asset deleted successfully'
+            });
+        }
+
+        return res.status(405).json({
+            success: false,
+            error: 'Method not allowed'
+        });
+
+    } catch (error: any) {
+        console.error('[API] Error:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+}
