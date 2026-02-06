@@ -29,8 +29,16 @@
   },
   "routes": [
     {
-      "src": "/api/.*",
-      "dest": "/api"
+      "src": "/api/health",
+      "dest": "/api/health.ts"
+    },
+    {
+      "src": "/api/auth",
+      "dest": "/api/auth.ts"
+    },
+    {
+      "src": "/api/v1/assetLibrary(?:/(.*))?$",
+      "dest": "/api/v1/assetLibrary.ts"
     },
     {
       "src": "/(.*\\.js)$",
