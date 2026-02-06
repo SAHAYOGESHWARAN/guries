@@ -3,12 +3,6 @@
   "buildCommand": "npm run build:frontend",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && cd ..",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs20.x",
-      "memory": 1024
-    }
-  },
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1",
