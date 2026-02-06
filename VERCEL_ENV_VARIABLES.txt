@@ -1,0 +1,102 @@
+================================================================================
+VERCEL ENVIRONMENT VARIABLES - COPY AND PASTE
+================================================================================
+
+Copy each line below and add to Vercel:
+https://vercel.com/dashboard → guries → Settings → Environment Variables
+
+================================================================================
+VARIABLE 1
+================================================================================
+Name: DB_CLIENT
+Value: pg
+
+================================================================================
+VARIABLE 2
+================================================================================
+Name: USE_PG
+Value: true
+
+================================================================================
+VARIABLE 3
+================================================================================
+Name: DATABASE_URL
+Value: postgresql://postgres:HeiWPgZkRkBWhWtr@db.nouyqizbqgoyscryexeg.supabase.co:5432/postgres
+
+================================================================================
+VARIABLE 4
+================================================================================
+Name: DB_HOST
+Value: db.nouyqizbqgoyscryexeg.supabase.co
+
+================================================================================
+VARIABLE 5
+================================================================================
+Name: DB_PORT
+Value: 5432
+
+================================================================================
+VARIABLE 6
+================================================================================
+Name: DB_USER
+Value: postgres
+
+================================================================================
+VARIABLE 7
+================================================================================
+Name: DB_PASSWORD
+Value: HeiWPgZkRkBWhWtr
+
+================================================================================
+VARIABLE 8
+================================================================================
+Name: DB_NAME
+Value: postgres
+
+================================================================================
+VARIABLE 9
+================================================================================
+Name: SUPABASE_URL
+Value: https://nouyqizbqgoyscryexeg.supabase.co
+
+================================================================================
+VARIABLE 10
+================================================================================
+Name: SUPABASE_ANON_KEY
+Value: sb_publishable_fzIkuQRYsy9TlRL0yY3l9w_AmREcEvk
+
+================================================================================
+INSTRUCTIONS
+================================================================================
+
+1. Go to: https://vercel.com/dashboard
+2. Click on "guries" project
+3. Click "Settings" tab
+4. Click "Environment Variables" in left sidebar
+5. Click "Add New" button
+6. For each variable above:
+   - Copy the Name
+   - Paste into "Name" field
+   - Copy the Value
+   - Paste into "Value" field
+   - Click "Save"
+7. Repeat for all 10 variables
+8. When done, all 10 should be listed
+
+================================================================================
+NEXT STEP: DEPLOY
+================================================================================
+
+After adding all variables:
+
+1. Open terminal/command prompt
+2. Navigate to your project folder
+3. Run these commands:
+
+git add .
+git commit -m "Fix: PostgreSQL data persistence"
+git push origin main
+
+Wait for Vercel to deploy automatically.
+
+================================================================================
