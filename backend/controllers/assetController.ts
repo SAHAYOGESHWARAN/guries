@@ -23,14 +23,13 @@ export const createAsset = async (req: Request, res: Response) => {
     }
 
     try {
-        const result = await pool.query(
+        await pool.query(
             `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, created_at)
-             VALUES ($1, $2, $3, $4, $5, NOW())
-             RETURNING id, asset_name, asset_type, asset_category, asset_format, status, created_at`,
+             VALUES ($1, $2, $3, $4, $5, NOW())`,
             [asset_name, asset_type, asset_category || null, asset_format || null, status || 'draft']
         );
 
-        const newAsset = result.rows?.[0] || {
+        const newAsset = {
             asset_name,
             asset_type,
             asset_category,
