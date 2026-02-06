@@ -19,11 +19,11 @@
     "DB_USER": "postgres",
     "DB_PASSWORD": "HeiWPgZkRkBWhWtr",
     "DB_NAME": "postgres",
-    "CORS_ORIGIN": "https://guries.vercel.app",
-    "CORS_ORIGINS": "https://guries.vercel.app",
-    "SOCKET_CORS_ORIGINS": "https://guries.vercel.app",
-    "BACKEND_URL": "https://guries.vercel.app",
-    "FRONTEND_URL": "https://guries.vercel.app",
+    "CORS_ORIGIN": "https://guires-sahayogeshwarans-projects.vercel.app",
+    "CORS_ORIGINS": "https://guires-sahayogeshwarans-projects.vercel.app",
+    "SOCKET_CORS_ORIGINS": "https://guires-sahayogeshwarans-projects.vercel.app",
+    "BACKEND_URL": "https://guires-sahayogeshwarans-projects.vercel.app",
+    "FRONTEND_URL": "https://guires-sahayogeshwarans-projects.vercel.app",
     "LOG_LEVEL": "info"
   },
   "functions": {
@@ -39,11 +39,31 @@
     },
     {
       "src": "/(.*\\.js)$",
-      "dest": "/frontend/dist/$1"
+      "dest": "/frontend/dist/$1",
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8"
+      }
+    },
+    {
+      "src": "/(.*\\.mjs)$",
+      "dest": "/frontend/dist/$1",
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8"
+      }
     },
     {
       "src": "/(.*\\.css)$",
-      "dest": "/frontend/dist/$1"
+      "dest": "/frontend/dist/$1",
+      "headers": {
+        "Content-Type": "text/css; charset=utf-8"
+      }
+    },
+    {
+      "src": "/(.*\\.json)$",
+      "dest": "/frontend/dist/$1",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8"
+      }
     },
     {
       "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
