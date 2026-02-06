@@ -33,6 +33,10 @@ export default defineConfig(({ mode }) => {
                 interval: 1000,
             },
             livereload: true,
+            middlewareMode: false,
+            headers: {
+                'Content-Type': 'application/javascript; charset=utf-8',
+            },
             proxy: {
                 '/api': {
                     target: 'http://localhost:3003',
@@ -54,9 +58,13 @@ export default defineConfig(({ mode }) => {
             cssCodeSplit: false,
             reportCompressedSize: false,
             chunkSizeWarningLimit: 1500,
+            target: 'esnext',
             rollupOptions: {
                 output: {
                     manualChunks: undefined,
+                    entryFileNames: '[name].[hash].js',
+                    chunkFileNames: '[name].[hash].js',
+                    assetFileNames: '[name].[hash][extname]',
                 },
             },
         },

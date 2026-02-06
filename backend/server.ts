@@ -115,6 +115,32 @@ app.use('/api/migrations', migrationRoutes);
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
+// Serve frontend static files with proper MIME types
+app.use(express.static(path.join(__dirname, '../frontend/dist'), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        } else if (filePath.endsWith('.mjs')) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        } else if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css; charset=utf-8');
+        } else if (filePath.endsWith('.json')) {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        } else if (filePath.endsWith('.wasm')) {
+            res.setHeader('Content-Type', 'application/wasm');
+        }
+    }
+}));
+
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+        return;
+    }
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
 // Health Check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -145,7 +171,7 @@ const startServer = (portToTry: number) => {
         // Export the app for serverless use
         return;
     }
-    
+
     serverInstance = httpServer.listen(portToTry);
 
     serverInstance.on('listening', () => {
