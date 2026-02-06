@@ -286,7 +286,8 @@ CREATE TABLE IF NOT EXISTS asset_category_master (
 -- Asset Type Master
 CREATE TABLE IF NOT EXISTS asset_type_master (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type_name TEXT UNIQUE NOT NULL,
+  asset_type_name TEXT UNIQUE NOT NULL,
+  type_name TEXT,
   type_code TEXT,
   description TEXT,
   status TEXT DEFAULT 'active',
@@ -311,10 +312,13 @@ CREATE TABLE IF NOT EXISTS service_asset_links (
   service_id INTEGER NOT NULL,
   asset_id INTEGER NOT NULL,
   link_type TEXT DEFAULT 'primary',
+  is_static INTEGER DEFAULT 0,
+  created_by INTEGER,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
   FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   UNIQUE(service_id, asset_id)
 );
 
@@ -324,10 +328,13 @@ CREATE TABLE IF NOT EXISTS subservice_asset_links (
   sub_service_id INTEGER NOT NULL,
   asset_id INTEGER NOT NULL,
   link_type TEXT DEFAULT 'primary',
+  is_static INTEGER DEFAULT 0,
+  created_by INTEGER,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (sub_service_id) REFERENCES sub_services(id) ON DELETE CASCADE,
   FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   UNIQUE(sub_service_id, asset_id)
 );
 

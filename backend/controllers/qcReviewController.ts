@@ -17,21 +17,34 @@ export const getPendingQCAssets = async (req: Request, res: Response) => {
                 id,
                 asset_name,
                 asset_type,
+                asset_category,
+                asset_format,
                 status,
                 qc_status,
                 workflow_stage,
                 seo_score,
                 grammar_score,
+                ai_plagiarism_score,
                 submitted_by,
                 submitted_at,
                 created_at,
                 file_url,
                 thumbnail_url,
+                og_image_url,
                 application_type,
-                asset_category,
                 keywords,
+                content_keywords,
+                seo_keywords,
                 linked_service_id,
-                linked_sub_service_id
+                linked_sub_service_id,
+                linked_service_ids,
+                linked_sub_service_ids,
+                qc_score,
+                qc_checklist_items,
+                qc_remarks,
+                rework_count,
+                version_history,
+                workflow_log
             FROM assets 
             WHERE qc_status IN ('QC Pending', 'Rework')
         `;
@@ -51,7 +64,14 @@ export const getPendingQCAssets = async (req: Request, res: Response) => {
         // Parse JSON fields
         const assets = result.rows.map((asset: any) => ({
             ...asset,
-            keywords: asset.keywords ? JSON.parse(asset.keywords) : []
+            keywords: asset.keywords ? JSON.parse(asset.keywords) : [],
+            content_keywords: asset.content_keywords ? JSON.parse(asset.content_keywords) : [],
+            seo_keywords: asset.seo_keywords ? JSON.parse(asset.seo_keywords) : [],
+            linked_service_ids: asset.linked_service_ids ? JSON.parse(asset.linked_service_ids) : [],
+            linked_sub_service_ids: asset.linked_sub_service_ids ? JSON.parse(asset.linked_sub_service_ids) : [],
+            qc_checklist_items: asset.qc_checklist_items ? JSON.parse(asset.qc_checklist_items) : [],
+            version_history: asset.version_history ? JSON.parse(asset.version_history) : [],
+            workflow_log: asset.workflow_log ? JSON.parse(asset.workflow_log) : []
         }));
 
         // Get total count

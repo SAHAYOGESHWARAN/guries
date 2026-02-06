@@ -85,6 +85,7 @@ import * as bulkOperationsController from '../controllers/bulkOperationsControll
 import qcReviewRoutes from './qcReview';
 import assetUploadRoutes from './assetUpload';
 import assetServiceLinkingRoutes from './assetServiceLinking';
+import assetStatusRoutes from './assetStatus';
 import * as assetUploadController from '../controllers/assetUploadController';
 
 const router = Router();
@@ -515,6 +516,9 @@ router.use('/assetServiceLinking', assetServiceLinkingRoutes);
 
 // --- Asset Upload with Service Linking ---
 router.use('/assets', assetUploadRoutes);
+
+// --- Asset Status Management ---
+router.use('/asset-status', assetStatusRoutes);
 
 // --- Configuration Masters ---
 router.get('/content-types', configController.getContentTypes);

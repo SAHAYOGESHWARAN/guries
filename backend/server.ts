@@ -163,18 +163,32 @@ app.use(errorHandler);
 
 // Start Server (only for local development)
 let serverInstance: any = null;
+let isServerStarting = false;
 
 const startServer = (portToTry: number) => {
+    // Prevent multiple simultaneous start attempts
+    if (isServerStarting) {
+        return;
+    }
+    isServerStarting = true;
+
     // Only start server if not in Vercel serverless environment
     if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
         console.log('🚀 Running in Vercel serverless mode - not starting HTTP server');
-        // Export the app for serverless use
+        isServerStarting = false;
+        return;
+    }
+
+    // If server is already listening, don't try to start again
+    if (serverInstance && serverInstance.listening) {
+        isServerStarting = false;
         return;
     }
 
     serverInstance = httpServer.listen(portToTry);
 
     serverInstance.on('listening', () => {
+        isServerStarting = false;
         const isTest = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
         if (!isTest) {
             console.log(`🚀 Server running on port ${portToTry}`);
@@ -182,16 +196,19 @@ const startServer = (portToTry: number) => {
     });
 
     serverInstance.on('error', (err: any) => {
-        const isTest = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
         if (err && err.code === 'EADDRINUSE') {
+            const isTest = process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
             if (isTest) {
+                isServerStarting = false;
                 throw err;
             }
 
             console.warn(`Port ${portToTry} in use, trying ${portToTry + 1}...`);
+            isServerStarting = false;
             setTimeout(() => startServer(portToTry + 1), 200);
         } else {
             console.error('Server error:', err);
+            isServerStarting = false;
             (process as any).exit(1);
         }
     });
