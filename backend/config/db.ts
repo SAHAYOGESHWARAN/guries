@@ -8,6 +8,7 @@ dotenv.config();
 const usePostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true' || process.env.DB_CLIENT === 'pg';
 
 let pool: any;
+let dbInitialized = false;
 
 if (usePostgres) {
     // PostgreSQL Configuration (for production on Vercel)
@@ -30,25 +31,20 @@ if (usePostgres) {
         console.error('[DB] Unexpected error on idle client:', err);
     });
 
-    // Auto-initialize database schema on first connection
-    const initSchema = async () => {
-        try {
-            const client = await pool.connect();
+    // Wrap pool.query to ensure schema is initialized
+    const originalQuery = pool.query.bind(pool);
+    pool.query = async (sql: string, params?: any[]) => {
+        // Initialize schema on first query if not already done
+        if (!dbInitialized && usePostgres) {
             try {
-                // Check if users table exists
-                const result = await client.query(`
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_name = 'users'
-                    )
-                `);
+                dbInitialized = true;
+                console.log('[DB] Running schema initialization on first query...');
 
-                if (!result.rows[0].exists) {
-                    console.log('[DB] Initializing schema...');
-
-                    // Create users table
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS users (
+                const client = await pool.connect();
+                try {
+                    // Create all essential tables
+                    const tables = [
+                        `CREATE TABLE IF NOT EXISTS users (
                             id SERIAL PRIMARY KEY,
                             name TEXT NOT NULL,
                             email TEXT UNIQUE NOT NULL,
@@ -60,12 +56,8 @@ if (usePostgres) {
                             last_login TIMESTAMP,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
-
-                    // Create other essential tables
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS brands (
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS brands (
                             id SERIAL PRIMARY KEY,
                             name TEXT UNIQUE NOT NULL,
                             code TEXT,
@@ -74,11 +66,8 @@ if (usePostgres) {
                             status TEXT DEFAULT 'active',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
-
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS services (
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS services (
                             id SERIAL PRIMARY KEY,
                             service_name TEXT NOT NULL,
                             service_code TEXT,
@@ -88,11 +77,8 @@ if (usePostgres) {
                             meta_description TEXT,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
-
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS assets (
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS assets (
                             id SERIAL PRIMARY KEY,
                             asset_name TEXT NOT NULL,
                             asset_type TEXT,
@@ -104,53 +90,54 @@ if (usePostgres) {
                             created_by INTEGER,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
-
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS projects (
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS projects (
                             id SERIAL PRIMARY KEY,
                             project_name TEXT NOT NULL,
                             project_code TEXT UNIQUE,
                             status TEXT DEFAULT 'Planned',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
-
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS campaigns (
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS campaigns (
                             id SERIAL PRIMARY KEY,
                             campaign_name TEXT NOT NULL,
                             campaign_type TEXT DEFAULT 'Content',
                             status TEXT DEFAULT 'planning',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
-
-                    await client.query(`
-                        CREATE TABLE IF NOT EXISTS tasks (
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS tasks (
                             id SERIAL PRIMARY KEY,
                             task_name TEXT NOT NULL,
                             status TEXT DEFAULT 'pending',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    `);
+                        )`
+                    ];
 
+                    for (const tableSQL of tables) {
+                        try {
+                            await client.query(tableSQL);
+                        } catch (e: any) {
+                            if (!e.message.includes('already exists')) {
+                                console.warn('[DB] Table creation warning:', e.message.substring(0, 80));
+                            }
+                        }
+                    }
                     console.log('[DB] ✅ Schema initialized successfully');
+                } finally {
+                    client.release();
                 }
-            } finally {
-                client.release();
+            } catch (err: any) {
+                console.error('[DB] Schema initialization error:', err.message);
+                dbInitialized = false; // Reset flag to retry
             }
-        } catch (err: any) {
-            console.error('[DB] Schema initialization error:', err.message);
         }
-    };
 
-    // Initialize on startup
-    initSchema().catch(err => console.error('[DB] Init error:', err));
+        // Execute the actual query
+        return originalQuery(sql, params);
+    };
 
     console.log('[DB] ✅ PostgreSQL connection pool created for production');
 } else {

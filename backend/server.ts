@@ -77,22 +77,20 @@ const connectDB = async () => {
             console.log('✅ Connected to database (SQLite)');
         }
 
-        // Initialize schema on startup (all environments)
-        try {
-            console.log('🔄 Initializing database schema...');
-            await initializeDatabase();
-            if (process.env.NODE_ENV !== 'production') {
+        // For local development, seed database
+        if (process.env.NODE_ENV !== 'production') {
+            try {
+                console.log('🔄 Seeding database...');
                 await seedDatabase();
+                console.log('✅ Database seeded');
+            } catch (error: any) {
+                console.warn('⚠️  Database seeding skipped:', error.message);
             }
-            console.log('✅ Database schema initialized');
-        } catch (error: any) {
-            console.warn('⚠️  Database initialization skipped:', error.message);
         }
-    }
     } catch (err: any) {
-    console.error('❌ Database connection failed:', err.message);
-    (process as any).exit(1);
-}
+        console.error('❌ Database connection failed:', err.message);
+        (process as any).exit(1);
+    }
 };
 
 // Real-time Connection Handler
