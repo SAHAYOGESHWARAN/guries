@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install --legacy-peer-deps --production=false && npm run build",
+  "buildCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps --production=false && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
@@ -14,6 +14,12 @@
     "USE_PG": "true",
     "SUPABASE_URL": "https://nouyqizbqgoyscryexeg.supabase.co",
     "SUPABASE_ANON_KEY": "sb_publishable_fzIkuQRYsy9TlRL0yY3l9w_AmREcEvk"
+  },
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
   },
   "routes": [
     {
