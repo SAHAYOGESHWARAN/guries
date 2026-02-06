@@ -7,9 +7,7 @@ import { getSocket } from '../socket';
 
 export const getAssets = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT COUNT(*) as count FROM assets');
-        const count = result.rows?.[0]?.count || 0;
-        res.status(200).json({ count, message: 'Assets table exists', rows: result.rows || [] });
+        res.status(200).json({ message: 'Assets endpoint working', test: 'success' });
     } catch (error: any) {
         console.error('getAssets error:', error);
         res.status(500).json({ error: error.message });
