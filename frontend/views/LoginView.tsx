@@ -46,9 +46,25 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 })
             });
 
-            const data = await response.json();
+            // Check if response is ok first
+            if (!response.ok) {
+                setError(`Login failed: ${response.status} ${response.statusText}`);
+                setIsLoading(false);
+                return;
+            }
 
-            if (response.ok && data.user) {
+            // Try to parse JSON
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('Failed to parse response:', parseError);
+                setError('Server returned invalid response. Please try again.');
+                setIsLoading(false);
+                return;
+            }
+
+            if (data.user) {
                 if (data.token && typeof data.token === 'string') {
                     localStorage.setItem('authToken', data.token);
                 }

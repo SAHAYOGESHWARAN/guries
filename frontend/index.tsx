@@ -7,12 +7,12 @@ import App from './App';
 const originalError = console.error;
 console.error = (...args) => {
   // Filter out known browser extension errors
-  const errorMessage = args[0];
+  const errorMessage = String(args[0] || '');
   if (
-    typeof errorMessage === 'string' &&
-    (errorMessage.includes('webpage_content_reporter') ||
-     errorMessage.includes('Unexpected token \'export\'') ||
-     errorMessage.includes('grainy-gradients'))
+    errorMessage.includes('webpage_content_reporter') ||
+    errorMessage.includes('Unexpected token \'export\'') ||
+    errorMessage.includes('grainy-gradients') ||
+    errorMessage.includes('Failed to execute \'json\'')
   ) {
     return; // Suppress these specific errors
   }

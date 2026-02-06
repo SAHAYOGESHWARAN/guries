@@ -108,19 +108,16 @@ function setCorsHeaders(res: VercelResponse) {
     res.setHeader('Content-Type', 'application/json');
 }
 
-// Helper: Parse request body
-async function parseBody(req: VercelRequest): Promise<any> {
-    return new Promise((resolve, reject) => {
-        let data = '';
-        req.on('data', chunk => data += chunk);
-        req.on('end', () => {
-            try {
-                resolve(data ? JSON.parse(data) : {});
-            } catch (e) {
-                reject(new Error('Invalid JSON'));
-            }
-        });
-    });
+// Helper: Get body from Vercel request
+function getBody(req: VercelRequest): any {
+    if (typeof req.body === 'string') {
+        try {
+            return JSON.parse(req.body);
+        } catch {
+            return {};
+        }
+    }
+    return req.body || {};
 }
 
 type AuthUser = {
@@ -232,7 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
             if (method === 'POST') {
-                const body = await parseBody(req);
+                const body = getBody(req);
                 const newAsset = {
                     id: Date.now(),
                     ...body,
@@ -278,7 +275,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
             if (method === 'POST') {
-                const body = await parseBody(req);
+                const body = getBody(req);
                 const newReview = {
                     id: Date.now(),
                     ...body,
@@ -357,7 +354,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Login endpoint
         if (path.includes('/auth/login')) {
-            const body = await parseBody(req);
+            const body = getBody(req);
             const { email, password } = body;
 
             const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
