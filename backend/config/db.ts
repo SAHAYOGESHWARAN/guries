@@ -29,6 +29,128 @@ if (usePostgres) {
         console.error('[DB] Unexpected error on idle client:', err);
     });
 
+    // Auto-initialize database schema on first connection
+    const initSchema = async () => {
+        try {
+            const client = await pool.connect();
+            try {
+                // Check if users table exists
+                const result = await client.query(`
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'users'
+                    )
+                `);
+
+                if (!result.rows[0].exists) {
+                    console.log('[DB] Initializing schema...');
+
+                    // Create users table
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS users (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT NOT NULL,
+                            email TEXT UNIQUE NOT NULL,
+                            role TEXT DEFAULT 'user',
+                            status TEXT DEFAULT 'active',
+                            password_hash TEXT,
+                            department TEXT,
+                            country TEXT,
+                            last_login TIMESTAMP,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    // Create other essential tables
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS brands (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            code TEXT,
+                            industry TEXT,
+                            website TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS services (
+                            id SERIAL PRIMARY KEY,
+                            service_name TEXT NOT NULL,
+                            service_code TEXT,
+                            slug TEXT,
+                            status TEXT DEFAULT 'draft',
+                            meta_title TEXT,
+                            meta_description TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS assets (
+                            id SERIAL PRIMARY KEY,
+                            asset_name TEXT NOT NULL,
+                            asset_type TEXT,
+                            asset_category TEXT,
+                            asset_format TEXT,
+                            status TEXT DEFAULT 'draft',
+                            qc_status TEXT,
+                            file_url TEXT,
+                            created_by INTEGER,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS projects (
+                            id SERIAL PRIMARY KEY,
+                            project_name TEXT NOT NULL,
+                            project_code TEXT UNIQUE,
+                            status TEXT DEFAULT 'Planned',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS campaigns (
+                            id SERIAL PRIMARY KEY,
+                            campaign_name TEXT NOT NULL,
+                            campaign_type TEXT DEFAULT 'Content',
+                            status TEXT DEFAULT 'planning',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS tasks (
+                            id SERIAL PRIMARY KEY,
+                            task_name TEXT NOT NULL,
+                            status TEXT DEFAULT 'pending',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    console.log('[DB] ✅ Schema initialized successfully');
+                }
+            } finally {
+                client.release();
+            }
+        } catch (err: any) {
+            console.error('[DB] Schema initialization error:', err.message);
+        }
+    };
+
+    // Initialize on startup
+    initSchema().catch(err => console.error('[DB] Init error:', err));
+
     console.log('[DB] ✅ PostgreSQL connection pool created for production');
 } else {
     // SQLite Configuration (for local development)
