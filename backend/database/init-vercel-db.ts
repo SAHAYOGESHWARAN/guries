@@ -9,28 +9,28 @@ dotenv.config();
  */
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 const initializeVercelDatabase = async () => {
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        console.log('🔄 Starting Vercel PostgreSQL database initialization...');
+  try {
+    console.log('🔄 Starting Vercel PostgreSQL database initialization...');
 
-        // Test connection
-        const result = await client.query('SELECT NOW()');
-        console.log('✅ Connected to PostgreSQL:', result.rows[0]);
+    // Test connection
+    const result = await client.query('SELECT NOW()');
+    console.log('✅ Connected to PostgreSQL:', result.rows[0]);
 
-        // Create all tables
-        console.log('📋 Creating database tables...');
+    // Create all tables
+    console.log('📋 Creating database tables...');
 
-        // Users table
-        await client.query(`
+    // Users table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -45,10 +45,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Users table created');
+    console.log('✅ Users table created');
 
-        // Brands table
-        await client.query(`
+    // Brands table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS brands (
         id SERIAL PRIMARY KEY,
         name TEXT UNIQUE NOT NULL,
@@ -60,10 +60,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Brands table created');
+    console.log('✅ Brands table created');
 
-        // Services table
-        await client.query(`
+    // Services table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS services (
         id SERIAL PRIMARY KEY,
         service_name TEXT NOT NULL,
@@ -90,10 +90,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Services table created');
+    console.log('✅ Services table created');
 
-        // Sub-Services table
-        await client.query(`
+    // Sub-Services table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS sub_services (
         id SERIAL PRIMARY KEY,
         service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
@@ -110,10 +110,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Sub-Services table created');
+    console.log('✅ Sub-Services table created');
 
-        // Keywords table
-        await client.query(`
+    // Keywords table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS keywords (
         id SERIAL PRIMARY KEY,
         keyword TEXT,
@@ -131,10 +131,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Keywords table created');
+    console.log('✅ Keywords table created');
 
-        // Assets table
-        await client.query(`
+    // Assets table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS assets (
         id SERIAL PRIMARY KEY,
         asset_name TEXT NOT NULL,
@@ -188,10 +188,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Assets table created');
+    console.log('✅ Assets table created');
 
-        // Asset QC Reviews
-        await client.query(`
+    // Asset QC Reviews
+    await client.query(`
       CREATE TABLE IF NOT EXISTS asset_qc_reviews (
         id SERIAL PRIMARY KEY,
         asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
@@ -203,10 +203,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Asset QC Reviews table created');
+    console.log('✅ Asset QC Reviews table created');
 
-        // QC Audit Log
-        await client.query(`
+    // QC Audit Log
+    await client.query(`
       CREATE TABLE IF NOT EXISTS qc_audit_log (
         id SERIAL PRIMARY KEY,
         asset_id INTEGER REFERENCES assets(id) ON DELETE CASCADE,
@@ -217,10 +217,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ QC Audit Log table created');
+    console.log('✅ QC Audit Log table created');
 
-        // Projects table
-        await client.query(`
+    // Projects table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS projects (
         id SERIAL PRIMARY KEY,
         project_name TEXT NOT NULL,
@@ -238,10 +238,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Projects table created');
+    console.log('✅ Projects table created');
 
-        // Campaigns table
-        await client.query(`
+    // Campaigns table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS campaigns (
         id SERIAL PRIMARY KEY,
         campaign_name TEXT NOT NULL,
@@ -263,10 +263,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Campaigns table created');
+    console.log('✅ Campaigns table created');
 
-        // Tasks table
-        await client.query(`
+    // Tasks table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS tasks (
         id SERIAL PRIMARY KEY,
         task_name TEXT NOT NULL,
@@ -286,10 +286,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Tasks table created');
+    console.log('✅ Tasks table created');
 
-        // Backlink Sources
-        await client.query(`
+    // Backlink Sources
+    await client.query(`
       CREATE TABLE IF NOT EXISTS backlink_sources (
         id SERIAL PRIMARY KEY,
         domain TEXT NOT NULL,
@@ -308,10 +308,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Backlink Sources table created');
+    console.log('✅ Backlink Sources table created');
 
-        // Backlink Submissions
-        await client.query(`
+    // Backlink Submissions
+    await client.query(`
       CREATE TABLE IF NOT EXISTS backlink_submissions (
         id SERIAL PRIMARY KEY,
         domain TEXT,
@@ -332,10 +332,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Backlink Submissions table created');
+    console.log('✅ Backlink Submissions table created');
 
-        // Toxic Backlinks
-        await client.query(`
+    // Toxic Backlinks
+    await client.query(`
       CREATE TABLE IF NOT EXISTS toxic_backlinks (
         id SERIAL PRIMARY KEY,
         domain TEXT,
@@ -354,10 +354,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Toxic Backlinks table created');
+    console.log('✅ Toxic Backlinks table created');
 
-        // Competitor Backlinks
-        await client.query(`
+    // Competitor Backlinks
+    await client.query(`
       CREATE TABLE IF NOT EXISTS competitor_backlinks (
         id SERIAL PRIMARY KEY,
         competitor_domain TEXT,
@@ -368,10 +368,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Competitor Backlinks table created');
+    console.log('✅ Competitor Backlinks table created');
 
-        // On-Page SEO Audits
-        await client.query(`
+    // On-Page SEO Audits
+    await client.query(`
       CREATE TABLE IF NOT EXISTS on_page_seo_audits (
         id SERIAL PRIMARY KEY,
         url TEXT,
@@ -394,10 +394,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ On-Page SEO Audits table created');
+    console.log('✅ On-Page SEO Audits table created');
 
-        // UX Issues
-        await client.query(`
+    // UX Issues
+    await client.query(`
       CREATE TABLE IF NOT EXISTS ux_issues (
         id SERIAL PRIMARY KEY,
         title TEXT,
@@ -418,10 +418,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ UX Issues table created');
+    console.log('✅ UX Issues table created');
 
-        // URL Errors
-        await client.query(`
+    // URL Errors
+    await client.query(`
       CREATE TABLE IF NOT EXISTS url_errors (
         id SERIAL PRIMARY KEY,
         url TEXT NOT NULL,
@@ -437,10 +437,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ URL Errors table created');
+    console.log('✅ URL Errors table created');
 
-        // SMM Posts
-        await client.query(`
+    // SMM Posts
+    await client.query(`
       CREATE TABLE IF NOT EXISTS smm_posts (
         id SERIAL PRIMARY KEY,
         title TEXT,
@@ -461,10 +461,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ SMM Posts table created');
+    console.log('✅ SMM Posts table created');
 
-        // Service Pages
-        await client.query(`
+    // Service Pages
+    await client.query(`
       CREATE TABLE IF NOT EXISTS service_pages (
         id SERIAL PRIMARY KEY,
         page_title TEXT NOT NULL,
@@ -482,10 +482,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Service Pages table created');
+    console.log('✅ Service Pages table created');
 
-        // SEO Asset Domains
-        await client.query(`
+    // SEO Asset Domains
+    await client.query(`
       CREATE TABLE IF NOT EXISTS seo_asset_domains (
         id SERIAL PRIMARY KEY,
         seo_asset_id INTEGER REFERENCES assets(id),
@@ -501,10 +501,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ SEO Asset Domains table created');
+    console.log('✅ SEO Asset Domains table created');
 
-        // QC Checklists
-        await client.query(`
+    // QC Checklists
+    await client.query(`
       CREATE TABLE IF NOT EXISTS qc_checklists (
         id SERIAL PRIMARY KEY,
         checklist_name TEXT NOT NULL,
@@ -518,10 +518,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ QC Checklists table created');
+    console.log('✅ QC Checklists table created');
 
-        // QC Checklist Versions
-        await client.query(`
+    // QC Checklist Versions
+    await client.query(`
       CREATE TABLE IF NOT EXISTS qc_checklist_versions (
         id SERIAL PRIMARY KEY,
         checklist_id INTEGER REFERENCES qc_checklists(id),
@@ -530,10 +530,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ QC Checklist Versions table created');
+    console.log('✅ QC Checklist Versions table created');
 
-        // QC Runs
-        await client.query(`
+    // QC Runs
+    await client.query(`
       CREATE TABLE IF NOT EXISTS qc_runs (
         id SERIAL PRIMARY KEY,
         target_type TEXT,
@@ -547,10 +547,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ QC Runs table created');
+    console.log('✅ QC Runs table created');
 
-        // Competitor Benchmarks
-        await client.query(`
+    // Competitor Benchmarks
+    await client.query(`
       CREATE TABLE IF NOT EXISTS competitor_benchmarks (
         id SERIAL PRIMARY KEY,
         competitor_name TEXT NOT NULL,
@@ -564,10 +564,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Competitor Benchmarks table created');
+    console.log('✅ Competitor Benchmarks table created');
 
-        // Effort Targets
-        await client.query(`
+    // Effort Targets
+    await client.query(`
       CREATE TABLE IF NOT EXISTS effort_targets (
         id SERIAL PRIMARY KEY,
         role TEXT NOT NULL,
@@ -582,10 +582,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Effort Targets table created');
+    console.log('✅ Effort Targets table created');
 
-        // Teams
-        await client.query(`
+    // Teams
+    await client.query(`
       CREATE TABLE IF NOT EXISTS teams (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -595,10 +595,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Teams table created');
+    console.log('✅ Teams table created');
 
-        // Team Members
-        await client.query(`
+    // Team Members
+    await client.query(`
       CREATE TABLE IF NOT EXISTS team_members (
         id SERIAL PRIMARY KEY,
         team_id INTEGER REFERENCES teams(id),
@@ -607,10 +607,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Team Members table created');
+    console.log('✅ Team Members table created');
 
-        // Notifications
-        await client.query(`
+    // Notifications
+    await client.query(`
       CREATE TABLE IF NOT EXISTS notifications (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id),
@@ -622,10 +622,10 @@ const initializeVercelDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Notifications table created');
+    console.log('✅ Notifications table created');
 
-        // Integrations
-        await client.query(`
+    // Integrations
+    await client.query(`
       CREATE TABLE IF NOT EXISTS integrations (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -639,10 +639,10 @@ const initializeVercelDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Integrations table created');
+    console.log('✅ Integrations table created');
 
-        // Integration Logs
-        await client.query(`
+    // Integration Logs
+    await client.query(`
       CREATE TABLE IF NOT EXISTS integration_logs (
         id SERIAL PRIMARY KEY,
         integration_id INTEGER REFERENCES integrations(id),
@@ -652,67 +652,74 @@ const initializeVercelDatabase = async () => {
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('✅ Integration Logs table created');
+    console.log('✅ Integration Logs table created');
 
-        // Create indexes
-        console.log('📊 Creating performance indexes...');
+    // Create indexes
+    console.log('📊 Creating performance indexes...');
 
-        const indexes = [
-            'CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status)',
-            'CREATE INDEX IF NOT EXISTS idx_assets_qc_status ON assets(qc_status)',
-            'CREATE INDEX IF NOT EXISTS idx_assets_workflow_stage ON assets(workflow_stage)',
-            'CREATE INDEX IF NOT EXISTS idx_assets_linked_service_id ON assets(linked_service_id)',
-            'CREATE INDEX IF NOT EXISTS idx_assets_linked_sub_service_id ON assets(linked_sub_service_id)',
-            'CREATE INDEX IF NOT EXISTS idx_asset_qc_reviews_asset_id ON asset_qc_reviews(asset_id)',
-            'CREATE INDEX IF NOT EXISTS idx_qc_audit_log_asset_id ON qc_audit_log(asset_id)',
-            'CREATE INDEX IF NOT EXISTS idx_projects_owner_id ON projects(owner_id)',
-            'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)',
-            'CREATE INDEX IF NOT EXISTS idx_campaigns_owner_id ON campaigns(campaign_owner_id)',
-            'CREATE INDEX IF NOT EXISTS idx_campaigns_project_id ON campaigns(project_id)',
-            'CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status)',
-            'CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)',
-            'CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)',
-            'CREATE INDEX IF NOT EXISTS idx_tasks_campaign_id ON tasks(campaign_id)',
-            'CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)',
-            'CREATE INDEX IF NOT EXISTS idx_keywords_keyword ON keywords(keyword)',
-            'CREATE INDEX IF NOT EXISTS idx_keywords_mapped_service_id ON keywords(mapped_service_id)',
-            'CREATE INDEX IF NOT EXISTS idx_services_status ON services(status)',
-            'CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug)',
-            'CREATE INDEX IF NOT EXISTS idx_sub_services_service_id ON sub_services(service_id)',
-            'CREATE INDEX IF NOT EXISTS idx_sub_services_status ON sub_services(status)',
-            'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
-            'CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)',
-        ];
+    const indexes = [
+      'CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status)',
+      'CREATE INDEX IF NOT EXISTS idx_assets_qc_status ON assets(qc_status)',
+      'CREATE INDEX IF NOT EXISTS idx_assets_workflow_stage ON assets(workflow_stage)',
+      'CREATE INDEX IF NOT EXISTS idx_assets_linked_service_id ON assets(linked_service_id)',
+      'CREATE INDEX IF NOT EXISTS idx_assets_linked_sub_service_id ON assets(linked_sub_service_id)',
+      'CREATE INDEX IF NOT EXISTS idx_asset_qc_reviews_asset_id ON asset_qc_reviews(asset_id)',
+      'CREATE INDEX IF NOT EXISTS idx_qc_audit_log_asset_id ON qc_audit_log(asset_id)',
+      'CREATE INDEX IF NOT EXISTS idx_projects_owner_id ON projects(owner_id)',
+      'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)',
+      'CREATE INDEX IF NOT EXISTS idx_campaigns_owner_id ON campaigns(campaign_owner_id)',
+      'CREATE INDEX IF NOT EXISTS idx_campaigns_project_id ON campaigns(project_id)',
+      'CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status)',
+      'CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)',
+      'CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)',
+      'CREATE INDEX IF NOT EXISTS idx_tasks_campaign_id ON tasks(campaign_id)',
+      'CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)',
+      'CREATE INDEX IF NOT EXISTS idx_keywords_keyword ON keywords(keyword)',
+      'CREATE INDEX IF NOT EXISTS idx_keywords_mapped_service_id ON keywords(mapped_service_id)',
+      'CREATE INDEX IF NOT EXISTS idx_services_status ON services(status)',
+      'CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug)',
+      'CREATE INDEX IF NOT EXISTS idx_sub_services_service_id ON sub_services(service_id)',
+      'CREATE INDEX IF NOT EXISTS idx_sub_services_status ON sub_services(status)',
+      'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+      'CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)',
+    ];
 
-        for (const index of indexes) {
-            await client.query(index);
+    for (const index of indexes) {
+      try {
+        await client.query(index);
+      } catch (err: any) {
+        // Ignore index creation errors if column doesn't exist
+        if (!err.message.includes('does not exist')) {
+          throw err;
         }
-        console.log('✅ All indexes created');
-
-        console.log('\n✅ Database initialization completed successfully!');
-        console.log('📊 All tables and indexes are ready for production use.');
-
-        return true;
-    } catch (error: any) {
-        console.error('❌ Database initialization failed:', error.message);
-        throw error;
-    } finally {
-        client.release();
-        await pool.end();
+      }
     }
+    console.log('✅ All indexes created');
+
+    console.log('\n✅ Database initialization completed successfully!');
+    console.log('📊 All tables and indexes are ready for production use.');
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ Database initialization failed:', error.message);
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
+  }
 };
 
 // Run initialization
 if (require.main === module) {
-    initializeVercelDatabase()
-        .then(() => {
-            console.log('\n🎉 Database ready for Vercel deployment!');
-            process.exit(0);
-        })
-        .catch((error) => {
-            console.error('\n❌ Initialization error:', error);
-            process.exit(1);
-        });
+  initializeVercelDatabase()
+    .then(() => {
+      console.log('\n🎉 Database ready for Vercel deployment!');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('\n❌ Initialization error:', error);
+      process.exit(1);
+    });
 }
 
 export { initializeVercelDatabase };
