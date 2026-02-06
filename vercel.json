@@ -38,36 +38,8 @@
       "dest": "/api/index.ts"
     },
     {
-      "src": "/(.*\\.js)$",
-      "dest": "/frontend/dist/$1",
-      "headers": {
-        "Content-Type": "application/javascript; charset=utf-8"
-      }
-    },
-    {
-      "src": "/(.*\\.mjs)$",
-      "dest": "/frontend/dist/$1",
-      "headers": {
-        "Content-Type": "application/javascript; charset=utf-8"
-      }
-    },
-    {
-      "src": "/(.*\\.css)$",
-      "dest": "/frontend/dist/$1",
-      "headers": {
-        "Content-Type": "text/css; charset=utf-8"
-      }
-    },
-    {
-      "src": "/(.*\\.json)$",
-      "dest": "/frontend/dist/$1",
-      "headers": {
-        "Content-Type": "application/json; charset=utf-8"
-      }
-    },
-    {
-      "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
-      "dest": "/frontend/dist/$1"
+      "src": "/(?!api)(.*)\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$",
+      "dest": "/frontend/dist/$1.$2"
     },
     {
       "src": "/(.*)",
