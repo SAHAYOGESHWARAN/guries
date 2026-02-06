@@ -34,9 +34,6 @@ export default defineConfig(({ mode }) => {
             },
             livereload: true,
             middlewareMode: false,
-            headers: {
-                'Content-Type': 'application/javascript; charset=utf-8',
-            },
             proxy: {
                 '/api': {
                     target: 'http://localhost:3003',

@@ -258,7 +258,7 @@ router.post('/assetLibrary/ai-scores', asyncHandler(assetController.generateAISc
 router.get('/admin/qc/assets', requireAdminJWT as any, asyncHandler(assetController.getAssetsForQC));
 router.get('/admin/qc/audit-log', requireAdminJWT as any, asyncHandler(async (req, res) => {
     // Get QC audit log for admin review
-    const { pool } = require('../config/db-sqlite');
+    const { pool } = require('../config/db');
     const result = await pool.query(`
         SELECT qal.*, u.name as reviewer_name, a.asset_name 
         FROM qc_audit_log qal

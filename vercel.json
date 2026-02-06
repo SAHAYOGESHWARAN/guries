@@ -19,11 +19,11 @@
     "DB_USER": "postgres",
     "DB_PASSWORD": "HeiWPgZkRkBWhWtr",
     "DB_NAME": "postgres",
-    "CORS_ORIGIN": "https://guires-sahayogeshwarans-projects.vercel.app",
-    "CORS_ORIGINS": "https://guires-sahayogeshwarans-projects.vercel.app",
-    "SOCKET_CORS_ORIGINS": "https://guires-sahayogeshwarans-projects.vercel.app",
-    "BACKEND_URL": "https://guires-sahayogeshwarans-projects.vercel.app",
-    "FRONTEND_URL": "https://guires-sahayogeshwarans-projects.vercel.app",
+    "CORS_ORIGIN": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
+    "CORS_ORIGINS": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
+    "SOCKET_CORS_ORIGINS": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
+    "BACKEND_URL": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
+    "FRONTEND_URL": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
     "LOG_LEVEL": "info"
   },
   "functions": {
@@ -38,7 +38,10 @@
       "dest": "/api/index.ts"
     },
     {
-      "src": "/(?!api)(.*)\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$",
+      "src": "/(?!api)(.*)\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map)$",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
       "dest": "/frontend/dist/$1.$2"
     },
     {
