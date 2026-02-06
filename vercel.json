@@ -5,7 +5,8 @@
   "installCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && cd ..",
   "functions": {
     "api/**/*.ts": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20.x",
+      "memory": 1024
     }
   },
   "env": {
