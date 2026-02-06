@@ -14,7 +14,7 @@
     "build:frontend": "cd frontend && npm install --legacy-peer-deps && npm run build",
     "preview": "cd frontend && npm run preview",
     "install:all": "npm install && cd frontend && npm install --legacy-peer-deps && cd ..",
-    "vercel-build": "npm run build:frontend"
+    "vercel-build": "npm install && cd frontend && npm install --legacy-peer-deps && npm run build"
   },
   "dependencies": {
     "@vercel/node": "^3.0.0",
