@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Simple in-memory storage for testing
 const assetStore: any[] = [];
+let nextId = 1;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
@@ -21,29 +22,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({
                 success: true,
                 data: assetStore,
-                count: assetStore.length,
-                message: 'Assets retrieved successfully'
+                count: assetStore.length
             });
         }
 
         if (req.method === 'POST') {
             // Create new asset
-            const { asset_name, asset_type, asset_category, asset_format, status } = req.body;
+            const { asset_name, asset_type, asset_category, asset_format, status, name, type, repository, application_type } = req.body;
 
-            if (!asset_name) {
+            const assetNameValue = asset_name || name;
+            if (!assetNameValue) {
                 return res.status(400).json({
                     success: false,
-                    error: 'asset_name is required'
+                    error: 'asset_name or name is required'
                 });
             }
 
             const newAsset = {
-                id: assetStore.length + 1,
-                asset_name,
-                asset_type: asset_type || null,
+                id: nextId++,
+                asset_name: assetNameValue,
+                asset_type: asset_type || type || null,
                 asset_category: asset_category || null,
                 asset_format: asset_format || null,
                 status: status || 'draft',
+                repository: repository || null,
+                application_type: application_type || null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };
@@ -52,6 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             return res.status(201).json({
                 success: true,
+                asset: newAsset,
                 data: newAsset,
                 message: 'Asset created successfully'
             });
@@ -86,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             return res.status(200).json({
                 success: true,
+                asset: assetStore[assetIndex],
                 data: assetStore[assetIndex],
                 message: 'Asset updated successfully'
             });
