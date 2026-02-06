@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Enterprise backend for Marketing Control Center",
   "main": "server.ts",
+  "engines": {
+    "node": ">=18.x"
+  },
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon server.ts",
