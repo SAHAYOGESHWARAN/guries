@@ -1,8 +1,70 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Pool } from 'pg';
 
-// Simple in-memory storage for testing
-const assetStore: any[] = [];
-let nextId = 1;
+// Create a connection pool
+let pool: Pool | null = null;
+
+const getPool = () => {
+    if (!pool) {
+        const connectionString = process.env.DATABASE_URL;
+
+        if (!connectionString) {
+            console.error('[DB] DATABASE_URL not set');
+            return null;
+        }
+
+        pool = new Pool({
+            connectionString,
+            ssl: { rejectUnauthorized: false },
+            max: 5,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
+        });
+
+        pool.on('error', (err) => {
+            console.error('[DB] Pool error:', err);
+            pool = null;
+        });
+    }
+
+    return pool;
+};
+
+// Initialize database schema
+const initializeSchema = async (client: any) => {
+    try {
+        // Check if table exists
+        const result = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'assets'
+      )
+    `);
+
+        if (!result.rows[0].exists) {
+            console.log('[DB] Creating assets table...');
+
+            await client.query(`
+        CREATE TABLE assets (
+          id SERIAL PRIMARY KEY,
+          asset_name TEXT NOT NULL,
+          asset_type TEXT,
+          asset_category TEXT,
+          asset_format TEXT,
+          status TEXT DEFAULT 'draft',
+          repository TEXT,
+          application_type TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+            console.log('[DB] Assets table created');
+        }
+    } catch (err: any) {
+        console.error('[DB] Schema initialization error:', err.message);
+    }
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
@@ -16,13 +78,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).end();
     }
 
+    const pool = getPool();
+
+    if (!pool) {
+        return res.status(500).json({
+            success: false,
+            error: 'Database connection not available',
+            message: 'DATABASE_URL environment variable is not set'
+        });
+    }
+
+    let client;
     try {
+        client = await pool.connect();
+
+        // Initialize schema on first connection
+        await initializeSchema(client);
+
         if (req.method === 'GET') {
             // Get all assets
+            const result = await client.query('SELECT * FROM assets ORDER BY created_at DESC LIMIT 100');
+
             return res.status(200).json({
                 success: true,
-                data: assetStore,
-                count: assetStore.length
+                data: result.rows,
+                count: result.rows.length
             });
         }
 
@@ -38,20 +118,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            const newAsset = {
-                id: nextId++,
-                asset_name: assetNameValue,
-                asset_type: asset_type || type || null,
-                asset_category: asset_category || null,
-                asset_format: asset_format || null,
-                status: status || 'draft',
-                repository: repository || null,
-                application_type: application_type || null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
+            const result = await client.query(
+                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, repository, application_type, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         RETURNING *`,
+                [
+                    assetNameValue,
+                    asset_type || type || null,
+                    asset_category || null,
+                    asset_format || null,
+                    status || 'draft',
+                    repository || null,
+                    application_type || null
+                ]
+            );
 
-            assetStore.push(newAsset);
+            const newAsset = result.rows[0];
 
             return res.status(201).json({
                 success: true,
@@ -73,25 +155,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            const assetIndex = assetStore.findIndex(a => a.id === parseInt(id as string));
-            if (assetIndex === -1) {
+            const result = await client.query(
+                `UPDATE assets SET asset_name = $1, status = $2, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $3
+         RETURNING *`,
+                [asset_name, status, parseInt(id as string)]
+            );
+
+            if (result.rows.length === 0) {
                 return res.status(404).json({
                     success: false,
                     error: 'Asset not found'
                 });
             }
 
-            assetStore[assetIndex] = {
-                ...assetStore[assetIndex],
-                asset_name: asset_name || assetStore[assetIndex].asset_name,
-                status: status || assetStore[assetIndex].status,
-                updated_at: new Date().toISOString()
-            };
-
             return res.status(200).json({
                 success: true,
-                asset: assetStore[assetIndex],
-                data: assetStore[assetIndex],
+                asset: result.rows[0],
+                data: result.rows[0],
                 message: 'Asset updated successfully'
             });
         }
@@ -107,15 +188,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            const assetIndex = assetStore.findIndex(a => a.id === parseInt(id as string));
-            if (assetIndex === -1) {
+            const result = await client.query(
+                'DELETE FROM assets WHERE id = $1 RETURNING id',
+                [parseInt(id as string)]
+            );
+
+            if (result.rows.length === 0) {
                 return res.status(404).json({
                     success: false,
                     error: 'Asset not found'
                 });
             }
-
-            assetStore.splice(assetIndex, 1);
 
             return res.status(200).json({
                 success: true,
@@ -135,5 +218,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             error: 'Internal server error',
             message: error.message
         });
+    } finally {
+        if (client) {
+            client.release();
+        }
     }
 }
