@@ -87,6 +87,8 @@ const connectDB = async () => {
                 console.warn('⚠️  Database seeding skipped:', error.message);
             }
         }
+
+        console.log('✅ Database ready for requests');
     } catch (err: any) {
         console.error('❌ Database connection failed:', err.message);
         (process as any).exit(1);
