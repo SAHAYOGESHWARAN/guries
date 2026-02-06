@@ -1,70 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { Pool } from 'pg';
-
-// Create a connection pool
-let pool: Pool | null = null;
-
-const getPool = () => {
-    if (!pool) {
-        const connectionString = process.env.DATABASE_URL;
-
-        if (!connectionString) {
-            console.error('[DB] DATABASE_URL not set');
-            return null;
-        }
-
-        pool = new Pool({
-            connectionString,
-            ssl: { rejectUnauthorized: false },
-            max: 5,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 2000,
-        });
-
-        pool.on('error', (err) => {
-            console.error('[DB] Pool error:', err);
-            pool = null;
-        });
-    }
-
-    return pool;
-};
-
-// Initialize database schema
-const initializeSchema = async (client: any) => {
-    try {
-        // Check if table exists
-        const result = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'assets'
-      )
-    `);
-
-        if (!result.rows[0].exists) {
-            console.log('[DB] Creating assets table...');
-
-            await client.query(`
-        CREATE TABLE assets (
-          id SERIAL PRIMARY KEY,
-          asset_name TEXT NOT NULL,
-          asset_type TEXT,
-          asset_category TEXT,
-          asset_format TEXT,
-          status TEXT DEFAULT 'draft',
-          repository TEXT,
-          application_type TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-            console.log('[DB] Assets table created');
-        }
-    } catch (err: any) {
-        console.error('[DB] Schema initialization error:', err.message);
-    }
-};
+import { getPool, initializeDatabase } from '../db';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
@@ -78,26 +13,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).end();
     }
 
-    const pool = getPool();
-
-    if (!pool) {
-        return res.status(500).json({
-            success: false,
-            error: 'Database connection not available',
-            message: 'DATABASE_URL environment variable is not set'
-        });
-    }
-
-    let client;
     try {
-        client = await pool.connect();
+        // Initialize database on first request
+        await initializeDatabase();
 
-        // Initialize schema on first connection
-        await initializeSchema(client);
+        const pool = getPool();
 
         if (req.method === 'GET') {
             // Get all assets
-            const result = await client.query('SELECT * FROM assets ORDER BY created_at DESC LIMIT 100');
+            const result = await pool.query(
+                'SELECT * FROM assets ORDER BY created_at DESC LIMIT 100'
+            );
 
             return res.status(200).json({
                 success: true,
@@ -108,19 +34,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (req.method === 'POST') {
             // Create new asset
-            const { asset_name, asset_type, asset_category, asset_format, status, name, type, repository, application_type } = req.body;
+            const {
+                asset_name,
+                asset_type,
+                asset_category,
+                asset_format,
+                status,
+                repository,
+                application_type,
+                name,
+                type
+            } = req.body;
 
             const assetNameValue = asset_name || name;
+
             if (!assetNameValue) {
                 return res.status(400).json({
                     success: false,
-                    error: 'asset_name or name is required'
+                    error: 'asset_name is required'
                 });
             }
 
-            const result = await client.query(
-                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, repository, application_type, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            const result = await pool.query(
+                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, repository, application_type)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
                 [
                     assetNameValue,
@@ -155,11 +92,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            const result = await client.query(
-                `UPDATE assets SET asset_name = $1, status = $2, updated_at = CURRENT_TIMESTAMP
+            const result = await pool.query(
+                `UPDATE assets SET asset_name = COALESCE($1, asset_name), status = COALESCE($2, status), updated_at = CURRENT_TIMESTAMP
          WHERE id = $3
          RETURNING *`,
-                [asset_name, status, parseInt(id as string)]
+                [asset_name || null, status || null, parseInt(id as string)]
             );
 
             if (result.rows.length === 0) {
@@ -188,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            const result = await client.query(
+            const result = await pool.query(
                 'DELETE FROM assets WHERE id = $1 RETURNING id',
                 [parseInt(id as string)]
             );
@@ -213,14 +150,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } catch (error: any) {
         console.error('[API] Error:', error);
+
+        if (error.message.includes('DATABASE_URL')) {
+            return res.status(500).json({
+                success: false,
+                error: 'Database not configured',
+                message: 'DATABASE_URL environment variable is not set'
+            });
+        }
+
         return res.status(500).json({
             success: false,
             error: 'Internal server error',
             message: error.message
         });
-    } finally {
-        if (client) {
-            client.release();
-        }
     }
 }
