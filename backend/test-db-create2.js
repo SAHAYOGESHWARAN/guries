@@ -1,0 +1,50 @@
+const Database = require('better-sqlite3');
+const fs = require('fs');
+const path = require('path');
+
+const dbPath = path.join(__dirname, '..', 'mcc_db.sqlite');
+
+console.log('Creating database at:', dbPath);
+
+// Delete if exists
+if (fs.existsSync(dbPath)) {
+    fs.unlinkSync(dbPath);
+    console.log('Deleted existing database');
+}
+
+// Create database with options
+const db = new Database(dbPath, { fileMustExist: false });
+console.log('Database created');
+
+// Create a simple table
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS test (
+    id INTEGER PRIMARY KEY,
+    name TEXT
+  )
+`).run();
+
+console.log('Table created');
+
+// Insert data
+db.prepare('INSERT INTO test (name) VALUES (?)').run('Test');
+console.log('Data inserted');
+
+// Query data
+const result = db.prepare('SELECT * FROM test').all();
+console.log('Query result:', result);
+
+// Flush to disk
+db.exec('PRAGMA optimize;');
+console.log('Optimized');
+
+db.close();
+console.log('Database closed');
+
+// Check if file exists
+setTimeout(() => {
+    console.log('File exists:', fs.existsSync(dbPath));
+    if (fs.existsSync(dbPath)) {
+        console.log('File size:', fs.statSync(dbPath).size);
+    }
+}, 100);
