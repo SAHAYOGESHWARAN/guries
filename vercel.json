@@ -10,8 +10,10 @@
     "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
     "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-12345",
     "JWT_EXPIRES_IN": "7d",
-    "DB_CLIENT": "sqlite",
-    "USE_PG": "false"
+    "DB_CLIENT": "pg",
+    "USE_PG": "true",
+    "SUPABASE_URL": "https://nouyqizbqgoyscryexeg.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_fzIkuQRYsy9TlRL0yY3l9w_AmREcEvk"
   },
   "routes": [
     {
