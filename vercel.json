@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && npm run build",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
