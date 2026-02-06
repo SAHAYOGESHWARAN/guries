@@ -1,0 +1,282 @@
+================================================================================
+QUICK DEPLOYMENT TEST GUIDE - GUIRES MARKETING CONTROL CENTER
+================================================================================
+
+URL: https://guries.vercel.app
+Date: February 6, 2026
+
+================================================================================
+QUICK START (5 MINUTES)
+================================================================================
+
+1. OPEN APPLICATION
+   - Go to https://guries.vercel.app
+   - Verify loading screen appears
+   - Wait for page to fully load
+
+2. LOGIN
+   - Email: admin@example.com
+   - Password: [Check .env.production]
+   - Click Login
+
+3. CHECK DASHBOARD
+   - Verify dashboard loads
+   - Check for charts and data
+   - Open browser console (F12) - should be clean
+
+4. TEST NAVIGATION
+   - Click "Assets" in sidebar
+   - Click "QC Review" in sidebar
+   - Click "Projects" in sidebar
+   - Verify all pages load
+
+5. TEST PAGE REFRESH
+   - Press F5 on each page
+   - Verify page reloads without errors
+   - Verify data persists
+
+================================================================================
+CRITICAL PAGES TO TEST (PRIORITY ORDER)
+================================================================================
+
+1. Dashboard (#dashboard)
+   - Should load within 2 seconds
+   - Should show stats and charts
+   - Should have no console errors
+
+2. Assets (#assets)
+   - Should load asset list
+   - Should show table with data
+   - Should have pagination
+
+3. QC Review (#qc-review)
+   - Should load QC panel
+   - Should show pending assets
+   - Should have approve/reject buttons
+
+4. Projects (#projects)
+   - Should load projects list
+   - Should show project details
+
+5. Admin Console (#admin-console)
+   - Should load admin panel
+   - Should show admin options
+   - Should require admin role
+
+================================================================================
+WHAT TO CHECK ON EACH PAGE
+================================================================================
+
+✓ Page loads without errors
+✓ No 404 errors
+✓ No console errors (F12)
+✓ Content displays correctly
+✓ Navigation links work
+✓ Page refresh works (F5)
+✓ Forms are functional
+✓ Buttons are clickable
+✓ Data loads correctly
+✓ No blank pages
+
+================================================================================
+COMMON ISSUES & SOLUTIONS
+================================================================================
+
+ISSUE: Page shows blank/white screen
+SOLUTION: 
+- Check browser console for errors (F12)
+- Try refreshing page (F5)
+- Clear browser cache (Ctrl+Shift+Delete)
+- Try different browser
+
+ISSUE: 404 error on page
+SOLUTION:
+- Check URL is correct
+- Verify route exists in App.tsx
+- Check if page requires authentication
+- Try navigating from sidebar instead
+
+ISSUE: Console shows errors
+SOLUTION:
+- Note the error message
+- Check if it's a critical error or warning
+- Try refreshing page
+- Report error with details
+
+ISSUE: Page loads slowly
+SOLUTION:
+- Check network tab in DevTools
+- Look for slow API calls
+- Check bundle size
+- Try on different network
+
+ISSUE: Navigation links don't work
+SOLUTION:
+- Check if link is clickable
+- Verify sidebar is visible
+- Try clicking different links
+- Check browser console for errors
+
+================================================================================
+TESTING CHECKLIST
+================================================================================
+
+AUTHENTICATION
+[ ] Login page loads
+[ ] Login form accepts credentials
+[ ] Login succeeds with valid credentials
+[ ] Dashboard loads after login
+[ ] Logout works
+[ ] Session persists on refresh
+
+NAVIGATION
+[ ] Sidebar visible and clickable
+[ ] All menu items clickable
+[ ] Navigation links work
+[ ] Page refresh maintains state
+[ ] Back button works
+[ ] Forward button works
+
+PAGES
+[ ] Dashboard loads
+[ ] Assets page loads
+[ ] QC Review page loads
+[ ] Projects page loads
+[ ] Campaigns page loads
+[ ] Admin Console loads (admin only)
+[ ] Settings page loads
+[ ] All 80+ pages load without errors
+
+FUNCTIONALITY
+[ ] Forms submit successfully
+[ ] Data displays correctly
+[ ] Tables show data
+[ ] Charts render properly
+[ ] Buttons are functional
+[ ] Modals open and close
+[ ] Filters work
+[ ] Search works
+
+ERRORS
+[ ] No console errors
+[ ] No 404 errors
+[ ] No 500 errors
+[ ] Error messages are clear
+[ ] Error recovery works
+
+PERFORMANCE
+[ ] Pages load within 3 seconds
+[ ] Dashboard loads within 2 seconds
+[ ] API responses within 100ms
+[ ] No lag or delays
+[ ] Smooth interactions
+
+================================================================================
+BROWSER CONSOLE CHECK (F12)
+================================================================================
+
+1. Press F12 to open Developer Tools
+2. Click "Console" tab
+3. Look for red error messages
+4. Document any errors found
+5. Check if errors are critical or warnings
+
+CRITICAL ERRORS (Red):
+- Syntax errors
+- Network errors
+- API errors
+- Missing resources
+
+WARNINGS (Yellow):
+- Deprecation warnings
+- Performance warnings
+- Best practice warnings
+
+================================================================================
+API ENDPOINTS TO TEST
+================================================================================
+
+GET /api/health
+- Should return 200 OK
+- Should respond quickly
+
+GET /api/v1/assets
+- Should return asset list
+- Should have pagination
+
+GET /api/v1/qc-review/pending
+- Should return pending QC assets
+- Should have asset details
+
+POST /api/v1/auth/login
+- Should accept credentials
+- Should return JWT token
+
+================================================================================
+TESTING RESULTS TEMPLATE
+================================================================================
+
+Page: _______________________________________________
+Route: _______________________________________________
+Expected: _______________________________________________
+Actual: _______________________________________________
+Load Time: _______________________________________________
+Console Errors: _______________________________________________
+Result: [ ] PASS [ ] FAIL
+Notes: _______________________________________________
+
+================================================================================
+ISSUE REPORTING TEMPLATE
+================================================================================
+
+Issue Title: _______________________________________________
+Severity: [ ] Critical [ ] High [ ] Medium [ ] Low
+Page: _______________________________________________
+Steps to Reproduce:
+1. _______________________________________________
+2. _______________________________________________
+3. _______________________________________________
+Expected: _______________________________________________
+Actual: _______________________________________________
+Console Error: _______________________________________________
+Browser: _______________________________________________
+Date: _______________________________________________
+
+================================================================================
+SIGN-OFF
+================================================================================
+
+Tester: _______________________________________________
+Date: _______________________________________________
+Overall Status: [ ] PASS [ ] FAIL [ ] PASS WITH NOTES
+Issues Found: _______________________________________________
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Complete all critical page tests
+2. Document any issues found
+3. Check browser console for errors
+4. Test page refresh on each page
+5. Verify navigation links work
+6. Test error scenarios
+7. Report results to team
+8. Fix any critical issues
+9. Re-test fixed issues
+10. Sign off on deployment
+
+================================================================================
+CONTACT & SUPPORT
+================================================================================
+
+Application: Guires Marketing Control Center
+Version: 2.5.0
+URL: https://guries.vercel.app
+Status: Ready for Testing
+
+For issues or questions, contact the development team.
+
+================================================================================
+END OF QUICK TEST GUIDE
+================================================================================
