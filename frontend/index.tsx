@@ -81,9 +81,10 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     if (isApiCall) {
       const pathMatch = url.match(/\/api[^?]*/);
       const apiPath = pathMatch ? pathMatch[0] : url;
+      const method = init?.method || 'GET';
 
       // Handle login
-      if (apiPath.includes('/auth/login') && init?.method === 'POST') {
+      if (apiPath.includes('/auth/login') && method === 'POST') {
         try {
           const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
           const { email, password } = body || {};
@@ -113,22 +114,30 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
         }
       }
 
-      // Return mock responses
-      if (mockApiResponses[apiPath]) {
+      // For GET requests, return mock responses if available
+      if (method === 'GET' && mockApiResponses[apiPath]) {
         return new Response(JSON.stringify(mockApiResponses[apiPath]), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       }
 
-      return new Response(JSON.stringify({
-        success: true,
-        data: [],
-        total: 0
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      // For POST/PUT/DELETE requests, pass through to actual backend
+      if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+        return originalFetch(input as any, init);
+      }
+
+      // Default GET response
+      if (method === 'GET') {
+        return new Response(JSON.stringify({
+          success: true,
+          data: [],
+          total: 0
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     return originalFetch(input as any, init);
