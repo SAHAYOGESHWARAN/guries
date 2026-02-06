@@ -1,7 +1,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
-import { pool } from '../config/db';
 import * as campaignController from '../controllers/campaignController';
 import * as projectController from '../controllers/projectController';
 import * as analyticsController from '../controllers/analyticsController';
@@ -134,31 +133,6 @@ const asyncHandler = (fn: (req: any, res: any, next?: any) => Promise<any>) =>
 // Public health check endpoint (no authentication required)
 router.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), database: 'connected' });
-});
-
-// Initialize database endpoint (for testing)
-router.post('/init-db', async (req, res) => {
-    try {
-        console.log('Initializing database...');
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS assets (
-                id SERIAL PRIMARY KEY,
-                asset_name TEXT NOT NULL,
-                asset_type TEXT,
-                asset_category TEXT,
-                asset_format TEXT,
-                status TEXT DEFAULT 'draft',
-                qc_status TEXT,
-                file_url TEXT,
-                created_by INTEGER,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        res.status(200).json({ message: 'Database initialized successfully' });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
 });
 
 router.get('/system/stats', systemController.getSystemStats);
