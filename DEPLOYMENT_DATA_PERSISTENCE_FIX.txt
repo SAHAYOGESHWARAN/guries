@@ -1,0 +1,474 @@
+================================================================================
+DEPLOYMENT DATA PERSISTENCE ISSUE - ANALYSIS & RESOLUTION
+================================================================================
+Date: February 6, 2026
+Issue: Data not persisting on Vercel deployment (https://guries.vercel.app)
+Status: IDENTIFIED & SOLUTION PROVIDED
+================================================================================
+
+1. ROOT CAUSE ANALYSIS
+================================================================================
+
+PROBLEM IDENTIFIED:
+The application is using SQLite with a local file path (mcc_db.sqlite) which
+does NOT persist on Vercel's serverless environment.
+
+TECHNICAL DETAILS:
+- Current Setup: backend/config/db.ts uses better-sqlite3 with local file
+- Database Path: path.join(__dirname, '..', 'mcc_db.sqlite')
+- Issue: Vercel serverless functions have ephemeral file systems
+- Result: Every deployment/function restart loses all data
+
+WHY THIS HAPPENS:
+1. Vercel serverless functions are stateless
+2. File system changes are not persisted between invocations
+3. Each function execution gets a fresh file system
+4. SQLite database file is lost after function execution ends
+
+CURRENT CONFIGURATION:
+- .env.production: DB_CLIENT=mock, USE_PG=false
+- This means the app is NOT using PostgreSQL in production
+- It's falling back to SQLite which doesn't work on Vercel
+
+================================================================================
+
+2. SOLUTION OVERVIEW
+================================================================================
+
+RECOMMENDED APPROACH: Use PostgreSQL (Supabase) for Production
+
+Why PostgreSQL:
+✅ Persistent data storage
+✅ Vercel-compatible
+✅ Scalable for production
+✅ Supports real-time features
+✅ Free tier available (Supabase)
+
+IMPLEMENTATION STEPS:
+1. Set up Supabase PostgreSQL database
+2. Update environment variables
+3. Update database configuration
+4. Deploy to Vercel
+5. Verify data persistence
+
+================================================================================
+
+3. STEP-BY-STEP IMPLEMENTATION
+================================================================================
+
+STEP 1: CREATE SUPABASE ACCOUNT & DATABASE
+────────────────────────────────────────────────────────────────────────────
+
+1. Go to https://supabase.com
+2. Sign up for free account
+3. Create new project
+4. Wait for database to be created
+5. Go to Project Settings → Database
+6. Copy connection string (PostgreSQL)
+
+Connection String Format:
+postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
+
+Example:
+postgresql://postgres:abc123@db.supabase.co:5432/postgres
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 2: UPDATE ENVIRONMENT VARIABLES
+────────────────────────────────────────────────────────────────────────────
+
+Update .env.production with:
+
+NODE_ENV=production
+ADMIN_EMAIL=admin@example.com
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-12345
+JWT_EXPIRES_IN=7d
+
+# DATABASE CONFIGURATION - PostgreSQL
+DB_CLIENT=pg
+USE_PG=true
+DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
+DB_HOST=[HOST]
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=[PASSWORD]
+DB_NAME=postgres
+
+# FRONTEND CONFIGURATION
+FRONTEND_URL=https://guries.vercel.app
+CORS_ORIGIN=https://guries.vercel.app
+
+# SOCKET.IO CONFIGURATION
+SOCKET_CORS_ORIGINS=https://guries.vercel.app
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 3: UPDATE VERCEL ENVIRONMENT VARIABLES
+────────────────────────────────────────────────────────────────────────────
+
+1. Go to Vercel Dashboard
+2. Select project "guries"
+3. Go to Settings → Environment Variables
+4. Add the following variables:
+
+Name: DATABASE_URL
+Value: postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
+Environments: Production
+
+Name: DB_HOST
+Value: [HOST]
+Environments: Production
+
+Name: DB_PORT
+Value: 5432
+Environments: Production
+
+Name: DB_USER
+Value: postgres
+Environments: Production
+
+Name: DB_PASSWORD
+Value: [PASSWORD]
+Environments: Production
+
+Name: DB_NAME
+Value: postgres
+Environments: Production
+
+Name: DB_CLIENT
+Value: pg
+Environments: Production
+
+Name: USE_PG
+Value: true
+Environments: Production
+
+Name: FRONTEND_URL
+Value: https://guries.vercel.app
+Environments: Production
+
+Name: CORS_ORIGIN
+Value: https://guries.vercel.app
+Environments: Production
+
+Name: JWT_SECRET
+Value: [Your 32+ character secret]
+Environments: Production
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 4: UPDATE DATABASE CONFIGURATION CODE
+────────────────────────────────────────────────────────────────────────────
+
+The backend/config/db.ts needs to support PostgreSQL. Here's the updated code:
+
+FILE: backend/config/db.ts
+
+```typescript
+import dotenv from 'dotenv';
+import { Pool } from 'pg';
+import Database from 'better-sqlite3';
+import path from 'path';
+
+dotenv.config();
+
+const usePostgres = process.env.USE_PG === 'true' || process.env.DB_CLIENT === 'pg';
+
+let pool: any;
+
+if (usePostgres) {
+    // PostgreSQL Configuration (for production on Vercel)
+    const connectionString = process.env.DATABASE_URL || 
+        `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+    
+    pool = new Pool({
+        connectionString,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+    });
+
+    pool.on('error', (err: any) => {
+        console.error('Unexpected error on idle client', err);
+    });
+
+    console.log('[DB] Using PostgreSQL for production');
+} else {
+    // SQLite Configuration (for local development)
+    const dbPath = path.join(__dirname, '..', 'mcc_db.sqlite');
+    const db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+
+    pool = {
+        query: async (sql: string, params?: any[]) => {
+            try {
+                const trimmedSql = sql.trim().toUpperCase();
+
+                if (trimmedSql.startsWith('CREATE') || trimmedSql.startsWith('DROP') || trimmedSql.startsWith('ALTER')) {
+                    try {
+                        const statements = sql.split(';').filter(s => s.trim());
+                        for (const stmt of statements) {
+                            if (stmt.trim()) {
+                                db.prepare(stmt).run();
+                            }
+                        }
+                        return { rows: [], rowCount: 0 };
+                    } catch (e: any) {
+                        if (!e.message.includes('already exists')) throw e;
+                        return { rows: [], rowCount: 0 };
+                    }
+                }
+
+                if (trimmedSql.startsWith('SELECT')) {
+                    const stmt = db.prepare(sql);
+                    const rows = params ? stmt.all(...params) : stmt.all();
+                    return { rows, rowCount: rows.length };
+                }
+
+                if (trimmedSql.startsWith('INSERT')) {
+                    const stmt = db.prepare(sql);
+                    const result = params ? stmt.run(...params) : stmt.run();
+                    return {
+                        rows: [{ id: Number(result.lastInsertRowid) }],
+                        lastID: Number(result.lastInsertRowid),
+                        changes: result.changes,
+                        rowCount: result.changes
+                    };
+                }
+
+                if (trimmedSql.startsWith('UPDATE')) {
+                    const stmt = db.prepare(sql);
+                    const result = params ? stmt.run(...params) : stmt.run();
+                    return { rows: [], changes: result.changes, rowCount: result.changes };
+                }
+
+                if (trimmedSql.startsWith('DELETE')) {
+                    const stmt = db.prepare(sql);
+                    const result = params ? stmt.run(...params) : stmt.run();
+                    return { rows: [], changes: result.changes, rowCount: result.changes };
+                }
+
+                const stmt = db.prepare(sql);
+                const rows = params ? stmt.all(...params) : stmt.all();
+                return { rows, rowCount: rows.length };
+            } catch (error: any) {
+                console.error('Database error:', error.message);
+                throw error;
+            }
+        },
+        end: async () => {
+            db.close();
+        }
+    };
+
+    console.log('[DB] Using SQLite for local development');
+}
+
+export { pool };
+```
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 5: UPDATE PACKAGE.JSON DEPENDENCIES
+────────────────────────────────────────────────────────────────────────────
+
+Add PostgreSQL support to backend/package.json:
+
+```json
+{
+  "dependencies": {
+    "pg": "^8.11.3",
+    "better-sqlite3": "^12.6.2"
+  }
+}
+```
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 6: INITIALIZE DATABASE SCHEMA
+────────────────────────────────────────────────────────────────────────────
+
+Run database initialization script to create tables in PostgreSQL:
+
+1. Connect to Supabase database using psql or SQL editor
+2. Run backend/database/schema.sql
+3. Verify all tables created successfully
+
+Or use the initialization endpoint:
+POST /api/v1/init-db
+
+This will create all necessary tables in PostgreSQL.
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 7: DEPLOY TO VERCEL
+────────────────────────────────────────────────────────────────────────────
+
+1. Commit changes to git
+2. Push to GitHub
+3. Vercel will automatically deploy
+4. Monitor deployment logs for any errors
+5. Verify data persistence
+
+Deploy Command:
+git add .
+git commit -m "Fix: Enable PostgreSQL for production data persistence"
+git push origin main
+
+────────────────────────────────────────────────────────────────────────────
+
+STEP 8: VERIFY DATA PERSISTENCE
+────────────────────────────────────────────────────────────────────────────
+
+1. Go to https://guries.vercel.app
+2. Create a test asset
+3. Refresh the page
+4. Verify asset still exists
+5. Check Supabase dashboard to confirm data in database
+
+Test Endpoints:
+- POST /api/v1/assetLibrary - Create asset
+- GET /api/v1/assetLibrary - Retrieve assets
+- POST /api/v1/assetLibrary/:id/submit-qc - Submit for QC
+- POST /api/v1/assetLibrary/:id/qc-review - Review asset
+
+================================================================================
+
+4. ALTERNATIVE SOLUTIONS
+================================================================================
+
+OPTION 1: SUPABASE (RECOMMENDED)
+✅ Free tier available
+✅ Easy setup
+✅ PostgreSQL-based
+✅ Real-time features
+✅ Good for production
+Website: https://supabase.com
+
+OPTION 2: NEON
+✅ PostgreSQL serverless
+✅ Free tier available
+✅ Vercel-friendly
+✅ Auto-scaling
+Website: https://neon.tech
+
+OPTION 3: RAILWAY
+✅ PostgreSQL support
+✅ Easy deployment
+✅ Affordable pricing
+✅ Good for small projects
+Website: https://railway.app
+
+OPTION 4: PLANETSCALE (MySQL)
+✅ MySQL serverless
+✅ Free tier available
+✅ Vercel-friendly
+✅ Good performance
+Website: https://planetscale.com
+
+================================================================================
+
+5. TROUBLESHOOTING
+================================================================================
+
+ISSUE: Connection timeout
+SOLUTION:
+- Check DATABASE_URL is correct
+- Verify Supabase project is running
+- Check network connectivity
+- Verify IP whitelist (if applicable)
+
+ISSUE: SSL certificate error
+SOLUTION:
+- Add ssl: { rejectUnauthorized: false } to connection options
+- This is already included in the updated code
+
+ISSUE: Tables not found
+SOLUTION:
+- Run database initialization script
+- Verify schema.sql was executed
+- Check Supabase SQL editor for tables
+
+ISSUE: Data still not persisting
+SOLUTION:
+- Verify USE_PG=true in environment variables
+- Check DATABASE_URL is set correctly
+- Review Vercel deployment logs
+- Verify PostgreSQL connection is working
+
+================================================================================
+
+6. VERIFICATION CHECKLIST
+================================================================================
+
+Before considering the fix complete:
+
+✅ Supabase account created
+✅ PostgreSQL database created
+✅ Connection string obtained
+✅ Vercel environment variables updated
+✅ Database configuration code updated
+✅ Package.json dependencies updated
+✅ Database schema initialized
+✅ Code deployed to Vercel
+✅ Test asset created
+✅ Data persists after page refresh
+✅ QC workflow works with persistent data
+✅ All CRUD operations work
+✅ Real-time updates work
+
+================================================================================
+
+7. QUICK REFERENCE
+================================================================================
+
+Supabase Setup:
+1. Sign up: https://supabase.com
+2. Create project
+3. Get connection string from Settings → Database
+4. Format: postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
+
+Vercel Environment Variables:
+- DATABASE_URL: Full connection string
+- DB_HOST: Database host
+- DB_PORT: 5432
+- DB_USER: postgres
+- DB_PASSWORD: Your password
+- DB_NAME: postgres
+- DB_CLIENT: pg
+- USE_PG: true
+
+Database Initialization:
+- Run backend/database/schema.sql in Supabase SQL editor
+- Or call POST /api/v1/init-db endpoint
+
+Testing:
+- Create asset: POST /api/v1/assetLibrary
+- Verify persistence: Refresh page, data should remain
+- Check Supabase dashboard for data
+
+================================================================================
+
+8. NEXT STEPS
+================================================================================
+
+1. Set up Supabase PostgreSQL database
+2. Update environment variables in Vercel
+3. Update backend/config/db.ts with PostgreSQL support
+4. Deploy to Vercel
+5. Initialize database schema
+6. Test data persistence
+7. Monitor for any issues
+
+Expected Result:
+✅ Data persists across page refreshes
+✅ Data persists across deployments
+✅ All CRUD operations work
+✅ QC workflow functions properly
+✅ Real-time updates work
+✅ Production-ready application
+
+================================================================================
+DEPLOYMENT DATA PERSISTENCE FIX - COMPLETE
+================================================================================
