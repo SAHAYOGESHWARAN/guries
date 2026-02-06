@@ -38,9 +38,33 @@
       "dest": "/api/index.ts"
     },
     {
-      "src": "/(?!api)(.*)\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map)$",
+      "src": "/(?!api)(.*)\\.js$",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "application/javascript;charset=utf-8"
+      },
+      "dest": "/frontend/dist/$1.js"
+    },
+    {
+      "src": "/(?!api)(.*)\\.css$",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "text/css;charset=utf-8"
+      },
+      "dest": "/frontend/dist/$1.css"
+    },
+    {
+      "src": "/(?!api)(.*)\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
+      },
+      "dest": "/frontend/dist/$1.$2"
+    },
+    {
+      "src": "/(?!api)(.*)\\.(json|map)$",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "application/json;charset=utf-8"
       },
       "dest": "/frontend/dist/$1.$2"
     },
