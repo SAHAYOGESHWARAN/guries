@@ -1,13 +1,12 @@
 {
   "version": 2,
   "buildCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps --production=false && npm run build",
-  "outputDirectory": "frontend/dist",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1",
     "ADMIN_EMAIL": "admin@example.com",
-    "ADMIN_PASSWORD": "$2a$10$bxntNCf1U22OFzHCPGWoY.bHLLy8Y0fnXs51.LK6Eu8m./KWTHrt.",
+    "ADMIN_PASSWORD": "$2a$10$KL271sXgLncfLQGyT7q/cOz.vYl1CiIy7tsaGWEgDe.b1cbosXMxq",
     "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-12345",
     "JWT_EXPIRES_IN": "7d",
     "DB_CLIENT": "pg",
@@ -19,39 +18,40 @@
     "DB_PORT": "5432",
     "DB_USER": "postgres",
     "DB_PASSWORD": "HeiWPgZkRkBWhWtr",
-    "DB_NAME": "postgres"
+    "DB_NAME": "postgres",
+    "CORS_ORIGIN": "https://guries.vercel.app",
+    "CORS_ORIGINS": "https://guries.vercel.app",
+    "SOCKET_CORS_ORIGINS": "https://guries.vercel.app",
+    "BACKEND_URL": "https://guries.vercel.app",
+    "FRONTEND_URL": "https://guries.vercel.app",
+    "LOG_LEVEL": "info"
   },
   "functions": {
-    "api/**/*.ts": {
+    "backend/server.ts": {
       "memory": 1024,
       "maxDuration": 60
     }
   },
   "routes": [
     {
-      "src": "/(.*\\.js)$",
-      "headers": {
-        "Content-Type": "application/javascript; charset=utf-8"
-      }
+      "src": "/api/(.*)",
+      "dest": "/backend/server.ts"
     },
     {
-      "src": "/(.*\\.mjs)$",
-      "headers": {
-        "Content-Type": "application/javascript; charset=utf-8"
-      }
+      "src": "/(.*\\.js)$",
+      "dest": "/frontend/dist/$1"
     },
     {
       "src": "/(.*\\.css)$",
-      "headers": {
-        "Content-Type": "text/css; charset=utf-8"
-      }
+      "dest": "/frontend/dist/$1"
     },
     {
-      "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$"
+      "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
+      "dest": "/frontend/dist/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/frontend/dist/index.html"
     }
   ]
 }
