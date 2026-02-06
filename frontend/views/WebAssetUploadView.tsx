@@ -297,16 +297,16 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
 
             const assetData: Partial<AssetLibraryItem> = {
                 ...formData, name: formData.web_title || formData.name || 'Untitled Asset', application_type: 'web',
-                linked_repository_item_id: linkedRepositoryId || undefined, 
+                linked_repository_item_id: linkedRepositoryId || undefined,
                 linked_task_id: linkedTaskId || undefined,
-                linked_campaign_id: linkedCampaignId || undefined, 
+                linked_campaign_id: linkedCampaignId || undefined,
                 linked_project_id: linkedProjectId || undefined,
-                linked_service_id: linkedServiceId || undefined, 
+                linked_service_id: linkedServiceId || undefined,
                 linked_sub_service_ids: linkedSubServiceIds,
                 keywords: [...contentKeywords, ...seoKeywords], content_keywords: contentKeywords, seo_keywords: seoKeywords,
-                web_h3_tags: h3Tags.filter(t => t.trim()), 
-                designed_by: designedBy || undefined, 
-                published_by: publishedBy || undefined, 
+                web_h3_tags: h3Tags.filter(t => t.trim()),
+                designed_by: designedBy || undefined,
+                published_by: publishedBy || undefined,
                 verified_by: verifiedBy || undefined,
                 created_by: currentUser?.id, workflow_stage: finalWorkflowStage, status: finalStatus, qc_status: finalQcStatus,
                 web_body_content: bodyEditorRef.current?.innerHTML || formData.web_body_content,
@@ -314,19 +314,29 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                 ai_plagiarism_score: aiPlagiarismScore, resource_files: uploadedFileUrls, date: new Date().toISOString(), repository: 'Content'
             };
 
+            console.log('[WebAssetUploadView] Submitting asset data:', assetData);
+
             let createdAsset;
             if (editAssetId) {
+                console.log('[WebAssetUploadView] Updating existing asset:', editAssetId);
                 await updateAsset(editAssetId, assetData);
                 createdAsset = { ...assetData, id: editAssetId };
             } else {
+                console.log('[WebAssetUploadView] Creating new asset');
                 createdAsset = await createAsset(assetData as AssetLibraryItem);
+
+                // Validate that asset was created with an ID
+                if (!createdAsset?.id) {
+                    throw new Error('Asset creation failed: No ID returned from server');
+                }
+                console.log('[WebAssetUploadView] Asset created successfully with ID:', createdAsset.id);
             }
 
             // Auto-link asset to service if linked service is selected (Requirement 6)
-            if (linkedServiceId && !editAssetId) {
+            if (linkedServiceId && !editAssetId && createdAsset?.id) {
                 try {
                     const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
-                    await fetch(`${apiUrl}/assetServiceLinking/link-static`, {
+                    const linkResponse = await fetch(`${apiUrl}/assetServiceLinking/link-static`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -336,19 +346,26 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                             created_by: currentUser?.id
                         })
                     });
+
+                    if (!linkResponse.ok) {
+                        console.warn('Auto-linking failed with status:', linkResponse.status);
+                    } else {
+                        console.log('[WebAssetUploadView] Asset linked to service successfully');
+                    }
                 } catch (linkError) {
-                    console.warn('Auto-linking failed:', linkError);
+                    console.warn('Auto-linking error:', linkError);
+                    // Don't fail the entire operation if linking fails
                 }
             }
 
             await refresh?.();
             alert(submitForQC ? 'Asset submitted for QC successfully!' : editAssetId ? 'Asset updated successfully!' : 'Asset saved successfully!');
             onNavigate?.('assets');
-        } catch (error) {
-            if (process.env.NODE_ENV === 'development') {
-                console.error('Error saving asset:', error);
-            }
-            alert('Failed to save asset. Please try again.');
+        } catch (error: any) {
+            console.error('[WebAssetUploadView] Error saving asset:', error);
+            const errorMessage = error?.message || 'Failed to save asset. Please try again.';
+            alert(errorMessage);
+            setValidationErrors([errorMessage]);
         }
         finally { setIsSubmitting(false); }
     };

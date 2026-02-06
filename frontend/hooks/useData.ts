@@ -378,15 +378,27 @@ export function useData<T>(collection: string) {
                 });
 
                 if (response.ok) {
-                    serverItem = await response.json();
-                    console.log(`[useData] Created ${collection} item on server:`, serverItem);
+                    const responseData = await response.json();
+
+                    // Extract the actual item from various response formats
+                    serverItem = responseData.asset || responseData.data || responseData;
+
+                    // Validate that we got an ID back
+                    if (!serverItem?.id) {
+                        console.error(`[useData] Server response missing ID:`, responseData);
+                        throw new Error('Server did not return item ID');
+                    }
+
+                    console.log(`[useData] Created ${collection} item on server with ID:`, serverItem.id);
                 } else {
                     const errorText = await response.text();
                     console.error(`[useData] Failed to create ${collection}:`, response.status, errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
                 }
             } catch (e: any) {
                 console.error(`[useData] Error creating ${collection}:`, e.message);
                 setIsOffline(true);
+                throw e; // Re-throw so caller knows creation failed
             }
         }
 

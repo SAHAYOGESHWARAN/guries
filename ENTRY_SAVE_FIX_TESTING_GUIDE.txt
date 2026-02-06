@@ -1,0 +1,298 @@
+================================================================================
+ENTRY SAVE FIX - TESTING GUIDE
+================================================================================
+
+PROJECT: Guires Marketing Control Center
+VERSION: 2.5.0
+DATE: February 6, 2026
+
+================================================================================
+QUICK TEST (5 MINUTES)
+================================================================================
+
+TEST 1: Create Web Asset
+1. Navigate to Assets → Upload Assets → Web
+2. Fill in form:
+   - Asset Name: "Test Web Asset"
+   - Web Title: "Test Title"
+   - Web Description: "Test Description"
+3. Click "Save Draft"
+4. Expected: Asset appears in Assets list with ID
+5. Verify: Check browser console for "[WebAssetUploadView] Asset created successfully with ID: X"
+
+TEST 2: Create Project
+1. Navigate to Projects
+2. Click "Create Project"
+3. Fill in form:
+   - Project Name: "Test Project"
+   - Description: "Test Description"
+4. Click "Save"
+5. Expected: Project appears in Projects list
+6. Verify: Check browser console for "[useData] Created projects item on server with ID: X"
+
+TEST 3: Create Campaign
+1. Navigate to Campaigns
+2. Click "Create Campaign"
+3. Fill in form:
+   - Campaign Name: "Test Campaign"
+   - Description: "Test Description"
+4. Click "Save"
+5. Expected: Campaign appears in Campaigns list
+6. Verify: Check browser console for "[useData] Created campaigns item on server with ID: X"
+
+================================================================================
+COMPREHENSIVE TEST (30 MINUTES)
+================================================================================
+
+TEST 1: Web Asset Creation
+Steps:
+1. Open browser DevTools (F12)
+2. Go to Console tab
+3. Navigate to Assets → Upload Assets → Web
+4. Fill in all required fields
+5. Click "Save Draft"
+
+Verify:
+✓ No errors in console
+✓ "[WebAssetUploadView] Asset created successfully with ID: X" appears
+✓ Asset appears in Assets list
+✓ Asset has correct name and type
+✓ Asset ID is visible in list
+
+TEST 2: Web Asset with Service Linking
+Steps:
+1. Open browser DevTools (F12)
+2. Navigate to Assets → Upload Assets → Web
+3. Fill in form:
+   - Asset Name: "Test Asset with Service"
+   - Select a Service from dropdown
+   - Select Sub-services if available
+4. Click "Save Draft"
+
+Verify:
+✓ Asset created successfully
+✓ "[WebAssetUploadView] Asset linked to service successfully" appears
+✓ Asset appears in Assets list
+✓ Asset is linked to selected service
+
+TEST 3: Web Asset Submission for QC
+Steps:
+1. Navigate to Assets → Upload Assets → Web
+2. Fill in all required fields including:
+   - SEO Score (0-100)
+   - Grammar Score (0-100)
+3. Click "Submit for QC"
+
+Verify:
+✓ Asset created successfully
+✓ Status shows "Pending QC Review"
+✓ QC Status shows "QC Pending"
+✓ Asset appears in QC Review page
+
+TEST 4: Edit Existing Asset
+Steps:
+1. Navigate to Assets
+2. Click on an existing asset
+3. Click "Edit"
+4. Modify some fields
+5. Click "Save Draft"
+
+Verify:
+✓ Asset updated successfully
+✓ Changes are reflected in asset list
+✓ Version number incremented
+✓ No errors in console
+
+TEST 5: Create Project
+Steps:
+1. Navigate to Projects
+2. Click "Create Project"
+3. Fill in form with required fields
+4. Click "Save"
+
+Verify:
+✓ Project created successfully
+✓ Project appears in Projects list
+✓ Project ID is assigned
+✓ No errors in console
+
+TEST 6: Create Campaign
+Steps:
+1. Navigate to Campaigns
+2. Click "Create Campaign"
+3. Fill in form with required fields
+4. Click "Save"
+
+Verify:
+✓ Campaign created successfully
+✓ Campaign appears in Campaigns list
+✓ Campaign ID is assigned
+✓ No errors in console
+
+TEST 7: Create Task
+Steps:
+1. Navigate to Tasks
+2. Click "Create Task"
+3. Fill in form with required fields
+4. Click "Save"
+
+Verify:
+✓ Task created successfully
+✓ Task appears in Tasks list
+✓ Task ID is assigned
+✓ No errors in console
+
+TEST 8: Error Handling
+Steps:
+1. Navigate to Assets → Upload Assets → Web
+2. Leave required fields empty
+3. Click "Save Draft"
+
+Verify:
+✓ Validation errors displayed
+✓ Form not submitted
+✓ User sees clear error messages
+
+TEST 9: Network Error Handling
+Steps:
+1. Open browser DevTools (F12)
+2. Go to Network tab
+3. Throttle network to "Offline"
+4. Try to create an asset
+5. Restore network connection
+
+Verify:
+✓ Error message shown to user
+✓ User can retry after connection restored
+✓ No silent failures
+
+TEST 10: Database Verification
+Steps:
+1. Create an asset via UI
+2. Open database directly
+3. Query assets table
+4. Find the created asset
+
+Verify:
+✓ Asset exists in database
+✓ All fields are populated
+✓ ID is not NULL
+✓ Created_at timestamp is correct
+
+================================================================================
+BROWSER CONSOLE LOGGING
+================================================================================
+
+Expected Log Messages:
+
+For Asset Creation:
+[WebAssetUploadView] Submitting asset data: {...}
+[WebAssetUploadView] Creating new asset
+[useData] Sending POST to /api/v1/assetLibrary
+[useData] Created assetLibrary item on server with ID: 123
+[WebAssetUploadView] Asset created successfully with ID: 123
+[WebAssetUploadView] Asset linked to service successfully
+
+For Project Creation:
+[useData] Sending POST to /api/v1/projects
+[useData] Created projects item on server with ID: 456
+
+For Error Cases:
+[useData] Failed to create assetLibrary: 400 Asset name is required
+[WebAssetUploadView] Error saving asset: Asset creation failed: No ID returned from server
+
+================================================================================
+NETWORK TAB VERIFICATION
+================================================================================
+
+POST Request to /api/v1/assetLibrary:
+- Status: 201 Created
+- Response Headers:
+  - Content-Type: application/json
+- Response Body:
+  {
+    "asset": {
+      "id": 123,
+      "name": "Test Asset",
+      "type": "web",
+      ...
+    },
+    "id": 123,
+    "message": "Asset created successfully"
+  }
+
+================================================================================
+DATABASE VERIFICATION
+================================================================================
+
+Query to verify asset was saved:
+SELECT id, asset_name, asset_type, created_at FROM assets ORDER BY id DESC LIMIT 1;
+
+Expected Result:
+id | asset_name | asset_type | created_at
+123 | Test Asset | web | 2026-02-06 10:30:45
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Issue: Asset not appearing in list after save
+Solution:
+1. Check browser console for errors
+2. Check Network tab for failed requests
+3. Verify database has the asset
+4. Try refreshing the page
+5. Check if asset ID is NULL in database
+
+Issue: Error message "No ID returned from server"
+Solution:
+1. Check backend logs for errors
+2. Verify assetController.ts has the fix
+3. Check database for asset creation
+4. Restart backend server
+
+Issue: Auto-linking not working
+Solution:
+1. Check if asset was created successfully
+2. Verify service ID is valid
+3. Check backend logs for linking errors
+4. Verify service exists in database
+
+Issue: Form validation errors not showing
+Solution:
+1. Check browser console for errors
+2. Verify validateForm() function
+3. Check if validation errors state is updating
+4. Try refreshing the page
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+✓ All assets created appear in the list
+✓ All assets have valid IDs
+✓ All assets are saved to database
+✓ Auto-linking works correctly
+✓ Error messages are clear and helpful
+✓ No silent failures
+✓ Console logs are informative
+✓ Network requests return proper responses
+✓ Database records are complete
+✓ User experience is smooth
+
+================================================================================
+SIGN-OFF
+================================================================================
+
+After completing all tests above, the entry save fix is verified and ready
+for production deployment.
+
+Test Date: _______________
+Tester Name: _______________
+Status: [ ] PASS [ ] FAIL
+
+Notes: _______________________________________________________________
+
+================================================================================
+END OF ENTRY SAVE FIX TESTING GUIDE
+================================================================================

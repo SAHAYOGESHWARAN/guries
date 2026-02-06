@@ -520,6 +520,7 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
         }
 
         const newAsset = {
+            id: assetId, // Ensure ID is included
             ...rawAsset,
             name: rawAsset.asset_name || rawAsset.name,
             type: rawAsset.asset_type || rawAsset.type,
@@ -538,8 +539,9 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             static_service_links: rawAsset.static_service_links ? JSON.parse(rawAsset.static_service_links) : []
         };
 
+        console.log('[assetController] Created asset with ID:', assetId, 'Response:', newAsset);
         getSocket().emit('assetLibrary_created', newAsset);
-        res.status(201).json(newAsset);
+        res.status(201).json({ asset: newAsset, id: assetId, message: 'Asset created successfully' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -766,7 +768,7 @@ export const linkAssetToService = async (req: Request, res: Response) => {
         // Check if this is a static link (created during upload)
         let isStatic = false;
         const staticLinks = asset.rows[0].static_service_links ? JSON.parse(asset.rows[0].static_service_links) : [];
-        
+
         if (serviceId) {
             isStatic = staticLinks.some((link: any) => link.service_id === serviceId && link.type === 'service');
         }
@@ -815,7 +817,7 @@ export const unlinkAssetFromService = async (req: Request, res: Response) => {
         // Check if this is a static link (created during upload)
         let isStatic = false;
         const staticLinks = asset.rows[0].static_service_links ? JSON.parse(asset.rows[0].static_service_links) : [];
-        
+
         if (serviceId) {
             isStatic = staticLinks.some((link: any) => link.service_id === serviceId && link.type === 'service');
         }
