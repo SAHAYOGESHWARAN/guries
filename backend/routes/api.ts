@@ -1,6 +1,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
+import { pool } from '../config/db';
 import * as campaignController from '../controllers/campaignController';
 import * as projectController from '../controllers/projectController';
 import * as analyticsController from '../controllers/analyticsController';
