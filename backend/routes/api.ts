@@ -130,6 +130,11 @@ const asyncHandler = (fn: (req: any, res: any, next?: any) => Promise<any>) =>
     };
 
 // --- System & Auth ---
+// Public health check endpoint (no authentication required)
+router.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), database: 'connected' });
+});
+
 router.get('/system/stats', systemController.getSystemStats);
 router.post('/auth/login', loginLimiter, validateLoginRequest, authController.login as any);
 router.post('/auth/send-otp', otpLimiter, validateOTPRequest, authController.sendOtp as any);
