@@ -1,9 +1,10 @@
--- Complete Database Schema for Marketing Control Center
-PRAGMA foreign_keys = ON;
+-- PostgreSQL Database Schema for Marketing Control Center
+-- Complete schema with all fields from codebase analysis
+-- Compatible with Supabase and Vercel serverless
 
--- Users
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   role TEXT DEFAULT 'user',
@@ -11,40 +12,32 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT,
   department TEXT,
   country TEXT,
-  last_login DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  last_login TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Roles
-CREATE TABLE IF NOT EXISTS roles (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  role_name TEXT UNIQUE NOT NULL,
-  permissions TEXT,
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Brands (referenced by assets)
+-- Brands table
 CREATE TABLE IF NOT EXISTS brands (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   code TEXT,
   industry TEXT,
   website TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Services (referenced by asset linking)
+-- Services table
 CREATE TABLE IF NOT EXISTS services (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   service_name TEXT NOT NULL,
   service_code TEXT,
   slug TEXT,
   status TEXT DEFAULT 'draft',
+  meta_title TEXT,
+  meta_description TEXT,
   h1 TEXT,
   h2_list TEXT,
   h3_list TEXT,
@@ -54,8 +47,6 @@ CREATE TABLE IF NOT EXISTS services (
   internal_links TEXT,
   external_links TEXT,
   image_alt_texts TEXT,
-  meta_title TEXT,
-  meta_description TEXT,
   focus_keywords TEXT,
   secondary_keywords TEXT,
   meta_keywords TEXT,
@@ -65,27 +56,26 @@ CREATE TABLE IF NOT EXISTS services (
   twitter_title TEXT,
   twitter_description TEXT,
   twitter_image_url TEXT,
-  schema_type_id INTEGER,
   robots_index TEXT,
   robots_follow TEXT,
   canonical_url TEXT,
   word_count INTEGER,
   reading_time_minutes INTEGER,
   version_number INTEGER DEFAULT 1,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Sub-Services (referenced by asset linking)
+-- Sub-Services table
 CREATE TABLE IF NOT EXISTS sub_services (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  service_id INTEGER NOT NULL,
+  id SERIAL PRIMARY KEY,
+  service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
   sub_service_name TEXT NOT NULL,
   sub_service_code TEXT,
   slug TEXT,
   description TEXT,
   status TEXT DEFAULT 'draft',
-  parent_service_id INTEGER,
+  parent_service_id INTEGER REFERENCES services(id),
   h1 TEXT,
   h2_list TEXT,
   h3_list TEXT,
@@ -106,22 +96,41 @@ CREATE TABLE IF NOT EXISTS sub_services (
   twitter_title TEXT,
   twitter_description TEXT,
   twitter_image_url TEXT,
-  schema_type_id INTEGER,
   robots_index TEXT,
   robots_follow TEXT,
   canonical_url TEXT,
   word_count INTEGER,
   reading_time_minutes INTEGER,
   version_number INTEGER DEFAULT 1,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id),
-  FOREIGN KEY (parent_service_id) REFERENCES services(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Assets (comprehensive with all fields)
+-- Keywords table
+CREATE TABLE IF NOT EXISTS keywords (
+  id SERIAL PRIMARY KEY,
+  keyword TEXT,
+  keyword_name TEXT UNIQUE NOT NULL,
+  keyword_code TEXT,
+  keyword_id TEXT,
+  keyword_intent TEXT,
+  keyword_type TEXT,
+  language TEXT,
+  search_volume INTEGER,
+  difficulty_score INTEGER,
+  mapped_service_id INTEGER REFERENCES services(id),
+  mapped_service TEXT,
+  mapped_sub_service_id INTEGER REFERENCES sub_services(id),
+  mapped_sub_service TEXT,
+  keyword_category TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets table (comprehensive with all fields)
 CREATE TABLE IF NOT EXISTS assets (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   asset_name TEXT NOT NULL,
   asset_type TEXT,
   asset_category TEXT,
@@ -132,10 +141,10 @@ CREATE TABLE IF NOT EXISTS assets (
   thumbnail_url TEXT,
   qc_score INTEGER,
   qc_checklist_items TEXT,
-  submitted_by INTEGER,
-  submitted_at DATETIME,
-  qc_reviewer_id INTEGER,
-  qc_reviewed_at DATETIME,
+  submitted_by INTEGER REFERENCES users(id),
+  submitted_at TIMESTAMP,
+  qc_reviewer_id INTEGER REFERENCES users(id),
+  qc_reviewed_at TIMESTAMP,
   qc_remarks TEXT,
   qc_checklist_completion INTEGER,
   linking_active INTEGER DEFAULT 0,
@@ -144,11 +153,10 @@ CREATE TABLE IF NOT EXISTS assets (
   workflow_stage TEXT DEFAULT 'draft',
   version_number INTEGER DEFAULT 1,
   version_history TEXT,
-  created_by INTEGER,
-  updated_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  -- Web Asset Fields
+  created_by INTEGER REFERENCES users(id),
+  updated_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   web_title TEXT,
   web_description TEXT,
   web_meta_description TEXT,
@@ -166,7 +174,6 @@ CREATE TABLE IF NOT EXISTS assets (
   seo_service_url TEXT,
   seo_blog_url TEXT,
   seo_anchor_text TEXT,
-  -- SMM Fields
   smm_platform TEXT,
   smm_title TEXT,
   smm_tag TEXT,
@@ -175,32 +182,28 @@ CREATE TABLE IF NOT EXISTS assets (
   smm_hashtags TEXT,
   smm_media_url TEXT,
   smm_media_type TEXT,
-  -- SEO Scores
   seo_score INTEGER,
   grammar_score INTEGER,
   ai_plagiarism_score INTEGER,
-  -- SEO Asset Fields
-  seo_primary_keyword_id INTEGER,
+  seo_primary_keyword_id INTEGER REFERENCES keywords(id),
   seo_lsi_keywords TEXT,
   seo_domain_type TEXT,
   seo_domains TEXT,
   seo_blog_content TEXT,
   seo_sector_id INTEGER,
   seo_industry_id INTEGER,
-  -- Linking Fields
   linked_task_id INTEGER,
   linked_campaign_id INTEGER,
   linked_project_id INTEGER,
-  linked_service_id INTEGER,
-  linked_sub_service_id INTEGER,
+  linked_service_id INTEGER REFERENCES services(id),
+  linked_sub_service_id INTEGER REFERENCES sub_services(id),
   linked_repository_item_id INTEGER,
   linked_service_ids TEXT,
   linked_sub_service_ids TEXT,
-  -- Additional Fields
-  designed_by INTEGER,
-  published_by INTEGER,
-  verified_by INTEGER,
-  published_at DATETIME,
+  designed_by INTEGER REFERENCES users(id),
+  published_by INTEGER REFERENCES users(id),
+  verified_by INTEGER REFERENCES users(id),
+  published_at TIMESTAMP,
   og_image_url TEXT,
   file_size INTEGER,
   file_type TEXT,
@@ -216,144 +219,130 @@ CREATE TABLE IF NOT EXISTS assets (
   application_type TEXT,
   asset_website_usage TEXT,
   asset_social_media_usage TEXT,
-  asset_backlink_usage TEXT,
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id),
-  FOREIGN KEY (qc_reviewer_id) REFERENCES users(id),
-  FOREIGN KEY (submitted_by) REFERENCES users(id),
-  FOREIGN KEY (designed_by) REFERENCES users(id),
-  FOREIGN KEY (published_by) REFERENCES users(id),
-  FOREIGN KEY (verified_by) REFERENCES users(id),
-  FOREIGN KEY (linked_campaign_id) REFERENCES campaigns(id),
-  FOREIGN KEY (linked_project_id) REFERENCES projects(id),
-  FOREIGN KEY (linked_service_id) REFERENCES services(id),
-  FOREIGN KEY (linked_sub_service_id) REFERENCES sub_services(id)
+  asset_backlink_usage TEXT
 );
 
--- Asset QC reviews
+-- Asset QC Reviews
 CREATE TABLE IF NOT EXISTS asset_qc_reviews (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  asset_id INTEGER NOT NULL,
-  qc_reviewer_id INTEGER,
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  qc_reviewer_id INTEGER REFERENCES users(id),
   qc_score INTEGER,
   checklist_completion INTEGER,
   qc_remarks TEXT,
   qc_decision TEXT,
   checklist_items TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (asset_id) REFERENCES assets(id),
-  FOREIGN KEY (qc_reviewer_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- QC audit log
+-- QC Audit Log
 CREATE TABLE IF NOT EXISTS qc_audit_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  asset_id INTEGER,
-  user_id INTEGER,
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER REFERENCES assets(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   action VARCHAR(50),
   details TEXT,
   ip_address VARCHAR(45),
   user_agent TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Notifications (basic)
+-- Asset Status Log
+CREATE TABLE IF NOT EXISTS asset_status_log (
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  status TEXT,
+  changed_by INTEGER REFERENCES users(id),
+  change_reason TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notifications
 CREATE TABLE IF NOT EXISTS notifications (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
   title TEXT,
   message TEXT,
   type TEXT,
   is_read INTEGER DEFAULT 0,
   link TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Asset Category Master
 CREATE TABLE IF NOT EXISTS asset_category_master (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   category_name TEXT UNIQUE NOT NULL,
   category_code TEXT,
   description TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Asset Type Master
 CREATE TABLE IF NOT EXISTS asset_type_master (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   asset_type_name TEXT UNIQUE NOT NULL,
   type_name TEXT,
   type_code TEXT,
   description TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Asset Format Master
+-- Asset Formats
 CREATE TABLE IF NOT EXISTS asset_formats (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   format_name TEXT UNIQUE NOT NULL,
   format_code TEXT,
   description TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Service-Asset Linking
 CREATE TABLE IF NOT EXISTS service_asset_links (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  service_id INTEGER NOT NULL,
-  asset_id INTEGER NOT NULL,
+  id SERIAL PRIMARY KEY,
+  service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   link_type TEXT DEFAULT 'primary',
   is_static INTEGER DEFAULT 0,
-  created_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
-  FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  created_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(service_id, asset_id)
 );
 
 -- Sub-Service-Asset Linking
 CREATE TABLE IF NOT EXISTS subservice_asset_links (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  sub_service_id INTEGER NOT NULL,
-  asset_id INTEGER NOT NULL,
+  id SERIAL PRIMARY KEY,
+  sub_service_id INTEGER NOT NULL REFERENCES sub_services(id) ON DELETE CASCADE,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   link_type TEXT DEFAULT 'primary',
   is_static INTEGER DEFAULT 0,
-  created_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (sub_service_id) REFERENCES sub_services(id) ON DELETE CASCADE,
-  FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  created_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(sub_service_id, asset_id)
 );
 
 -- Keyword-Asset Linking
 CREATE TABLE IF NOT EXISTS keyword_asset_links (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  keyword_id INTEGER NOT NULL,
-  asset_id INTEGER NOT NULL,
+  id SERIAL PRIMARY KEY,
+  keyword_id INTEGER NOT NULL REFERENCES keywords(id) ON DELETE CASCADE,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   link_type TEXT DEFAULT 'primary',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (keyword_id) REFERENCES keywords(id) ON DELETE CASCADE,
-  FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(keyword_id, asset_id)
 );
 
 -- Projects table
 CREATE TABLE IF NOT EXISTS projects (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   project_name TEXT NOT NULL,
   project_code TEXT UNIQUE,
   description TEXT,
@@ -361,34 +350,31 @@ CREATE TABLE IF NOT EXISTS projects (
   start_date DATE,
   end_date DATE,
   budget DECIMAL(10,2),
-  owner_id INTEGER,
-  brand_id INTEGER,
-  linked_service_id INTEGER,
+  owner_id INTEGER REFERENCES users(id),
+  brand_id INTEGER REFERENCES brands(id),
+  linked_service_id INTEGER REFERENCES services(id),
   priority TEXT DEFAULT 'Medium',
   sub_services TEXT,
   outcome_kpis TEXT,
   expected_outcome TEXT,
   team_members TEXT,
   weekly_report INTEGER DEFAULT 1,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (owner_id) REFERENCES users(id),
-  FOREIGN KEY (brand_id) REFERENCES brands(id),
-  FOREIGN KEY (linked_service_id) REFERENCES services(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Campaigns table
 CREATE TABLE IF NOT EXISTS campaigns (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   campaign_name TEXT NOT NULL,
   campaign_type TEXT DEFAULT 'Content',
   status TEXT DEFAULT 'planning',
   description TEXT,
   campaign_start_date DATE,
   campaign_end_date DATE,
-  campaign_owner_id INTEGER,
-  project_id INTEGER,
-  brand_id INTEGER,
+  campaign_owner_id INTEGER REFERENCES users(id),
+  project_id INTEGER REFERENCES projects(id),
+  brand_id INTEGER REFERENCES brands(id),
   linked_service_ids TEXT,
   target_url TEXT,
   backlinks_planned INTEGER DEFAULT 0,
@@ -397,23 +383,20 @@ CREATE TABLE IF NOT EXISTS campaigns (
   tasks_total INTEGER DEFAULT 0,
   kpi_score INTEGER DEFAULT 0,
   sub_campaigns TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (campaign_owner_id) REFERENCES users(id),
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (brand_id) REFERENCES brands(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tasks table
 CREATE TABLE IF NOT EXISTS tasks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   task_name TEXT NOT NULL,
   description TEXT,
   status TEXT DEFAULT 'pending',
   priority TEXT DEFAULT 'Medium',
-  assigned_to INTEGER,
-  project_id INTEGER,
-  campaign_id INTEGER,
+  assigned_to INTEGER REFERENCES users(id),
+  project_id INTEGER REFERENCES projects(id),
+  campaign_id INTEGER REFERENCES campaigns(id),
   due_date DATE,
   campaign_type TEXT,
   sub_campaign TEXT,
@@ -424,125 +407,13 @@ CREATE TABLE IF NOT EXISTS tasks (
   repo_links TEXT,
   rework_count INTEGER DEFAULT 0,
   repo_link_count INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (assigned_to) REFERENCES users(id),
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Indexes commonly used by QC queries
-CREATE INDEX IF NOT EXISTS idx_asset_qc_asset_id ON asset_qc_reviews(asset_id);
-CREATE INDEX IF NOT EXISTS idx_qc_audit_asset_id ON qc_audit_log(asset_id);
-CREATE INDEX IF NOT EXISTS idx_qc_audit_user_id ON qc_audit_log(user_id);
-
--- Keywords table (referenced by keyword-asset linking)
-CREATE TABLE IF NOT EXISTS keywords (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  keyword TEXT,
-  keyword_name TEXT UNIQUE NOT NULL,
-  keyword_code TEXT,
-  keyword_id TEXT,
-  keyword_intent TEXT,
-  keyword_type TEXT,
-  language TEXT,
-  search_volume INTEGER,
-  difficulty_score INTEGER,
-  mapped_service_id INTEGER,
-  mapped_service TEXT,
-  mapped_sub_service_id INTEGER,
-  mapped_sub_service TEXT,
-  keyword_category TEXT,
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (mapped_service_id) REFERENCES services(id),
-  FOREIGN KEY (mapped_sub_service_id) REFERENCES sub_services(id)
-);
-
--- Workflow Stages
-CREATE TABLE IF NOT EXISTS workflow_stages (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  stage_name TEXT UNIQUE NOT NULL,
-  stage_code TEXT,
-  sequence INTEGER,
-  description TEXT,
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Platforms (for SMM)
-CREATE TABLE IF NOT EXISTS platforms (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  platform_name TEXT UNIQUE NOT NULL,
-  platform_code TEXT,
-  description TEXT,
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Countries
-CREATE TABLE IF NOT EXISTS countries (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  country_name TEXT UNIQUE NOT NULL,
-  country_code TEXT,
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- SEO Error Types
-CREATE TABLE IF NOT EXISTS seo_error_types (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  error_type TEXT UNIQUE NOT NULL,
-  error_code TEXT,
-  description TEXT,
-  severity TEXT DEFAULT 'medium',
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Additional indexes for Projects, Campaigns, Tasks
-CREATE INDEX IF NOT EXISTS idx_projects_owner_id ON projects(owner_id);
-CREATE INDEX IF NOT EXISTS idx_projects_brand_id ON projects(brand_id);
-CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
-CREATE INDEX IF NOT EXISTS idx_campaigns_owner_id ON campaigns(campaign_owner_id);
-CREATE INDEX IF NOT EXISTS idx_campaigns_project_id ON campaigns(project_id);
-CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status);
-CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_campaign_id ON tasks(campaign_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
-
--- Indexes for Asset Linking Tables
-CREATE INDEX IF NOT EXISTS idx_service_asset_links_service_id ON service_asset_links(service_id);
-CREATE INDEX IF NOT EXISTS idx_service_asset_links_asset_id ON service_asset_links(asset_id);
-CREATE INDEX IF NOT EXISTS idx_subservice_asset_links_sub_service_id ON subservice_asset_links(sub_service_id);
-CREATE INDEX IF NOT EXISTS idx_subservice_asset_links_asset_id ON subservice_asset_links(asset_id);
-CREATE INDEX IF NOT EXISTS idx_keyword_asset_links_keyword_id ON keyword_asset_links(keyword_id);
-CREATE INDEX IF NOT EXISTS idx_keyword_asset_links_asset_id ON keyword_asset_links(asset_id);
-CREATE INDEX IF NOT EXISTS idx_sub_services_service_id ON sub_services(service_id);
-CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
-CREATE INDEX IF NOT EXISTS idx_assets_qc_status ON assets(qc_status);
-CREATE INDEX IF NOT EXISTS idx_assets_workflow_stage ON assets(workflow_stage);
-CREATE INDEX IF NOT EXISTS idx_assets_linked_service_id ON assets(linked_service_id);
-CREATE INDEX IF NOT EXISTS idx_assets_linked_sub_service_id ON assets(linked_sub_service_id);
-CREATE INDEX IF NOT EXISTS idx_assets_application_type ON assets(application_type);
-CREATE INDEX IF NOT EXISTS idx_keywords_keyword ON keywords(keyword);
-CREATE INDEX IF NOT EXISTS idx_keywords_mapped_service_id ON keywords(mapped_service_id);
-CREATE INDEX IF NOT EXISTS idx_services_status ON services(status);
-CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug);
-CREATE INDEX IF NOT EXISTS idx_sub_services_status ON sub_services(status);
-CREATE INDEX IF NOT EXISTS idx_sub_services_slug ON sub_services(slug);
-
 
 -- Backlink Sources
 CREATE TABLE IF NOT EXISTS backlink_sources (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   domain TEXT NOT NULL,
   backlink_url TEXT,
   backlink_category TEXT,
@@ -555,15 +426,14 @@ CREATE TABLE IF NOT EXISTS backlink_sources (
   password TEXT,
   credentials_notes TEXT,
   status TEXT DEFAULT 'active',
-  created_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  created_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Backlink Submissions
 CREATE TABLE IF NOT EXISTS backlink_submissions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   domain TEXT,
   opportunity_type TEXT,
   category TEXT,
@@ -573,21 +443,18 @@ CREATE TABLE IF NOT EXISTS backlink_submissions (
   da_score INTEGER,
   spam_score INTEGER,
   country TEXT,
-  service_id INTEGER,
-  sub_service_id INTEGER,
-  seo_owner_id INTEGER,
+  service_id INTEGER REFERENCES services(id),
+  sub_service_id INTEGER REFERENCES sub_services(id),
+  seo_owner_id INTEGER REFERENCES users(id),
   is_paid INTEGER DEFAULT 0,
   submission_status TEXT DEFAULT 'pending',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id),
-  FOREIGN KEY (sub_service_id) REFERENCES sub_services(id),
-  FOREIGN KEY (seo_owner_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Toxic Backlinks
 CREATE TABLE IF NOT EXISTS toxic_backlinks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   domain TEXT,
   toxic_url TEXT,
   backlink_url TEXT NOT NULL,
@@ -598,57 +465,50 @@ CREATE TABLE IF NOT EXISTS toxic_backlinks (
   dr_type TEXT,
   severity TEXT DEFAULT 'Medium',
   status TEXT DEFAULT 'Pending',
-  assigned_to_id INTEGER,
-  service_id INTEGER,
+  assigned_to_id INTEGER REFERENCES users(id),
+  service_id INTEGER REFERENCES services(id),
   notes TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (assigned_to_id) REFERENCES users(id),
-  FOREIGN KEY (service_id) REFERENCES services(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Competitor Backlinks
 CREATE TABLE IF NOT EXISTS competitor_backlinks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   competitor_domain TEXT,
   backlink_url TEXT,
   source_domain TEXT,
   anchor_text TEXT,
   domain_authority INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- On-Page SEO Audits
 CREATE TABLE IF NOT EXISTS on_page_seo_audits (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   url TEXT,
-  service_id INTEGER,
-  sub_service_id INTEGER,
+  service_id INTEGER REFERENCES services(id),
+  sub_service_id INTEGER REFERENCES sub_services(id),
   error_type TEXT NOT NULL,
   error_category TEXT,
   severity TEXT DEFAULT 'Medium',
   issue_description TEXT,
   current_value TEXT,
   recommended_value TEXT,
-  linked_campaign_id INTEGER,
+  linked_campaign_id INTEGER REFERENCES campaigns(id),
   status TEXT DEFAULT 'Open',
-  assigned_to_id INTEGER,
-  created_by INTEGER,
-  detected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  resolved_at DATETIME,
+  assigned_to_id INTEGER REFERENCES users(id),
+  created_by INTEGER REFERENCES users(id),
+  detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at TIMESTAMP,
   resolution_notes TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id),
-  FOREIGN KEY (sub_service_id) REFERENCES sub_services(id),
-  FOREIGN KEY (linked_campaign_id) REFERENCES campaigns(id),
-  FOREIGN KEY (assigned_to_id) REFERENCES users(id),
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- UX Issues
 CREATE TABLE IF NOT EXISTS ux_issues (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   title TEXT,
   issue_title TEXT NOT NULL,
   description TEXT,
@@ -658,40 +518,34 @@ CREATE TABLE IF NOT EXISTS ux_issues (
   severity TEXT DEFAULT 'Medium',
   source TEXT,
   screenshot_url TEXT,
-  assigned_to_id INTEGER,
-  service_id INTEGER,
+  assigned_to_id INTEGER REFERENCES users(id),
+  service_id INTEGER REFERENCES services(id),
   status TEXT DEFAULT 'open',
   resolution_notes TEXT,
   priority_score INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (assigned_to_id) REFERENCES users(id),
-  FOREIGN KEY (service_id) REFERENCES services(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- URL Errors
 CREATE TABLE IF NOT EXISTS url_errors (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   url TEXT NOT NULL,
   error_type TEXT,
   severity TEXT,
   description TEXT,
-  service_id INTEGER,
-  sub_service_id INTEGER,
-  linked_campaign_id INTEGER,
-  assigned_to_id INTEGER,
+  service_id INTEGER REFERENCES services(id),
+  sub_service_id INTEGER REFERENCES sub_services(id),
+  linked_campaign_id INTEGER REFERENCES campaigns(id),
+  assigned_to_id INTEGER REFERENCES users(id),
   status TEXT DEFAULT 'open',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id),
-  FOREIGN KEY (sub_service_id) REFERENCES sub_services(id),
-  FOREIGN KEY (linked_campaign_id) REFERENCES campaigns(id),
-  FOREIGN KEY (assigned_to_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- SMM Posts
 CREATE TABLE IF NOT EXISTS smm_posts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   title TEXT,
   smm_type TEXT,
   content_type TEXT,
@@ -703,40 +557,35 @@ CREATE TABLE IF NOT EXISTS smm_posts (
   hashtags TEXT,
   asset_url TEXT,
   asset_count INTEGER,
-  service_id INTEGER,
-  sub_service_id INTEGER,
-  assigned_to_id INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id),
-  FOREIGN KEY (sub_service_id) REFERENCES sub_services(id),
-  FOREIGN KEY (assigned_to_id) REFERENCES users(id)
+  service_id INTEGER REFERENCES services(id),
+  sub_service_id INTEGER REFERENCES sub_services(id),
+  assigned_to_id INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Service Pages
 CREATE TABLE IF NOT EXISTS service_pages (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   page_title TEXT NOT NULL,
   url TEXT,
   url_slug TEXT,
   page_type TEXT,
-  service_id INTEGER,
-  sub_service_id INTEGER,
+  service_id INTEGER REFERENCES services(id),
+  sub_service_id INTEGER REFERENCES sub_services(id),
   industry TEXT,
   target_keyword TEXT,
   primary_keyword TEXT,
   seo_score INTEGER,
   audit_score INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (service_id) REFERENCES services(id),
-  FOREIGN KEY (sub_service_id) REFERENCES sub_services(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- SEO Asset Domains
 CREATE TABLE IF NOT EXISTS seo_asset_domains (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  seo_asset_id INTEGER,
+  id SERIAL PRIMARY KEY,
+  seo_asset_id INTEGER REFERENCES assets(id),
   domain_name TEXT,
   domain_type TEXT,
   url_posted TEXT,
@@ -744,32 +593,14 @@ CREATE TABLE IF NOT EXISTS seo_asset_domains (
   qa_status TEXT,
   approval_status TEXT,
   display_status TEXT,
-  backlink_source_id INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (seo_asset_id) REFERENCES assets(id),
-  FOREIGN KEY (backlink_source_id) REFERENCES backlink_sources(id)
-);
-
--- QC Runs
-CREATE TABLE IF NOT EXISTS qc_runs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  target_type TEXT,
-  target_id INTEGER,
-  qc_status TEXT,
-  qc_owner_id INTEGER,
-  qc_checklist_version_id INTEGER,
-  final_score_percentage REAL,
-  analysis_report TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (qc_owner_id) REFERENCES users(id),
-  FOREIGN KEY (qc_checklist_version_id) REFERENCES qc_checklist_versions(id)
+  backlink_source_id INTEGER REFERENCES backlink_sources(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- QC Checklists
 CREATE TABLE IF NOT EXISTS qc_checklists (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   checklist_name TEXT NOT NULL,
   checklist_type TEXT,
   category TEXT,
@@ -777,50 +608,49 @@ CREATE TABLE IF NOT EXISTS qc_checklists (
   scoring_mode TEXT,
   pass_threshold REAL,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- QC Checklist Versions
 CREATE TABLE IF NOT EXISTS qc_checklist_versions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  checklist_id INTEGER,
+  id SERIAL PRIMARY KEY,
+  checklist_id INTEGER REFERENCES qc_checklists(id),
   version_number INTEGER,
   items TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (checklist_id) REFERENCES qc_checklists(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- QC Runs
+CREATE TABLE IF NOT EXISTS qc_runs (
+  id SERIAL PRIMARY KEY,
+  target_type TEXT,
+  target_id INTEGER,
+  qc_status TEXT,
+  qc_owner_id INTEGER REFERENCES users(id),
+  qc_checklist_version_id INTEGER REFERENCES qc_checklist_versions(id),
+  final_score_percentage REAL,
+  analysis_report TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- QC Weightage Configs
 CREATE TABLE IF NOT EXISTS qc_weightage_configs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   name TEXT,
   type TEXT,
   weight REAL,
   mandatory INTEGER DEFAULT 0,
   stage TEXT,
   asset_type TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- OKRs
-CREATE TABLE IF NOT EXISTS okrs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  objective TEXT NOT NULL,
-  type TEXT,
-  cycle TEXT,
-  owner TEXT,
-  alignment TEXT,
-  progress REAL DEFAULT 0,
-  status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Competitor Benchmarks
 CREATE TABLE IF NOT EXISTS competitor_benchmarks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   competitor_name TEXT NOT NULL,
   competitor_domain TEXT,
   monthly_traffic INTEGER,
@@ -828,13 +658,13 @@ CREATE TABLE IF NOT EXISTS competitor_benchmarks (
   backlinks INTEGER,
   ranking_coverage REAL,
   status TEXT DEFAULT 'active',
-  updated_on DATETIME DEFAULT CURRENT_TIMESTAMP,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Gold Standards
 CREATE TABLE IF NOT EXISTS gold_standards (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   metric_name TEXT NOT NULL,
   category TEXT,
   value REAL,
@@ -842,13 +672,13 @@ CREATE TABLE IF NOT EXISTS gold_standards (
   unit TEXT,
   evidence TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Effort Targets
 CREATE TABLE IF NOT EXISTS effort_targets (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   role TEXT NOT NULL,
   category TEXT,
   metric TEXT,
@@ -858,84 +688,70 @@ CREATE TABLE IF NOT EXISTS effort_targets (
   weightage REAL,
   rules TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OKRs
+CREATE TABLE IF NOT EXISTS okrs (
+  id SERIAL PRIMARY KEY,
+  objective TEXT NOT NULL,
+  type TEXT,
+  cycle TEXT,
+  owner TEXT,
+  alignment TEXT,
+  progress REAL DEFAULT 0,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Personas
 CREATE TABLE IF NOT EXISTS personas (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   persona_name TEXT NOT NULL,
   description TEXT,
   demographics TEXT,
   goals TEXT,
   pain_points TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Forms
 CREATE TABLE IF NOT EXISTS forms (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   form_name TEXT NOT NULL,
   form_type TEXT,
   fields TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Integrations
-CREATE TABLE IF NOT EXISTS integrations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  type TEXT,
-  status TEXT DEFAULT 'inactive',
-  api_key TEXT,
-  api_secret TEXT,
-  config TEXT,
-  last_sync_at DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Integration Logs
-CREATE TABLE IF NOT EXISTS integration_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  integration_id INTEGER,
-  event TEXT,
-  status TEXT,
-  details TEXT,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (integration_id) REFERENCES integrations(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Teams
 CREATE TABLE IF NOT EXISTS teams (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  lead_user_id INTEGER,
+  lead_user_id INTEGER REFERENCES users(id),
   description TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (lead_user_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Team Members
 CREATE TABLE IF NOT EXISTS team_members (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  team_id INTEGER,
-  user_id INTEGER,
+  id SERIAL PRIMARY KEY,
+  team_id INTEGER REFERENCES teams(id),
+  user_id INTEGER REFERENCES users(id),
   role_in_team TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (team_id) REFERENCES teams(id),
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Graphic Assets
 CREATE TABLE IF NOT EXISTS graphic_assets (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   asset_name TEXT NOT NULL,
   asset_type TEXT,
   file_url TEXT,
@@ -944,154 +760,172 @@ CREATE TABLE IF NOT EXISTS graphic_assets (
   file_size_kb INTEGER,
   tags TEXT,
   status TEXT DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Knowledge Articles
 CREATE TABLE IF NOT EXISTS knowledge_articles (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   content TEXT,
   category TEXT,
   tags TEXT,
   language TEXT,
-  author_id INTEGER,
+  author_id INTEGER REFERENCES users(id),
   status TEXT DEFAULT 'draft',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (author_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Compliance Rules
 CREATE TABLE IF NOT EXISTS compliance_rules (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   rule_name TEXT NOT NULL,
   description TEXT,
   category TEXT,
   severity TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Compliance Audits
 CREATE TABLE IF NOT EXISTS compliance_audits (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  target_type TEXT,
-  target_id INTEGER,
-  score REAL,
-  violations TEXT,
-  audited_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Employee Evaluations
-CREATE TABLE IF NOT EXISTS employee_evaluations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  employee_id INTEGER,
-  evaluation_period TEXT,
-  overall_score REAL,
-  performance_metrics TEXT,
-  ai_analysis TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (employee_id) REFERENCES users(id)
-);
-
--- Employee Skills
-CREATE TABLE IF NOT EXISTS employee_skills (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  employee_id INTEGER,
-  skill_name TEXT,
-  skill_category TEXT,
-  score REAL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (employee_id) REFERENCES users(id)
-);
-
--- Employee Achievements
-CREATE TABLE IF NOT EXISTS employee_achievements (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  employee_id INTEGER,
-  achievement_title TEXT,
-  achievement_description TEXT,
-  date_awarded DATE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (employee_id) REFERENCES users(id)
-);
-
--- Reward Recommendations
-CREATE TABLE IF NOT EXISTS reward_recommendations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  employee_id INTEGER,
-  recommendation_type TEXT,
-  reason TEXT,
+  id SERIAL PRIMARY KEY,
+  audit_name TEXT NOT NULL,
+  audit_type TEXT,
   status TEXT DEFAULT 'pending',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (employee_id) REFERENCES users(id)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Voice Profiles
-CREATE TABLE IF NOT EXISTS voice_profiles (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+-- Integrations
+CREATE TABLE IF NOT EXISTS integrations (
+  id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  voice_id TEXT,
-  language TEXT,
-  gender TEXT,
-  provider TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  type TEXT,
+  status TEXT DEFAULT 'inactive',
+  api_key TEXT,
+  api_secret TEXT,
+  config TEXT,
+  last_sync_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Call Logs
-CREATE TABLE IF NOT EXISTS call_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  agent_id INTEGER,
-  customer_phone TEXT,
-  duration INTEGER,
-  sentiment TEXT,
-  recording_url TEXT,
-  summary TEXT,
-  start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (agent_id) REFERENCES users(id)
+-- Integration Logs
+CREATE TABLE IF NOT EXISTS integration_logs (
+  id SERIAL PRIMARY KEY,
+  integration_id INTEGER REFERENCES integrations(id),
+  event TEXT,
+  status TEXT,
+  details TEXT,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- System Settings
-CREATE TABLE IF NOT EXISTS system_settings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  setting_key TEXT UNIQUE NOT NULL,
-  setting_value TEXT,
-  is_enabled INTEGER DEFAULT 1,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+-- Workflow Stages
+CREATE TABLE IF NOT EXISTS workflow_stages (
+  id SERIAL PRIMARY KEY,
+  stage_name TEXT UNIQUE NOT NULL,
+  stage_code TEXT,
+  sequence INTEGER,
+  description TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Missing Indexes for New Tables
-CREATE INDEX IF NOT EXISTS idx_backlink_sources_status ON backlink_sources(status);
-CREATE INDEX IF NOT EXISTS idx_backlink_sources_created_by ON backlink_sources(created_by);
+-- Platforms (for SMM)
+CREATE TABLE IF NOT EXISTS platforms (
+  id SERIAL PRIMARY KEY,
+  platform_name TEXT UNIQUE NOT NULL,
+  platform_code TEXT,
+  description TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Countries
+CREATE TABLE IF NOT EXISTS countries (
+  id SERIAL PRIMARY KEY,
+  country_name TEXT UNIQUE NOT NULL,
+  country_code TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SEO Error Types
+CREATE TABLE IF NOT EXISTS seo_error_types (
+  id SERIAL PRIMARY KEY,
+  error_type TEXT UNIQUE NOT NULL,
+  error_code TEXT,
+  description TEXT,
+  severity TEXT DEFAULT 'medium',
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
+CREATE INDEX IF NOT EXISTS idx_assets_qc_status ON assets(qc_status);
+CREATE INDEX IF NOT EXISTS idx_assets_workflow_stage ON assets(workflow_stage);
+CREATE INDEX IF NOT EXISTS idx_assets_linked_service_id ON assets(linked_service_id);
+CREATE INDEX IF NOT EXISTS idx_assets_linked_sub_service_id ON assets(linked_sub_service_id);
+CREATE INDEX IF NOT EXISTS idx_assets_created_by ON assets(created_by);
+CREATE INDEX IF NOT EXISTS idx_assets_application_type ON assets(application_type);
+CREATE INDEX IF NOT EXISTS idx_asset_qc_reviews_asset_id ON asset_qc_reviews(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_qc_reviews_qc_reviewer_id ON asset_qc_reviews(qc_reviewer_id);
+CREATE INDEX IF NOT EXISTS idx_qc_audit_log_asset_id ON qc_audit_log(asset_id);
+CREATE INDEX IF NOT EXISTS idx_qc_audit_log_user_id ON qc_audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_asset_status_log_asset_id ON asset_status_log(asset_id);
+CREATE INDEX IF NOT EXISTS idx_projects_owner_id ON projects(owner_id);
+CREATE INDEX IF NOT EXISTS idx_projects_brand_id ON projects(brand_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_campaigns_owner_id ON campaigns(campaign_owner_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_project_id ON campaigns(project_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_brand_id ON campaigns(brand_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_campaign_id ON tasks(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
+CREATE INDEX IF NOT EXISTS idx_service_asset_links_service_id ON service_asset_links(service_id);
+CREATE INDEX IF NOT EXISTS idx_service_asset_links_asset_id ON service_asset_links(asset_id);
+CREATE INDEX IF NOT EXISTS idx_subservice_asset_links_sub_service_id ON subservice_asset_links(sub_service_id);
+CREATE INDEX IF NOT EXISTS idx_subservice_asset_links_asset_id ON subservice_asset_links(asset_id);
+CREATE INDEX IF NOT EXISTS idx_keyword_asset_links_keyword_id ON keyword_asset_links(keyword_id);
+CREATE INDEX IF NOT EXISTS idx_keyword_asset_links_asset_id ON keyword_asset_links(asset_id);
+CREATE INDEX IF NOT EXISTS idx_keywords_keyword ON keywords(keyword);
+CREATE INDEX IF NOT EXISTS idx_keywords_mapped_service_id ON keywords(mapped_service_id);
+CREATE INDEX IF NOT EXISTS idx_keywords_mapped_sub_service_id ON keywords(mapped_sub_service_id);
+CREATE INDEX IF NOT EXISTS idx_services_status ON services(status);
+CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug);
+CREATE INDEX IF NOT EXISTS idx_sub_services_service_id ON sub_services(service_id);
+CREATE INDEX IF NOT EXISTS idx_sub_services_status ON sub_services(status);
+CREATE INDEX IF NOT EXISTS idx_sub_services_slug ON sub_services(slug);
+CREATE INDEX IF NOT EXISTS idx_backlink_sources_domain ON backlink_sources(domain);
 CREATE INDEX IF NOT EXISTS idx_backlink_submissions_service_id ON backlink_submissions(service_id);
-CREATE INDEX IF NOT EXISTS idx_backlink_submissions_sub_service_id ON backlink_submissions(sub_service_id);
-CREATE INDEX IF NOT EXISTS idx_backlink_submissions_seo_owner_id ON backlink_submissions(seo_owner_id);
+CREATE INDEX IF NOT EXISTS idx_backlink_submissions_status ON backlink_submissions(submission_status);
 CREATE INDEX IF NOT EXISTS idx_toxic_backlinks_service_id ON toxic_backlinks(service_id);
-CREATE INDEX IF NOT EXISTS idx_toxic_backlinks_assigned_to_id ON toxic_backlinks(assigned_to_id);
+CREATE INDEX IF NOT EXISTS idx_toxic_backlinks_status ON toxic_backlinks(status);
 CREATE INDEX IF NOT EXISTS idx_on_page_seo_audits_service_id ON on_page_seo_audits(service_id);
-CREATE INDEX IF NOT EXISTS idx_on_page_seo_audits_severity ON on_page_seo_audits(severity);
-CREATE INDEX IF NOT EXISTS idx_on_page_seo_audits_assigned_to_id ON on_page_seo_audits(assigned_to_id);
+CREATE INDEX IF NOT EXISTS idx_on_page_seo_audits_status ON on_page_seo_audits(status);
 CREATE INDEX IF NOT EXISTS idx_ux_issues_service_id ON ux_issues(service_id);
-CREATE INDEX IF NOT EXISTS idx_ux_issues_assigned_to_id ON ux_issues(assigned_to_id);
+CREATE INDEX IF NOT EXISTS idx_ux_issues_status ON ux_issues(status);
 CREATE INDEX IF NOT EXISTS idx_url_errors_service_id ON url_errors(service_id);
-CREATE INDEX IF NOT EXISTS idx_url_errors_assigned_to_id ON url_errors(assigned_to_id);
+CREATE INDEX IF NOT EXISTS idx_url_errors_status ON url_errors(status);
 CREATE INDEX IF NOT EXISTS idx_smm_posts_service_id ON smm_posts(service_id);
-CREATE INDEX IF NOT EXISTS idx_smm_posts_assigned_to_id ON smm_posts(assigned_to_id);
+CREATE INDEX IF NOT EXISTS idx_smm_posts_status ON smm_posts(smm_status);
 CREATE INDEX IF NOT EXISTS idx_service_pages_service_id ON service_pages(service_id);
 CREATE INDEX IF NOT EXISTS idx_seo_asset_domains_seo_asset_id ON seo_asset_domains(seo_asset_id);
-CREATE INDEX IF NOT EXISTS idx_qc_runs_target_type ON qc_runs(target_type);
-CREATE INDEX IF NOT EXISTS idx_qc_runs_qc_owner_id ON qc_runs(qc_owner_id);
-CREATE INDEX IF NOT EXISTS idx_qc_checklist_versions_checklist_id ON qc_checklist_versions(checklist_id);
 CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);
 CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members(user_id);
-CREATE INDEX IF NOT EXISTS idx_employee_evaluations_employee_id ON employee_evaluations(employee_id);
-CREATE INDEX IF NOT EXISTS idx_employee_skills_employee_id ON employee_skills(employee_id);
-CREATE INDEX IF NOT EXISTS idx_employee_achievements_employee_id ON employee_achievements(employee_id);
-CREATE INDEX IF NOT EXISTS idx_reward_recommendations_employee_id ON reward_recommendations(employee_id);
-CREATE INDEX IF NOT EXISTS idx_call_logs_agent_id ON call_logs(agent_id);
-CREATE INDEX IF NOT EXISTS idx_integration_logs_integration_id ON integration_logs(integration_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_brands_status ON brands(status);

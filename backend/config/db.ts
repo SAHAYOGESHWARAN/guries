@@ -4,7 +4,8 @@ import Database from 'better-sqlite3';
 
 dotenv.config();
 
-const usePostgres = process.env.USE_PG === 'true' || process.env.DB_CLIENT === 'pg';
+// FORCE PostgreSQL in production - SQLite doesn't persist on Vercel
+const usePostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true' || process.env.DB_CLIENT === 'pg';
 
 let pool: any;
 
