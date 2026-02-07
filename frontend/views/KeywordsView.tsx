@@ -4,7 +4,7 @@ import Table from '../components/Table';
 import Tooltip from '../components/Tooltip';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
-import type { Keyword } from '../types';
+import type { Keyword, Service, SubServiceItem } from '../types';
 
 const INTENTS = ['All Intent', 'Trans', 'Info', 'Nav', 'Comm'];
 const TYPES = ['All Types', 'Primary', 'Secondary', 'Branded'];
@@ -12,6 +12,8 @@ const COMPETITIONS = ['All Competition', 'High', 'Medium', 'Low'];
 
 const KeywordsView: React.FC = () => {
     const { data: keywords, create, update, remove } = useData<Keyword>('keywords');
+    const { data: services = [] } = useData<Service>('services');
+    const { data: subServices = [] } = useData<SubServiceItem>('sub-services');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [intentFilter, setIntentFilter] = useState('All Intent');
@@ -21,8 +23,32 @@ const KeywordsView: React.FC = () => {
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [editingItem, setEditingItem] = useState<Keyword | null>(null);
     const [formData, setFormData] = useState<Partial<Keyword>>({
-        keyword: '', intent: 'Info', keyword_type: 'Primary', search_volume: 0, competition: 'Medium', mapped_service: '', status: 'active'
+        keyword: '', keyword_intent: 'Info', keyword_type: 'Primary', search_volume: 0, competition: 'Medium', mapped_service_id: undefined, mapped_sub_service_id: undefined, status: 'active'
     });
+
+    const [filteredSubServices, setFilteredSubServices] = useState<SubServiceItem[]>([]);
+
+    // Handle service selection - filter sub-services
+    const handleServiceChange = (serviceId: number | undefined) => {
+        setFormData(prev => ({ ...prev, mapped_service_id: serviceId, mapped_sub_service_id: undefined }));
+
+        if (serviceId) {
+            const filtered = subServices.filter(sub => sub.parent_service_id === serviceId);
+            setFilteredSubServices(filtered);
+        } else {
+            setFilteredSubServices([]);
+        }
+    };
+
+    // Get service name by ID
+    const getServiceName = (id?: number) => {
+        return services.find(s => s.id === id)?.service_name || '';
+    };
+
+    // Get sub-service name by ID
+    const getSubServiceName = (id?: number) => {
+        return subServices.find(s => s.id === id)?.sub_service_name || '';
+    };
 
     const filteredData = keywords.filter(item => {
         const matchesSearch = item.keyword.toLowerCase().includes(searchQuery.toLowerCase());
@@ -51,6 +77,13 @@ const KeywordsView: React.FC = () => {
     const handleEdit = (item: Keyword) => {
         setEditingItem(item);
         setFormData(item);
+
+        // If editing an item with a service, filter sub-services
+        if (item.mapped_service_id) {
+            const filtered = subServices.filter(sub => sub.parent_service_id === item.mapped_service_id);
+            setFilteredSubServices(filtered);
+        }
+
         setViewMode('form');
     };
 
@@ -60,13 +93,14 @@ const KeywordsView: React.FC = () => {
 
     const handleSave = async () => {
         if (editingItem) {
-            await update(editingItem.id, { ...formData, updated_at: 'Just now' });
+            await update(editingItem.id, { ...formData, updated_at: new Date().toISOString() });
         } else {
-            await create({ ...formData, updated_at: 'Just now' } as any);
+            await create({ ...formData, updated_at: new Date().toISOString() } as any);
         }
         setViewMode('list');
         setEditingItem(null);
-        setFormData({ keyword: '', intent: 'Info', keyword_type: 'Primary', search_volume: 0, competition: 'Medium', mapped_service: '', status: 'active' });
+        setFormData({ keyword: '', keyword_intent: 'Info', keyword_type: 'Primary', search_volume: 0, competition: 'Medium', mapped_service_id: undefined, mapped_sub_service_id: undefined, status: 'active' });
+        setFilteredSubServices([]);
     };
 
     const handleExport = () => {
@@ -75,11 +109,12 @@ const KeywordsView: React.FC = () => {
 
     const columns = [
         { header: 'Keyword', accessor: 'keyword' as keyof Keyword, className: 'font-medium text-slate-800' },
-        { header: 'Intent', accessor: (item: Keyword) => getIntentBadge(item.intent) },
+        { header: 'Intent', accessor: (item: Keyword) => getIntentBadge(item.keyword_intent) },
         { header: 'Type', accessor: 'keyword_type' as keyof Keyword, className: 'text-slate-600' },
         { header: 'Volume', accessor: (item: Keyword) => item.search_volume.toLocaleString(), className: "font-mono text-slate-700" },
         { header: 'Comp', accessor: (item: Keyword) => <span className={getCompetitionColor(item.competition)}>{item.competition}</span> },
-        { header: 'Service', accessor: 'mapped_service' as keyof Keyword, className: "text-sm text-blue-600" },
+        { header: 'Service', accessor: (item: Keyword) => getServiceName(item.mapped_service_id), className: "text-sm text-blue-600" },
+        { header: 'Sub-Service', accessor: (item: Keyword) => getSubServiceName(item.mapped_sub_service_id), className: "text-sm text-indigo-600" },
         {
             header: 'Usage',
             accessor: 'usage_count' as keyof Keyword,
@@ -120,7 +155,7 @@ const KeywordsView: React.FC = () => {
                             <Tooltip content="User intent (Informational, Navigational, Transactional).">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Intent</label>
-                                    <select value={formData.intent} onChange={(e) => setFormData({ ...formData, intent: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                    <select value={formData.keyword_intent} onChange={(e) => setFormData({ ...formData, keyword_intent: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                         <option>Trans</option><option>Info</option><option>Nav</option><option>Comm</option>
                                     </select>
                                 </div>
@@ -150,10 +185,27 @@ const KeywordsView: React.FC = () => {
                                 </div>
                             </Tooltip>
                         </div>
-                        <Tooltip content="Optional: Associate this keyword with a specific service offering.">
+                        <Tooltip content="Associate this keyword with a specific service offering.">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Mapped Service (Optional)</label>
-                                <input type="text" value={formData.mapped_service} onChange={(e) => setFormData({ ...formData, mapped_service: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. SEO Services" />
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Map to Service</label>
+                                <select value={formData.mapped_service_id || ''} onChange={(e) => handleServiceChange(e.target.value ? parseInt(e.target.value) : undefined)} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                    <option value="">-- Select Service --</option>
+                                    {services.map(service => (
+                                        <option key={service.id} value={service.id}>{service.service_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </Tooltip>
+
+                        <Tooltip content="Associate this keyword with a specific sub-service (optional).">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Map to Sub-Service</label>
+                                <select value={formData.mapped_sub_service_id || ''} onChange={(e) => setFormData({ ...formData, mapped_sub_service_id: e.target.value ? parseInt(e.target.value) : undefined })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white" disabled={!formData.mapped_service_id}>
+                                    <option value="">-- Select Sub-Service --</option>
+                                    {filteredSubServices.map(subService => (
+                                        <option key={subService.id} value={subService.id}>{subService.sub_service_name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </Tooltip>
                     </div>
