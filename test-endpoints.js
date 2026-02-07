@@ -26,6 +26,10 @@ function log(message, color = 'reset') {
 
 function makeRequest(method, path, body = null) {
     return new Promise((resolve, reject) => {
+        // Ensure relative paths resolve against BASE_URL (strip leading slash)
+        if (typeof path === 'string' && path.startsWith('/')) {
+            path = path.slice(1);
+        }
         const url = new URL(path, BASE_URL);
         const options = {
             hostname: url.hostname,
