@@ -37,7 +37,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         }
 
         try {
-            const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+            const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
