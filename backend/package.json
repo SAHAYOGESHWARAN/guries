@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon server.ts",
-    "build": "npx typescript --version && ./node_modules/.bin/tsc --skipLibCheck",
+    "build": "tsc --skipLibCheck",
     "test": "jest --runInBand"
   },
   "dependencies": {

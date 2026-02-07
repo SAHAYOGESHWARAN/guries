@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps --save-dev typescript && npm run build && cd ../frontend && npm install --legacy-peer-deps && npm run build && cd ..",
+  "buildCommand": "npm run build",
   "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production",
-    "VITE_API_URL": "/api/v1",
-    "LOG_LEVEL": "info"
+    "VITE_API_URL": "/api/v1"
   },
   "functions": {
     "api/index.ts": {
@@ -20,38 +19,7 @@
       "dest": "/api/index.ts"
     },
     {
-      "src": "/(?!api)(.*)\\.js$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "application/javascript;charset=utf-8"
-      },
-      "dest": "/$1.js"
-    },
-    {
-      "src": "/(?!api)(.*)\\.css$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "text/css;charset=utf-8"
-      },
-      "dest": "/$1.css"
-    },
-    {
-      "src": "/(?!api)(.*)\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "dest": "/$1.$2"
-    },
-    {
-      "src": "/(?!api)(.*)\\.(json|map)$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "application/json;charset=utf-8"
-      },
-      "dest": "/$1.$2"
-    },
-    {
-      "src": "/((?!api/)(?!.*\\.js$)(?!.*\\.css$)(?!.*\\.ico$)(?!.*\\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|json|map)$).*)",
+      "src": "/(.*)",
       "dest": "/index.html"
     }
   ]
