@@ -164,13 +164,29 @@
     <div class="loading-container">
       <div class="spinner"></div>
       <div class="loading-text">Guires Marketing Control Center</div>
-      <div class="loading-subtext">Initializing your enterprise marketing platform...</div>
+      <div class="loading-subtext" id="loading-subtext">Initializing your enterprise marketing platform...</div>
+      <div id="loading-fallback" style="display:none; margin-top:20px;">
+        <p style="color:#94a3b8;font-size:14px;margin-bottom:12px;">Taking longer than usual?</p>
+        <a href="." style="color:#3b82f6;font-weight:600;text-decoration:none;" onclick="location.reload();return false;">Refresh page</a>
+      </div>
     </div>
   </div>
   <div id="modal-root" class="relative z-[100]"></div>
 
   <!-- Main application entry point -->
   <script type="module" src="/src/main.tsx"></script>
+
+  <!-- Loading timeout: show refresh hint if app does not load -->
+  <script>
+    setTimeout(function() {
+      var root = document.getElementById('root');
+      var fallback = document.getElementById('loading-fallback');
+      if (root && fallback && root.querySelector('.loading-container') && !root.querySelector('[data-app-mounted]')) {
+        document.getElementById('loading-subtext').style.display = 'none';
+        fallback.style.display = 'block';
+      }
+    }, 12000);
+  </script>
 
   <!-- Enhanced error handling and analytics -->
   <script>

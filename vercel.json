@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps --production=false && npm run build && cp -r dist/. ../",
+  "buildCommand": "npm run vercel-build",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
     "NODE_ENV": "production",
@@ -43,7 +43,7 @@
         "cache-control": "public, max-age=31536000, immutable",
         "content-type": "application/javascript;charset=utf-8"
       },
-      "dest": "/frontend/dist/$1.js"
+      "dest": "/$1.js"
     },
     {
       "src": "/(?!api)(.*)\\.css$",
@@ -51,14 +51,14 @@
         "cache-control": "public, max-age=31536000, immutable",
         "content-type": "text/css;charset=utf-8"
       },
-      "dest": "/frontend/dist/$1.css"
+      "dest": "/$1.css"
     },
     {
       "src": "/(?!api)(.*)\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       },
-      "dest": "/frontend/dist/$1.$2"
+      "dest": "/$1.$2"
     },
     {
       "src": "/(?!api)(.*)\\.(json|map)$",
@@ -66,10 +66,10 @@
         "cache-control": "public, max-age=31536000, immutable",
         "content-type": "application/json;charset=utf-8"
       },
-      "dest": "/frontend/dist/$1.$2"
+      "dest": "/$1.$2"
     },
     {
-      "src": "/(.*)",
+      "src": "/((?!api/)(?!.*\\.js$)(?!.*\\.css$)(?!.*\\.ico$)(?!.*\\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|json|map)$).*)",
       "dest": "/index.html"
     }
   ]
