@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.5.0",
   "engines": {
-    "node": "20.x"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
