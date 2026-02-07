@@ -174,33 +174,37 @@
 
   <!-- Enhanced error handling and analytics -->
   <script>
+    // Ignore errors from browser extensions (they inject scripts that can throw)
+    function isExtensionError(filename, message) {
+      if (!filename && !message) return false;
+      const str = String(filename || '') + String(message || '');
+      return /chrome-extension|moz-extension|webpage_content_reporter|grainy-gradients|content_reporter/i.test(str);
+    }
+
     // Global error handler for better debugging
     window.addEventListener('error', (event) => {
-      console.error('Application Error:', {
-        message: event.error?.message,
+      if (isExtensionError(event.filename, event.message)) {
+        event.preventDefault();
+        return;
+      }
+      var msg = event.error && event.error.message ? event.error.message : event.message;
+      var stack = event.error && event.error.stack ? event.error.stack : '';
+      console.error('Application Error: ' + msg, {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
-        stack: event.error?.stack
+        stack: stack
       });
-      // Don't prevent default for actual errors
     });
 
     window.addEventListener('unhandledrejection', (event) => {
-      console.error('Unhandled Promise Rejection:', {
-        reason: event.reason,
-        type: typeof event.reason
-      });
-      // Suppress browser extension errors
-      if (event.reason && typeof event.reason === 'string') {
-        if (event.reason.includes('webpage_content_reporter') ||
-          event.reason.includes('grainy-gradients') ||
-          event.reason.includes('402') ||
-          event.reason.includes('chrome-extension') ||
-          event.reason.includes('moz-extension')) {
-          event.preventDefault();
-        }
+      var reason = event.reason;
+      var reasonStr = typeof reason === 'string' ? reason : (reason && reason.message) || String(reason);
+      if (/chrome-extension|moz-extension|webpage_content_reporter|grainy-gradients|402/i.test(reasonStr)) {
+        event.preventDefault();
+        return;
       }
+      console.error('Unhandled Promise Rejection:', reasonStr, reason);
     });
 
     // Performance monitoring
