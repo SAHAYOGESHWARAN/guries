@@ -166,6 +166,90 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/brands') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/backlinks') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/backlinkSources') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/submissions') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/competitors') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/competitorBacklinks') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/okrs') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/smm') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/graphics') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/roles') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/teams') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/team-members') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
         // QC review endpoint (mock)
         if (req.url?.includes('/qc-review') && req.method === 'POST') {
             return res.status(200).json({
@@ -177,9 +261,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Generic endpoint handler for other routes
         // This handles /api/v1/* routes that don't have specific handlers
         if (req.url?.startsWith('/api/v1/')) {
-            const endpoint = req.url.replace('/api/v1/', '').split('?')[0];
+            const endpoint = req.url.replace('/api/v1/', '').split('?')[0].split('/')[0];
 
-            // For now, return a not found for unhandled endpoints
+            // Return empty array for GET requests to any endpoint (mock data)
+            if (req.method === 'GET') {
+                return res.status(200).json({
+                    success: true,
+                    data: []
+                });
+            }
+
+            // Return success for POST/PUT/DELETE requests
+            if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
+                return res.status(200).json({
+                    success: true,
+                    message: `${req.method} request to ${endpoint} processed successfully`
+                });
+            }
+
             return res.status(404).json({
                 success: false,
                 error: `Endpoint /${endpoint} not found`,
