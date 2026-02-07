@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
             success: true,
             status: 'healthy',
-            database: 'connected',
+            database: 'connected (mock)',
             timestamp: result.rows[0]?.now,
             assets: {
                 count: assetCount,

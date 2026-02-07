@@ -52,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(200).json({
                     success: true,
                     status: 'healthy',
-                    database: 'connected',
+                    database: 'connected (mock)',
                     timestamp: result.rows[0]?.now,
                     assets: {
                         count: assetCount,
@@ -66,6 +66,112 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     error: error.message
                 });
             }
+        }
+
+        // Mock endpoints for services, keywords, users, etc.
+        if (req.url?.includes('/services') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: [
+                    { id: 1, service_name: 'SEO Services', status: 'active' },
+                    { id: 2, service_name: 'Content Creation', status: 'active' }
+                ]
+            });
+        }
+
+        if (req.url?.includes('/keywords') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: [
+                    { id: 1, keyword_name: 'digital marketing', keyword_intent: 'commercial' },
+                    { id: 2, keyword_name: 'seo strategy', keyword_intent: 'informational' }
+                ]
+            });
+        }
+
+        if (req.url?.includes('/users') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: [
+                    { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' }
+                ]
+            });
+        }
+
+        if (req.url?.includes('/projects') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/tasks') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/campaigns') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/content') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/asset-category-master') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/asset-type-master') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/sub-services') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/notifications') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/dashboard/stats') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    total_assets: 0,
+                    total_services: 2,
+                    total_keywords: 2,
+                    total_users: 1
+                }
+            });
+        }
+
+        // QC review endpoint (mock)
+        if (req.url?.includes('/qc-review') && req.method === 'POST') {
+            return res.status(200).json({
+                success: true,
+                message: 'QC review submitted successfully'
+            });
         }
 
         // Generic endpoint handler for other routes
