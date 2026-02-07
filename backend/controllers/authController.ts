@@ -12,39 +12,26 @@ const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
 
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
-// Get admin credentials from environment variables
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-
-// Validate required environment variables on startup
-if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-    console.error('❌ CRITICAL: ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
-    process.exit(1);
+// Get admin credentials from environment variables (read at runtime for serverless)
+function getAdminConfig() {
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+    const JWT_SECRET = process.env.JWT_SECRET;
+    const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+    return { ADMIN_EMAIL, ADMIN_PASSWORD, JWT_SECRET, JWT_EXPIRES_IN };
 }
-
-if (!JWT_SECRET) {
-    console.error('❌ CRITICAL: JWT_SECRET environment variable is required');
-    process.exit(1);
-}
-
-// Log environment variables on startup (for debugging)
-console.log('🔐 Auth Configuration Loaded:');
-console.log('   ADMIN_EMAIL:', ADMIN_EMAIL);
-console.log('   ADMIN_PASSWORD:', ADMIN_PASSWORD ? '✅ SET' : '❌ NOT SET');
-console.log('   JWT_SECRET:', JWT_SECRET ? '✅ SET' : '❌ NOT SET');
-console.log('   JWT_EXPIRES_IN:', JWT_EXPIRES_IN);
 
 // Helper function to generate JWT token
-const generateJWT = (payload: { id: number; email: string; role: string }): string => {
-    return jwt.sign(payload, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN, algorithm: 'HS256' });
+const generateJWT = (payload: { id: number; email: string; role: string }, secret: string, expiresIn: string): string => {
+    return jwt.sign(payload, secret, { expiresIn, algorithm: 'HS256' });
 };
 
 // Helper function to verify JWT token
 export const verifyJWT = (token: string): any => {
+    const { JWT_SECRET } = getAdminConfig();
+    if (!JWT_SECRET) throw new Error('JWT not configured');
     try {
-        return jwt.verify(token, JWT_SECRET!);
+        return jwt.verify(token, JWT_SECRET);
     } catch (error) {
         throw new Error('Invalid or expired token');
     }
@@ -58,15 +45,28 @@ export const login = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    const { ADMIN_EMAIL, ADMIN_PASSWORD, JWT_SECRET, JWT_EXPIRES_IN } = getAdminConfig();
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !JWT_SECRET) {
+        console.error('Login: ADMIN_EMAIL, ADMIN_PASSWORD or JWT_SECRET not configured');
+        return res.status(503).json({ error: 'Login not configured' });
+    }
+
     try {
         console.log('🔐 Login attempt:', { email, adminEmail: ADMIN_EMAIL });
 
         // Check admin credentials
-        if (email.toLowerCase() === ADMIN_EMAIL!.toLowerCase()) {
+        if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             console.log('✅ Email matches admin email');
             console.log('🔑 Comparing password with hash...');
 
-            const isPasswordValid = await bcrypt.compare(password, ADMIN_PASSWORD!);
+            let isPasswordValid = false;
+            try {
+                isPasswordValid = ADMIN_PASSWORD.startsWith('$2')
+                    ? await bcrypt.compare(password, ADMIN_PASSWORD)
+                    : password === ADMIN_PASSWORD;
+            } catch {
+                isPasswordValid = false;
+            }
             console.log('🔐 Password valid:', isPasswordValid);
 
             if (!isPasswordValid) {
@@ -74,7 +74,7 @@ export const login = async (req: Request, res: Response) => {
                 return res.status(401).json({ error: 'Invalid email or password' });
             }
 
-            const token = generateJWT({ id: 1, email: ADMIN_EMAIL!, role: 'admin' });
+            const token = generateJWT({ id: 1, email: ADMIN_EMAIL, role: 'admin' }, JWT_SECRET, JWT_EXPIRES_IN);
             console.log('✅ Login successful, token generated');
 
             return res.status(200).json({
@@ -98,7 +98,7 @@ export const login = async (req: Request, res: Response) => {
 
         // Check database for other users
         const result = await pool.query(
-            'SELECT * FROM users WHERE email = ? LIMIT 1',
+            'SELECT * FROM users WHERE email = $1 LIMIT 1',
             [email]
         );
 
@@ -127,7 +127,7 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        const token = generateJWT({ id: user.id, email: user.email, role: user.role || 'user' });
+        const token = generateJWT({ id: user.id, email: user.email, role: user.role || 'user' }, JWT_SECRET, JWT_EXPIRES_IN);
         return res.status(200).json({
             success: true,
             user: {

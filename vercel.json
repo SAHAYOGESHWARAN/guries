@@ -19,11 +19,11 @@
     "DB_USER": "postgres",
     "DB_PASSWORD": "HeiWPgZkRkBWhWtr",
     "DB_NAME": "postgres",
-    "CORS_ORIGIN": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
-    "CORS_ORIGINS": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
-    "SOCKET_CORS_ORIGINS": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
-    "BACKEND_URL": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
-    "FRONTEND_URL": "https://guires-on01aaf3e-sahayogeshwarans-projects.vercel.app",
+    "CORS_ORIGIN": "https://guires-nu.vercel.app",
+    "CORS_ORIGINS": "https://guires-nu.vercel.app",
+    "SOCKET_CORS_ORIGINS": "https://guires-nu.vercel.app",
+    "BACKEND_URL": "https://guires-nu.vercel.app",
+    "FRONTEND_URL": "https://guires-nu.vercel.app",
     "LOG_LEVEL": "info"
   },
   "functions": {
@@ -33,6 +33,10 @@
     }
   },
   "routes": [
+    {
+      "src": "/api/v1/auth/login",
+      "dest": "/api/auth"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.ts"

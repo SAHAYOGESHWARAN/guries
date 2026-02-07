@@ -44,10 +44,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
         const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
+        if (!adminEmail || !adminPassword) {
+            console.error('Auth: ADMIN_EMAIL or ADMIN_PASSWORD not configured');
+            return res.status(503).json({ success: false, error: 'Login not configured' });
+        }
+        if (!process.env.JWT_SECRET) {
+            console.error('Auth: JWT_SECRET not configured');
+            return res.status(503).json({ success: false, error: 'Login not configured' });
+        }
+
         const isAdminEmail = typeof email === 'string' && email.toLowerCase() === adminEmail.toLowerCase();
-        const isPasswordValid = typeof password === 'string'
-            ? (adminPassword.startsWith('$2') ? await bcrypt.compare(password, adminPassword) : password === adminPassword)
-            : false;
+        let isPasswordValid = false;
+        if (typeof password === 'string') {
+            if (adminPassword.startsWith('$2')) {
+                try {
+                    isPasswordValid = await bcrypt.compare(password, adminPassword);
+                } catch {
+                    isPasswordValid = false;
+                }
+            } else {
+                isPasswordValid = password === adminPassword;
+            }
+        }
 
         if (isAdminEmail && isPasswordValid) {
             const token = signToken({ id: 1, email: adminEmail, role: 'admin' });
