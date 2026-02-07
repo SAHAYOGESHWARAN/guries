@@ -2,371 +2,234 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guires - Marketing Control Center</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' font-weight='bold' fill='%233b82f6'>G</text></svg>" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="description"
+    content="Guires Marketing Control Center - Comprehensive marketing management platform for enterprise teams" />
+  <meta name="keywords" content="marketing, control center, asset management, campaign management, enterprise" />
+  <meta name="author" content="Guires Inc." />
+  <meta property="og:title" content="Guires Marketing Control Center" />
+  <meta property="og:description" content="Enterprise-grade marketing management platform" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#1e293b" />
+  <title>Guires Marketing Control Center - Enterprise Marketing Platform</title>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+  <!-- Preconnect to external domains for faster resource loading -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-        .container {
-            max-width: 1200px;
-            width: 100%;
-        }
+  <!-- Optimized Google Fonts with font-display swap for faster rendering -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
 
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 60px;
-        }
+  <!-- Security headers are set via HTTP headers in backend/config/security.ts -->
+  <!-- Do NOT set X-Frame-Options, X-Content-Type-Options, or X-XSS-Protection as meta tags -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 
-        .logo {
-            font-size: 48px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
+  <style>
+    /* Enhanced loading screen with animations */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    }
 
-        .tagline {
-            font-size: 24px;
-            font-weight: 300;
-            opacity: 0.95;
-            margin-bottom: 10px;
-        }
+    /* Fallback loading screen */
+    #root {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      color: #e2e8f0;
+      position: relative;
+    }
 
-        .subtitle {
-            font-size: 16px;
-            opacity: 0.85;
-        }
+    .loading-container {
+      text-align: center;
+      z-index: 10;
+      position: relative;
+    }
 
-        .content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 60px;
-        }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(59, 130, 246, 0.1);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+      position: relative;
+    }
 
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+    .spinner::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      border: 3px solid rgba(139, 92, 246, 0.1);
+      border-top-color: #8b5cf6;
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite reverse;
+    }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
-        }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
-        .card-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
+    .loading-text {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
+    .loading-subtext {
+      font-size: 14px;
+      color: #94a3b8;
+      font-weight: 400;
+    }
 
-        .card-description {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
+    /* Background effects - pointer-events: none so they don't block clicks */
+    #root::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+      pointer-events: none;
+    }
 
-        .card-link {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: gap 0.3s ease;
-        }
+    #root::after {
+      content: '';
+      position: absolute;
+      bottom: -10%;
+      right: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 8s ease-in-out infinite reverse;
+      pointer-events: none;
+    }
 
-        .card-link:hover {
-            gap: 12px;
-        }
+    @keyframes float {
 
-        .arrow {
-            font-size: 18px;
-        }
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
 
-        .buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 60px;
-        }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
 
-        .btn {
-            padding: 14px 32px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
+    /* Performance optimizations */
+    * {
+      box-sizing: border-box;
+    }
 
-        .btn-primary {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: white;
-            color: #667eea;
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            opacity: 0.8;
-            font-size: 14px;
-        }
-
-        .status {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #4ade80;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .credentials {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 20px;
-            color: white;
-            margin-bottom: 40px;
-            backdrop-filter: blur(10px);
-        }
-
-        .credentials-title {
-            font-weight: 600;
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-
-        .credential-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 14px;
-        }
-
-        .credential-item:last-child {
-            border-bottom: none;
-        }
-
-        .credential-label {
-            opacity: 0.8;
-        }
-
-        .credential-value {
-            font-family: 'Courier New', monospace;
-            font-weight: 500;
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                margin-bottom: 40px;
-            }
-
-            .logo {
-                font-size: 36px;
-            }
-
-            .tagline {
-                font-size: 20px;
-            }
-
-            .buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+  <script type="module" crossorigin src="/index.Cgn8UqAd.js"></script>
+  <link rel="stylesheet" crossorigin href="/style.DwlsIRt8.css">
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="status">
-                <span class="status-badge"></span>
-                System Ready
-            </div>
-            <div class="logo">🎯 Guires</div>
-            <div class="tagline">Marketing Control Center</div>
-            <div class="subtitle">Enterprise-grade marketing management platform</div>
-        </div>
-
-        <div class="credentials">
-            <div class="credentials-title">🔐 Login Credentials</div>
-            <div class="credential-item">
-                <span class="credential-label">Email:</span>
-                <span class="credential-value">admin@example.com</span>
-            </div>
-            <div class="credential-item">
-                <span class="credential-label">Password:</span>
-                <span class="credential-value">admin123</span>
-            </div>
-        </div>
-
-        <div class="buttons">
-            <a href="http://localhost:5173" class="btn btn-primary">Launch Application</a>
-            <a href="#documentation" class="btn btn-secondary">View Documentation</a>
-        </div>
-
-        <div class="content">
-            <div class="card">
-                <div class="card-icon">📊</div>
-                <div class="card-title">Dashboard</div>
-                <div class="card-description">
-                    Real-time analytics and performance metrics for your marketing campaigns.
-                </div>
-                <a href="http://localhost:5173" class="card-link">
-                    Access Dashboard <span class="arrow">→</span>
-                </a>
-            </div>
-
-            <div class="card">
-                <div class="card-icon">🎨</div>
-                <div class="card-title">Asset Management</div>
-                <div class="card-description">
-                    Upload, organize, and manage all your marketing assets in one place.
-                </div>
-                <a href="http://localhost:5173" class="card-link">
-                    Manage Assets <span class="arrow">→</span>
-                </a>
-            </div>
-
-            <div class="card">
-                <div class="card-icon">🔍</div>
-                <div class="card-title">SEO Tools</div>
-                <div class="card-description">
-                    Optimize your content with advanced SEO analysis and recommendations.
-                </div>
-                <a href="http://localhost:5173" class="card-link">
-                    SEO Suite <span class="arrow">→</span>
-                </a>
-            </div>
-
-            <div class="card">
-                <div class="card-icon">👥</div>
-                <div class="card-title">Team Management</div>
-                <div class="card-description">
-                    Manage team members, roles, and permissions with granular control.
-                </div>
-                <a href="http://localhost:5173" class="card-link">
-                    Team Settings <span class="arrow">→</span>
-                </a>
-            </div>
-
-            <div class="card">
-                <div class="card-icon">📈</div>
-                <div class="card-title">Analytics</div>
-                <div class="card-description">
-                    Track performance metrics and generate comprehensive reports.
-                </div>
-                <a href="http://localhost:5173" class="card-link">
-                    View Analytics <span class="arrow">→</span>
-                </a>
-            </div>
-
-            <div class="card">
-                <div class="card-icon">⚙️</div>
-                <div class="card-title">Settings</div>
-                <div class="card-description">
-                    Configure system settings, integrations, and preferences.
-                </div>
-                <a href="http://localhost:5173" class="card-link">
-                    Configure <span class="arrow">→</span>
-                </a>
-            </div>
-        </div>
-
-        <div id="documentation" class="credentials" style="margin-bottom: 40px;">
-            <div class="credentials-title">📚 Quick Links</div>
-            <div class="credential-item">
-                <span class="credential-label">Frontend:</span>
-                <span class="credential-value">http://localhost:5173</span>
-            </div>
-            <div class="credential-item">
-                <span class="credential-label">Backend API:</span>
-                <span class="credential-value">http://localhost:3003/api/v1</span>
-            </div>
-            <div class="credential-item">
-                <span class="credential-label">Health Check:</span>
-                <span class="credential-value">http://localhost:3003/health</span>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>Guires Marketing Control Center • Enterprise Edition</p>
-            <p style="margin-top: 10px; opacity: 0.6;">© 2024 All rights reserved</p>
-        </div>
+  <div id="root">
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <div class="loading-text">Guires Marketing Control Center</div>
+      <div class="loading-subtext" id="loading-subtext">Initializing your enterprise marketing platform...</div>
+      <div id="loading-fallback" style="display:none; margin-top:20px;">
+        <p style="color:#94a3b8;font-size:14px;margin-bottom:12px;">Taking longer than usual?</p>
+        <a href="." style="color:#3b82f6;font-weight:600;text-decoration:none;" onclick="location.reload();return false;">Refresh page</a>
+      </div>
     </div>
+  </div>
+  <div id="modal-root" class="relative z-[100]"></div>
+
+  <!-- Main application entry point -->
+
+  <!-- Loading timeout: show refresh hint if app does not load -->
+  <script>
+    setTimeout(function() {
+      var root = document.getElementById('root');
+      var fallback = document.getElementById('loading-fallback');
+      if (root && fallback && root.querySelector('.loading-container') && !root.querySelector('[data-app-mounted]')) {
+        document.getElementById('loading-subtext').style.display = 'none';
+        fallback.style.display = 'block';
+      }
+    }, 12000);
+  </script>
+
+  <!-- Enhanced error handling and analytics -->
+  <script>
+    // Ignore errors from browser extensions (they inject scripts that can throw)
+    function isExtensionError(filename, message) {
+      if (!filename && !message) return false;
+      const str = String(filename || '') + String(message || '');
+      return /chrome-extension|moz-extension|webpage_content_reporter|grainy-gradients|content_reporter/i.test(str);
+    }
+
+    // Global error handler for better debugging
+    window.addEventListener('error', (event) => {
+      if (isExtensionError(event.filename, event.message)) {
+        event.preventDefault();
+        return;
+      }
+      var msg = event.error && event.error.message ? event.error.message : event.message;
+      var stack = event.error && event.error.stack ? event.error.stack : '';
+      console.error('Application Error: ' + msg, {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        stack: stack
+      });
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+      var reason = event.reason;
+      var reasonStr = typeof reason === 'string' ? reason : (reason && reason.message) || String(reason);
+      if (/chrome-extension|moz-extension|webpage_content_reporter|grainy-gradients|402/i.test(reasonStr)) {
+        event.preventDefault();
+        return;
+      }
+      console.error('Unhandled Promise Rejection:', reasonStr, reason);
+    });
+
+    // Performance monitoring
+    window.addEventListener('load', () => {
+      const loadTime = performance.now();
+      console.log(`Application loaded in ${loadTime.toFixed(2)}ms`);
+    });
+  </script>
 </body>
 
 </html>
