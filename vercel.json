@@ -1,42 +1,21 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
-  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps && cd ../frontend && npm install --legacy-peer-deps && cd ..",
+  "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1",
-    "ADMIN_EMAIL": "admin@example.com",
-    "ADMIN_PASSWORD": "$2a$10$KL271sXgLncfLQGyT7q/cOz.vYl1CiIy7tsaGWEgDe.b1cbosXMxq",
-    "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-12345",
-    "JWT_EXPIRES_IN": "7d",
-    "DB_CLIENT": "pg",
-    "USE_PG": "true",
-    "SUPABASE_URL": "https://nouyqizbqgoyscryexeg.supabase.co",
-    "SUPABASE_ANON_KEY": "sb_publishable_fzIkuQRYsy9TlRL0yY3l9w_AmREcEvk",
-    "DATABASE_URL": "postgresql://postgres:HeiWPgZkRkBWhWtr@db.nouyqizbqgoyscryexeg.supabase.co:5432/postgres",
-    "DB_HOST": "db.nouyqizbqgoyscryexeg.supabase.co",
-    "DB_PORT": "5432",
-    "DB_USER": "postgres",
-    "DB_PASSWORD": "HeiWPgZkRkBWhWtr",
-    "DB_NAME": "postgres",
-    "CORS_ORIGIN": "https://guires-nu.vercel.app",
-    "CORS_ORIGINS": "https://guires-nu.vercel.app",
-    "SOCKET_CORS_ORIGINS": "https://guires-nu.vercel.app",
-    "BACKEND_URL": "https://guires-nu.vercel.app",
-    "FRONTEND_URL": "https://guires-nu.vercel.app",
     "LOG_LEVEL": "info"
   },
   "functions": {
     "api/index.ts": {
       "memory": 1024,
-      "maxDuration": 60
+      "maxDuration": 60,
+      "runtime": "nodejs20.x"
     }
   },
   "routes": [
-    {
-      "src": "/api/v1/auth/login",
-      "dest": "/api/auth"
-    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.ts"

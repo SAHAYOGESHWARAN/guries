@@ -1,14 +1,28 @@
 #!/bin/bash
+
+# Build script for Vercel deployment
+# This script builds both backend and frontend
+
 set -e
 
-echo "🔨 Building Guries Marketing Control Center for Production..."
+echo "🔨 Starting build process..."
+
+# Install root dependencies
+echo "📦 Installing root dependencies..."
+npm install --legacy-peer-deps
+
+# Build backend
+echo "🔨 Building backend..."
+cd backend
+npm install --legacy-peer-deps
+npm run build
+cd ..
 
 # Build frontend
-echo "📦 Building frontend..."
+echo "🔨 Building frontend..."
 cd frontend
 npm install --legacy-peer-deps
 npm run build
 cd ..
 
-echo "✅ Build complete!"
-echo "Frontend dist ready at: frontend/dist/"
+echo "✅ Build completed successfully!"
