@@ -6,35 +6,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Content-Type', 'application/json');
 
     try {
-        // Check environment
-        const dbUrl = process.env.DATABASE_URL;
-        if (!dbUrl) {
-            return res.status(500).json({
-                status: 'error',
-                message: 'DATABASE_URL not configured',
-                timestamp: new Date().toISOString()
-            });
-        }
-
         // Initialize database
         await initializeDatabase();
+        const pool = getPool();
 
         // Test database connection
-        const pool = getPool();
-        const result = await pool.query('SELECT NOW() as current_time');
+        const result = await pool.query('SELECT NOW()');
+
+        // Check if assets table exists and has data
+        const assetsCheck = await pool.query('SELECT COUNT(*) as count FROM assets');
+        const assetCount = assetsCheck.rows[0]?.count || 0;
 
         return res.status(200).json({
-            status: 'ok',
+            success: true,
+            status: 'healthy',
             database: 'connected',
-            timestamp: result.rows[0].current_time,
-            environment: process.env.NODE_ENV
+            timestamp: result.rows[0]?.now,
+            assets: {
+                count: assetCount,
+                table_exists: true
+            }
         });
     } catch (error: any) {
         console.error('[Health] Error:', error);
         return res.status(500).json({
-            status: 'error',
-            message: error.message,
-            timestamp: new Date().toISOString()
+            success: false,
+            status: 'unhealthy',
+            error: error.message
         });
     }
 }

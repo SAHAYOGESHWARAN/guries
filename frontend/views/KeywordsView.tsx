@@ -40,6 +40,11 @@ const KeywordsView: React.FC = () => {
         }
     };
 
+    // Handle competition score change
+    const handleCompetitionChange = (value: string) => {
+        setFormData(prev => ({ ...prev, competition: value }));
+    };
+
     // Get service name by ID
     const getServiceName = (id?: number) => {
         return services.find(s => s.id === id)?.service_name || '';
@@ -147,49 +152,81 @@ const KeywordsView: React.FC = () => {
                     <div className="w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                         <Tooltip content="The search term to track.">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Keyword</label>
-                                <input type="text" value={formData.keyword} onChange={(e) => setFormData({ ...formData, keyword: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g. digital marketing services" />
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Keyword <span className="text-red-500">*</span></label>
+                                <input type="text" value={formData.keyword} onChange={(e) => setFormData({ ...formData, keyword: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g., digital marketing agency" />
                             </div>
                         </Tooltip>
+
                         <div className="grid grid-cols-2 gap-6">
                             <Tooltip content="User intent (Informational, Navigational, Transactional).">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Intent</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Keyword Intent <span className="text-red-500">*</span></label>
                                     <select value={formData.keyword_intent} onChange={(e) => setFormData({ ...formData, keyword_intent: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
-                                        <option>Trans</option><option>Info</option><option>Nav</option><option>Comm</option>
+                                        <option>Informational</option><option>Transactional</option><option>Navigational</option><option>Commercial</option>
                                     </select>
                                 </div>
                             </Tooltip>
                             <Tooltip content="Priority level of the keyword.">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Type</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Keyword Type <span className="text-red-500">*</span></label>
                                     <select value={formData.keyword_type} onChange={(e) => setFormData({ ...formData, keyword_type: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                         <option>Primary</option><option>Secondary</option><option>Branded</option>
                                     </select>
                                 </div>
                             </Tooltip>
                         </div>
+
                         <div className="grid grid-cols-2 gap-6">
-                            <Tooltip content="Average monthly searches.">
+                            <Tooltip content="Language of the keyword.">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Search Volume</label>
-                                    <input type="number" value={formData.search_volume} onChange={(e) => setFormData({ ...formData, search_volume: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
-                                </div>
-                            </Tooltip>
-                            <Tooltip content="Difficulty to rank for this keyword.">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Competition</label>
-                                    <select value={formData.competition} onChange={(e) => setFormData({ ...formData, competition: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
-                                        <option>High</option><option>Medium</option><option>Low</option>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Language</label>
+                                    <select value={formData.language || 'English'} onChange={(e) => setFormData({ ...formData, language: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                        <option>English</option><option>Spanish</option><option>French</option><option>German</option><option>Chinese</option>
                                     </select>
                                 </div>
                             </Tooltip>
+                            <Tooltip content="Average monthly searches.">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Search Volume</label>
+                                    <input type="number" value={formData.search_volume} onChange={(e) => setFormData({ ...formData, search_volume: parseInt(e.target.value) || 0 })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" placeholder="e.g., 12000" />
+                                </div>
+                            </Tooltip>
                         </div>
+
+                        <Tooltip content="Difficulty to rank for this keyword.">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Competition Score</label>
+                                <div className="flex gap-3 items-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCompetitionChange('Low')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${formData.competition === 'Low' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                                    >
+                                        Low
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCompetitionChange('Medium')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${formData.competition === 'Medium' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                                    >
+                                        Medium
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCompetitionChange('High')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${formData.competition === 'High' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                                    >
+                                        High
+                                    </button>
+                                </div>
+                            </div>
+                        </Tooltip>
+
                         <Tooltip content="Associate this keyword with a specific service offering.">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Map to Service</label>
                                 <select value={formData.mapped_service_id || ''} onChange={(e) => handleServiceChange(e.target.value ? parseInt(e.target.value) : undefined)} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
-                                    <option value="">-- Select Service --</option>
+                                    <option value="">Select service</option>
                                     {services.map(service => (
                                         <option key={service.id} value={service.id}>{service.service_name}</option>
                                     ))}
@@ -201,7 +238,7 @@ const KeywordsView: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Map to Sub-Service</label>
                                 <select value={formData.mapped_sub_service_id || ''} onChange={(e) => setFormData({ ...formData, mapped_sub_service_id: e.target.value ? parseInt(e.target.value) : undefined })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white" disabled={!formData.mapped_service_id}>
-                                    <option value="">-- Select Sub-Service --</option>
+                                    <option value="">Select sub-service</option>
                                     {filteredSubServices.map(subService => (
                                         <option key={subService.id} value={subService.id}>{subService.sub_service_name}</option>
                                     ))}
