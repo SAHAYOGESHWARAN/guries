@@ -399,6 +399,29 @@ const ServiceMasterView: React.FC = () => {
         setFormData(prev => ({ ...prev, slug, full_url: fullUrl }));
     };
 
+    // Auto-generate slug from full URL when full URL changes
+    const handleFullUrlChange = (val: string) => {
+        setFormData(prev => ({ ...prev, full_url: val }));
+
+        // Extract slug from full URL
+        if (val) {
+            const slug = val
+                .split('/').pop() // Get last part of URL
+                .toLowerCase()
+                .trim()
+                .replace(/&/g, 'and')
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_]+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .substring(0, 100);
+
+            if (slug) {
+                setFormData(prev => ({ ...prev, slug }));
+            }
+        }
+    };
+
     // Auto-generate slug when service name changes
     const handleServiceNameChange = (val: string) => {
         setFormData(prev => ({ ...prev, service_name: val }));
@@ -810,7 +833,7 @@ const ServiceMasterView: React.FC = () => {
                                                                 <input
                                                                     type="text"
                                                                     value={formData.full_url}
-                                                                    onChange={(e) => setFormData({ ...formData, full_url: e.target.value })}
+                                                                    onChange={(e) => handleFullUrlChange(e.target.value)}
                                                                     className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg text-sm bg-slate-50 font-mono text-slate-700 transition-all focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:bg-white placeholder:text-slate-400"
                                                                     placeholder="/services/enterprise-marketing"
                                                                 />
