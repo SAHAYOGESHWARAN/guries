@@ -22,7 +22,7 @@ const LinkedAssetsDisplay: React.FC<LinkedAssetsDisplayProps> = ({
             setError(null);
 
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+                const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
                 const endpoint = serviceId
                     ? `/services/${serviceId}/linked-assets`
                     : subServiceId

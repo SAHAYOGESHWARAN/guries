@@ -141,7 +141,7 @@ const UrlSlugManager: React.FC<UrlSlugManagerProps> = ({
 
         setIsChecking(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             let endpoint = '';
 
             switch (type) {

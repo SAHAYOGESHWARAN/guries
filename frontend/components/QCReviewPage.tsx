@@ -31,7 +31,7 @@ const QCReviewPage: React.FC = () => {
     const [actionError, setActionError] = useState<string | null>(null);
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+    const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
     const { refreshAssetLibrary } = useAssetLibraryRefresh();
 
     useEffect(() => {

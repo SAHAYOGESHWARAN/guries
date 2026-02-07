@@ -33,7 +33,7 @@ const ServiceAssetLinker: React.FC<Props> = ({
     React.useEffect(() => {
         const fetchRepositories = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+                const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
                 const reposRes = await fetch(`${apiUrl}/asset-categories/repositories`);
 
                 if (reposRes.ok) {

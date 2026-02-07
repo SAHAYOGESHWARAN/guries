@@ -140,7 +140,7 @@ export const approveAsset = async (req: Request, res: Response) => {
     const { asset_id, qc_remarks, qc_score } = req.body;
     const assetIdParam = (req.params as any).asset_id;
     const finalAssetId = assetIdParam || asset_id;
-    const qc_reviewer_id = (req as any).user?.id;
+    const qc_reviewer_id = (req as any).user?.id ?? (req.headers['x-user-id'] ? parseInt(String(req.headers['x-user-id']), 10) : undefined);
 
     try {
         if (!finalAssetId) {
@@ -235,7 +235,7 @@ export const rejectAsset = async (req: Request, res: Response) => {
     const { asset_id, qc_remarks, qc_score } = req.body;
     const assetIdParam = (req.params as any).asset_id;
     const finalAssetId = assetIdParam || asset_id;
-    const qc_reviewer_id = (req as any).user?.id;
+    const qc_reviewer_id = (req as any).user?.id ?? (req.headers['x-user-id'] ? parseInt(String(req.headers['x-user-id']), 10) : undefined);
 
     try {
         if (!finalAssetId) {
@@ -329,7 +329,7 @@ export const requestRework = async (req: Request, res: Response) => {
     const { asset_id, qc_remarks, qc_score } = req.body;
     const assetIdParam = (req.params as any).asset_id;
     const finalAssetId = assetIdParam || asset_id;
-    const qc_reviewer_id = (req as any).user?.id;
+    const qc_reviewer_id = (req as any).user?.id ?? (req.headers['x-user-id'] ? parseInt(String(req.headers['x-user-id']), 10) : undefined);
 
     try {
         if (!finalAssetId) {

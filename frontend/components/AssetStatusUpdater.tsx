@@ -23,7 +23,7 @@ const AssetStatusUpdater: React.FC<AssetStatusUpdaterProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+    const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
 
     const handleQCStatusUpdate = async () => {
         setLoading(true);

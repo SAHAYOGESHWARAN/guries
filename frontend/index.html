@@ -3,22 +3,39 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' font-weight='bold' fill='%233b82f6'>G</text></svg>" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="description" content="Guires Marketing Control Center - Comprehensive marketing management platform" />
-  <title>Guires Marketing Control Center</title>
+  <meta name="description"
+    content="Guires Marketing Control Center - Comprehensive marketing management platform for enterprise teams" />
+  <meta name="keywords" content="marketing, control center, asset management, campaign management, enterprise" />
+  <meta name="author" content="Guires Inc." />
+  <meta property="og:title" content="Guires Marketing Control Center" />
+  <meta property="og:description" content="Enterprise-grade marketing management platform" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#1e293b" />
+  <title>Guires Marketing Control Center - Enterprise Marketing Platform</title>
+
   <!-- Preconnect to external domains for faster resource loading -->
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="dns-prefetch" href="https://fonts.gstatic.com">
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <!-- Optimized Google Fonts with font-display swap for faster rendering -->
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
+
+  <!-- Security and Performance Meta Tags -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
   <style>
-    /* Ensure full viewport coverage */
+    /* Enhanced loading screen with animations */
     html,
     body {
       margin: 0;
@@ -26,6 +43,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
     }
 
     /* Fallback loading screen */
@@ -35,23 +53,39 @@
       justify-content: center;
       height: 100vh;
       width: 100vw;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
       color: #e2e8f0;
+      position: relative;
     }
 
     .loading-container {
       text-align: center;
+      z-index: 10;
+      position: relative;
     }
 
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(226, 232, 240, 0.1);
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(59, 130, 246, 0.1);
       border-top-color: #3b82f6;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+
+    .spinner::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      border: 3px solid rgba(139, 92, 246, 0.1);
+      border-top-color: #8b5cf6;
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite reverse;
     }
 
     @keyframes spin {
@@ -61,13 +95,68 @@
     }
 
     .loading-text {
-      font-size: 16px;
-      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .loading-subtext {
-      font-size: 12px;
+      font-size: 14px;
       color: #94a3b8;
+      font-weight: 400;
+    }
+
+    /* Background effects - pointer-events: none so they don't block clicks */
+    #root::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    #root::after {
+      content: '';
+      position: absolute;
+      bottom: -10%;
+      right: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 8s ease-in-out infinite reverse;
+      pointer-events: none;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    /* Performance optimizations */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
   </style>
 </head>
@@ -76,29 +165,50 @@
   <div id="root">
     <div class="loading-container">
       <div class="spinner"></div>
-      <div class="loading-text">Loading Guires MCC...</div>
-      <div class="loading-subtext">Please wait while we initialize your application</div>
+      <div class="loading-text">Guires Marketing Control Center</div>
+      <div class="loading-subtext">Initializing your enterprise marketing platform...</div>
     </div>
   </div>
   <div id="modal-root" class="relative z-[100]"></div>
-  <script type="module" src="/index.tsx"></script>
+
+  <!-- Main application entry point -->
+  <script type="module" src="/src/main.tsx"></script>
+
+  <!-- Enhanced error handling and analytics -->
   <script>
     // Global error handler for better debugging
     window.addEventListener('error', (event) => {
-      console.error('Global error:', event.error);
+      console.error('Application Error:', {
+        message: event.error?.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        stack: event.error?.stack
+      });
       // Don't prevent default for actual errors
     });
 
     window.addEventListener('unhandledrejection', (event) => {
-      console.error('Unhandled rejection:', event.reason);
+      console.error('Unhandled Promise Rejection:', {
+        reason: event.reason,
+        type: typeof event.reason
+      });
       // Suppress browser extension errors
       if (event.reason && typeof event.reason === 'string') {
         if (event.reason.includes('webpage_content_reporter') ||
           event.reason.includes('grainy-gradients') ||
-          event.reason.includes('402')) {
+          event.reason.includes('402') ||
+          event.reason.includes('chrome-extension') ||
+          event.reason.includes('moz-extension')) {
           event.preventDefault();
         }
       }
+    });
+
+    // Performance monitoring
+    window.addEventListener('load', () => {
+      const loadTime = performance.now();
+      console.log(`Application loaded in ${loadTime.toFixed(2)}ms`);
     });
   </script>
 </body>

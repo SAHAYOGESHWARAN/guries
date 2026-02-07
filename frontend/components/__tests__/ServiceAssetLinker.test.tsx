@@ -1,11 +1,12 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ServiceAssetLinker from '../ServiceAssetLinker';
 import type { AssetLibraryItem } from '../../types';
 
 // Mock fetch for repositories
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('ServiceAssetLinker', () => {
     const mockLinkedAssets: AssetLibraryItem[] = [
@@ -58,18 +59,18 @@ describe('ServiceAssetLinker', () => {
         linkedAssets: mockLinkedAssets,
         availableAssets: mockAvailableAssets,
         assetSearch: '',
-        setAssetSearch: jest.fn(),
-        onToggle: jest.fn(),
+        setAssetSearch: vi.fn(),
+        onToggle: vi.fn(),
         totalAssets: 10,
         repositoryFilter: 'All',
-        setRepositoryFilter: jest.fn(),
+        setRepositoryFilter: vi.fn(),
         allAssets: [...mockLinkedAssets, ...mockAvailableAssets],
         staticLinks: [1] // Asset ID 1 is statically linked
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        (fetch as jest.Mock).mockResolvedValue({
+        vi.clearAllMocks();
+        (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
             ok: true,
             json: async () => [{ repository: 'Web' }, { repository: 'SEO' }, { repository: 'SMM' }]
         });

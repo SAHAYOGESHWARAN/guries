@@ -63,7 +63,7 @@ const AssetStatusDisplay: React.FC<AssetStatusDisplayProps> = ({
         setError(null);
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+            const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
             const response = await fetch(`${apiUrl}/asset-status/assets/${assetId}/status`);
 
             if (!response.ok) {

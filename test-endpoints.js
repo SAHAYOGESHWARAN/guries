@@ -7,7 +7,7 @@
 
 const http = require('http');
 
-const BASE_URL = 'http://localhost:3003/api/v1';
+const BASE_URL = 'http://localhost:3003/api/v1/';  // Trailing slash needed for relative path resolution
 let authToken = null;
 
 // Color codes for console output
@@ -96,8 +96,8 @@ async function runTests() {
     // Test 2: Authentication
     log('\n🔐 Authentication Tests', 'blue');
 
-    // Login
-    const loginResponse = await makeRequest('POST', '/auth/login', {
+    // Login (use relative path - /auth/login resolves to wrong URL with new URL())
+    const loginResponse = await makeRequest('POST', 'auth/login', {
         email: 'admin@example.com',
         password: 'admin123'
     });

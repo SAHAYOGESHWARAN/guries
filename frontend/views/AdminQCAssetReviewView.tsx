@@ -156,13 +156,23 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    // Helper: check if asset is pending QC
+    const isPending = (a: AssetLibraryItem) => {
+        const qc = (a.qc_status || '').toLowerCase();
+        const st = (a.status || '').toLowerCase();
+        return qc === 'qc pending' || qc === '' || st === 'draft' || st === 'pending qc review' || st === 'pending';
+    };
+    const isRework = (a: AssetLibraryItem) => (a.qc_status || '').toLowerCase() === 'rework' || (a.status || '').toLowerCase() === 'rework requested';
+    const isApproved = (a: AssetLibraryItem) => ['approved', 'qc approved', 'published'].includes((a.qc_status || a.status || '').toLowerCase());
+    const isRejected = (a: AssetLibraryItem) => (a.qc_status || a.status || '').toLowerCase() === 'rejected';
+
     // Filter assets based on view mode - Admin sees ALL assets
     const filteredAssets = useMemo(() => {
         switch (viewMode) {
-            case 'pending': return assetsForQC.filter(a => a.qc_status === 'QC Pending' || a.status === 'Pending QC Review' || a.status === 'Draft' || !a.qc_status);
-            case 'rework': return assetsForQC.filter(a => a.qc_status === 'Rework' || a.status === 'Rework Requested');
-            case 'approved': return assetsForQC.filter(a => a.qc_status === 'Approved' || a.status === 'QC Approved' || a.status === 'Published');
-            case 'rejected': return assetsForQC.filter(a => a.qc_status === 'Rejected' || a.status === 'Rejected');
+            case 'pending': return assetsForQC.filter(isPending);
+            case 'rework': return assetsForQC.filter(isRework);
+            case 'approved': return assetsForQC.filter(isApproved);
+            case 'rejected': return assetsForQC.filter(isRejected);
             default: return assetsForQC;
         }
     }, [assetsForQC, viewMode]);
@@ -170,11 +180,14 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
     // Status counts
     const statusCounts = useMemo(() => ({
         all: assetsForQC.length,
-        pending: assetsForQC.filter(a => a.qc_status === 'QC Pending' || a.status === 'Pending QC Review' || a.status === 'Draft' || !a.qc_status).length,
-        rework: assetsForQC.filter(a => a.qc_status === 'Rework' || a.status === 'Rework Requested').length,
-        approved: assetsForQC.filter(a => a.qc_status === 'Approved' || a.status === 'QC Approved' || a.status === 'Published').length,
-        rejected: assetsForQC.filter(a => a.qc_status === 'Rejected' || a.status === 'Rejected').length,
+        pending: assetsForQC.filter(isPending).length,
+        rework: assetsForQC.filter(isRework).length,
+        approved: assetsForQC.filter(isApproved).length,
+        rejected: assetsForQC.filter(isRejected).length,
     }), [assetsForQC]);
+
+    // Can this asset be reviewed (approve/reject/rework)?
+    const canReview = (a: AssetLibraryItem) => isPending(a) || isRework(a);
 
     // Handlers
     const handleOpenSidePanel = (asset: AssetLibraryItem) => {
@@ -224,17 +237,28 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                 endpoint = `${apiUrl}/qc-review/rework`;
             }
 
+            // Require remarks for reject and rework
+            if ((decision === 'rejected' || decision === 'rework') && !qcRemarks?.trim()) {
+                alert('Please enter remarks/feedback for ' + (decision === 'rejected' ? 'rejection' : 'rework request'));
+                setSubmitting(false);
+                return;
+            }
+
+            const authToken = localStorage.getItem('authToken');
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'X-User-Id': String(user.id),
+                'X-User-Role': user.role
+            };
+            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-Id': String(user.id),
-                    'X-User-Role': user.role
-                },
+                headers,
                 body: JSON.stringify({
                     asset_id: selectedAsset.id,
                     qc_score: qcScore || 0,
-                    qc_remarks: qcRemarks || '',
+                    qc_remarks: qcRemarks?.trim() || '',
                     qc_reviewer_id: user.id,
                     user_role: user.role,
                     checklist_items: checklistItems,
@@ -698,7 +722,9 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Category</th>
                                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Service</th>
                                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">QC Status</th>
-                                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Rework #</th>
+                                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wide">SEO</th>
+                                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wide">Grammar</th>
+                                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wide">Rework</th>
                                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Submitted</th>
                                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Action</th>
                                 </tr>
@@ -718,8 +744,8 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                             </div>
                                         </td>
                                         <td className="px-4 py-4">
-                                            <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline">
-                                                {asset.name || asset.name}
+                                            <button onClick={() => handleOpenSidePanel(asset)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm text-left hover:underline truncate max-w-[200px]">
+                                                {asset.name || 'Untitled Asset'}
                                             </button>
                                         </td>
                                         <td className="px-4 py-4 text-gray-700 text-sm">{getSubmitterName(asset)}</td>
@@ -731,6 +757,16 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                         </td>
                                         <td className="px-4 py-4 text-gray-700 text-sm">{getLinkedServiceName(asset)}</td>
                                         <td className="px-4 py-4">{getQCStatusBadge(asset)}</td>
+                                        <td className="px-4 py-4 text-center">
+                                            <span className={`inline-flex items-center justify-center min-w-[2.5rem] px-2 py-0.5 rounded text-xs font-medium ${(asset.seo_score ?? 0) >= 80 ? 'bg-green-100 text-green-700' : (asset.seo_score ?? 0) >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                {asset.seo_score ?? '-'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <span className={`inline-flex items-center justify-center min-w-[2.5rem] px-2 py-0.5 rounded text-xs font-medium ${(asset.grammar_score ?? 0) >= 80 ? 'bg-green-100 text-green-700' : (asset.grammar_score ?? 0) >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                {asset.grammar_score ?? '-'}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-4 text-center">
                                             {asset.rework_count && asset.rework_count > 0 ? (
                                                 <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">
@@ -746,7 +782,7 @@ const AdminQCAssetReviewView: React.FC<AdminQCAssetReviewViewProps> = ({ onNavig
                                                 <button onClick={() => handleOpenSidePanel(asset)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
                                                     View
                                                 </button>
-                                                {(asset.status !== 'QC Approved' && asset.status !== 'QC Rejected' && asset.status !== 'Published') && (
+                                                {canReview(asset) && (
                                                     <button onClick={() => handleReviewAsset(asset)} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
                                                         Review
                                                     </button>

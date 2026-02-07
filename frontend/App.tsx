@@ -187,7 +187,7 @@ const NotFoundView = ({ onNavigate }: { onNavigate: (view: string) => void }) =>
 );
 
 const App: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [viewState, setViewState] = useState<{ view: string; id: string | number | null }>({
@@ -209,26 +209,23 @@ const App: React.FC = () => {
 
   // Restore session from localStorage on mount
   useEffect(() => {
-    // Auto-seeding of demo/admin users disabled
-
-    // Check for existing session and auto-login - REMOVED to force login every time
-    // const savedUser = localStorage.getItem('currentUser');
-    // if (savedUser) {
-    //   try {
-    //     const user = JSON.parse(savedUser);
-    //     setCurrentUser(user);
-    //     setIsAuthenticated(true);
-    //   } catch (error) {
-    //     console.error('Failed to restore session:', error);
-    //     localStorage.removeItem('currentUser');
-    //     setCurrentUser(null);
-    //     setIsAuthenticated(false);
-    //   }
-    // }
-
-    const initialRoute = parseHash(window.location.hash);
-    setViewState(initialRoute);
-    setIsLoading(false);
+    // Check for existing session and auto-login
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        const initialRoute = parseHash(window.location.hash);
+        setViewState(initialRoute);
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        localStorage.removeItem('currentUser');
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      }
+    }
+    // If not authenticated, show login page (isAuthenticated stays false)
   }, []);
 
   // Listen for hash changes from ServiceMasterView and other components

@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
     const isProduction = mode === 'production';
     const apiUrl = isProduction
         ? (env.VITE_API_URL || '/api/v1') // Use relative path in production
-        : (env.VITE_API_URL || 'http://localhost:3003/api/v1');
+        : (env.VITE_API_URL || '/api/v1'); // Use relative path in dev - proxy forwards to backend
 
     return {
         plugins: [react()],
@@ -34,11 +34,20 @@ export default defineConfig(({ mode }) => {
             },
             livereload: true,
             middlewareMode: false,
+            fs: {
+                strict: false,
+            },
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            },
             proxy: {
                 '/api': {
                     target: 'http://localhost:3003',
                     changeOrigin: true,
                     secure: false,
+                    rewrite: (path) => path,
                 },
                 '/socket.io': {
                     target: 'http://localhost:3003',

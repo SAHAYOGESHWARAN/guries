@@ -24,7 +24,7 @@ const AssetLibraryByCategory: React.FC<AssetLibraryCategoryProps> = ({
         const fetchRepositories = async () => {
             try {
                 setLoading(true);
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003/api/v1';
+                const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
 
                 // Fetch available repositories
                 const reposRes = await fetch(`${apiUrl}/asset-categories/repositories`);
