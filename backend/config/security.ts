@@ -138,7 +138,8 @@ export const validateSecurityConfig = () => {
     if (errors.length > 0) {
         console.error('❌ Security Configuration Errors:');
         errors.forEach(error => console.error(`  - ${error}`));
-        if (process.env.NODE_ENV === 'production') {
+        // In Vercel serverless, do not exit so the app can still respond (e.g. health, auth)
+        if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
             process.exit(1);
         }
     }

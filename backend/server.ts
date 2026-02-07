@@ -91,7 +91,10 @@ const connectDB = async () => {
         console.log('✅ Database ready for requests');
     } catch (err: any) {
         console.error('❌ Database connection failed:', err.message);
-        (process as any).exit(1);
+        // In Vercel serverless, do not exit so the app can still respond (e.g. /health, auth)
+        if (!process.env.VERCEL) {
+            (process as any).exit(1);
+        }
     }
 };
 
@@ -134,10 +137,10 @@ app.use(express.static(path.join(__dirname, '../frontend/dist'), {
 }));
 
 // SPA fallback - serve index.html for all non-API routes
-app.get('*', (req, res) => {
-    // Don't serve index.html for API routes
+app.get('*', (req, res, next) => {
+    // Let 404 handler respond for API routes that didn't match
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-        return;
+        return next();
     }
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
