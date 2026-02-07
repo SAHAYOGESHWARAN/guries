@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps && npm run build && cd ../frontend && npm install --legacy-peer-deps && npm run build && cd ..",
+  "buildCommand": "npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps --save-dev typescript && npm run build && cd ../frontend && npm install --legacy-peer-deps && npm run build && cd ..",
   "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "frontend/dist",
   "env": {
