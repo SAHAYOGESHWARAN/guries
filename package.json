@@ -14,7 +14,7 @@
     "build:frontend": "cd frontend && npm install --legacy-peer-deps && npm run build",
     "preview": "cd frontend && npm run preview",
     "install:all": "npm install && cd frontend && npm install --legacy-peer-deps && cd ..",
-    "vercel-build": "npm install --legacy-peer-deps && (cd backend && npm install --legacy-peer-deps --production=false && npm run build) && cd frontend && npm install --legacy-peer-deps --production=false && npm run build && cp -r dist/. ..",
+    "vercel-build": "npm install --legacy-peer-deps && (cd backend && npm install --legacy-peer-deps --production=false && npm run build) && (cd frontend && npm install --legacy-peer-deps --production=false && npm run build && cp -r ./dist/. ..)",
     "db:init": "ts-node backend/database/init-vercel-db.ts",
     "db:init:vercel": "DATABASE_URL=$DATABASE_URL npm run db:init",
     "db:deploy": "bash backend/database/deploy-db.sh",
