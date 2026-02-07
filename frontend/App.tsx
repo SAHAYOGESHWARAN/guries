@@ -207,25 +207,11 @@ const App: React.FC = () => {
     return { view, id };
   };
 
-  // Restore session from localStorage on mount
+  // Initialize app state on mount
   useEffect(() => {
-    // Check for existing session and auto-login
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-        const initialRoute = parseHash(window.location.hash);
-        setViewState(initialRoute);
-      } catch (error) {
-        console.error('Failed to restore session:', error);
-        localStorage.removeItem('currentUser');
-        setCurrentUser(null);
-        setIsAuthenticated(false);
-      }
-    }
-    // If not authenticated, show login page (isAuthenticated stays false)
+    // Always require login - no auto-login
+    setCurrentUser(null);
+    setIsAuthenticated(false);
   }, []);
 
   // Listen for hash changes from ServiceMasterView and other components
