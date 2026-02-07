@@ -1,23 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps && npm run build && cd ../frontend && npm install --legacy-peer-deps && npm run build && cd ..",
+  "buildCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && npm run build && cd ..",
   "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1"
   },
-  "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.ts"
-    },
     {
       "src": "/(.*)",
       "dest": "/index.html"
