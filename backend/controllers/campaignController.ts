@@ -71,9 +71,51 @@ export const createCampaign = async (req: Request, res: Response) => {
         ];
 
         const result = await pool.query(query, values);
-        const newCampaign = result.rows[0];
-        getSocket().emit('campaign_created', newCampaign);
-        res.status(201).json(newCampaign);
+
+        // Extract the ID from the result
+        const campaignId = result.rows?.[0]?.id || result.lastID;
+
+        if (!campaignId) {
+            return res.status(500).json({ error: 'Failed to get campaign ID after creation' });
+        }
+
+        // Fetch the created campaign with all fields
+        const selectQuery = `SELECT * FROM campaigns WHERE id = ?`;
+        const createdCampaign = await pool.query(selectQuery, [campaignId]);
+
+        if (createdCampaign.rows && createdCampaign.rows.length > 0) {
+            const campaign = createdCampaign.rows[0];
+            console.log('[createCampaign] Returning campaign from SELECT:', campaign);
+            getSocket().emit('campaign_created', campaign);
+            return res.status(201).json(campaign);
+        } else {
+            // Fallback: return the data we just inserted with the ID
+            const fallbackCampaign = {
+                id: campaignId,
+                campaign_name,
+                campaign_type: campaign_type || 'Content',
+                status: status || campaign_status || 'planning',
+                description: description || null,
+                campaign_start_date: campaign_start_date || null,
+                campaign_end_date: campaign_end_date || null,
+                campaign_owner_id: campaign_owner_id || null,
+                sub_campaigns: sub_campaigns || null,
+                linked_service_ids: linked_service_ids ? JSON.stringify(linked_service_ids) : null,
+                target_url: target_url || null,
+                project_id: project_id || null,
+                brand_id: brand_id || null,
+                backlinks_planned: backlinks_planned || 0,
+                backlinks_completed: 0,
+                tasks_completed: tasks_completed || 0,
+                tasks_total: tasks_total || 0,
+                kpi_score: kpi_score || 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            console.log('[createCampaign] Returning fallback campaign:', fallbackCampaign);
+            getSocket().emit('campaign_created', fallbackCampaign);
+            return res.status(201).json(fallbackCampaign);
+        }
     } catch (error: any) {
         console.error('Error creating campaign:', error);
         res.status(500).json({ error: 'Failed to create campaign', details: error.message });

@@ -380,13 +380,33 @@ export function useData<T>(collection: string) {
                 if (response.ok) {
                     const responseData = await response.json();
 
+                    console.log(`[useData] Raw response from server:`, responseData);
+
                     // Extract the actual item from various response formats
-                    serverItem = responseData.asset || responseData.data || responseData;
+                    // Try: asset (for assets), data (for wrapped responses), or use directly
+                    let extracted = responseData.asset || responseData.data || responseData;
+
+                    // If extracted is still an array, take the first element
+                    if (Array.isArray(extracted)) {
+                        extracted = extracted[0];
+                    }
+
+                    serverItem = extracted;
 
                     // Validate that we got an ID back
-                    if (!serverItem?.id) {
-                        console.error(`[useData] Server response missing ID:`, responseData);
+                    if (!serverItem || typeof serverItem !== 'object') {
+                        console.error(`[useData] Server response invalid - not an object:`, responseData);
+                        throw new Error('Server did not return valid item');
+                    }
+
+                    if (!serverItem.id && !serverItem.lastID) {
+                        console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full response:', responseData);
                         throw new Error('Server did not return item ID');
+                    }
+
+                    // Use lastID if id is not present (for some database responses)
+                    if (!serverItem.id && serverItem.lastID) {
+                        serverItem.id = serverItem.lastID;
                     }
 
                     console.log(`[useData] Created ${collection} item on server with ID:`, serverItem.id);
