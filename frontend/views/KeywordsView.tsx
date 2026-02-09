@@ -33,7 +33,8 @@ const KeywordsView: React.FC = () => {
         setFormData(prev => ({ ...prev, mapped_service_id: serviceId, mapped_sub_service_id: undefined }));
 
         if (serviceId) {
-            const filtered = subServices.filter(sub => sub.parent_service_id === serviceId);
+            const safeSubServices = Array.isArray(subServices) ? subServices : [];
+            const filtered = safeSubServices.filter(sub => sub.parent_service_id === serviceId);
             setFilteredSubServices(filtered);
         } else {
             setFilteredSubServices([]);
@@ -86,7 +87,8 @@ const KeywordsView: React.FC = () => {
 
         // If editing an item with a service, filter sub-services
         if (item.mapped_service_id) {
-            const filtered = subServices.filter(sub => sub.parent_service_id === item.mapped_service_id);
+            const safeSubServices = Array.isArray(subServices) ? subServices : [];
+            const filtered = safeSubServices.filter(sub => sub.parent_service_id === item.mapped_service_id);
             setFilteredSubServices(filtered);
         }
 

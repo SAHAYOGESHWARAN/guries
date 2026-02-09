@@ -65,9 +65,10 @@ export default function UserManagement() {
         setShowModal(false);
     };
 
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.email_address.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredUsers = (users || []).filter(user => {
+        if (!user) return false;
+        const matchesSearch = (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (user.email_address || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
@@ -157,8 +158,8 @@ export default function UserManagement() {
                                             <td className="px-6 py-4 text-sm text-gray-600">{user.department}</td>
                                             <td className="px-6 py-4 text-sm">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.status === 'active'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
                                                     }`}>
                                                     {user.status === 'active' ? '✓ Active' : '✗ Inactive'}
                                                 </span>

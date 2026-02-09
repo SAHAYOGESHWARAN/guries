@@ -3035,7 +3035,7 @@ Lists:
                                 className="appearance-none bg-white border border-slate-300 text-sm rounded-lg py-2 pl-3 pr-8 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer min-w-[130px]"
                             >
                                 <option value="All Sectors">All Sectors</option>
-                                {[...new Set(services.map(s => s.business_unit).filter(Boolean))].map(sector => (
+                                {[...new Set((services || []).map(s => s.business_unit).filter(Boolean))].map(sector => (
                                     <option key={sector} value={sector}>{sector}</option>
                                 ))}
                             </select>

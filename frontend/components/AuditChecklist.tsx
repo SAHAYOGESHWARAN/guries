@@ -70,8 +70,9 @@ export default function AuditChecklist() {
         setShowModal(false);
     };
 
-    const filteredChecklists = checklists.filter(checklist => {
-        const matchesSearch = checklist.checklist_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredChecklists = (checklists || []).filter(checklist => {
+        if (!checklist) return false;
+        const matchesSearch = (checklist.checklist_name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'all' || checklist.status === filterStatus;
         const matchesType = filterType === 'all' || checklist.checklist_type === filterType;
         return matchesSearch && matchesStatus && matchesType;
@@ -178,8 +179,8 @@ export default function AuditChecklist() {
                                             </td>
                                             <td className="px-6 py-4 text-sm">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${checklist.status === 'active'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
                                                     }`}>
                                                     {checklist.status === 'active' ? '✓ Active' : '✗ Inactive'}
                                                 </span>

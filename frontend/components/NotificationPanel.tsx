@@ -18,9 +18,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
 }) => {
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = (notifications || []).filter(n => !n.read).length;
 
-    const filteredNotifications = notifications.filter(notification => {
+    const filteredNotifications = (notifications || []).filter(notification => {
+        if (!notification) return false;
         if (filter === 'unread') return !notification.read;
         if (filter === 'read') return notification.read;
         return true;

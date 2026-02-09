@@ -24,7 +24,8 @@ const BacklinkMasterView: React.FC = () => {
         domain: '', platform_type: 'Guest Post', da_score: 0, spam_score: 0, country: 'United States', pricing: 'Paid', status: 'active'
     });
 
-    const filteredData = backlinks.filter(item => {
+    const filteredData = (backlinks || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = (item.domain || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = typeFilter === 'All Types' || item.platform_type === typeFilter;
         const matchesCountry = countryFilter === 'All Countries' || item.country === countryFilter;

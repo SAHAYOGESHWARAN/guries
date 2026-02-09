@@ -153,7 +153,8 @@ const AITaskAllocationSuggestions: React.FC<AITaskAllocationSuggestionsProps> = 
         }
     };
 
-    const filteredSuggestions = suggestions.filter(s => {
+    const filteredSuggestions = (suggestions || []).filter(s => {
+        if (!s) return false;
         if (filters.status !== 'all' && s.status !== filters.status) return false;
         if (filters.priority !== 'all' && s.priority !== filters.priority) return false;
         if (s.confidence_score < filters.minConfidence) return false;

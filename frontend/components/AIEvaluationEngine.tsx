@@ -68,13 +68,14 @@ export default function AIEvaluationEngine({ onNavigate }: AIEvaluationEnginePro
         setShowModal(false);
     };
 
-    const filteredReports = reports.filter(report => {
-        const matchesSearch = report.report_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredReports = (reports || []).filter(report => {
+        if (!report) return false;
+        const matchesSearch = (report.report_id || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesPeriod = filterPeriod === 'all' || report.evaluation_period === filterPeriod;
         return matchesSearch && matchesPeriod;
     });
 
-    const periods = [...new Set(reports.map(r => r.evaluation_period))];
+    const periods = [...new Set((reports || []).map(r => r.evaluation_period))];
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">

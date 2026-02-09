@@ -71,9 +71,10 @@ export default function EmployeePerformanceScorecard() {
         setShowModal(false);
     };
 
-    const filteredScorecards = scorecards.filter(scorecard => {
-        const matchesSearch = scorecard.employee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            scorecard.employee_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredScorecards = (scorecards || []).filter(scorecard => {
+        if (!scorecard) return false;
+        const matchesSearch = (scorecard.employee_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (scorecard.employee_id || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDept = filterDepartment === 'all' || scorecard.department === filterDepartment;
         return matchesSearch && matchesDept;
     });

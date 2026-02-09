@@ -37,7 +37,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         setExpandedFilters(newSet);
     };
 
-    const activeFilterCount = filters.filter(f => f.value && f.value !== 'All').length;
+    const activeFilterCount = (filters || []).filter(f => f.value && f.value !== 'All').length;
 
     if (!isOpen) {
         return (

@@ -38,7 +38,7 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
             if (response.ok) {
                 const data = await response.json();
                 // Filter to only show assets submitted by current user
-                const userSubmissions = data.filter((asset: AssetLibraryItem) =>
+                const userSubmissions = (data || []).filter((asset: AssetLibraryItem) =>
                     asset.submitted_by === currentUserId || asset.created_by === currentUserId
                 );
                 setSubmissions(userSubmissions);
@@ -50,7 +50,8 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
         }
     };
 
-    const filteredSubmissions = submissions.filter(asset => {
+    const filteredSubmissions = (submissions || []).filter(asset => {
+        if (!asset) return false;
         switch (filter) {
             case 'rework':
                 return asset.status === 'Rework Required';
@@ -65,9 +66,9 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
         }
     });
 
-    const reworkCount = submissions.filter(a => a.status === 'Rework Required').length;
-    const pendingCount = submissions.filter(a => a.status === 'Pending QC Review').length;
-    const approvedCount = submissions.filter(a => a.status === 'QC Approved').length;
+    const reworkCount = (submissions || []).filter(a => a.status === 'Rework Required').length;
+    const pendingCount = (submissions || []).filter(a => a.status === 'Pending QC Review').length;
+    const approvedCount = (submissions || []).filter(a => a.status === 'QC Approved').length;
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -100,8 +101,8 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
                 <button
                     onClick={() => setFilter('all')}
                     className={`p-4 rounded-xl border-2 transition-all ${filter === 'all'
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-indigo-500 bg-indigo-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                 >
                     <div className="text-2xl font-bold text-slate-900">{submissions.length}</div>
@@ -111,8 +112,8 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
                 <button
                     onClick={() => setFilter('rework')}
                     className={`p-4 rounded-xl border-2 transition-all ${filter === 'rework'
-                            ? 'border-orange-500 bg-orange-50'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                 >
                     <div className="flex items-center gap-2">
@@ -130,8 +131,8 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
                 <button
                     onClick={() => setFilter('pending')}
                     className={`p-4 rounded-xl border-2 transition-all ${filter === 'pending'
-                            ? 'border-amber-500 bg-amber-50'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-amber-500 bg-amber-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                 >
                     <div className="text-2xl font-bold text-amber-600">{pendingCount}</div>
@@ -141,8 +142,8 @@ const UserAssetSubmissions: React.FC<UserAssetSubmissionsProps> = ({
                 <button
                     onClick={() => setFilter('approved')}
                     className={`p-4 rounded-xl border-2 transition-all ${filter === 'approved'
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                 >
                     <div className="text-2xl font-bold text-green-600">{approvedCount}</div>

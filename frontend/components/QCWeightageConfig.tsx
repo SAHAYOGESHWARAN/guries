@@ -67,8 +67,9 @@ export default function QCWeightageConfig() {
         setShowModal(false);
     };
 
-    const filteredConfigs = configs.filter(config => {
-        const matchesSearch = config.config_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredConfigs = (configs || []).filter(config => {
+        if (!config) return false;
+        const matchesSearch = (config.config_name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'all' || config.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
