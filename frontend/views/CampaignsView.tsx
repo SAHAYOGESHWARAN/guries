@@ -205,7 +205,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
     const handleCreate = async () => {
         setIsSubmitting(true);
         try {
-            await createCampaign({
+            const newCampaign = await createCampaign({
                 campaign_name: formData.campaign_name,
                 campaign_type: formData.campaign_type,
                 campaign_status: formData.campaign_status,
@@ -225,9 +225,10 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                 tasks_completed: 0,
                 kpi_score: 0,
             } as any);
+            console.log('[CampaignsView] Campaign created successfully:', newCampaign);
             setViewMode('list');
             resetForm();
-            refresh();
+            // Don't refresh - the item is already in state from createCampaign
         } catch (error) {
             if (process.env.NODE_ENV === 'development') {
                 console.error('Failed to create campaign:', error);

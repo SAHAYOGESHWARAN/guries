@@ -432,7 +432,12 @@ export function useData<T>(collection: string) {
 
         // 3. Immediately update state to reflect the new item
         const finalItem = serverItem || newItem;
-        setData(prev => [finalItem, ...prev]);
+        console.log(`[useData] Adding item to state:`, JSON.stringify(finalItem, null, 2));
+        setData(prev => {
+            const updated = [finalItem, ...prev];
+            console.log(`[useData] Updated data array length:`, updated.length);
+            return updated;
+        });
 
         return finalItem;
     };
