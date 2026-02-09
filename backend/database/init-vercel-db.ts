@@ -253,12 +253,14 @@ const initializeVercelDatabase = async () => {
         campaign_owner_id INTEGER REFERENCES users(id),
         project_id INTEGER REFERENCES projects(id),
         brand_id INTEGER REFERENCES brands(id),
+        linked_service_ids TEXT,
         target_url TEXT,
         backlinks_planned INTEGER DEFAULT 0,
         backlinks_completed INTEGER DEFAULT 0,
         tasks_completed INTEGER DEFAULT 0,
         tasks_total INTEGER DEFAULT 0,
         kpi_score INTEGER DEFAULT 0,
+        sub_campaigns TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

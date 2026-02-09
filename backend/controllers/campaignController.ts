@@ -72,23 +72,32 @@ export const createCampaign = async (req: Request, res: Response) => {
 
         const result = await pool.query(query, values);
 
+        console.log('[createCampaign] INSERT result:', JSON.stringify(result, null, 2));
+
         // Extract the ID from the result
         const campaignId = result.rows?.[0]?.id || result.lastID;
 
+        console.log('[createCampaign] Extracted campaignId:', campaignId);
+
         if (!campaignId) {
+            console.error('[createCampaign] Failed to extract ID from result');
             return res.status(500).json({ error: 'Failed to get campaign ID after creation' });
         }
 
         // Fetch the created campaign with all fields
         const selectQuery = `SELECT * FROM campaigns WHERE id = ?`;
+        console.log('[createCampaign] Executing SELECT with ID:', campaignId);
         const createdCampaign = await pool.query(selectQuery, [campaignId]);
+
+        console.log('[createCampaign] SELECT result:', JSON.stringify(createdCampaign, null, 2));
 
         if (createdCampaign.rows && createdCampaign.rows.length > 0) {
             const campaign = createdCampaign.rows[0];
-            console.log('[createCampaign] Returning campaign from SELECT:', campaign);
+            console.log('[createCampaign] Returning campaign from SELECT:', JSON.stringify(campaign, null, 2));
             getSocket().emit('campaign_created', campaign);
             return res.status(201).json(campaign);
         } else {
+            console.log('[createCampaign] SELECT returned no rows, using fallback');
             // Fallback: return the data we just inserted with the ID
             const fallbackCampaign = {
                 id: campaignId,
@@ -112,7 +121,7 @@ export const createCampaign = async (req: Request, res: Response) => {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };
-            console.log('[createCampaign] Returning fallback campaign:', fallbackCampaign);
+            console.log('[createCampaign] Returning fallback campaign:', JSON.stringify(fallbackCampaign, null, 2));
             getSocket().emit('campaign_created', fallbackCampaign);
             return res.status(201).json(fallbackCampaign);
         }

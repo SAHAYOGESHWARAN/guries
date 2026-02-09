@@ -380,7 +380,7 @@ export function useData<T>(collection: string) {
                 if (response.ok) {
                     const responseData = await response.json();
 
-                    console.log(`[useData] Raw response from server:`, responseData);
+                    console.log(`[useData] Raw response from server:`, JSON.stringify(responseData, null, 2));
 
                     // Extract the actual item from various response formats
                     // Try: asset (for assets), data (for wrapped responses), or use directly
@@ -393,20 +393,25 @@ export function useData<T>(collection: string) {
 
                     serverItem = extracted;
 
+                    console.log(`[useData] Extracted item:`, JSON.stringify(serverItem, null, 2));
+
                     // Validate that we got an ID back
                     if (!serverItem || typeof serverItem !== 'object') {
                         console.error(`[useData] Server response invalid - not an object:`, responseData);
                         throw new Error('Server did not return valid item');
                     }
 
-                    if (!serverItem.id && !serverItem.lastID) {
-                        console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full response:', responseData);
+                    // Check all possible ID fields
+                    const hasId = serverItem.id || serverItem.lastID || serverItem.last_insert_rowid;
+
+                    if (!hasId) {
+                        console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full object:', serverItem);
                         throw new Error('Server did not return item ID');
                     }
 
-                    // Use lastID if id is not present (for some database responses)
-                    if (!serverItem.id && serverItem.lastID) {
-                        serverItem.id = serverItem.lastID;
+                    // Use any available ID field
+                    if (!serverItem.id) {
+                        serverItem.id = serverItem.lastID || serverItem.last_insert_rowid;
                     }
 
                     console.log(`[useData] Created ${collection} item on server with ID:`, serverItem.id);
