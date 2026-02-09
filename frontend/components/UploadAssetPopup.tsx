@@ -144,12 +144,12 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
 
     // SMM filtered sub-services
     const smmFilteredSubServices = useMemo(() =>
-        smmLinkedServiceId ? subServices.filter(s => Number(s.parent_service_id) === Number(smmLinkedServiceId)) : [],
+        smmLinkedServiceId ? (Array.isArray(subServices) ? subServices : []).filter(s => Number(s.parent_service_id) === Number(smmLinkedServiceId)) : [],
         [subServices, smmLinkedServiceId]
     );
 
     const filteredSubServices = useMemo(() =>
-        linkedServiceId ? subServices.filter(s => Number(s.parent_service_id) === Number(linkedServiceId)) : [],
+        linkedServiceId ? (Array.isArray(subServices) ? subServices : []).filter(s => Number(s.parent_service_id) === Number(linkedServiceId)) : [],
         [subServices, linkedServiceId]
     );
 
@@ -515,7 +515,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             </label>
                                             <select value={asset.asset_category || ''} onChange={e => setAsset({ ...asset, asset_category: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Category...</option>
-                                                {assetCategories.filter(c => !c.status || c.status === 'active').map(cat => (
+                                                {(Array.isArray(assetCategories) ? assetCategories : []).filter(c => !c.status || c.status === 'active').map(cat => (
                                                     <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
                                                 ))}
                                             </select>
@@ -527,7 +527,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             </label>
                                             <select value={asset.type || ''} onChange={e => setAsset({ ...asset, type: e.target.value })} className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select Type...</option>
-                                                {assetTypes.filter(t => !t.status || t.status === 'active').map(type => (
+                                                {(Array.isArray(assetTypes) ? assetTypes : []).filter(t => !t.status || t.status === 'active').map(type => (
                                                     <option key={type.id} value={type.asset_type_name}>{type.asset_type_name}</option>
                                                 ))}
                                             </select>
@@ -612,7 +612,7 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         >
                                             <option value="">Select keyword from master...</option>
-                                            {keywordsMaster.filter(k => (k.status === 'active' || !k.status) && !webSelectedKeywords.includes(k.keyword)).map(kw => (
+                                            {(Array.isArray(keywordsMaster) ? keywordsMaster : []).filter(k => (k.status === 'active' || !k.status) && !webSelectedKeywords.includes(k.keyword)).map(kw => (
                                                 <option key={kw.id} value={kw.keyword}>{kw.keyword} {kw.search_volume ? `(Vol: ${kw.search_volume})` : ''}</option>
                                             ))}
                                         </select>
@@ -802,21 +802,21 @@ const UploadAssetPopup: React.FC<UploadAssetPopupProps> = ({ isOpen, onClose, on
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Designed By</label>
                                             <select value={designedBy || ''} onChange={e => setDesignedBy(e.target.value ? Number(e.target.value) : null)} className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select designer...</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                {(Array.isArray(users) ? users : []).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Published By</label>
                                             <select className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select publisher...</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                {(Array.isArray(users) ? users : []).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 mb-1">Verified By (SEO)</label>
                                             <select className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm">
                                                 <option value="">Select SEO verifier...</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                {(Array.isArray(users) ? users : []).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
                                         </div>
                                     </div>

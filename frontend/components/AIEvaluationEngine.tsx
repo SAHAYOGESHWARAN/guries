@@ -34,9 +34,10 @@ export default function AIEvaluationEngine({ onNavigate }: AIEvaluationEnginePro
             setLoading(true);
             const response = await fetch('/api/ai-evaluation-engine/reports');
             const data = await response.json();
-            setReports(data);
+            setReports(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching reports:', error);
+            setReports([]);
         } finally {
             setLoading(false);
         }

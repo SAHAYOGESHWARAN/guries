@@ -94,8 +94,11 @@ export default function UserManagementModal({ user, onClose, onSave }: UserManag
             const rolesData = await rolesRes.json();
             const deptsData = await deptsRes.json();
 
-            setRoles(rolesData.map((r: any) => r.role_name));
-            setDepartments(deptsData.map((d: any) => d.department_name));
+            const safeRoles = Array.isArray(rolesData) ? rolesData : rolesData.data || [];
+            const safeDepts = Array.isArray(deptsData) ? deptsData : deptsData.data || [];
+
+            setRoles(safeRoles.map((r: any) => r.role_name));
+            setDepartments(safeDepts.map((d: any) => d.department_name));
         } catch (error) {
             console.error('Error fetching roles/departments:', error);
             // Set default values if fetch fails

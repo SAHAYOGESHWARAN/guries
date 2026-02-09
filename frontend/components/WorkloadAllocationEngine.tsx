@@ -70,19 +70,27 @@ export default function WorkloadAllocationEngine() {
             setLoading(true);
             if (activeTab === 'task-suggestions') {
                 const response = await fetch('/api/workload-allocation-engine/task-suggestions');
-                setTaskSuggestions(await response.json());
+                const data = await response.json();
+                setTaskSuggestions(Array.isArray(data) ? data : data.data || []);
             } else if (activeTab === 'workload-forecast') {
                 const response = await fetch('/api/workload-allocation-engine/workload-forecast');
-                setWorkloadForecasts(await response.json());
+                const data = await response.json();
+                setWorkloadForecasts(Array.isArray(data) ? data : data.data || []);
             } else if (activeTab === 'team-capacity') {
                 const response = await fetch('/api/workload-allocation-engine/team-capacity');
-                setTeamCapacities(await response.json());
+                const data = await response.json();
+                setTeamCapacities(Array.isArray(data) ? data : data.data || []);
             } else if (activeTab === 'predicted-overloads') {
                 const response = await fetch('/api/workload-allocation-engine/predicted-overloads');
-                setPredictedOverloads(await response.json());
+                const data = await response.json();
+                setPredictedOverloads(Array.isArray(data) ? data : data.data || []);
             }
         } catch (e) {
             console.error('Failed to fetch workload data', e);
+            setTaskSuggestions([]);
+            setWorkloadForecasts([]);
+            setTeamCapacities([]);
+            setPredictedOverloads([]);
         } finally {
             setLoading(false);
         }

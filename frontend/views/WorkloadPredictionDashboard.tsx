@@ -281,7 +281,7 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                             <div>
                                                 <h4 className="text-xs font-semibold text-slate-700 mb-1">Recommendations:</h4>
                                                 <ul className="text-xs text-slate-600 space-y-1">
-                                                    {overload.recommendations.slice(0, 2).map((rec: string, index: number) => (
+                                                    {(Array.isArray(overload.recommendations) ? overload.recommendations : []).slice(0, 2).map((rec: string, index: number) => (
                                                         <li key={index} className="flex items-start gap-2">
                                                             <span className="text-blue-500 mt-1">•</span>
                                                             <span>{rec}</span>
@@ -320,7 +320,7 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                             <div className="mb-3">
                                                 <h4 className="text-xs font-semibold text-slate-700 mb-1">Recommendations:</h4>
                                                 <ul className="text-xs text-slate-600 space-y-1">
-                                                    {alert.recommendations.map((rec: string, index: number) => (
+                                                    {(Array.isArray(alert.recommendations) ? alert.recommendations : []).map((rec: string, index: number) => (
                                                         <li key={index} className="flex items-start gap-2">
                                                             <span className="text-emerald-500 mt-1">•</span>
                                                             <span>{rec}</span>
@@ -376,7 +376,7 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                         <div className="bg-slate-50 rounded-lg p-3 mb-3">
                                             <h4 className="text-xs font-semibold text-slate-700 mb-2">Expected Impact:</h4>
                                             <div className="grid grid-cols-2 gap-2 text-xs">
-                                                {Object.entries(suggestion.impact).map(([key, value]: [string, any]) => (
+                                                {(suggestion.impact && typeof suggestion.impact === 'object' ? Object.entries(suggestion.impact) : []).map(([key, value]: [string, any]) => (
                                                     <div key={key} className="flex justify-between">
                                                         <span className="text-slate-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
                                                         <span className="font-medium text-slate-900">{value}</span>

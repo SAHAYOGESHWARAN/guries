@@ -223,7 +223,7 @@ export default function WorkflowStageMaster() {
                     </div>
                     <div className="bg-white p-4 rounded-lg shadow">
                         <p className="text-gray-600 text-sm">Active Workflows</p>
-                        <p className="text-2xl font-bold text-green-600">{workflows.filter(w => w.status === 'active').length}</p>
+                        <p className="text-2xl font-bold text-green-600">{(Array.isArray(workflows) ? workflows : []).filter(w => w.status === 'active').length}</p>
                     </div>
                 </div>
             </div>
