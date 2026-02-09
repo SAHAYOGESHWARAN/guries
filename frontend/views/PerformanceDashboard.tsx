@@ -75,6 +75,13 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ onNavigate 
 
     const { summaryWidgets, kpiAnalytics, projectImpact, alerts, chartData } = dashboardData || {};
 
+    // Ensure all arrays are properly initialized
+    const safeSummaryWidgets = Array.isArray(summaryWidgets) ? summaryWidgets : [];
+    const safeKpiAnalytics = Array.isArray(kpiAnalytics) ? kpiAnalytics : [];
+    const safeProjectImpact = Array.isArray(projectImpact) ? projectImpact : [];
+    const safeAlerts = Array.isArray(alerts) ? alerts : [];
+    const safeChartData = chartData || {};
+
     return (
         <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50">
             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-300">

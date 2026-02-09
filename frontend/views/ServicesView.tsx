@@ -35,10 +35,11 @@ const ServicesView: React.FC = () => {
         return servicePages.filter(i => i.status === stage).length;
     };
 
-    const filteredPages = servicePages.filter(item => {
+    const filteredPages = (servicePages || []).filter(item => {
+        if (!item) return false;
         const matchesSearch =
-            item.page_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.page_title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.service_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.sub_service_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.primary_keyword || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -291,8 +292,8 @@ const ServicesView: React.FC = () => {
                                 key={stage}
                                 onClick={() => setActiveStage(stage)}
                                 className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center space-x-2 ${isActive
-                                        ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                                    ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                                     }`}
                             >
                                 <span>{stage}</span>

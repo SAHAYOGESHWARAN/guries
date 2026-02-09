@@ -564,7 +564,7 @@ const ServiceMasterView: React.FC = () => {
             return acc + (s.focus_keywords?.includes(kw) ? 1 : 0);
         }, 0);
 
-        const masterRecord = keywordsMaster.find(k => k.keyword.toLowerCase() === kw.toLowerCase());
+        const masterRecord = (keywordsMaster || []).find(k => (k?.keyword || '').toLowerCase() === (kw || '').toLowerCase());
         const vol = masterRecord ? masterRecord.search_volume.toLocaleString() : 'N/A';
         const comp = masterRecord ? masterRecord.competition : '-';
 

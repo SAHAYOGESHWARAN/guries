@@ -75,6 +75,16 @@ const EmployeeScorecardDashboard: React.FC<EmployeeScorecardDashboardProps> = ({
 
     const { employeeInfo, summaryScores, kpiContributions, contributionChart, qcHistory, attendanceMetrics, aiFeedback, performanceTrends } = dashboardData || {};
 
+    // Ensure all arrays are properly initialized
+    const safeEmployeeInfo = employeeInfo || {};
+    const safeSummaryScores = summaryScores || {};
+    const safeKpiContributions = kpiContributions || {};
+    const safeContributionChart = Array.isArray(contributionChart) ? contributionChart : [];
+    const safeQcHistory = Array.isArray(qcHistory) ? qcHistory : [];
+    const safeAttendanceMetrics = Array.isArray(attendanceMetrics) ? attendanceMetrics : [];
+    const safeAiFeedback = Array.isArray(aiFeedback) ? aiFeedback : [];
+    const safePerformanceTrends = Array.isArray(performanceTrends) ? performanceTrends : [];
+
     return (
         <div className="h-full w-full flex flex-col overflow-hidden bg-slate-50">
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">

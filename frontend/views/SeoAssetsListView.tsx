@@ -75,12 +75,13 @@ const SeoAssetsListView: React.FC<SeoAssetsListViewProps> = ({ onNavigate }) => 
                 const response = await fetch(`${apiUrl}/seo-assets`);
                 if (response.ok) {
                     const data = await response.json();
-                    setSeoAssets(data);
+                    setSeoAssets(Array.isArray(data) ? data : data.data || []);
                 }
             } catch (error) {
                 if (process.env.NODE_ENV === 'development') {
                     console.error('Error fetching SEO assets:', error);
                 }
+                setSeoAssets([]);
             } finally {
                 setLoading(false);
             }

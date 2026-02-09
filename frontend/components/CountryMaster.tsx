@@ -36,9 +36,10 @@ export default function CountryMaster() {
         try {
             const response = await fetch(`${API_BASE_URL}/country-master`);
             const data = await response.json();
-            setCountries(data);
+            setCountries(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching countries:', error);
+            setCountries([]);
         } finally {
             setLoading(false);
         }
@@ -48,15 +49,17 @@ export default function CountryMaster() {
         try {
             const response = await fetch(`${API_BASE_URL}/country-master/list/regions`);
             const data = await response.json();
-            setRegions(data);
+            setRegions(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching regions:', error);
+            setRegions([]);
         }
     };
 
-    const filteredCountries = countries.filter(country => {
-        const matchesSearch = country.country_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            country.iso_code.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredCountries = (countries || []).filter(country => {
+        if (!country) return false;
+        const matchesSearch = (country.country_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (country.iso_code || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesRegion = regionFilter === 'All Regions' || country.region === regionFilter;
         const matchesStatus = statusFilter === 'All Status' || country.status === statusFilter;
         return matchesSearch && matchesRegion && matchesStatus;
@@ -209,8 +212,8 @@ export default function CountryMaster() {
                                     </td>
                                     <td className="px-6 py-4 text-sm">
                                         <span className={`px-2 py-1 rounded text-xs font-semibold ${country.status === 'active'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                             }`}>
                                             {country.status}
                                         </span>

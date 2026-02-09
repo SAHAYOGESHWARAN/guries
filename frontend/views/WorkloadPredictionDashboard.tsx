@@ -78,6 +78,13 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
 
     const { forecastedTasks, predictedOverloads, resourceGapAlerts, allocationSuggestions, workloadTrendForecast, teamCapacityUtilization } = dashboardData || {};
 
+    // Ensure all arrays are properly initialized
+    const safeForecastedTasks = Array.isArray(forecastedTasks) ? forecastedTasks : [];
+    const safePredictedOverloads = Array.isArray(predictedOverloads) ? predictedOverloads : [];
+    const safeResourceGapAlerts = Array.isArray(resourceGapAlerts) ? resourceGapAlerts : [];
+    const safeAllocationSuggestions = Array.isArray(allocationSuggestions) ? allocationSuggestions : [];
+    const safeTeamCapacityUtilization = Array.isArray(teamCapacityUtilization) ? teamCapacityUtilization : [];
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'balanced': return 'bg-emerald-500';
@@ -167,14 +174,14 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                     </div>
 
                     {/* Forecasted Tasks per Person */}
-                    {forecastedTasks && (
+                    {safeForecastedTasks && (
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                                 <Users className="w-5 h-5 text-blue-500" />
                                 Forecasted Tasks per Person
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {forecastedTasks.map((employee: any) => (
+                                {safeForecastedTasks.map((employee: any) => (
                                     <div key={employee.employeeId} className="border border-slate-200 rounded-lg p-4">
                                         <div className="flex justify-between items-start mb-3">
                                             <div>
@@ -234,14 +241,14 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                         {/* Predicted Overload Cases */}
-                        {predictedOverloads && (
+                        {safePredictedOverloads && (
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                                 <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                                     <AlertTriangle className="w-5 h-5 text-red-500" />
                                     Predicted Overload Cases
                                 </h2>
                                 <div className="space-y-4">
-                                    {predictedOverloads.map((overload: any) => (
+                                    {safePredictedOverloads.map((overload: any) => (
                                         <div key={overload.employeeId} className={`border-l-4 p-4 rounded-r-lg ${getRiskColor(overload.riskLevel)}`}>
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
@@ -289,14 +296,14 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                         )}
 
                         {/* Resource Gap Alerts */}
-                        {resourceGapAlerts && (
+                        {safeResourceGapAlerts && (
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                                 <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                                     <Target className="w-5 h-5 text-amber-500" />
                                     Resource Gap Alerts
                                 </h2>
                                 <div className="space-y-4">
-                                    {resourceGapAlerts.map((alert: any) => (
+                                    {safeResourceGapAlerts.map((alert: any) => (
                                         <div key={alert.id} className={`border-l-4 p-4 rounded-r-lg ${getRiskColor(alert.severity)}`}>
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-semibold text-slate-900">{alert.department}</h3>
@@ -333,14 +340,14 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                     </div>
 
                     {/* AI Task Allocation Suggestions */}
-                    {allocationSuggestions && (
+                    {safeAllocationSuggestions && (
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                                 <Lightbulb className="w-5 h-5 text-yellow-500" />
                                 AI Task Allocation Suggestions
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {allocationSuggestions.map((suggestion: any) => (
+                                {safeAllocationSuggestions.map((suggestion: any) => (
                                     <div key={suggestion.id} className="border border-slate-200 rounded-lg p-4">
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex-1">
@@ -394,14 +401,14 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                     )}
 
                     {/* Team Capacity Utilization */}
-                    {teamCapacityUtilization && (
+                    {safeTeamCapacityUtilization && (
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                                 <BarChart3 className="w-5 h-5 text-purple-500" />
                                 Team Capacity Utilization
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {teamCapacityUtilization.map((team: any, index: number) => (
+                                {safeTeamCapacityUtilization.map((team: any, index: number) => (
                                     <div key={index} className="border border-slate-200 rounded-lg p-4">
                                         <div className="flex justify-between items-start mb-3">
                                             <h3 className="font-semibold text-slate-900">{team.team}</h3>

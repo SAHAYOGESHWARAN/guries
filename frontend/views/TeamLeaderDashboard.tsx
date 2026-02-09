@@ -78,6 +78,17 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
 
     const { teamSummary, workloadDistribution, teamCapacity, campaignOverview, taskDistribution, performanceTrends, teamAlerts, allocationSuggestions, skillsMatrix } = dashboardData || {};
 
+    // Ensure all arrays are properly initialized
+    const safeTeamSummary = teamSummary || {};
+    const safeWorkloadDistribution = Array.isArray(workloadDistribution) ? workloadDistribution : [];
+    const safeTeamCapacity = teamCapacity || {};
+    const safeCampaignOverview = Array.isArray(campaignOverview) ? campaignOverview : [];
+    const safeTaskDistribution = Array.isArray(taskDistribution) ? taskDistribution : [];
+    const safePerformanceTrends = Array.isArray(performanceTrends) ? performanceTrends : [];
+    const safeTeamAlerts = Array.isArray(teamAlerts) ? teamAlerts : [];
+    const safeAllocationSuggestions = Array.isArray(allocationSuggestions) ? allocationSuggestions : [];
+    const safeSkillsMatrix = Array.isArray(skillsMatrix) ? skillsMatrix : [];
+
     const getUtilizationColor = (utilization: number) => {
         if (utilization >= 100) return 'text-red-600 bg-red-100';
         if (utilization >= 85) return 'text-amber-600 bg-amber-100';
@@ -137,7 +148,7 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                     </div>
 
                     {/* Team Summary Metrics */}
-                    {teamSummary && (
+                    {safeTeamSummary && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
                             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                                 <div className="flex items-center justify-between mb-2">
@@ -145,16 +156,16 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <Activity className="w-4 h-4 text-blue-500" />
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-2xl font-bold text-slate-900">{teamSummary.teamEffortScore.value}%</div>
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${teamSummary.teamEffortScore.trend === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        <TrendingUp className={`w-3 h-3 ${teamSummary.teamEffortScore.trend === 'down' ? 'rotate-180' : ''}`} />
-                                        {teamSummary.teamEffortScore.change}
+                                    <div className="text-2xl font-bold text-slate-900">{safeTeamSummary.teamEffortScore?.value}%</div>
+                                    <div className={`flex items-center gap-1 text-xs font-medium ${safeTeamSummary.teamEffortScore?.trend === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        <TrendingUp className={`w-3 h-3 ${safeTeamSummary.teamEffortScore?.trend === 'down' ? 'rotate-180' : ''}`} />
+                                        {safeTeamSummary.teamEffortScore?.change}
                                     </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mb-1">Target: {teamSummary.teamEffortScore.target}%</div>
+                                <div className="text-xs text-slate-500 mb-1">Target: {safeTeamSummary.teamEffortScore?.target}%</div>
                                 <div className="text-xs text-emerald-600 font-medium">Above Target</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.teamEffortScore.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.teamEffortScore?.lastUpdated ? new Date(safeTeamSummary.teamEffortScore.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -289,7 +300,7 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                                 <h2 className="text-lg font-bold text-slate-900 mb-4">Workload Distribution</h2>
                                 <div className="space-y-4">
-                                    {workloadDistribution.map((employee: any) => (
+                                    {safeWorkloadDistribution.map((employee: any) => (
                                         <div key={employee.employeeId} className="border border-slate-200 rounded-lg p-4">
                                             <div className="flex justify-between items-start mb-3">
                                                 <div>
@@ -387,7 +398,7 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                             <h2 className="text-lg font-bold text-slate-900 mb-4">Campaign Overview</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {campaignOverview.map((campaign: any) => (
+                                {safeCampaignOverview.map((campaign: any) => (
                                     <div key={campaign.id} className="border border-slate-200 rounded-lg p-4">
                                         <div className="flex justify-between items-start mb-3">
                                             <h3 className="font-semibold text-slate-900 text-sm">{campaign.name}</h3>
@@ -449,7 +460,7 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                                 <h2 className="text-lg font-bold text-slate-900 mb-4">Team Alerts & Notifications</h2>
                                 <div className="space-y-3">
-                                    {teamAlerts.map((alert: any) => (
+                                    {safeTeamAlerts.map((alert: any) => (
                                         <div key={alert.id} className={`border-l-4 p-4 rounded-r-lg ${alert.type === 'error' ? 'border-red-500 bg-red-50' :
                                             alert.type === 'warning' ? 'border-amber-500 bg-amber-50' :
                                                 alert.type === 'success' ? 'border-emerald-500 bg-emerald-50' :
@@ -482,7 +493,7 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                                 <h2 className="text-lg font-bold text-slate-900 mb-4">Resource Allocation Suggestions</h2>
                                 <div className="space-y-4">
-                                    {allocationSuggestions.map((suggestion: any) => (
+                                    {safeAllocationSuggestions.map((suggestion: any) => (
                                         <div key={suggestion.suggestion} className="border border-slate-200 rounded-lg p-4">
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-medium text-slate-900 text-sm">{suggestion.suggestion}</h3>

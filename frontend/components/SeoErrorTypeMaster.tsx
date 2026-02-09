@@ -34,9 +34,10 @@ export default function SeoErrorTypeMaster() {
         try {
             const response = await fetch(`${API_BASE_URL}/seo-error-type-master`);
             const data = await response.json();
-            setErrorTypes(data);
+            setErrorTypes(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
-            console.error('Error fetching SEO error types:', error);
+            console.error('Error fetching error types:', error);
+            setErrorTypes([]);
         } finally {
             setLoading(false);
         }
@@ -46,15 +47,17 @@ export default function SeoErrorTypeMaster() {
         try {
             const response = await fetch(`${API_BASE_URL}/seo-error-type-master/list/categories`);
             const data = await response.json();
-            setCategories(data);
+            setCategories(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching categories:', error);
+            setCategories([]);
         }
     };
 
-    const filteredErrorTypes = errorTypes.filter(errorType => {
-        const matchesSearch = errorType.error_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            errorType.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredErrorTypes = (errorTypes || []).filter(errorType => {
+        if (!errorType) return false;
+        const matchesSearch = (errorType.error_type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (errorType.description || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === 'All Categories' || errorType.category === categoryFilter;
         const matchesSeverity = severityFilter === 'All Severity' || errorType.severity_level === severityFilter;
         const matchesStatus = statusFilter === 'All Status' || errorType.status === statusFilter;
@@ -236,8 +239,8 @@ export default function SeoErrorTypeMaster() {
                                     <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{errorType.description}</td>
                                     <td className="px-6 py-4 text-sm">
                                         <span className={`px-2 py-1 rounded text-xs font-semibold ${errorType.status === 'active'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                             }`}>
                                             {errorType.status}
                                         </span>

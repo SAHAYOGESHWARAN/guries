@@ -44,9 +44,10 @@ export default function PlatformMaster() {
         try {
             const response = await fetch(`${API_BASE_URL}/platform-master`);
             const data = await response.json();
-            setPlatforms(data);
+            setPlatforms(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching platforms:', error);
+            setPlatforms([]);
         } finally {
             setLoading(false);
         }
@@ -60,10 +61,12 @@ export default function PlatformMaster() {
             ]);
             const contentTypesData = await ctRes.json();
             const assetTypesData = await atRes.json();
-            setContentTypes(contentTypesData);
-            setAssetTypes(assetTypesData);
+            setContentTypes(Array.isArray(contentTypesData) ? contentTypesData : contentTypesData.data || []);
+            setAssetTypes(Array.isArray(assetTypesData) ? assetTypesData : assetTypesData.data || []);
         } catch (error) {
             console.error('Error fetching master data:', error);
+            setContentTypes([]);
+            setAssetTypes([]);
         }
     };
 
@@ -163,8 +166,8 @@ export default function PlatformMaster() {
                                         </td>
                                         <td className="px-6 py-4 text-sm">
                                             <span className={`px-2 py-1 rounded text-xs font-semibold ${platform.status === 'active'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-gray-100 text-gray-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-gray-100 text-gray-800'
                                                 }`}>
                                                 {platform.status}
                                             </span>

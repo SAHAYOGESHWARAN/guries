@@ -95,6 +95,14 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
 
     const { bonusCriteria, rewardRecommendations, penaltyTriggers, automationRules, approvalWorkflow, summaryStats } = dashboardData || {};
 
+    // Ensure all arrays are properly initialized
+    const safeBonusCriteria = Array.isArray(bonusCriteria) ? bonusCriteria : [];
+    const safeRewardRecommendations = Array.isArray(rewardRecommendations) ? rewardRecommendations : [];
+    const safePenaltyTriggers = Array.isArray(penaltyTriggers) ? penaltyTriggers : [];
+    const safeAutomationRules = Array.isArray(automationRules) ? automationRules : [];
+    const safeApprovalWorkflow = Array.isArray(approvalWorkflow) ? approvalWorkflow : [];
+    const safeSummaryStats = summaryStats || {};
+
     const getTierColor = (tier: string) => {
         if (tier.includes('Tier 1')) return 'border-emerald-500 bg-emerald-50';
         if (tier.includes('Tier 2')) return 'border-blue-500 bg-blue-50';

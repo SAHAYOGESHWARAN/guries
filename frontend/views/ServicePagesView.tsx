@@ -90,10 +90,11 @@ const ServicePagesView: React.FC = () => {
         return servicePages.filter(p => p.status === stage).length;
     };
 
-    const filteredPages = servicePages.filter(item => {
-        const matchesSearch = item.page_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.primary_keyword?.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredPages = (servicePages || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.page_title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.primary_keyword || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStage = activeStage === 'All' || item.status === activeStage;
         return matchesSearch && matchesStage;
     });

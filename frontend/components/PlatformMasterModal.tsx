@@ -67,14 +67,22 @@ export default function PlatformMasterModal({
         try {
             const response = await fetch(`${API_BASE_URL}/platform-master/${platform.id}`);
             const data = await response.json();
+            const contentTypesArray = Array.isArray(data.contentTypes) ? data.contentTypes : [];
+            const assetTypesArray = Array.isArray(data.assetTypes) ? data.assetTypes : [];
+            const recommendedSizesArray = Array.isArray(data.recommendedSizes) ? data.recommendedSizes : [];
+            const schedulingOptionsArray = Array.isArray(data.schedulingOptions) ? data.schedulingOptions : [
+                { type: 'Manual', enabled: false },
+                { type: 'Auto', enabled: false },
+                { type: 'Both', enabled: false }
+            ];
             setFormData({
                 platform_name: data.platform_name,
                 platform_code: data.platform_code || '',
                 description: data.description || '',
-                contentTypeIds: data.contentTypes.map((ct: any) => ct.id),
-                assetTypeIds: data.assetTypes.map((at: any) => at.id),
-                recommendedSizes: data.recommendedSizes,
-                schedulingOptions: data.schedulingOptions
+                contentTypeIds: contentTypesArray.map((ct: any) => ct.id),
+                assetTypeIds: assetTypesArray.map((at: any) => at.id),
+                recommendedSizes: recommendedSizesArray,
+                schedulingOptions: schedulingOptionsArray
             });
         } catch (error) {
             console.error('Error fetching platform details:', error);
@@ -168,8 +176,8 @@ export default function PlatformMasterModal({
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-4 py-2 font-medium text-sm border-b-2 ${activeTab === tab
-                                    ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}

@@ -133,8 +133,8 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
         return subServices.filter(ss => ss.parent_service_id === parentServiceId);
     }, [formData.linked_service_id, subServices]);
 
-    const filteredProjects = projects.filter(project =>
-        (project.project_name || project.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredProjects = (projects || []).filter(project =>
+        (project?.project_name || project?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleCreate = async () => {

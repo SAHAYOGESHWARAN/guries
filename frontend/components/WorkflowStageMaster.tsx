@@ -40,16 +40,18 @@ export default function WorkflowStageMaster() {
         try {
             const response = await fetch(`${API_BASE_URL}/workflow-stage-master`);
             const data = await response.json();
-            setWorkflows(data);
+            setWorkflows(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching workflows:', error);
+            setWorkflows([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredWorkflows = workflows.filter(workflow => {
-        const matchesSearch = workflow.workflow_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredWorkflows = (workflows || []).filter(workflow => {
+        if (!workflow) return false;
+        const matchesSearch = (workflow.workflow_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === 'All Status' || workflow.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -177,8 +179,8 @@ export default function WorkflowStageMaster() {
                                     </td>
                                     <td className="px-6 py-4 text-sm">
                                         <span className={`px-2 py-1 rounded text-xs font-semibold ${workflow.status === 'active'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                             }`}>
                                             {workflow.status}
                                         </span>
