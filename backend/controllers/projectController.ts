@@ -97,8 +97,21 @@ export const createProject = async (req: Request, res: Response) => {
             weekly_report !== undefined ? (weekly_report ? 1 : 0) : 1
         ];
 
-        const result = await pool.query(query, values);
-        const newProject = result.rows[0];
+        const insertResult = await pool.query(query, values);
+        const projectId = insertResult.rows[0]?.id || insertResult.lastID;
+
+        // Fetch the complete project record with related data
+        const selectResult = await pool.query(`
+            SELECT p.*, 
+                u.name as owner_name,
+                b.name as brand_name
+            FROM projects p
+            LEFT JOIN users u ON p.owner_id = u.id
+            LEFT JOIN brands b ON p.brand_id = b.id
+            WHERE p.id = ?
+        `, [projectId]);
+
+        const newProject = selectResult.rows[0];
 
         getSocket().emit('project_created', newProject);
         res.status(201).json(newProject);

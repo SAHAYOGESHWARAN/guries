@@ -35,23 +35,25 @@ export const createAssetCategory = async (req: Request, res: Response) => {
         }
 
         const result = db.prepare(`
-            INSERT INTO asset_category_master (category_name, description)
-            VALUES (?, ?)
+            INSERT INTO asset_category_master (category_name, description, status, created_at, updated_at)
+            VALUES (?, ?, 'active', datetime('now'), datetime('now'))
         `).run(category_name, description || null);
+
+        const categoryId = result.lastInsertRowid;
 
         const newCategory = db.prepare(`
             SELECT id, category_name, description, status, created_at, updated_at
             FROM asset_category_master 
             WHERE id = ?
-        `).get(result.lastInsertRowid);
+        `).get(categoryId);
 
         res.status(201).json(newCategory);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating asset category:', error);
-        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        if (error.message && error.message.includes('UNIQUE constraint failed')) {
             res.status(400).json({ error: 'Category name already exists' });
         } else {
-            res.status(500).json({ error: 'Failed to create asset category' });
+            res.status(500).json({ error: 'Failed to create asset category', details: error.message });
         }
     } finally {
         db.close();

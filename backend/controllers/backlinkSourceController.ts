@@ -28,16 +28,22 @@ export const createBacklinkSource = async (req: Request, res: Response) => {
                 domain, backlink_url, backlink_category, niche_industry, da_score, spam_score,
                 pricing, country, username, password, credentials_notes, status, created_by,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
             [
                 domain, backlink_url, backlink_category, niche_industry || null, da_score || 0,
                 spam_score || 0, pricing || 'Free', country || null, username || null,
-                password || null, credentials_notes || null, status || 'active', created_by || null,
-                new Date().toISOString(), new Date().toISOString()
+                password || null, credentials_notes || null, status || 'active', created_by || null
             ]
         );
 
-        const item = result.rows[0];
+        // Fetch the created record
+        const sourceId = result.rows[0]?.id || result.lastID;
+        const fetchResult = await pool.query(
+            `SELECT * FROM backlink_sources WHERE id = ?`,
+            [sourceId]
+        );
+
+        const item = fetchResult.rows[0];
         getSocket().emit('backlink_source_created', item);
         res.status(201).json(item);
     } catch (error: any) {

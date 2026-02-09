@@ -29,16 +29,23 @@ export const createKeyword = async (req: Request, res: Response) => {
                 keyword, keyword_intent, keyword_type, language, search_volume,
                 competition_score, mapped_service_id, mapped_service, mapped_sub_service_id,
                 mapped_sub_service, status, created_by, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
             [
                 keyword, keyword_intent, keyword_type, language || 'English', search_volume || 0,
                 competition_score || 'Medium', mapped_service_id || null, mapped_service || null,
                 mapped_sub_service_id || null, mapped_sub_service || null, status || 'active',
-                created_by || null, new Date().toISOString(), new Date().toISOString()
+                created_by || null
             ]
         );
 
-        const item = result.rows[0];
+        // Fetch the created record
+        const keywordId = result.rows[0]?.id || result.lastID;
+        const fetchResult = await pool.query(
+            `SELECT * FROM keywords WHERE id = ?`,
+            [keywordId]
+        );
+
+        const item = fetchResult.rows[0];
         getSocket().emit('keyword_created', item);
         res.status(201).json(item);
     } catch (error: any) {
