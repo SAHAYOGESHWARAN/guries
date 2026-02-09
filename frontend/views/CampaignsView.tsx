@@ -155,6 +155,13 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
     const { data: brands } = useData<Brand>('brands');
     const { data: services } = useData<Service>('services');
 
+    // Safe array initialization
+    const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];
+    const safeUsers = Array.isArray(users) ? users : [];
+    const safeProjects = Array.isArray(projects) ? projects : [];
+    const safeBrands = Array.isArray(brands) ? brands : [];
+    const safeServices = Array.isArray(services) ? services : [];
+
     const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('All Types');
@@ -185,7 +192,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
         'Analytics': ['Conversion Goals', 'Event Tracking', 'Custom Reports', 'Dashboard Setup'],
     };
 
-    const filteredCampaigns = (campaigns || []).filter(item => {
+    const filteredCampaigns = (safeCampaigns || []).filter(item => {
         if (!item) return false;
         const matchesSearch = (item.campaign_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = typeFilter === 'All Types' || item.campaign_type === typeFilter;
@@ -308,7 +315,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
                             >
                                 <option value="">Select owner</option>
-                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                {safeUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
                         </div>
                     </div>
@@ -378,7 +385,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
                             >
                                 <option value="">Select project</option>
-                                {projects.map(p => <option key={p.id} value={p.id}>{p.project_name || p.name}</option>)}
+                                {safeProjects.map(p => <option key={p.id} value={p.id}>{p.project_name || p.name}</option>)}
                             </select>
                         </div>
                     </div>
@@ -505,7 +512,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredCampaigns.length > 0 ? (
                         filteredCampaigns.map(campaign => {
-                            const owner = users.find(u => u.id === campaign.campaign_owner_id);
+                            const owner = safeUsers.find(u => u.id === campaign.campaign_owner_id);
                             return (
                                 <CampaignCard
                                     key={campaign.id}
