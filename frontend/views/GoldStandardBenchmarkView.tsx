@@ -11,10 +11,10 @@ const CATEGORIES = ['All', 'SEO', 'Content', 'Technical', 'UX', 'SMM', 'Backlink
 
 const GoldStandardBenchmarkView: React.FC = () => {
     const { data: benchmarks, create, update, remove } = useData<GoldStandardMetric>('goldStandards');
-    
+
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<GoldStandardMetric | null>(null);
@@ -24,8 +24,9 @@ const GoldStandardBenchmarkView: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const filteredData = benchmarks.filter(item => {
-        const matchesSearch = item.metric_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (benchmarks || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.metric_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
         return matchesSearch && matchesCategory;
     });
@@ -85,19 +86,18 @@ const GoldStandardBenchmarkView: React.FC = () => {
 
     const columns = [
         { header: 'Metric Name', accessor: 'metric_name' as keyof GoldStandardMetric, className: 'font-medium text-slate-800' },
-        { 
-            header: 'Category', 
+        {
+            header: 'Category',
             accessor: (item: GoldStandardMetric) => (
-                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                    item.category === 'SEO' ? 'bg-blue-100 text-blue-800' :
-                    item.category === 'Technical' ? 'bg-purple-100 text-purple-800' :
-                    item.category === 'UX' ? 'bg-pink-100 text-pink-800' :
-                    item.category === 'Content' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-600'
-                }`}>
+                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${item.category === 'SEO' ? 'bg-blue-100 text-blue-800' :
+                        item.category === 'Technical' ? 'bg-purple-100 text-purple-800' :
+                            item.category === 'UX' ? 'bg-pink-100 text-pink-800' :
+                                item.category === 'Content' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-600'
+                    }`}>
                     {item.category}
                 </span>
-            ) 
+            )
         },
         { header: 'Gold Standard Value', accessor: 'gold_standard_value' as keyof GoldStandardMetric, className: 'font-bold text-emerald-600' },
         { header: 'Range', accessor: 'acceptable_range_min' as keyof GoldStandardMetric, className: 'text-xs font-mono' },
@@ -128,12 +128,12 @@ const GoldStandardBenchmarkView: React.FC = () => {
                     <p className="text-slate-500 mt-1">Store ideal expected benchmarks for all KPIs across SEO, content, technical, and UX metrics.</p>
                 </div>
                 <div className="flex space-x-3">
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileChange} 
-                        accept=".csv" 
-                        style={{ display: 'none' }} 
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept=".csv"
+                        style={{ display: 'none' }}
                     />
                     <button onClick={handleImportClick} className="bg-white text-slate-600 border border-slate-300 px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors">
                         Import
@@ -152,29 +152,28 @@ const GoldStandardBenchmarkView: React.FC = () => {
                     <div className="relative flex-1 w-full md:w-auto md:max-w-md">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                             </svg>
                         </div>
-                        <input 
-                            type="search" 
-                            className="block w-full p-2.5 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-indigo-500 focus:border-indigo-500" 
-                            placeholder="Search gold standard metrics..." 
+                        <input
+                            type="search"
+                            className="block w-full p-2.5 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-slate-50 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Search gold standard metrics..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
                     {CATEGORIES.map(cat => (
                         <button
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                activeCategory === cat 
-                                    ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-500/20' 
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeCategory === cat
+                                    ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-500/20'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
+                                }`}
                         >
                             {cat}
                         </button>
@@ -188,33 +187,33 @@ const GoldStandardBenchmarkView: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Metric Name</label>
-                        <input type="text" value={formData.metric_name} onChange={(e) => setFormData({...formData, metric_name: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        <input type="text" value={formData.metric_name} onChange={(e) => setFormData({ ...formData, metric_name: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Category</label>
-                            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                                 {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Gold Standard Value</label>
-                            <input type="text" value={formData.gold_standard_value} onChange={(e) => setFormData({...formData, gold_standard_value: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <input type="text" value={formData.gold_standard_value} onChange={(e) => setFormData({ ...formData, gold_standard_value: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Min Range</label>
-                            <input type="text" value={formData.acceptable_range_min} onChange={(e) => setFormData({...formData, acceptable_range_min: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <input type="text" value={formData.acceptable_range_min} onChange={(e) => setFormData({ ...formData, acceptable_range_min: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Unit</label>
-                            <input type="text" value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                            <input type="text" value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Evidence / Source</label>
-                        <input type="text" value={formData.evidence_link} onChange={(e) => setFormData({...formData, evidence_link: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+                        <input type="text" value={formData.evidence_link} onChange={(e) => setFormData({ ...formData, evidence_link: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                     </div>
                     <div className="flex justify-end pt-4">
                         <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button>

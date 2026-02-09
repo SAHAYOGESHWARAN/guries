@@ -18,7 +18,7 @@ const KnowledgeBaseView: React.FC = () => {
     // AI Translation
     const [isTranslating, setIsTranslating] = useState(false);
 
-    const filteredArticles = articles.filter(a => a.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredArticles = (articles || []).filter(a => (a.title || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
     const handleSave = async () => {
         if (editingItem) {

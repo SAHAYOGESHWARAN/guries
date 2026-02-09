@@ -73,9 +73,10 @@ const CompetitorRepositoryView: React.FC = () => {
         total_backlinks: '', primary_traffic_sources: ['Organic'] as string[], attachments: [] as string[]
     });
 
-    const filteredCompetitors = competitors.filter(item => {
-        const matchesSearch = item.competitor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.website_url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const filteredCompetitors = (competitors || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.competitor_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.website_url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.domain?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesIndustry = !filters.industry || item.industry === filters.industry;
         const matchesCountry = !filters.country || item.primary_country === filters.country || item.region === filters.country;

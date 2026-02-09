@@ -2,22 +2,22 @@
 import React, { useState } from 'react';
 import Modal from '../components/Modal';
 import { useData } from '../hooks/useData';
-import { 
-    GoogleIcon, SemrushIcon, AhrefsIcon, 
+import {
+    GoogleIcon, SemrushIcon, AhrefsIcon,
 } from '../constants';
 import type { Integration, IntegrationLog } from '../types';
 
 const IntegrationsView: React.FC = () => {
     const { data: integrationsData, update: updateIntegration } = useData<Integration>('integrations');
     const { data: logs, create: createLog } = useData<IntegrationLog>('logs');
-    
+
     // STRICT: Only use data from the backend
     const integrations = integrationsData;
 
     const [configModal, setConfigModal] = useState<{ open: boolean; integrationId: string | null }>({ open: false, integrationId: null });
     const [isSyncing, setIsSyncing] = useState<Record<string, boolean>>({});
     const [logFilter, setLogFilter] = useState('all');
-    
+
     // Config Form State
     const [configForm, setConfigForm] = useState<any>({
         syncFrequency: 'daily',
@@ -27,7 +27,7 @@ const IntegrationsView: React.FC = () => {
 
     // ... (Helpers and Handlers remain same) ...
     const getIcon = (iconName: string) => {
-        switch(iconName) {
+        switch (iconName) {
             case 'google': return <GoogleIcon />;
             case 'semrush': return <SemrushIcon />;
             case 'ahrefs': return <AhrefsIcon />;
@@ -71,7 +71,7 @@ const IntegrationsView: React.FC = () => {
     const handleSync = async (id: string) => {
         setIsSyncing(prev => ({ ...prev, [id]: true }));
         await updateIntegration(id, { syncStatus: 'syncing' });
-        
+
         setTimeout(async () => {
             setIsSyncing(prev => ({ ...prev, [id]: false }));
             await updateIntegration(id, { syncStatus: 'success', lastSyncTime: new Date().toISOString() });
@@ -80,7 +80,7 @@ const IntegrationsView: React.FC = () => {
     };
 
     // Filter logs correctly using integration_id (database column name)
-    const filteredLogs = logs.filter(log => logFilter === 'all' || (log as any).integration_id === logFilter);
+    const filteredLogs = (logs || []).filter(log => logFilter === 'all' || (log as any).integration_id === logFilter);
 
     return (
         <div className="space-y-6 h-full overflow-y-auto w-full pr-1 p-6">
@@ -88,8 +88,8 @@ const IntegrationsView: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-800">Connectivity Hub</h1>
                 <div className="text-sm text-gray-500 flex items-center bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
                     <span className="relative flex h-2.5 w-2.5 mr-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                     </span>
                     System Status: <span className="font-bold text-green-600 ml-1">OPERATIONAL</span>
                 </div>
@@ -103,77 +103,76 @@ const IntegrationsView: React.FC = () => {
                     const isIssue = integration.connected && (isOldKey || isHighLatency);
 
                     return (
-                    <div key={integration.id} className={`bg-white p-6 rounded-lg shadow-md flex flex-col relative hover:shadow-lg transition-all border-2 ${isIssue ? 'border-red-100 ring-1 ring-red-100' : 'border-transparent'}`}>
-                        {integration.connected && (
-                            <div className="absolute top-4 right-4 flex flex-col items-end space-y-1">
-                                <div className="flex items-center space-x-2 bg-gray-50 rounded-full px-2 py-1 border border-gray-200">
-                                    <span className={`text-xs font-mono font-bold ${getLatencyColor(latencies[integration.id] || 0, integration.config?.healthThresholds?.maxLatency || 500)}`}>
-                                        {latencies[integration.id] ? `${latencies[integration.id]}ms` : 'OK'}
-                                    </span>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${latencies[integration.id] > (integration.config?.healthThresholds?.maxLatency || 500) ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="flex items-center mb-4">
-                            <div className="w-12 h-12 flex items-center justify-center mr-4 bg-gray-50 rounded-full border border-gray-100 shadow-sm">
-                                {getIcon(integration.icon)}
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-800">{integration.name}</h3>
-                                <div className="flex items-center space-x-2">
-                                     <p className={`text-xs font-semibold ${integration.connected ? 'text-green-600' : 'text-gray-400'}`}>
-                                        {integration.connected ? 'Connected' : 'Disconnected'}
-                                     </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <p className="text-sm text-gray-600 mb-4 flex-grow leading-relaxed">{integration.description}</p>
-
-                        {integration.connected && (
-                            <div className="mb-4 space-y-3">
-                                <div>
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-gray-500 font-medium">Health Score</span>
-                                        <span className="font-bold text-gray-700">{integration.healthScore}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                        <div 
-                                            className={`h-1.5 rounded-full transition-all duration-500 ${getHealthColor(integration.healthScore)}`} 
-                                            style={{ width: `${integration.healthScore}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="flex space-x-2 mt-auto pt-2">
-                            <button
-                                onClick={() => handleToggleConnect(integration.id)}
-                                className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${
-                                    integration.connected
-                                        ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                                }`}
-                            >
-                                {integration.connected ? 'Configure' : 'Connect Integration'}
-                            </button>
+                        <div key={integration.id} className={`bg-white p-6 rounded-lg shadow-md flex flex-col relative hover:shadow-lg transition-all border-2 ${isIssue ? 'border-red-100 ring-1 ring-red-100' : 'border-transparent'}`}>
                             {integration.connected && (
-                                <button 
-                                    onClick={() => handleSync(integration.id)}
-                                    disabled={isSyncing[integration.id]}
-                                    className="px-3 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-md hover:bg-blue-100 disabled:opacity-50 transition-colors"
-                                    title="Force Sync Now"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isSyncing[integration.id] ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                </button>
+                                <div className="absolute top-4 right-4 flex flex-col items-end space-y-1">
+                                    <div className="flex items-center space-x-2 bg-gray-50 rounded-full px-2 py-1 border border-gray-200">
+                                        <span className={`text-xs font-mono font-bold ${getLatencyColor(latencies[integration.id] || 0, integration.config?.healthThresholds?.maxLatency || 500)}`}>
+                                            {latencies[integration.id] ? `${latencies[integration.id]}ms` : 'OK'}
+                                        </span>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${latencies[integration.id] > (integration.config?.healthThresholds?.maxLatency || 500) ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                    </div>
+                                </div>
                             )}
+
+                            <div className="flex items-center mb-4">
+                                <div className="w-12 h-12 flex items-center justify-center mr-4 bg-gray-50 rounded-full border border-gray-100 shadow-sm">
+                                    {getIcon(integration.icon)}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800">{integration.name}</h3>
+                                    <div className="flex items-center space-x-2">
+                                        <p className={`text-xs font-semibold ${integration.connected ? 'text-green-600' : 'text-gray-400'}`}>
+                                            {integration.connected ? 'Connected' : 'Disconnected'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-gray-600 mb-4 flex-grow leading-relaxed">{integration.description}</p>
+
+                            {integration.connected && (
+                                <div className="mb-4 space-y-3">
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span className="text-gray-500 font-medium">Health Score</span>
+                                            <span className="font-bold text-gray-700">{integration.healthScore}%</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                            <div
+                                                className={`h-1.5 rounded-full transition-all duration-500 ${getHealthColor(integration.healthScore)}`}
+                                                style={{ width: `${integration.healthScore}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex space-x-2 mt-auto pt-2">
+                                <button
+                                    onClick={() => handleToggleConnect(integration.id)}
+                                    className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${integration.connected
+                                            ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                                        }`}
+                                >
+                                    {integration.connected ? 'Configure' : 'Connect Integration'}
+                                </button>
+                                {integration.connected && (
+                                    <button
+                                        onClick={() => handleSync(integration.id)}
+                                        disabled={isSyncing[integration.id]}
+                                        className="px-3 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-md hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                                        title="Force Sync Now"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isSyncing[integration.id] ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                );
+                    );
                 }) : (
                     <div className="col-span-full p-8 text-center text-gray-500 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl">
                         No integrations configured. Use the Admin Console to add providers.
@@ -190,8 +189,8 @@ const IntegrationsView: React.FC = () => {
                         </svg>
                         Live Event Stream
                     </h3>
-                    <select 
-                        value={logFilter} 
+                    <select
+                        value={logFilter}
                         onChange={(e) => setLogFilter(e.target.value)}
                         className="bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded px-2 py-1 focus:outline-none focus:border-blue-500"
                     >
@@ -216,12 +215,12 @@ const IntegrationsView: React.FC = () => {
             </div>
 
             {/* Advanced Config Modal */}
-            <Modal 
-                isOpen={configModal.open} 
-                onClose={() => setConfigModal({ open: false, integrationId: null })} 
+            <Modal
+                isOpen={configModal.open}
+                onClose={() => setConfigModal({ open: false, integrationId: null })}
                 title="Integration Settings"
             >
-               <div className="p-4 text-center text-slate-500 italic">Configuration options coming soon...</div>
+                <div className="p-4 text-center text-slate-500 italic">Configuration options coming soon...</div>
             </Modal>
         </div>
     );

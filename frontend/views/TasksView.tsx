@@ -212,6 +212,7 @@ const TasksView: React.FC = () => {
     };
 
     const filteredTasks = (tasks || []).filter(task => {
+        if (!task) return false;
         const taskName = (task?.name || task?.task_name || '').toLowerCase();
         const matchesSearch = taskName.includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === 'all' || (task?.status || '').toLowerCase() === statusFilter.toLowerCase();

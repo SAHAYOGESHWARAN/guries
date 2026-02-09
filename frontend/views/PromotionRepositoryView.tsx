@@ -62,9 +62,10 @@ const PromotionRepositoryView: React.FC = () => {
         campaign_id: '', service_id: '', keywords: '', thumbnail_url: '', full_url: '', qc_status: 'QC Pending',
     });
 
-    const filteredItems = items.filter(item => {
-        const matchesSearch = item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.campaign_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const filteredItems = (items || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.campaign_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.service_name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesPromotionType = filters.promotionTypes.length === 0 ||
             (item.promotion_types && item.promotion_types.some(t => filters.promotionTypes.includes(t)));

@@ -56,9 +56,10 @@ const SmmAssetUploadView: React.FC<SmmAssetUploadViewProps> = ({ onNavigate, edi
 
     useEffect(() => {
         if (linkedRepositoryId) {
-            const related = tasks.filter(t => t.linked_repository_id === linkedRepositoryId || !t.linked_repository_id);
-            setFilteredTasks(related.length > 0 ? related : tasks);
-        } else { setFilteredTasks(tasks); }
+            const safeTasks = Array.isArray(tasks) ? tasks : [];
+            const related = safeTasks.filter(t => t.linked_repository_id === linkedRepositoryId || !t.linked_repository_id);
+            setFilteredTasks(related.length > 0 ? related : safeTasks);
+        } else { setFilteredTasks(safeTasks); }
     }, [linkedRepositoryId, tasks]);
 
     useEffect(() => {

@@ -591,9 +591,12 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
                             <tbody className="divide-y divide-slate-100">
                                 {filteredProjects.length > 0 ? (
                                     filteredProjects.map((project) => {
-                                        const owner = users.find(u => u.id === project.owner_id);
-                                        const brand = brands.find(b => b.id === project.brand_id);
-                                        const linkedCampaigns = campaigns.filter(c => c.project_id === project.id);
+                                        const safeUsers = Array.isArray(users) ? users : [];
+                                        const owner = safeUsers.find(u => u.id === project.owner_id);
+                                        const safeBrands = Array.isArray(brands) ? brands : [];
+                                        const brand = safeBrands.find(b => b.id === project.brand_id);
+                                        const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];
+                                        const linkedCampaigns = safeCampaigns.filter(c => c.project_id === project.id);
                                         const progress = project.progress || Math.floor(Math.random() * 60) + 30;
                                         const openTasks = Math.floor(Math.random() * 15) + 5;
                                         const closedTasks = Math.floor(Math.random() * 50) + 10;

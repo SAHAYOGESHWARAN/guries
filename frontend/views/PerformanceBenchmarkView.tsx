@@ -25,7 +25,8 @@ const PerformanceBenchmarkView: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Filtering Logic
-    const filteredOkrs = okrs.filter(item => {
+    const filteredOkrs = (okrs || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = (item.objective || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.owner || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.type || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -119,8 +120,8 @@ const PerformanceBenchmarkView: React.FC = () => {
             header: 'Type',
             accessor: (item: OKRItem) => (
                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${item.type === 'Company' ? 'bg-purple-100 text-purple-800' :
-                        item.type === 'Department' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-700'
+                    item.type === 'Department' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-700'
                     }`}>
                     {item.type}
                 </span>
@@ -148,8 +149,8 @@ const PerformanceBenchmarkView: React.FC = () => {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                             className={`h-2 rounded-full ${(item.progress || 0) === 100 ? 'bg-green-500' :
-                                    (item.progress || 0) > 60 ? 'bg-blue-500' :
-                                        (item.progress || 0) > 30 ? 'bg-yellow-500' : 'bg-red-500'
+                                (item.progress || 0) > 60 ? 'bg-blue-500' :
+                                    (item.progress || 0) > 30 ? 'bg-yellow-500' : 'bg-red-500'
                                 }`}
                             style={{ width: `${Math.min(item.progress || 0, 100)}%` }}
                         ></div>

@@ -86,9 +86,10 @@ const OKRManagementView: React.FC = () => {
         progress: 0,
     });
 
-    const filteredOKRs = okrs.filter(item => {
-        const matchesSearch = item.objective_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.objective?.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredOKRs = (okrs || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.objective_title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.objective || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCycle = filterCycle === 'All Cycles' || item.cycle === filterCycle;
         const matchesStatus = filterStatus === 'All Status' || item.status === filterStatus;
         const matchesType = filterType === 'All Types' || item.objective_type === filterType || item.type === filterType;

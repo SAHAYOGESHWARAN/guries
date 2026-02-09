@@ -55,7 +55,8 @@ const KeywordsView: React.FC = () => {
         return subServices.find(s => s.id === id)?.sub_service_name || '';
     };
 
-    const filteredData = keywords.filter(item => {
+    const filteredData = (keywords || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = (item.keyword || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesIntent = intentFilter === 'All Intent' || item.keyword_intent === intentFilter;
         const matchesType = typeFilter === 'All Types' || item.keyword_type === typeFilter;

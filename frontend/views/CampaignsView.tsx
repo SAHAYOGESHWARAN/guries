@@ -185,7 +185,8 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
         'Analytics': ['Conversion Goals', 'Event Tracking', 'Custom Reports', 'Dashboard Setup'],
     };
 
-    const filteredCampaigns = campaigns.filter(item => {
+    const filteredCampaigns = (campaigns || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = (item.campaign_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = typeFilter === 'All Types' || item.campaign_type === typeFilter;
         const matchesStatus = statusFilter === 'All Statuses' ||

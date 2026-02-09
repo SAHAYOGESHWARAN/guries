@@ -38,9 +38,9 @@ const CampaignDetailView: React.FC<CampaignDetailViewProps> = ({ campaignId, onN
     }
 
     const project = projects.find(p => p.id === campaign.project_id);
-    const campaignTasks = tasks.filter(t => t.campaign_id === campaignId);
-    const linkedContent = content.filter(c => c.linked_campaign_id === campaignId);
-    const linkedServices = services.filter(s => campaign.linked_service_ids?.includes(s.id));
+    const campaignTasks = (tasks || []).filter(t => t.campaign_id === campaignId);
+    const linkedContent = (content || []).filter(c => c.linked_campaign_id === campaignId);
+    const linkedServices = (services || []).filter(s => campaign.linked_service_ids?.includes(s.id));
 
     // KPI Calculation
     const totalBacklinks = campaign.backlinks_planned || 1;

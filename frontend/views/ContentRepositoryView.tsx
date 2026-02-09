@@ -113,8 +113,9 @@ const ContentRepositoryView: React.FC = () => {
         return content.filter(c => c.status === stage).length;
     };
 
-    const filteredContent = content.filter(item => {
-        const matchesSearch = item.content_title_clean?.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredContent = (content || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.content_title_clean || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStage = activeStage === 'All' || item.status === activeStage;
         return matchesSearch && matchesStage;
     });

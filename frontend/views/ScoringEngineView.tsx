@@ -70,7 +70,7 @@ const ScoringEngineView: React.FC<ScoringEngineViewProps> = ({ onNavigate }) => 
         }
     };
 
-    const totalWeightage = rules.filter(r => r.status === 'Active').reduce((sum, r) => sum + r.weightage, 0);
+    const totalWeightage = (rules || []).filter(r => r.status === 'Active').reduce((sum, r) => sum + r.weightage, 0);
 
     return (
         <div className="h-full flex flex-col bg-slate-50 animate-fade-in overflow-hidden">

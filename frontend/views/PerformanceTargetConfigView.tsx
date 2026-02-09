@@ -29,8 +29,9 @@ const PerformanceTargetConfigView: React.FC = () => {
         review_frequency: 'Monthly'
     });
 
-    const filteredData = performanceTargets.filter(item => {
-        const matchesSearch = item.kpi_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (performanceTargets || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.kpi_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDept = filters.department === 'All' || item.department_function === filters.department;
         const matchesCycle = filters.cycleType === 'All' || item.cycle_type === filters.cycleType;
         return matchesSearch && matchesDept && matchesCycle;

@@ -32,9 +32,10 @@ export default function QCWeightageConfig() {
             setLoading(true);
             const response = await fetch(`${API_BASE_URL}/qc-weightage`);
             const data = await response.json();
-            setConfigs(data);
+            setConfigs(Array.isArray(data) ? data : data.data || []);
         } catch (error) {
             console.error('Error fetching configs:', error);
+            setConfigs([]);
         } finally {
             setLoading(false);
         }
@@ -161,8 +162,8 @@ export default function QCWeightageConfig() {
                                             </td>
                                             <td className="px-6 py-4 text-sm">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.status === 'active'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
                                                     }`}>
                                                     {config.status === 'active' ? '✓ Active' : '✗ Inactive'}
                                                 </span>

@@ -125,7 +125,8 @@ const BacklinksView: React.FC = () => {
     };
 
 
-    const filteredSubmissions = submissions.filter(item => {
+    const filteredSubmissions = (submissions || []).filter(item => {
+        if (!item) return false;
         // Search filter
         const matchesSearch =
             item.domain?.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -100,8 +100,9 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     // Section 4.1: Filter tasks based on selected repository
     useEffect(() => {
         if (linkedRepositoryId) {
-            const related = tasks.filter(t => (t as any).linked_repository_id === linkedRepositoryId || !(t as any).linked_repository_id);
-            setFilteredTasks(related.length > 0 ? related : tasks);
+            const safeTasks = Array.isArray(tasks) ? tasks : [];
+            const related = safeTasks.filter(t => (t as any).linked_repository_id === linkedRepositoryId || !(t as any).linked_repository_id);
+            setFilteredTasks(related.length > 0 ? related : safeTasks);
         } else {
             setFilteredTasks(tasks);
         }
@@ -110,7 +111,8 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
     // Filter sub-services based on selected service
     useEffect(() => {
         if (linkedServiceId) {
-            const related = subServices.filter(ss => ss.parent_service_id === linkedServiceId);
+            const safeSubServices = Array.isArray(subServices) ? subServices : [];
+            const related = safeSubServices.filter(ss => ss.parent_service_id === linkedServiceId);
             setFilteredSubServices(related);
         } else {
             setFilteredSubServices(subServices);
@@ -187,7 +189,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
         setSeoKeywords(prev => prev.includes(keyword) ? prev.filter(k => k !== keyword) : [...prev, keyword]);
     };
 
-    const filteredSeoKeywords = keywords.filter(kw => kw.keyword?.toLowerCase().includes(seoKeywordSearch.toLowerCase()));
+    const filteredSeoKeywords = (keywords || []).filter(kw => (kw.keyword || '').toLowerCase().includes(seoKeywordSearch.toLowerCase()));
 
     // Section 4.4: H3 tag handlers
     const handleH3Change = (index: number, value: string) => {
@@ -448,7 +450,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Campaign</label>
                                     <select value={linkedCampaignId || ''} onChange={e => setLinkedCampaignId(e.target.value ? Number(e.target.value) : null)} disabled={campaignsLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
                                         <option value="">Select Campaign...</option>
-                                        {campaigns.map(campaign => (<option key={campaign.id} value={campaign.id}>{campaign.campaign_name}</option>))}
+                                        {(campaigns || []).map(campaign => (<option key={campaign.id} value={campaign.id}>{campaign.campaign_name}</option>))}
                                     </select>
                                     {campaignsLoading && <p className="text-xs text-slate-400 mt-1">Loading campaigns...</p>}
                                 </div>
@@ -456,7 +458,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Project</label>
                                     <select value={linkedProjectId || ''} onChange={e => setLinkedProjectId(e.target.value ? Number(e.target.value) : null)} disabled={projectsLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
                                         <option value="">Select Project...</option>
-                                        {projects.map(project => (<option key={project.id} value={project.id}>{project.project_name}</option>))}
+                                        {(projects || []).map(project => (<option key={project.id} value={project.id}>{project.project_name}</option>))}
                                     </select>
                                     {projectsLoading && <p className="text-xs text-slate-400 mt-1">Loading projects...</p>}
                                 </div>
@@ -465,7 +467,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Service</label>
                                     <select value={linkedServiceId || ''} onChange={e => { setLinkedServiceId(e.target.value ? Number(e.target.value) : null); setLinkedSubServiceIds([]); }} disabled={servicesLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
                                         <option value="">Select Service...</option>
-                                        {services.map(service => (<option key={service.id} value={service.id}>{service.service_name}</option>))}
+                                        {(services || []).map(service => (<option key={service.id} value={service.id}>{service.service_name}</option>))}
                                     </select>
                                     {servicesLoading && <p className="text-xs text-slate-400 mt-1">Loading services...</p>}
                                 </div>
@@ -514,7 +516,7 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Linked Repository</label>
                                     <select value={linkedRepositoryId || ''} onChange={e => { setLinkedRepositoryId(e.target.value ? Number(e.target.value) : null); setLinkedTaskId(null); }} disabled={repoLoading} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
                                         <option value="">Select Repository...</option>
-                                        {repositoryItems.map(repo => (<option key={repo.id} value={repo.id}>{repo.content_title_clean || `Repository #${repo.id}`}</option>))}
+                                        {(repositoryItems || []).map(repo => (<option key={repo.id} value={repo.id}>{repo.content_title_clean || `Repository #${repo.id}`}</option>))}
                                     </select>
                                     {repoLoading && <p className="text-xs text-slate-400 mt-1">Loading repositories...</p>}
                                 </div>
@@ -683,21 +685,21 @@ const WebAssetUploadView: React.FC<WebAssetUploadViewProps> = ({ onNavigate, edi
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Designed By (From Admin Console)</label>
                                     <select value={designedBy || ''} onChange={e => setDesignedBy(e.target.value ? Number(e.target.value) : null)} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all">
                                         <option value="">Select Designer...</option>
-                                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                        {(users || []).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Published By (From Admin Console)</label>
                                     <select value={publishedBy || ''} onChange={e => setPublishedBy(e.target.value ? Number(e.target.value) : null)} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all">
                                         <option value="">Select Publisher...</option>
-                                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                        {(users || []).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Verified By (SEO) (From Admin Console)</label>
                                     <select value={verifiedBy || ''} onChange={e => setVerifiedBy(e.target.value ? Number(e.target.value) : null)} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400 transition-all">
                                         <option value="">Select Verifier...</option>
-                                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                        {(users || []).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                     </select>
                                 </div>
                             </div>

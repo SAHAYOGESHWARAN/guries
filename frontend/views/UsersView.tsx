@@ -30,9 +30,10 @@ const UsersView: React.FC = () => {
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, type: 'user' | 'team' | 'bulk', id?: number }>({ isOpen: false, type: 'user' });
     const [dragOverTeamId, setDragOverTeamId] = useState<number | null>(null);
 
-    const activeRate = users.length > 0 ? Math.round((users.filter(u => u.status === 'active').length / users.length) * 100) : 0;
+    const safeUsers = Array.isArray(users) ? users : [];
+    const activeRate = safeUsers.length > 0 ? Math.round((safeUsers.filter(u => u.status === 'active').length / safeUsers.length) * 100) : 0;
 
-    const roleChartData = Object.entries(users.reduce((acc, user) => {
+    const roleChartData = Object.entries(safeUsers.reduce((acc, user) => {
         acc[user.role] = (acc[user.role] || 0) + 1;
         return acc;
     }, {} as Record<string, number>)).map(([role, count], idx) => ({ id: idx, name: role, value: count }));
@@ -41,7 +42,7 @@ const UsersView: React.FC = () => {
         setIsAiModalOpen(true);
         setIsAiLoading(true);
         try {
-            const prompt = `Analyze this team structure: ${JSON.stringify(users.map(u => ({ role: u.role, department: u.department })))}. 
+            const prompt = `Analyze this team structure: ${JSON.stringify(safeUsers.map(u => ({ role: u.role, department: u.department })))}. 
           Identify potential role gaps or imbalances for a digital marketing agency.`;
             const result = await runQuery(prompt, { model: 'gemini-2.5-flash' });
             setAiAnalysis(result.text);
@@ -101,7 +102,7 @@ const UsersView: React.FC = () => {
         setDeleteConfirm({ isOpen: true, type: 'bulk' });
     };
 
-    const getTeamLead = (leadId: number) => users.find(u => u.id === leadId);
+    const getTeamLead = (leadId: number) => safeUsers.find(u => u.id === leadId);
 
     // Drag & Drop Handlers
     const handleDragStart = (e: React.DragEvent, userId: number) => {
@@ -280,7 +281,7 @@ const UsersView: React.FC = () => {
                             </div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-2">
                                 <p className="text-[10px] text-slate-400 italic text-center mb-2">Drag to assign</p>
-                                {users.map(user => (
+                                {safeUsers.map(user => (
                                     <DraggableUserCard
                                         key={user.id}
                                         user={user}
@@ -301,7 +302,7 @@ const UsersView: React.FC = () => {
                                     const lead = getTeamLead(team.lead_user_id);
                                     const members = teamMembers.filter(tm => tm.team_id === team.id).map(tm => ({
                                         ...tm,
-                                        user: users.find(u => u.id === tm.user_id)
+                                        user: safeUsers.find(u => u.id === tm.user_id)
                                     })).filter(m => m.user);
 
                                     const isOver = dragOverTeamId === team.id;
@@ -385,7 +386,7 @@ const UsersView: React.FC = () => {
                                         const lead = getTeamLead(team.lead_user_id);
                                         const members = teamMembers.filter(tm => tm.team_id === team.id).map(tm => ({
                                             ...tm,
-                                            user: users.find(u => u.id === tm.user_id)
+                                            user: safeUsers.find(u => u.id === tm.user_id)
                                         })).filter(m => m.user);
 
                                         return (
@@ -571,7 +572,7 @@ const UsersView: React.FC = () => {
                             className="block w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                         >
                             <option value={0}>Select a Lead...</option>
-                            {users.map(u => (
+                            {safeUsers.map(u => (
                                 <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                             ))}
                         </select>

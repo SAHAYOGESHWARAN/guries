@@ -28,9 +28,10 @@ const EffortTargetConfigView: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const filteredData = effortTargets.filter(item => {
-        const matchesSearch = item.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.effort_metric.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (effortTargets || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.role || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.effort_metric || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filters.status === 'All' || item.status === filters.status;
         const matchesDept = filters.department === 'All' || item.department === filters.department;
         return matchesSearch && matchesStatus && matchesDept;

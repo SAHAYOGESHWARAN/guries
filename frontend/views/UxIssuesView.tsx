@@ -119,11 +119,12 @@ const UxIssuesView: React.FC = () => {
         return issues.filter(i => i.severity === severity).length;
     };
 
-    const filteredIssues = issues.filter(item => {
+    const filteredIssues = (issues || []).filter(item => {
+        if (!item) return false;
         const matchesSearch =
-            item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.issue_type?.toLowerCase().includes(searchQuery.toLowerCase());
+            (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.issue_type || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesSeverity = activeSeverity === 'All' || item.severity === activeSeverity;
         return matchesSearch && matchesSeverity;
     });
