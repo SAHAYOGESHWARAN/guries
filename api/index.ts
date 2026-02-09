@@ -89,6 +89,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/keywords') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/users') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
@@ -105,10 +115,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/projects') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/tasks') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/tasks') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -119,10 +149,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/campaigns') && req.method === 'POST') {
+            const {
+                campaign_name, campaign_type, status, campaign_status, description,
+                campaign_start_date, campaign_end_date, campaign_owner_id,
+                sub_campaigns, linked_service_ids, target_url,
+                project_id, brand_id, backlinks_planned, backlinks_completed,
+                tasks_completed, tasks_total, kpi_score
+            } = req.body;
+
+            // Generate a mock ID
+            const id = Math.floor(Math.random() * 100000) + 1;
+
+            const campaign = {
+                id,
+                campaign_name: campaign_name || 'Untitled Campaign',
+                campaign_type: campaign_type || 'Content',
+                status: status || campaign_status || 'planning',
+                description: description || null,
+                campaign_start_date: campaign_start_date || null,
+                campaign_end_date: campaign_end_date || null,
+                campaign_owner_id: campaign_owner_id || null,
+                sub_campaigns: sub_campaigns || null,
+                linked_service_ids: linked_service_ids ? JSON.stringify(linked_service_ids) : null,
+                target_url: target_url || null,
+                project_id: project_id || null,
+                brand_id: brand_id || null,
+                backlinks_planned: backlinks_planned || 0,
+                backlinks_completed: backlinks_completed || 0,
+                tasks_completed: tasks_completed || 0,
+                tasks_total: tasks_total || 0,
+                kpi_score: kpi_score || 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            return res.status(201).json(campaign);
+        }
+
         if (req.url?.includes('/content') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/content') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -133,10 +211,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/asset-category-master') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/asset-type-master') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/asset-type-master') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -173,10 +271,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/brands') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/backlinks') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/backlinks') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/backlink-sources') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/backlink-sources') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -187,10 +322,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/backlinkSources') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/submissions') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/submissions') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -201,10 +356,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/competitors') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/competitorBacklinks') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/competitorBacklinks') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -215,6 +390,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/okrs') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/smm') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
@@ -222,10 +407,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/smm') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         if (req.url?.includes('/graphics') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
                 data: []
+            });
+        }
+
+        if (req.url?.includes('/graphics') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
@@ -271,8 +476,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            // Return success for POST/PUT/DELETE requests
-            if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
+            // Return proper object for POST requests with ID
+            if (req.method === 'POST') {
+                const id = Math.floor(Math.random() * 100000) + 1;
+                return res.status(201).json({
+                    id,
+                    ...req.body,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+            }
+
+            // Return success for PUT/DELETE requests
+            if (req.method === 'PUT' || req.method === 'DELETE') {
                 return res.status(200).json({
                     success: true,
                     message: `${req.method} request to ${endpoint} processed successfully`
