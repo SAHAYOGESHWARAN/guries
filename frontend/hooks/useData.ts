@@ -381,6 +381,8 @@ export function useData<T>(collection: string) {
                     const responseData = await response.json();
 
                     console.log(`[useData] Raw response from server:`, JSON.stringify(responseData, null, 2));
+                    console.log(`[useData] Response keys:`, Object.keys(responseData));
+                    console.log(`[useData] Response type:`, typeof responseData);
 
                     // Extract the actual item from various response formats
                     // Try: asset (for assets), data (for wrapped responses), or use directly
@@ -394,6 +396,7 @@ export function useData<T>(collection: string) {
                     serverItem = extracted;
 
                     console.log(`[useData] Extracted item:`, JSON.stringify(serverItem, null, 2));
+                    console.log(`[useData] Extracted keys:`, Object.keys(serverItem || {}));
 
                     // Validate that we got an ID back
                     if (!serverItem || typeof serverItem !== 'object') {
@@ -405,7 +408,7 @@ export function useData<T>(collection: string) {
                     const hasId = serverItem.id || serverItem.lastID || serverItem.last_insert_rowid;
 
                     if (!hasId) {
-                        console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full object:', serverItem);
+                        console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full object:', JSON.stringify(serverItem, null, 2));
                         throw new Error('Server did not return item ID');
                     }
 

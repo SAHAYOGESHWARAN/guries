@@ -41,6 +41,42 @@ export const createCampaign = async (req: Request, res: Response) => {
     } = req.body;
 
     try {
+        // Ensure campaigns table exists with all columns
+        const ensureTableQuery = `
+            CREATE TABLE IF NOT EXISTS campaigns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_name TEXT NOT NULL,
+                campaign_type TEXT DEFAULT 'Content',
+                status TEXT DEFAULT 'planning',
+                description TEXT,
+                campaign_start_date DATE,
+                campaign_end_date DATE,
+                campaign_owner_id INTEGER,
+                project_id INTEGER,
+                brand_id INTEGER,
+                linked_service_ids TEXT,
+                target_url TEXT,
+                backlinks_planned INTEGER DEFAULT 0,
+                backlinks_completed INTEGER DEFAULT 0,
+                tasks_completed INTEGER DEFAULT 0,
+                tasks_total INTEGER DEFAULT 0,
+                kpi_score INTEGER DEFAULT 0,
+                sub_campaigns TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+
+        try {
+            await pool.query(ensureTableQuery);
+            console.log('[createCampaign] Campaigns table ensured');
+        } catch (e: any) {
+            // Table might already exist, continue
+            if (!e.message.includes('already exists')) {
+                console.warn('[createCampaign] Warning creating table:', e.message);
+            }
+        }
+
         const query = `
             INSERT INTO campaigns (
                 campaign_name, campaign_type, status, description,
@@ -70,6 +106,7 @@ export const createCampaign = async (req: Request, res: Response) => {
             kpi_score || 0
         ];
 
+        console.log('[createCampaign] Executing INSERT with values:', values);
         const result = await pool.query(query, values);
 
         console.log('[createCampaign] INSERT result:', JSON.stringify(result, null, 2));
@@ -126,7 +163,9 @@ export const createCampaign = async (req: Request, res: Response) => {
             return res.status(201).json(fallbackCampaign);
         }
     } catch (error: any) {
-        console.error('Error creating campaign:', error);
+        console.error('[createCampaign] Error creating campaign:', error);
+        console.error('[createCampaign] Error message:', error.message);
+        console.error('[createCampaign] Error stack:', error.stack);
         res.status(500).json({ error: 'Failed to create campaign', details: error.message });
     }
 };
