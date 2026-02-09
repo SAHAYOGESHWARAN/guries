@@ -33,11 +33,12 @@ const IndustrySectorMasterView: React.FC = () => {
 
     // Filter data
     const filteredData = useMemo(() => {
-        return items.filter(item => {
+        return (items || []).filter(item => {
+            if (!item) return false;
             const matchesSearch =
-                item.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.sector.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.application.toLowerCase().includes(searchQuery.toLowerCase());
+                (item.industry || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.sector || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.application || '').toLowerCase().includes(searchQuery.toLowerCase());
             const matchesIndustry = !industryFilter || item.industry === industryFilter;
             const matchesCountry = !countryFilter || item.country === countryFilter;
             const matchesStatus = !statusFilter || item.status === statusFilter;

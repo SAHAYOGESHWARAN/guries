@@ -45,8 +45,9 @@ const BacklinkSourceMasterView: React.FC = () => {
     const statusOptions = ['active', 'inactive', 'blacklisted', 'test', 'trusted', 'avoid'];
 
     const filteredSources = (backlinkSources || []).filter(source => {
-        const matchesSearch = source.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            source.backlink_url.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!source) return false;
+        const matchesSearch = (source.domain || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (source.backlink_url || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = !filterCategory || source.backlink_category === filterCategory;
         const matchesPricing = !filterPricing || source.pricing === filterPricing;
         const matchesStatus = !filterStatus || source.status === filterStatus;

@@ -56,8 +56,8 @@ const KeywordsView: React.FC = () => {
     };
 
     const filteredData = keywords.filter(item => {
-        const matchesSearch = item.keyword.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesIntent = intentFilter === 'All Intent' || item.intent === intentFilter;
+        const matchesSearch = (item.keyword || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesIntent = intentFilter === 'All Intent' || item.keyword_intent === intentFilter;
         const matchesType = typeFilter === 'All Types' || item.keyword_type === typeFilter;
         const matchesCompetition = competitionFilter === 'All Competition' || item.competition === competitionFilter;
         return matchesSearch && matchesIntent && matchesType && matchesCompetition;
@@ -113,11 +113,11 @@ const KeywordsView: React.FC = () => {
     };
 
     const columns = [
-        { header: 'Keyword', accessor: 'keyword' as keyof Keyword, className: 'font-medium text-slate-800' },
+        { header: 'Keyword', accessor: (item: Keyword) => item.keyword || '-', className: 'font-medium text-slate-800' },
         { header: 'Intent', accessor: (item: Keyword) => getIntentBadge(item.keyword_intent) },
         { header: 'Type', accessor: 'keyword_type' as keyof Keyword, className: 'text-slate-600' },
-        { header: 'Volume', accessor: (item: Keyword) => item.search_volume.toLocaleString(), className: "font-mono text-slate-700" },
-        { header: 'Comp', accessor: (item: Keyword) => <span className={getCompetitionColor(item.competition)}>{item.competition}</span> },
+        { header: 'Volume', accessor: (item: Keyword) => (item.search_volume || 0).toLocaleString(), className: "font-mono text-slate-700" },
+        { header: 'Comp', accessor: (item: Keyword) => <span className={getCompetitionColor(item.competition)}>{item.competition || '-'}</span> },
         { header: 'Service', accessor: (item: Keyword) => getServiceName(item.mapped_service_id), className: "text-sm text-blue-600" },
         { header: 'Sub-Service', accessor: (item: Keyword) => getSubServiceName(item.mapped_sub_service_id), className: "text-sm text-indigo-600" },
         {

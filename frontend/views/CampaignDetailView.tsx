@@ -47,11 +47,11 @@ const CampaignDetailView: React.FC<CampaignDetailViewProps> = ({ campaignId, onN
     const currentBacklinks = campaign.backlinks_completed || 0;
     const progress = Math.round((currentBacklinks / totalBacklinks) * 100);
 
-    const tasksCompleted = campaignTasks.filter(t => t.status === 'completed').length;
+    const tasksCompleted = (campaignTasks || []).filter(t => t?.status === 'completed').length;
     const taskProgress = campaignTasks.length > 0 ? Math.round((tasksCompleted / campaignTasks.length) * 100) : 0;
 
-    const relevantKpis = performanceData.filter(k => k.campaign_id === campaignId);
-    const trafficData = relevantKpis.filter(k => k.metric_name === 'traffic').map(k => ({ label: k.date, value: k.metric_value }));
+    const relevantKpis = (performanceData || []).filter(k => k?.campaign_id === campaignId);
+    const trafficData = (relevantKpis || []).filter(k => k?.metric_name === 'traffic').map(k => ({ label: k.date, value: k.metric_value }));
 
     const handleAiAnalysis = async () => {
         setIsAnalyzing(true);

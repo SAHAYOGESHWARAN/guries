@@ -19,7 +19,7 @@ const DEPARTMENTS = ['All Departments', 'Management', 'Marketing', 'Content', 'T
 const UserRoleMasterView: React.FC = () => {
     const { data: users } = useData<User>('users');
     const { data: roles, create: createRole, update: updateRole, remove: deleteRole } = useData<Role>('roles');
-    
+
     const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('All Roles');
@@ -30,15 +30,16 @@ const UserRoleMasterView: React.FC = () => {
     const [editingRole, setEditingRole] = useState<Role | null>(null);
     const [roleForm, setRoleForm] = useState<Partial<Role>>({ role_name: '', status: 'Active', permissions: { read: true, write: false, delete: false } });
 
-    const filteredUsers = users.filter(item => {
-        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              item.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredUsers = (users || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.email || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesRole = roleFilter === 'All Roles' || item.role === roleFilter;
         const matchesDept = deptFilter === 'All Departments' || item.department === deptFilter;
         return matchesSearch && matchesRole && matchesDept;
     });
 
-    const filteredRoles = roles.filter(r => r.role_name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredRoles = (roles || []).filter(r => (r?.role_name || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
     const handleExport = () => {
         exportToCSV(activeTab === 'users' ? filteredUsers : filteredRoles, `${activeTab}_export`);
@@ -57,7 +58,7 @@ const UserRoleMasterView: React.FC = () => {
     };
 
     const handleDeleteRole = async (id: number) => {
-        if(confirm("Delete this role?")) await deleteRole(id);
+        if (confirm("Delete this role?")) await deleteRole(id);
     };
 
     const handleEditRole = (role: Role) => {
@@ -67,8 +68,8 @@ const UserRoleMasterView: React.FC = () => {
     };
 
     const userColumns = [
-        { 
-            header: 'Name', 
+        {
+            header: 'Name',
             accessor: (item: User) => (
                 <div className="flex items-center">
                     <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold mr-3">
@@ -83,8 +84,8 @@ const UserRoleMasterView: React.FC = () => {
         { header: 'Email', accessor: 'email' as keyof User, className: 'text-slate-500' },
         { header: 'Country', accessor: 'country' as keyof User },
         { header: 'Target', accessor: 'target' as keyof User, className: 'font-mono text-green-600' },
-        { 
-            header: 'Projects', 
+        {
+            header: 'Projects',
             accessor: (item: User) => (
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-bold text-xs">
                     {item.projects_count}
@@ -106,8 +107,8 @@ const UserRoleMasterView: React.FC = () => {
     const roleColumns = [
         { header: 'Role Name', accessor: 'role_name' as keyof Role, className: 'font-bold' },
         { header: 'Status', accessor: 'status' as keyof Role },
-        { 
-            header: 'Permissions', 
+        {
+            header: 'Permissions',
             accessor: (item: Role) => (
                 <div className="flex gap-2 text-xs">
                     {item.permissions?.read && <span className="bg-blue-50 text-blue-600 px-2 rounded">Read</span>}
@@ -135,15 +136,15 @@ const UserRoleMasterView: React.FC = () => {
                     <p className="text-slate-500 mt-1">Manage users, roles, permissions and departmental assignments</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="text-slate-600 hover:text-indigo-600 bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors"
                     >
                         Export
                     </button>
                     {activeTab === 'roles' && (
-                        <button 
-                            onClick={() => { setEditingRole(null); setRoleForm({role_name: '', status: 'Active', permissions: {read: true, write: false, delete: false}}); setIsRoleModalOpen(true); }}
+                        <button
+                            onClick={() => { setEditingRole(null); setRoleForm({ role_name: '', status: 'Active', permissions: { read: true, write: false, delete: false } }); setIsRoleModalOpen(true); }}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
                         >
                             + Add Role
@@ -186,19 +187,19 @@ const UserRoleMasterView: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Role Name</label>
-                        <input type="text" value={roleForm.role_name} onChange={(e) => setRoleForm({...roleForm, role_name: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+                        <input type="text" value={roleForm.role_name} onChange={(e) => setRoleForm({ ...roleForm, role_name: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
                         <div className="flex gap-4">
-                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.read} onChange={(e) => setRoleForm({...roleForm, permissions: {...roleForm.permissions, read: e.target.checked}})} className="mr-2"/> Read</label>
-                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.write} onChange={(e) => setRoleForm({...roleForm, permissions: {...roleForm.permissions, write: e.target.checked}})} className="mr-2"/> Write</label>
-                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.delete} onChange={(e) => setRoleForm({...roleForm, permissions: {...roleForm.permissions, delete: e.target.checked}})} className="mr-2"/> Delete</label>
+                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.read} onChange={(e) => setRoleForm({ ...roleForm, permissions: { ...roleForm.permissions, read: e.target.checked } })} className="mr-2" /> Read</label>
+                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.write} onChange={(e) => setRoleForm({ ...roleForm, permissions: { ...roleForm.permissions, write: e.target.checked } })} className="mr-2" /> Write</label>
+                            <label className="flex items-center"><input type="checkbox" checked={roleForm.permissions?.delete} onChange={(e) => setRoleForm({ ...roleForm, permissions: { ...roleForm.permissions, delete: e.target.checked } })} className="mr-2" /> Delete</label>
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Status</label>
-                        <select value={roleForm.status} onChange={(e) => setRoleForm({...roleForm, status: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                        <select value={roleForm.status} onChange={(e) => setRoleForm({ ...roleForm, status: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2">
                             <option>Active</option>
                             <option>Inactive</option>
                         </select>

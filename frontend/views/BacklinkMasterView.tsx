@@ -25,7 +25,7 @@ const BacklinkMasterView: React.FC = () => {
     });
 
     const filteredData = backlinks.filter(item => {
-        const matchesSearch = item.domain.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (item.domain || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = typeFilter === 'All Types' || item.platform_type === typeFilter;
         const matchesCountry = countryFilter === 'All Countries' || item.country === countryFilter;
         const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
@@ -81,7 +81,7 @@ const BacklinkMasterView: React.FC = () => {
     };
 
     const columns = [
-        { header: 'Domain', accessor: 'domain' as keyof BacklinkSource, className: 'font-bold text-slate-800' },
+        { header: 'Domain', accessor: (item: BacklinkSource) => item.domain || '-', className: 'font-bold text-slate-800' },
         { header: 'Type', accessor: 'platform_type' as keyof BacklinkSource },
         { header: 'DA', accessor: (item: BacklinkSource) => getScoreBadge(item.da_score, 'da'), className: "text-center" },
         { header: 'Spam', accessor: (item: BacklinkSource) => getScoreBadge(item.spam_score, 'spam'), className: "text-center" },

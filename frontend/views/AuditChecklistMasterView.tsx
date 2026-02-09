@@ -12,18 +12,19 @@ const STATUSES = ['All Status', 'Active', 'Inactive'];
 const AuditChecklistMasterView: React.FC = () => {
     // ... (logic kept same) ...
     const { data: checklists, create, update, remove } = useData<QcChecklistItem>('qcChecklists');
-    
+
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('All Types');
     const [statusFilter, setStatusFilter] = useState('All Status');
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<QcChecklistItem | null>(null);
     const [formData, setFormData] = useState<Partial<QcChecklistItem>>({
         checklist_name: '', checklist_type: 'Content', category: 'Editorial', number_of_items: 0, scoring_mode: 'Weighted', pass_threshold: '90%', rework_threshold: '75%', status: 'Active'
     });
 
-    const filteredData = checklists.filter(item => {
+    const filteredData = (checklists || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = (item.checklist_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = typeFilter === 'All Types' || item.checklist_type === typeFilter;
         const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
@@ -37,7 +38,7 @@ const AuditChecklistMasterView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if(confirm('Delete this checklist?')) await remove(id);
+        if (confirm('Delete this checklist?')) await remove(id);
     };
 
     const handleSave = async () => {
@@ -79,7 +80,7 @@ const AuditChecklistMasterView: React.FC = () => {
             <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Audit Checklist Master</h1>
                 <div className="flex space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >
@@ -100,14 +101,14 @@ const AuditChecklistMasterView: React.FC = () => {
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Checklist" : "Create Checklist"}>
                 <div className="space-y-4">
-                    <div><label className="block text-sm font-medium text-gray-700">Checklist Name</label><input type="text" value={formData.checklist_name} onChange={(e) => setFormData({...formData, checklist_name: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Checklist Name</label><input type="text" value={formData.checklist_name} onChange={(e) => setFormData({ ...formData, checklist_name: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-gray-700">Type</label><select value={formData.checklist_type} onChange={(e) => setFormData({...formData, checklist_type: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Content</option><option>SEO</option><option>Web</option></select></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Category</label><input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Type</label><select value={formData.checklist_type} onChange={(e) => setFormData({ ...formData, checklist_type: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Content</option><option>SEO</option><option>Web</option></select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Category</label><input type="text" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-gray-700">Pass %</label><input type="text" value={formData.pass_threshold} onChange={(e) => setFormData({...formData, pass_threshold: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Status</label><select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Active</option><option>Inactive</option></select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Pass %</label><input type="text" value={formData.pass_threshold} onChange={(e) => setFormData({ ...formData, pass_threshold: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Status</label><select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Active</option><option>Inactive</option></select></div>
                     </div>
                     <div className="flex justify-end pt-4"><button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button></div>
                 </div>

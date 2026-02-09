@@ -147,7 +147,8 @@ const SubServiceMasterView: React.FC = () => {
 
     // Computed Data
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const filteredData = subServices.filter(item => {
+    const filteredData = (subServices || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = !normalizedQuery || [
             item.sub_service_name,
             item.sub_service_code,
@@ -566,7 +567,7 @@ const SubServiceMasterView: React.FC = () => {
             return acc + (s.focus_keywords?.includes(kw) ? 1 : 0);
         }, 0);
 
-        const masterRecord = keywordsMaster.find(k => k.keyword.toLowerCase() === kw.toLowerCase());
+        const masterRecord = (keywordsMaster || []).find(k => (k?.keyword || '').toLowerCase() === (kw || '').toLowerCase());
         const vol = masterRecord ? masterRecord.search_volume.toLocaleString() : 'N/A';
         const comp = masterRecord ? masterRecord.competition_score : '-';
 

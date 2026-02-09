@@ -110,11 +110,12 @@ const ToxicBacklinksView: React.FC = () => {
         return toxicLinks.filter(t => t.severity === severity).length;
     };
 
-    const filteredLinks = toxicLinks.filter(item => {
+    const filteredLinks = (toxicLinks || []).filter(item => {
+        if (!item) return false;
         const matchesSearch =
-            item.domain?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.toxic_url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.anchor_text?.toLowerCase().includes(searchQuery.toLowerCase());
+            (item.domain || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.toxic_url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.anchor_text || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesSeverity = activeSeverity === 'All' || item.severity === activeSeverity;
         return matchesSearch && matchesSeverity;
     });

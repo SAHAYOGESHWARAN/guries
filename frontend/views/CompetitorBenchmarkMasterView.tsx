@@ -12,17 +12,18 @@ const STATUSES = ['All Status', 'Active', 'Inactive', 'Watchlist'];
 const CompetitorBenchmarkMasterView: React.FC = () => {
     const { data: competitors, create, update, remove } = useData<CompetitorBenchmarkItem>('competitors');
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [editingItem, setEditingItem] = useState<CompetitorBenchmarkItem | null>(null);
     const [formData, setFormData] = useState<Partial<CompetitorBenchmarkItem>>({
         competitor_name: '', domain: '', industry: 'Technology', region: 'United States', da: 0, dr: 0, monthly_traffic: 0, backlinks: 0, ranking_coverage: 0, status: 'Active'
     });
 
-    const filteredData = competitors.filter(item => 
-        item.competitor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.domain.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredData = (competitors || []).filter(item => {
+        if (!item) return false;
+        return (item.competitor_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.domain || '').toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     const handleEdit = (item: CompetitorBenchmarkItem) => {
         setEditingItem(item);
@@ -52,13 +53,13 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
     };
 
     const columns = [
-        { 
-            header: 'Competitor Name', 
-            accessor: 'competitor_name' as keyof CompetitorBenchmarkItem, 
-            className: 'font-bold text-slate-800' 
+        {
+            header: 'Competitor Name',
+            accessor: 'competitor_name' as keyof CompetitorBenchmarkItem,
+            className: 'font-bold text-slate-800'
         },
-        { 
-            header: 'Domain', 
+        {
+            header: 'Domain',
             accessor: (item: CompetitorBenchmarkItem) => (
                 <a href={`https://${item.domain}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-mono text-xs">
                     {item.domain}
@@ -67,8 +68,8 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
         },
         { header: 'Industry', accessor: 'industry' as keyof CompetitorBenchmarkItem },
         { header: 'Region', accessor: 'region' as keyof CompetitorBenchmarkItem },
-        { 
-            header: 'DA / DR', 
+        {
+            header: 'DA / DR',
             accessor: (item: CompetitorBenchmarkItem) => (
                 <div className="flex flex-col space-y-1">
                     <span className="text-xs font-medium bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-100 w-fit">DA: {item.da}</span>
@@ -76,8 +77,8 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
                 </div>
             )
         },
-        { 
-            header: 'Traffic', 
+        {
+            header: 'Traffic',
             accessor: (item: CompetitorBenchmarkItem) => item.monthly_traffic.toLocaleString(),
             className: "text-right font-mono"
         },
@@ -111,22 +112,22 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
                     <div className="w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Competitor Name</label>
-                            <input type="text" value={formData.competitor_name} onChange={(e) => setFormData({...formData, competitor_name: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                            <input type="text" value={formData.competitor_name} onChange={(e) => setFormData({ ...formData, competitor_name: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Domain</label>
-                            <input type="text" value={formData.domain} onChange={(e) => setFormData({...formData, domain: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                            <input type="text" value={formData.domain} onChange={(e) => setFormData({ ...formData, domain: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
-                                <select value={formData.industry} onChange={(e) => setFormData({...formData, industry: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                <select value={formData.industry} onChange={(e) => setFormData({ ...formData, industry: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                     {INDUSTRIES.filter(i => i !== 'All Industries').map(i => <option key={i} value={i}>{i}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Region</label>
-                                <select value={formData.region} onChange={(e) => setFormData({...formData, region: e.target.value})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
+                                <select value={formData.region} onChange={(e) => setFormData({ ...formData, region: e.target.value })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-white">
                                     {COUNTRIES.filter(c => c !== 'All Countries').map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
@@ -134,15 +135,15 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
                         <div className="grid grid-cols-3 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">DA</label>
-                                <input type="number" value={formData.da} onChange={(e) => setFormData({...formData, da: parseInt(e.target.value)})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                                <input type="number" value={formData.da} onChange={(e) => setFormData({ ...formData, da: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">DR</label>
-                                <input type="number" value={formData.dr} onChange={(e) => setFormData({...formData, dr: parseInt(e.target.value)})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                                <input type="number" value={formData.dr} onChange={(e) => setFormData({ ...formData, dr: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Traffic</label>
-                                <input type="number" value={formData.monthly_traffic} onChange={(e) => setFormData({...formData, monthly_traffic: parseInt(e.target.value)})} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                                <input type="number" value={formData.monthly_traffic} onChange={(e) => setFormData({ ...formData, monthly_traffic: parseInt(e.target.value) })} className="block w-full px-4 py-3 border border-slate-300 rounded-xl" />
                             </div>
                         </div>
                     </div>
@@ -159,14 +160,14 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
                     <p className="text-slate-500 mt-1">Track and compare competitor metrics.</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >
                         Export
                     </button>
-                    <button 
-                        onClick={() => { setEditingItem(null); setFormData({competitor_name: '', domain: '', industry: 'Technology', region: 'United States', da: 0, dr: 0, monthly_traffic: 0, backlinks: 0, ranking_coverage: 0, status: 'Active'}); setViewMode('form'); }}
+                    <button
+                        onClick={() => { setEditingItem(null); setFormData({ competitor_name: '', domain: '', industry: 'Technology', region: 'United States', da: 0, dr: 0, monthly_traffic: 0, backlinks: 0, ranking_coverage: 0, status: 'Active' }); setViewMode('form'); }}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 shadow-sm transition-colors"
                     >
                         Add Competitor
@@ -175,10 +176,10 @@ const CompetitorBenchmarkMasterView: React.FC = () => {
             </div>
 
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-shrink-0">
-                <input 
-                    type="search" 
-                    className="block w-full p-2.5 border border-gray-300 rounded-lg" 
-                    placeholder="Search competitor..." 
+                <input
+                    type="search"
+                    className="block w-full p-2.5 border border-gray-300 rounded-lg"
+                    placeholder="Search competitor..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />

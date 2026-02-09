@@ -20,9 +20,10 @@ const WorkflowStageMasterView: React.FC = () => {
         workflow_name: '', stage_order: 1, total_stages: 1, stage_label: '', color_tag: 'blue', active_flag: 'Active'
     });
 
-    const filteredData = stages.filter(item => {
-        const matchesSearch = item.workflow_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              item.stage_label.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (stages || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.workflow_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.stage_label || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesWorkflow = workflowFilter === 'All Workflows' || item.workflow_name === workflowFilter;
         return matchesSearch && matchesWorkflow;
     });
@@ -46,7 +47,7 @@ const WorkflowStageMasterView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if(confirm('Delete this stage?')) await remove(id);
+        if (confirm('Delete this stage?')) await remove(id);
     };
 
     const handleSave = async () => {
@@ -66,8 +67,8 @@ const WorkflowStageMasterView: React.FC = () => {
 
     const columns = [
         { header: 'Workflow Name', accessor: 'workflow_name' as keyof WorkflowStageItem, className: 'font-bold text-slate-800' },
-        { 
-            header: 'Stage Order', 
+        {
+            header: 'Stage Order',
             accessor: (item: WorkflowStageItem) => (
                 <div className="flex items-center">
                     <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-xs mr-1">{item.stage_order}</span>
@@ -94,7 +95,7 @@ const WorkflowStageMasterView: React.FC = () => {
             <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Workflow Stage Master</h1>
                 <div className="flex space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >
@@ -115,15 +116,15 @@ const WorkflowStageMasterView: React.FC = () => {
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Stage" : "Add Stage"}>
                 <div className="space-y-4">
-                    <div><label className="block text-sm font-medium text-gray-700">Workflow Name</label><input type="text" value={formData.workflow_name} onChange={(e) => setFormData({...formData, workflow_name: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Workflow Name</label><input type="text" value={formData.workflow_name} onChange={(e) => setFormData({ ...formData, workflow_name: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-gray-700">Stage Order</label><input type="number" value={formData.stage_order} onChange={(e) => setFormData({...formData, stage_order: parseInt(e.target.value)})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Total Stages</label><input type="number" value={formData.total_stages} onChange={(e) => setFormData({...formData, total_stages: parseInt(e.target.value)})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Stage Order</label><input type="number" value={formData.stage_order} onChange={(e) => setFormData({ ...formData, stage_order: parseInt(e.target.value) })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Total Stages</label><input type="number" value={formData.total_stages} onChange={(e) => setFormData({ ...formData, total_stages: parseInt(e.target.value) })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
                     </div>
-                    <div><label className="block text-sm font-medium text-gray-700">Label</label><input type="text" value={formData.stage_label} onChange={(e) => setFormData({...formData, stage_label: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Label</label><input type="text" value={formData.stage_label} onChange={(e) => setFormData({ ...formData, stage_label: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-gray-700">Color</label><select value={formData.color_tag} onChange={(e) => setFormData({...formData, color_tag: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option value="blue">Blue</option><option value="amber">Amber</option><option value="green">Green</option><option value="purple">Purple</option><option value="slate">Slate</option></select></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Status</label><select value={formData.active_flag} onChange={(e) => setFormData({...formData, active_flag: e.target.value as any})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Active</option><option>Inactive</option></select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Color</label><select value={formData.color_tag} onChange={(e) => setFormData({ ...formData, color_tag: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option value="blue">Blue</option><option value="amber">Amber</option><option value="green">Green</option><option value="purple">Purple</option><option value="slate">Slate</option></select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Status</label><select value={formData.active_flag} onChange={(e) => setFormData({ ...formData, active_flag: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Active</option><option>Inactive</option></select></div>
                     </div>
                     <div className="flex justify-end pt-4"><button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button></div>
                 </div>

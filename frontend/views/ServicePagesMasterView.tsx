@@ -50,7 +50,8 @@ const ServicePagesMasterView: React.FC<ServicePagesMasterViewProps> = ({ onNavig
         og_image_url: '',
     });
 
-    const filteredData = subServices.filter(item => {
+    const filteredData = (subServices || []).filter(item => {
+        if (!item) return false;
         const normalizedQuery = searchQuery.trim().toLowerCase();
         const matchesSearch = !normalizedQuery || [
             item.sub_service_name,

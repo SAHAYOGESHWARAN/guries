@@ -143,7 +143,8 @@ const ServiceMasterView: React.FC = () => {
 
     // Computed Data
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const filteredData = services.filter(item => {
+    const filteredData = (services || []).filter(item => {
+        if (!item) return false;
         const matchesSearch = !normalizedQuery || [
             item.service_name,
             item.service_code,

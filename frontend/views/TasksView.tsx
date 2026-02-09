@@ -211,11 +211,11 @@ const TasksView: React.FC = () => {
         }
     };
 
-    const filteredTasks = tasks.filter(task => {
-        const taskName = task.name || task.task_name || '';
-        const matchesSearch = taskName.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || task.status?.toLowerCase() === statusFilter.toLowerCase();
-        const matchesPriority = priorityFilter === 'all' || task.priority?.toLowerCase() === priorityFilter.toLowerCase();
+    const filteredTasks = (tasks || []).filter(task => {
+        const taskName = (task?.name || task?.task_name || '').toLowerCase();
+        const matchesSearch = taskName.includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || (task?.status || '').toLowerCase() === statusFilter.toLowerCase();
+        const matchesPriority = priorityFilter === 'all' || (task?.priority || '').toLowerCase() === priorityFilter.toLowerCase();
         return matchesSearch && matchesStatus && matchesPriority;
     });
 

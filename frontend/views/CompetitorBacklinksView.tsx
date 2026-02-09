@@ -91,8 +91,8 @@ const CompetitorBacklinksView: React.FC = () => {
         });
 
     // Summary stats
-    const aheadCount = competitorData.filter(c => c.gapStatus === 'Ahead').length;
-    const behindCount = competitorData.filter(c => c.gapStatus === 'Behind').length;
+    const aheadCount = (competitorData || []).filter(c => c?.gapStatus === 'Ahead').length;
+    const behindCount = (competitorData || []).filter(c => c?.gapStatus === 'Behind').length;
 
     return (
         <div className="h-full flex flex-col w-full p-6 overflow-hidden bg-slate-50">

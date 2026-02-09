@@ -115,10 +115,11 @@ const SmmRepositoryView: React.FC = () => {
         return posts.filter(p => p.smm_status === stage).length;
     };
 
-    const filteredPosts = posts.filter(item => {
-        const matchesSearch = item.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.primary_platform?.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredPosts = (posts || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.caption || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.primary_platform || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStage = activeStage === 'All' || item.smm_status === activeStage;
         return matchesSearch && matchesStage;
     });

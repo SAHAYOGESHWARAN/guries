@@ -22,8 +22,9 @@ const AssetCategoryMasterView: React.FC = () => {
         status: 'active'
     });
 
-    const filteredData = assetCategories.filter(item => {
-        const matchesSearch = item.category_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (assetCategories || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.category_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesBrand = brandFilter === 'All Brands' || item.brand === brandFilter;
         return matchesSearch && matchesBrand;
     });

@@ -25,8 +25,9 @@ const KeywordMasterView: React.FC = () => {
         status: 'active'
     });
 
-    const filteredData = keywords.filter(item => {
-        const matchesSearch = item.keyword.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (keywords || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.keyword || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesIntent = filters.intent === 'All' || item.keyword_intent === filters.intent;
         const matchesType = filters.type === 'All' || item.keyword_type === filters.type;
         const matchesCompetition = filters.competition === 'All' || item.competition_score === filters.competition;

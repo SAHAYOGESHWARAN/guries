@@ -36,11 +36,12 @@ const ContentTypeMasterView: React.FC = () => {
 
     // Filter data
     const filteredData = useMemo(() => {
-        return items.filter(item => {
+        return (items || []).filter(item => {
+            if (!item) return false;
             const matchesSearch =
-                item.content_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchQuery.toLowerCase());
+                (item.content_type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory = !categoryFilter || item.category === categoryFilter;
             const matchesStatus = !statusFilter || item.status === statusFilter;
 

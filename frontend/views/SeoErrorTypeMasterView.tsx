@@ -22,9 +22,10 @@ const SeoErrorTypeMasterView: React.FC = () => {
         error_type: '', category: 'On-page', severity: 'Medium', description: '', status: 'Published'
     });
 
-    const filteredData = seoErrors.filter(item => {
-        const matchesSearch = item.error_type.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredData = (seoErrors || []).filter(item => {
+        if (!item) return false;
+        const matchesSearch = (item.error_type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === 'All Categories' || item.category === categoryFilter;
         const matchesSeverity = severityFilter === 'All Severity' || item.severity === severityFilter;
         return matchesSearch && matchesCategory && matchesSeverity;
@@ -45,7 +46,7 @@ const SeoErrorTypeMasterView: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if(confirm('Delete this error type?')) await remove(id);
+        if (confirm('Delete this error type?')) await remove(id);
     };
 
     const handleSave = async () => {
@@ -85,7 +86,7 @@ const SeoErrorTypeMasterView: React.FC = () => {
             <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">SEO Error Type Master</h1>
                 <div className="flex space-x-3">
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="bg-white text-slate-600 border border-slate-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-50 shadow-sm transition-colors"
                     >
@@ -109,13 +110,13 @@ const SeoErrorTypeMasterView: React.FC = () => {
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? "Edit Error Type" : "Add Error Type"}>
                 <div className="space-y-4">
-                    <div><label className="block text-sm font-medium text-gray-700">Error Type</label><input type="text" value={formData.error_type} onChange={(e) => setFormData({...formData, error_type: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Error Type</label><input type="text" value={formData.error_type} onChange={(e) => setFormData({ ...formData, error_type: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-gray-700">Category</label><select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>On-page</option><option>Technical SEO</option></select></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Severity</label><select value={formData.severity} onChange={(e) => setFormData({...formData, severity: e.target.value as any})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>High</option><option>Medium</option><option>Low</option></select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Category</label><select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>On-page</option><option>Technical SEO</option></select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Severity</label><select value={formData.severity} onChange={(e) => setFormData({ ...formData, severity: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>High</option><option>Medium</option><option>Low</option></select></div>
                     </div>
-                    <div><label className="block text-sm font-medium text-gray-700">Description</label><input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
-                    <div><label className="block text-sm font-medium text-gray-700">Status</label><select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Published</option><option>Draft</option><option>Archived</option></select></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Description</label><input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="mt-1 block w-full border border-gray-300 rounded-md p-2" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Status</label><select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })} className="mt-1 block w-full border border-gray-300 rounded-md p-2"><option>Published</option><option>Draft</option><option>Archived</option></select></div>
                     <div className="flex justify-end pt-4"><button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button></div>
                 </div>
             </Modal>
