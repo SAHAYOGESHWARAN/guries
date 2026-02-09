@@ -175,16 +175,16 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <Target className="w-4 h-4 text-purple-500" />
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-2xl font-bold text-slate-900">{teamSummary.teamPerformanceScore.value}%</div>
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${teamSummary.teamPerformanceScore.trend === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        <TrendingUp className={`w-3 h-3 ${teamSummary.teamPerformanceScore.trend === 'down' ? 'rotate-180' : ''}`} />
-                                        {teamSummary.teamPerformanceScore.change}
+                                    <div className="text-2xl font-bold text-slate-900">{safeTeamSummary.teamPerformanceScore?.value}%</div>
+                                    <div className={`flex items-center gap-1 text-xs font-medium ${safeTeamSummary.teamPerformanceScore?.trend === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        <TrendingUp className={`w-3 h-3 ${safeTeamSummary.teamPerformanceScore?.trend === 'down' ? 'rotate-180' : ''}`} />
+                                        {safeTeamSummary.teamPerformanceScore?.change}
                                     </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mb-1">Target: {teamSummary.teamPerformanceScore.target}%</div>
+                                <div className="text-xs text-slate-500 mb-1">Target: {safeTeamSummary.teamPerformanceScore?.target}%</div>
                                 <div className="text-xs text-emerald-600 font-medium">Good</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.teamPerformanceScore.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.teamPerformanceScore?.lastUpdated ? new Date(safeTeamSummary.teamPerformanceScore.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -194,16 +194,16 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <Clock className="w-4 h-4 text-amber-500" />
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-2xl font-bold text-slate-900">{teamSummary.openTasks.value}</div>
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${teamSummary.openTasks.trend === 'stable' ? 'text-blue-600' : teamSummary.openTasks.trend === 'up' ? 'text-red-600' : 'text-emerald-600'}`}>
-                                        <TrendingUp className={`w-3 h-3 ${teamSummary.openTasks.trend === 'down' ? 'rotate-180' : teamSummary.openTasks.trend === 'stable' ? 'rotate-90' : ''}`} />
-                                        {teamSummary.openTasks.change}
+                                    <div className="text-2xl font-bold text-slate-900">{safeTeamSummary.openTasks?.value}</div>
+                                    <div className={`flex items-center gap-1 text-xs font-medium ${safeTeamSummary.openTasks?.trend === 'stable' ? 'text-blue-600' : safeTeamSummary.openTasks?.trend === 'up' ? 'text-red-600' : 'text-emerald-600'}`}>
+                                        <TrendingUp className={`w-3 h-3 ${safeTeamSummary.openTasks?.trend === 'down' ? 'rotate-180' : safeTeamSummary.openTasks?.trend === 'stable' ? 'rotate-90' : ''}`} />
+                                        {safeTeamSummary.openTasks?.change}
                                     </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mb-1">H:{teamSummary.openTasks.priority.high} M:{teamSummary.openTasks.priority.medium} L:{teamSummary.openTasks.priority.low}</div>
+                                <div className="text-xs text-slate-500 mb-1">H:{safeTeamSummary.openTasks?.priority?.high} M:{safeTeamSummary.openTasks?.priority?.medium} L:{safeTeamSummary.openTasks?.priority?.low}</div>
                                 <div className="text-xs text-slate-600 font-medium">Active</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.openTasks.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.openTasks?.lastUpdated ? new Date(safeTeamSummary.openTasks.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -213,16 +213,16 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <AlertTriangle className="w-4 h-4 text-red-500" />
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-2xl font-bold text-slate-900">{teamSummary.overdueTasks.value}</div>
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${teamSummary.overdueTasks.trend === 'up' ? 'text-red-600' : 'text-emerald-600'}`}>
-                                        <TrendingUp className={`w-3 h-3 ${teamSummary.overdueTasks.trend === 'down' ? 'rotate-180' : ''}`} />
-                                        {teamSummary.overdueTasks.change}
+                                    <div className="text-2xl font-bold text-slate-900">{safeTeamSummary.overdueTasks?.value}</div>
+                                    <div className={`flex items-center gap-1 text-xs font-medium ${safeTeamSummary.overdueTasks?.trend === 'up' ? 'text-red-600' : 'text-emerald-600'}`}>
+                                        <TrendingUp className={`w-3 h-3 ${safeTeamSummary.overdueTasks?.trend === 'down' ? 'rotate-180' : ''}`} />
+                                        {safeTeamSummary.overdueTasks?.change}
                                     </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mb-1">Target: {teamSummary.overdueTasks.target}</div>
+                                <div className="text-xs text-slate-500 mb-1">Target: {safeTeamSummary.overdueTasks?.target}</div>
                                 <div className="text-xs text-red-600 font-medium">Needs Attention</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.overdueTasks.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.overdueTasks?.lastUpdated ? new Date(safeTeamSummary.overdueTasks.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -232,16 +232,16 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <AlertTriangle className="w-4 h-4 text-orange-500" />
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-2xl font-bold text-slate-900">{teamSummary.qcRejections.value}</div>
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${teamSummary.qcRejections.trend === 'down' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        <TrendingUp className={`w-3 h-3 ${teamSummary.qcRejections.trend === 'down' ? 'rotate-180' : ''}`} />
-                                        {teamSummary.qcRejections.change}
+                                    <div className="text-2xl font-bold text-slate-900">{safeTeamSummary.qcRejections?.value}</div>
+                                    <div className={`flex items-center gap-1 text-xs font-medium ${safeTeamSummary.qcRejections?.trend === 'down' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        <TrendingUp className={`w-3 h-3 ${safeTeamSummary.qcRejections?.trend === 'down' ? 'rotate-180' : ''}`} />
+                                        {safeTeamSummary.qcRejections?.change}
                                     </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mb-1">Target: ≤{teamSummary.qcRejections.target}</div>
+                                <div className="text-xs text-slate-500 mb-1">Target: ≤{safeTeamSummary.qcRejections?.target}</div>
                                 <div className="text-xs text-emerald-600 font-medium">Improving</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.qcRejections.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.qcRejections?.lastUpdated ? new Date(safeTeamSummary.qcRejections.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -251,16 +251,16 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <CheckCircle className="w-4 h-4 text-blue-500" />
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-2xl font-bold text-slate-900">{teamSummary.pendingApprovals.value}</div>
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${teamSummary.pendingApprovals.trend === 'stable' ? 'text-blue-600' : teamSummary.pendingApprovals.trend === 'up' ? 'text-red-600' : 'text-emerald-600'}`}>
-                                        <TrendingUp className={`w-3 h-3 ${teamSummary.pendingApprovals.trend === 'down' ? 'rotate-180' : teamSummary.pendingApprovals.trend === 'stable' ? 'rotate-90' : ''}`} />
-                                        {teamSummary.pendingApprovals.change}
+                                    <div className="text-2xl font-bold text-slate-900">{safeTeamSummary.pendingApprovals?.value}</div>
+                                    <div className={`flex items-center gap-1 text-xs font-medium ${safeTeamSummary.pendingApprovals?.trend === 'stable' ? 'text-blue-600' : safeTeamSummary.pendingApprovals?.trend === 'up' ? 'text-red-600' : 'text-emerald-600'}`}>
+                                        <TrendingUp className={`w-3 h-3 ${safeTeamSummary.pendingApprovals?.trend === 'down' ? 'rotate-180' : safeTeamSummary.pendingApprovals?.trend === 'stable' ? 'rotate-90' : ''}`} />
+                                        {safeTeamSummary.pendingApprovals?.change}
                                     </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mb-1">Avg Wait: {teamSummary.pendingApprovals.avgWaitTime}</div>
+                                <div className="text-xs text-slate-500 mb-1">Avg Wait: {safeTeamSummary.pendingApprovals?.avgWaitTime}</div>
                                 <div className="text-xs text-blue-600 font-medium">Normal</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.pendingApprovals.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.pendingApprovals?.lastUpdated ? new Date(safeTeamSummary.pendingApprovals.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -269,11 +269,11 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Team Size</h3>
                                     <Users className="w-4 h-4 text-emerald-500" />
                                 </div>
-                                <div className="text-2xl font-bold text-slate-900 mb-1">{teamSummary.teamSize.value}</div>
-                                <div className="text-xs text-slate-500 mb-1">Active: {teamSummary.teamSize.active} | On Leave: {teamSummary.teamSize.onLeave}</div>
-                                <div className="text-xs text-slate-600 font-medium">Utilization: {teamSummary.teamSize.utilizationRate}%</div>
+                                <div className="text-2xl font-bold text-slate-900 mb-1">{safeTeamSummary.teamSize?.value}</div>
+                                <div className="text-xs text-slate-500 mb-1">Active: {safeTeamSummary.teamSize?.active} | On Leave: {safeTeamSummary.teamSize?.onLeave}</div>
+                                <div className="text-xs text-slate-600 font-medium">Utilization: {safeTeamSummary.teamSize?.utilizationRate}%</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.teamSize.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.teamSize?.lastUpdated ? new Date(safeTeamSummary.teamSize.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
 
@@ -282,11 +282,11 @@ const TeamLeaderDashboard: React.FC<TeamLeaderDashboardProps> = ({ onNavigate })
                                     <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Active Projects</h3>
                                     <BarChart3 className="w-4 h-4 text-purple-500" />
                                 </div>
-                                <div className="text-2xl font-bold text-slate-900 mb-1">{teamSummary.activeProjects.value}</div>
-                                <div className="text-xs text-slate-500 mb-1">On Track: {teamSummary.activeProjects.onTrack} | At Risk: {teamSummary.activeProjects.atRisk}</div>
-                                <div className="text-xs text-purple-600 font-medium">Completion: {teamSummary.activeProjects.completionRate}%</div>
+                                <div className="text-2xl font-bold text-slate-900 mb-1">{safeTeamSummary.activeProjects?.value}</div>
+                                <div className="text-xs text-slate-500 mb-1">On Track: {safeTeamSummary.activeProjects?.onTrack} | At Risk: {safeTeamSummary.activeProjects?.atRisk}</div>
+                                <div className="text-xs text-purple-600 font-medium">Completion: {safeTeamSummary.activeProjects?.completionRate}%</div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    Updated: {new Date(teamSummary.activeProjects.lastUpdated).toLocaleTimeString()}
+                                    Updated: {safeTeamSummary.activeProjects?.lastUpdated ? new Date(safeTeamSummary.activeProjects.lastUpdated).toLocaleTimeString() : 'N/A'}
                                 </div>
                             </div>
                         </div>
