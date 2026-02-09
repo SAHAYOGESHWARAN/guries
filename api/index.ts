@@ -455,11 +455,326 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        if (req.url?.includes('/team-members') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/services') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/sub-services') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/sub-services') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/users') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/notifications') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
+
+        if (req.url?.includes('/notifications') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/roles') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/teams') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
         // QC review endpoint (mock)
         if (req.url?.includes('/qc-review') && req.method === 'POST') {
             return res.status(200).json({
                 success: true,
                 message: 'QC review submitted successfully'
+            });
+        }
+
+        // Additional POST handlers for common endpoints
+        if (req.url?.includes('/service-pages') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/asset-formats') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/platforms') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/countries') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/seo-errors') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/workflow-stages') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/qc-checklists') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/qc-versions') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/qc-weightage-configs') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/integrations') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/logs') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/hr/workload') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/hr/rewards') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/ai/evaluations') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/analytics/dashboard-metrics') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/hr/rankings') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/analytics/traffic') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/communication/emails') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/communication/voice-profiles') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/communication/calls') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/knowledge/articles') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/compliance/rules') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        if (req.url?.includes('/compliance/audits') && req.method === 'POST') {
+            const id = Math.floor(Math.random() * 100000) + 1;
+            return res.status(201).json({
+                id,
+                ...req.body,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
 
