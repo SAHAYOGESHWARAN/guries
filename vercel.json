@@ -6,7 +6,7 @@
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1",
-    "BACKEND_URL": "https://your-backend-url.com"
+    "BACKEND_URL": "https://guires-backend.up.railway.app"
   },
   "functions": {
     "api/backend-proxy.ts": {

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node dist/server.js",
+    "start:standalone": "npx ts-node standalone-server.ts",
     "dev": "nodemon server.ts",
     "build": "tsc --skipLibCheck",
     "test": "jest --runInBand"
