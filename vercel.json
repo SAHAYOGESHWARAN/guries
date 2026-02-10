@@ -1,50 +1,29 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && npm run build && cd ..",
+  "buildCommand": "npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps && npm run build && cd ../frontend && npm install --legacy-peer-deps && npm run build && cd ..",
   "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production",
-    "VITE_API_URL": "/api/v1"
+    "VITE_API_URL": "/api/v1",
+    "PORT": "3001",
+    "API_PORT": "3001"
   },
   "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/health.ts": {
-      "memory": 512,
-      "maxDuration": 30
-    },
-    "api/v1/assetLibrary.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/test-endpoints.ts": {
-      "memory": 1024,
-      "maxDuration": 60
+    "api/backend-proxy.ts": {
+      "memory": 3008,
+      "maxDuration": 60,
+      "runtime": "nodejs20.x"
     }
   },
   "routes": [
     {
-      "src": "/api/health",
-      "dest": "/api/health.ts"
-    },
-    {
-      "src": "/api/test-endpoints",
-      "dest": "/api/test-endpoints.ts"
-    },
-    {
-      "src": "/api/v1/assetLibrary",
-      "dest": "/api/v1/assetLibrary.ts"
-    },
-    {
-      "src": "/api/v1/(.*)",
-      "dest": "/api/index.ts"
-    },
-    {
       "src": "/api/(.*)",
-      "dest": "/api/index.ts"
+      "dest": "/api/backend-proxy.ts"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "/api/backend-proxy.ts"
     },
     {
       "src": "/index\\.[a-z0-9]+\\.js",
