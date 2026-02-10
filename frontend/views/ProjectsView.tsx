@@ -523,7 +523,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
 
             {/* Header */}
             <div className="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start mb-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
                         <p className="text-sm text-slate-500 mt-1">Manage multi-campaign marketing projects.</p>
@@ -554,26 +554,26 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
                 </div>
 
                 {/* Search */}
-                <div className="mb-4">
-                    <div className="relative max-w-md">
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search projects..."
-                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                    </div>
+                <div className="relative max-w-md">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search projects..."
+                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
                 </div>
+            </div>
 
-                {/* Table */}
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
+            {/* Table Container */}
+            <div className="flex-1 overflow-hidden px-6 py-4">
+                <div className="h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="overflow-x-auto flex-1">
                         <table className="w-full">
-                            <thead className="bg-slate-50 border-b border-slate-200">
+                            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Name</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Brand</th>

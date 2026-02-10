@@ -548,8 +548,10 @@ const TasksView: React.FC = () => {
         <div className="h-full flex flex-col w-full overflow-hidden bg-slate-50">
             {viewMode === 'create' && renderCreateModal()}
             {viewMode === 'edit' && renderEditModal()}
+
+            {/* Header */}
             <div className="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start mb-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Tasks</h1>
                         <p className="text-sm text-slate-500 mt-1">Manage and track all tasks across projects and campaigns.</p>
@@ -576,7 +578,7 @@ const TasksView: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-4">
                     <div className="flex-1 relative">
                         <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -611,9 +613,12 @@ const TasksView: React.FC = () => {
                         <option value="low">Low</option>
                     </select>
                 </div>
+            </div>
 
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto h-full">
+            {/* Table Container */}
+            <div className="flex-1 overflow-hidden px-6 py-4">
+                <div className="h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="overflow-x-auto flex-1">
                         <table className="w-full min-w-[1400px]">
                             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
                                 <tr>
