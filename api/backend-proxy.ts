@@ -367,6 +367,7 @@ function handleDemoEndpoint(req: VercelRequest, res: VercelResponse) {
             name: p.project_name || p.name || '',
             status: p.status || 'active'
         }));
+        console.log('[Demo] Returning projects:', normalizedProjects.length, 'items');
         return res.status(200).json({ success: true, data: normalizedProjects, message: 'Projects retrieved' });
     }
 
@@ -412,6 +413,7 @@ function handleDemoEndpoint(req: VercelRequest, res: VercelResponse) {
             task_name: t.title || t.task_name || '',
             status: t.status || 'pending'
         }));
+        console.log('[Demo] Returning tasks:', normalizedTasks.length, 'items');
         return res.status(200).json({ success: true, data: normalizedTasks, message: 'Tasks retrieved' });
     }
 
