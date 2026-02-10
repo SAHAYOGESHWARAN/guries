@@ -6,13 +6,12 @@
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api/v1",
-    "PORT": "3001",
-    "API_PORT": "3001"
+    "BACKEND_URL": "https://your-backend-url.com"
   },
   "functions": {
     "api/backend-proxy.ts": {
-      "memory": 3008,
-      "maxDuration": 60,
+      "memory": 512,
+      "maxDuration": 30,
       "runtime": "nodejs20.x"
     }
   },

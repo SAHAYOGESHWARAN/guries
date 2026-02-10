@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { app } from '../backend/dist/server';
 
 /**
- * Vercel Serverless Function - Backend Proxy
- * Routes all API requests to the Express backend server
+ * Vercel Serverless Function - Lightweight API Proxy
+ * Routes API requests to external backend server
+ * Optimized for Hobby plan (2048 MB memory limit)
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
@@ -19,20 +19,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        // Use the Express app to handle the request
-        return new Promise<void>((resolve, reject) => {
-            // Set response headers
-            res.setHeader('Content-Type', 'application/json');
+        // Get backend URL from environment
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
 
-            // Call the Express app with the request and response
-            app(req as any, res as any, (err?: any) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        // Extract the API path (remove /api prefix if present)
+        const path = req.url?.replace(/^\/api/, '') || '/';
+        const targetUrl = `${backendUrl}${path}`;
+
+        // Prepare request options
+        const options: RequestInit = {
+            method: req.method,
+            headers: {
+                'Content-Type': 'application/json',
+                ...req.headers,
+            },
+        };
+
+        // Add body for non-GET requests
+        if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+            options.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+        }
+
+        // Make request to backend
+        const response = await fetch(targetUrl, options);
+
+        // Get response data
+        const data = await response.text();
+
+        // Set response status and headers
+        res.status(response.status);
+
+        // Copy relevant headers from backend response
+        const contentType = response.headers.get('content-type');
+        if (contentType) {
+            res.setHeader('Content-Type', contentType);
+        }
+
+        // Send response
+        res.send(data);
     } catch (error: any) {
         console.error('Backend proxy error:', error);
         if (!res.headersSent) {
