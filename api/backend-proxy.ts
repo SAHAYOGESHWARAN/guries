@@ -307,6 +307,11 @@ function handleMockEndpoint(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, data: [], message: 'Brands retrieved' });
     }
 
+    // Default: return empty array for any unknown GET endpoint
+    if (method === 'GET') {
+        return res.status(200).json({ success: true, data: [], message: 'Data retrieved' });
+    }
+
     // Default: return 404 for unknown endpoints
     return res.status(404).json({
         success: false,
