@@ -27,6 +27,77 @@ app.get('/api/v1/health', (req, res) => {
 // In-memory storage
 const projects: any[] = [];
 const tasks: any[] = [];
+const users: any[] = [
+    {
+        id: 1,
+        email: 'admin@example.com',
+        password: 'admin123',
+        name: 'Admin User',
+        role: 'admin',
+        status: 'active'
+    }
+];
+
+// Auth endpoints
+app.post('/api/v1/auth/login', (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ success: false, error: 'Email and password required' });
+    }
+
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!user || user.password !== password) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (user.status === 'inactive') {
+        return res.status(403).json({ success: false, error: 'User account is inactive' });
+    }
+
+    res.json({
+        success: true,
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            status: user.status
+        },
+        token: 'mock-jwt-token-' + Date.now()
+    });
+});
+
+app.post('/api/admin/auth/login', (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ success: false, error: 'Email and password required' });
+    }
+
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === 'admin');
+
+    if (!user || user.password !== password) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (user.status === 'inactive') {
+        return res.status(403).json({ success: false, error: 'User account is inactive' });
+    }
+
+    res.json({
+        success: true,
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            status: user.status
+        },
+        token: 'mock-jwt-token-' + Date.now()
+    });
+});
 
 // Projects endpoints
 app.get('/api/v1/projects', (req, res) => {
