@@ -161,6 +161,34 @@ app.delete('/api/v1/tasks/:id', (req, res) => {
     res.json({ success: true, message: 'Task deleted successfully' });
 });
 
+// Dashboard stats
+app.get('/api/v1/dashboard/stats', (req, res) => {
+    res.json({
+        success: true,
+        data: {
+            totalProjects: projects.length,
+            totalTasks: tasks.length,
+            completedTasks: tasks.filter((t: any) => t.status === 'completed').length,
+            activeCampaigns: 0
+        }
+    });
+});
+
+// Notifications
+app.get('/api/v1/notifications', (req, res) => {
+    res.json({ success: true, data: [], message: 'Notifications retrieved' });
+});
+
+// Users
+app.get('/api/v1/users', (req, res) => {
+    res.json({ success: true, data: users, message: 'Users retrieved' });
+});
+
+// Campaigns
+app.get('/api/v1/campaigns', (req, res) => {
+    res.json({ success: true, data: [], message: 'Campaigns retrieved' });
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);

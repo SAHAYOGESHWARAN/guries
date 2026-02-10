@@ -105,6 +105,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         clearTimeout(timeout);
 
+        // If backend returns 404 or 5xx, fall back to mock data
+        if (response.status === 404 || response.status >= 500) {
+            console.log(`[Proxy] Backend returned ${response.status}, falling back to mock data`);
+            return handleMockEndpoint(req, res);
+        }
+
         // Get response data
         const data = await response.text();
 
