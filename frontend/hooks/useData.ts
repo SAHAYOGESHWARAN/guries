@@ -240,21 +240,23 @@ export function useData<T>(collection: string) {
             const result = await response.json();
 
             // Handle both array and object responses
-            let dataArray = Array.isArray(result) ? result : (result?.data || []);
+            // API returns { success: true, data: [...] } or just [...]
+            let dataArray = Array.isArray(result) ? result : (result?.data || result || []);
+
+            console.log(`[useData] Raw response for ${collection}:`, result);
+            console.log(`[useData] Extracted dataArray for ${collection}:`, dataArray);
+            console.log(`[useData] Is array?`, Array.isArray(dataArray), `Length:`, dataArray?.length);
 
             if (isRefresh) {
-                if (process.env.NODE_ENV === 'development') {
-                    console.log(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
-                }
+                console.log(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
             } else {
-                if (process.env.NODE_ENV === 'development') {
-                    console.log(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
-                }
+                console.log(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
             }
 
             // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
                 // Always update on refresh, or if we don't have data yet
+                console.log(`[useData] Setting data for ${collection} with ${dataArray.length} items`);
                 setData(dataArray);
                 // Also save to localStorage for offline access
                 if ((db as any)[collection]) {
@@ -264,6 +266,8 @@ export function useData<T>(collection: string) {
                         // Ignore localStorage errors
                     }
                 }
+            } else {
+                console.warn(`[useData] dataArray is not an array for ${collection}:`, dataArray);
             }
             setIsOffline(false);
         } catch (err: any) {
@@ -286,7 +290,9 @@ export function useData<T>(collection: string) {
     useEffect(() => {
         // Check backend availability first, then fetch data
         const initializeData = async () => {
+            console.log(`[useData] Initializing data for ${collection}`);
             await checkBackendAvailability();
+            console.log(`[useData] Backend available: ${backendAvailable}`);
             fetchData();
         };
 
