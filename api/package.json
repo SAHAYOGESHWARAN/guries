@@ -1,0 +1,8 @@
+{
+    "name": "backend-proxy",
+    "version": "1.0.0",
+    "description": "Vercel API proxy for backend",
+    "dependencies": {
+        "@vercel/node": "^3.0.0"
+    }
+}
