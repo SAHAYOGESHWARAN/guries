@@ -162,7 +162,20 @@ function handleMockEndpoint(req: VercelRequest, res: VercelResponse) {
 
     // Projects - GET
     if (path === '/v1/projects' && method === 'GET') {
-        return res.status(200).json({ success: true, data: mockData.projects, message: 'Projects retrieved' });
+        // Normalize project data to match frontend expectations
+        const normalizedProjects = mockData.projects.map((p: any) => ({
+            id: p.id,
+            project_name: p.project_name || p.name,
+            name: p.project_name || p.name,
+            description: p.description,
+            status: p.status || 'active',
+            start_date: p.start_date,
+            end_date: p.end_date,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+            ...p
+        }));
+        return res.status(200).json({ success: true, data: normalizedProjects, message: 'Projects retrieved' });
     }
 
     // Projects - POST (create)
@@ -201,7 +214,19 @@ function handleMockEndpoint(req: VercelRequest, res: VercelResponse) {
 
     // Tasks - GET
     if (path === '/v1/tasks' && method === 'GET') {
-        return res.status(200).json({ success: true, data: mockData.tasks, message: 'Tasks retrieved' });
+        // Normalize task data to match frontend expectations
+        const normalizedTasks = mockData.tasks.map((t: any) => ({
+            id: t.id,
+            title: t.title || t.task_name,
+            task_name: t.title || t.task_name,
+            description: t.description,
+            status: t.status || 'pending',
+            project_id: t.project_id,
+            created_at: t.created_at,
+            updated_at: t.updated_at,
+            ...t
+        }));
+        return res.status(200).json({ success: true, data: normalizedTasks, message: 'Tasks retrieved' });
     }
 
     // Tasks - POST (create)
