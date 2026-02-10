@@ -5,8 +5,7 @@
   "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production",
-    "VITE_API_URL": "/api/v1",
-    "BACKEND_URL": "https://guires-backend.up.railway.app"
+    "VITE_API_URL": "/api/v1"
   },
   "functions": {
     "api/backend-proxy.ts": {
