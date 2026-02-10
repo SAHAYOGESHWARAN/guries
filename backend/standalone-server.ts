@@ -189,6 +189,21 @@ app.get('/api/v1/campaigns', (req, res) => {
     res.json({ success: true, data: [], message: 'Campaigns retrieved' });
 });
 
+// Services
+app.get('/api/v1/services', (req, res) => {
+    res.json({ success: true, data: [], message: 'Services retrieved' });
+});
+
+// Sub-services
+app.get('/api/v1/sub-services', (req, res) => {
+    res.json({ success: true, data: [], message: 'Sub-services retrieved' });
+});
+
+// Brands
+app.get('/api/v1/brands', (req, res) => {
+    res.json({ success: true, data: [], message: 'Brands retrieved' });
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);

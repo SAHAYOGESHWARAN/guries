@@ -278,6 +278,21 @@ function handleMockEndpoint(req: VercelRequest, res: VercelResponse) {
         return res.status(201).json({ success: true, data: campaign, message: 'Campaign created' });
     }
 
+    // Services - GET
+    if (path === '/v1/services' && method === 'GET') {
+        return res.status(200).json({ success: true, data: [], message: 'Services retrieved' });
+    }
+
+    // Sub-services - GET
+    if (path === '/v1/sub-services' && method === 'GET') {
+        return res.status(200).json({ success: true, data: [], message: 'Sub-services retrieved' });
+    }
+
+    // Brands - GET
+    if (path === '/v1/brands' && method === 'GET') {
+        return res.status(200).json({ success: true, data: [], message: 'Brands retrieved' });
+    }
+
     // Default: return 404 for unknown endpoints
     return res.status(404).json({
         success: false,
