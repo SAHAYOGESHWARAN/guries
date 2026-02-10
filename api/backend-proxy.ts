@@ -18,6 +18,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
+    // Handle auth endpoints locally (mock authentication)
+    if (req.url?.includes('/auth/login') && req.method === 'POST') {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, error: 'Email and password required' });
+        }
+
+        // Mock admin user
+        if (email === 'admin@example.com' && password === 'admin123') {
+            return res.status(200).json({
+                success: true,
+                user: {
+                    id: 1,
+                    email: 'admin@example.com',
+                    name: 'Admin User',
+                    role: 'admin',
+                    status: 'active'
+                },
+                token: 'mock-jwt-token-' + Date.now(),
+                message: 'Login successful'
+            });
+        }
+
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
     try {
         // Get backend URL from environment
         const backendUrl = process.env.BACKEND_URL;
