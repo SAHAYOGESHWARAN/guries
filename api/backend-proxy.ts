@@ -5,6 +5,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * Routes API requests to external backend server
  * Optimized for Hobby plan (2048 MB memory limit)
  */
+
+// In-memory storage for mock data
+const mockData: { [key: string]: any[] } = {
+    projects: [],
+    tasks: [],
+    users: [],
+    campaigns: [],
+    notifications: []
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -144,24 +154,82 @@ function handleMockEndpoint(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
     }
 
-    // Projects
+    // Projects - GET
     if (path === '/v1/projects' && method === 'GET') {
-        return res.status(200).json({ success: true, data: [], message: 'Projects retrieved' });
+        return res.status(200).json({ success: true, data: mockData.projects, message: 'Projects retrieved' });
     }
 
+    // Projects - POST (create)
     if (path === '/v1/projects' && method === 'POST') {
-        const project = { id: Date.now(), ...req.body, created_at: new Date(), updated_at: new Date() };
-        return res.status(200).json({ success: true, data: project, message: 'Project created' });
+        const project = {
+            id: Date.now(),
+            ...req.body,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        mockData.projects.push(project);
+        return res.status(201).json({ success: true, data: project, message: 'Project created' });
     }
 
-    // Tasks
+    // Projects - PUT (update)
+    if (path.match(/^\/v1\/projects\/\d+$/) && method === 'PUT') {
+        const id = parseInt(path.split('/').pop() || '0');
+        const index = mockData.projects.findIndex(p => p.id === id);
+        if (index !== -1) {
+            mockData.projects[index] = { ...mockData.projects[index], ...req.body, updated_at: new Date().toISOString() };
+            return res.status(200).json({ success: true, data: mockData.projects[index], message: 'Project updated' });
+        }
+        return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    // Projects - DELETE
+    if (path.match(/^\/v1\/projects\/\d+$/) && method === 'DELETE') {
+        const id = parseInt(path.split('/').pop() || '0');
+        const index = mockData.projects.findIndex(p => p.id === id);
+        if (index !== -1) {
+            mockData.projects.splice(index, 1);
+            return res.status(200).json({ success: true, message: 'Project deleted' });
+        }
+        return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    // Tasks - GET
     if (path === '/v1/tasks' && method === 'GET') {
-        return res.status(200).json({ success: true, data: [], message: 'Tasks retrieved' });
+        return res.status(200).json({ success: true, data: mockData.tasks, message: 'Tasks retrieved' });
     }
 
+    // Tasks - POST (create)
     if (path === '/v1/tasks' && method === 'POST') {
-        const task = { id: Date.now(), ...req.body, created_at: new Date(), updated_at: new Date() };
-        return res.status(200).json({ success: true, data: task, message: 'Task created' });
+        const task = {
+            id: Date.now(),
+            ...req.body,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        mockData.tasks.push(task);
+        return res.status(201).json({ success: true, data: task, message: 'Task created' });
+    }
+
+    // Tasks - PUT (update)
+    if (path.match(/^\/v1\/tasks\/\d+$/) && method === 'PUT') {
+        const id = parseInt(path.split('/').pop() || '0');
+        const index = mockData.tasks.findIndex(t => t.id === id);
+        if (index !== -1) {
+            mockData.tasks[index] = { ...mockData.tasks[index], ...req.body, updated_at: new Date().toISOString() };
+            return res.status(200).json({ success: true, data: mockData.tasks[index], message: 'Task updated' });
+        }
+        return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+
+    // Tasks - DELETE
+    if (path.match(/^\/v1\/tasks\/\d+$/) && method === 'DELETE') {
+        const id = parseInt(path.split('/').pop() || '0');
+        const index = mockData.tasks.findIndex(t => t.id === id);
+        if (index !== -1) {
+            mockData.tasks.splice(index, 1);
+            return res.status(200).json({ success: true, message: 'Task deleted' });
+        }
+        return res.status(404).json({ success: false, error: 'Task not found' });
     }
 
     // Dashboard stats
@@ -169,27 +237,39 @@ function handleMockEndpoint(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
             success: true,
             data: {
-                totalProjects: 0,
-                totalTasks: 0,
-                completedTasks: 0,
-                activeCampaigns: 0
+                totalProjects: mockData.projects.length,
+                totalTasks: mockData.tasks.length,
+                completedTasks: mockData.tasks.filter((t: any) => t.status === 'completed').length,
+                activeCampaigns: mockData.campaigns.length
             }
         });
     }
 
-    // Notifications
-    if (path === '/v1/notifications') {
-        return res.status(200).json({ success: true, data: [], message: 'Notifications retrieved' });
+    // Notifications - GET
+    if (path === '/v1/notifications' && method === 'GET') {
+        return res.status(200).json({ success: true, data: mockData.notifications, message: 'Notifications retrieved' });
     }
 
-    // Users
-    if (path === '/v1/users') {
-        return res.status(200).json({ success: true, data: [], message: 'Users retrieved' });
+    // Users - GET
+    if (path === '/v1/users' && method === 'GET') {
+        return res.status(200).json({ success: true, data: mockData.users, message: 'Users retrieved' });
     }
 
-    // Campaigns
-    if (path === '/v1/campaigns') {
-        return res.status(200).json({ success: true, data: [], message: 'Campaigns retrieved' });
+    // Campaigns - GET
+    if (path === '/v1/campaigns' && method === 'GET') {
+        return res.status(200).json({ success: true, data: mockData.campaigns, message: 'Campaigns retrieved' });
+    }
+
+    // Campaigns - POST (create)
+    if (path === '/v1/campaigns' && method === 'POST') {
+        const campaign = {
+            id: Date.now(),
+            ...req.body,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        mockData.campaigns.push(campaign);
+        return res.status(201).json({ success: true, data: campaign, message: 'Campaign created' });
     }
 
     // Default: return 404 for unknown endpoints

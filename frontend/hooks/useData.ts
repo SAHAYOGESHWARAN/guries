@@ -254,16 +254,14 @@ export function useData<T>(collection: string) {
 
             // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
-                // Don't overwrite data if we already have items (prevents clearing newly created items)
-                if (data.length === 0 || isRefresh) {
-                    setData(dataArray);
-                    // Also save to localStorage for offline access
-                    if ((db as any)[collection]) {
-                        try {
-                            localStorage.setItem((db as any)[collection].key, JSON.stringify(dataArray));
-                        } catch (e) {
-                            // Ignore localStorage errors
-                        }
+                // Always update on refresh, or if we don't have data yet
+                setData(dataArray);
+                // Also save to localStorage for offline access
+                if ((db as any)[collection]) {
+                    try {
+                        localStorage.setItem((db as any)[collection].key, JSON.stringify(dataArray));
+                    } catch (e) {
+                        // Ignore localStorage errors
                     }
                 }
             }
