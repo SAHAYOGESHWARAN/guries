@@ -20,33 +20,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         // Get backend URL from environment
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+        const backendUrl = process.env.BACKEND_URL;
 
-        // Extract the API path (remove /api prefix if present)
+        if (!backendUrl) {
+            return res.status(503).json({
+                success: false,
+                error: 'Backend not configured',
+                message: 'BACKEND_URL environment variable is not set. Please configure backend URL in Vercel environment variables.'
+            });
+        }
+
+        // Extract the API path
         const path = req.url?.replace(/^\/api/, '') || '/';
         const targetUrl = `${backendUrl}${path}`;
 
+        console.log(`[Proxy] ${req.method} ${targetUrl}`);
+
         // Prepare request options
         const options: RequestInit = {
-            method: req.method,
+            method: req.method || 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                ...req.headers,
             },
         };
 
+        // Copy relevant headers from request
+        if (req.headers['authorization']) {
+            options.headers = {
+                ...options.headers,
+                'authorization': req.headers['authorization']
+            };
+        }
+
         // Add body for non-GET requests
-        if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+        if (req.method && req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
             options.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
         }
 
-        // Make request to backend
-        const response = await fetch(targetUrl, options);
+        // Make request to backend with timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(targetUrl, {
+            ...options,
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
 
         // Get response data
         const data = await response.text();
 
-        // Set response status and headers
+        // Set response status
         res.status(response.status);
 
         // Copy relevant headers from backend response
@@ -58,11 +83,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Send response
         res.send(data);
     } catch (error: any) {
-        console.error('Backend proxy error:', error);
+        console.error('[Proxy Error]', error.message);
+
         if (!res.headersSent) {
+            // Check if it's a timeout
+            if (error.name === 'AbortError') {
+                return res.status(504).json({
+                    success: false,
+                    error: 'Gateway timeout',
+                    message: 'Backend server did not respond in time'
+                });
+            }
+
+            // Check if backend is unreachable
+            if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+                return res.status(503).json({
+                    success: false,
+                    error: 'Backend unavailable',
+                    message: 'Cannot connect to backend server. Please check BACKEND_URL environment variable.'
+                });
+            }
+
             res.status(500).json({
                 success: false,
-                error: 'Internal server error',
+                error: 'Proxy error',
                 message: error.message
             });
         }
