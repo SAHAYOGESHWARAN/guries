@@ -234,6 +234,11 @@ const initializeVercelDatabase = async () => {
         brand_id INTEGER REFERENCES brands(id),
         linked_service_id INTEGER REFERENCES services(id),
         priority TEXT DEFAULT 'Medium',
+        sub_services TEXT,
+        outcome_kpis TEXT,
+        expected_outcome TEXT,
+        team_members TEXT,
+        weekly_report INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -279,11 +284,15 @@ const initializeVercelDatabase = async () => {
         project_id INTEGER REFERENCES projects(id),
         campaign_id INTEGER REFERENCES campaigns(id),
         due_date DATE,
+        campaign_type TEXT,
+        sub_campaign TEXT,
         progress_stage TEXT DEFAULT 'Not Started',
         qc_stage TEXT DEFAULT 'Pending',
         estimated_hours DECIMAL(5,2),
         tags TEXT,
+        repo_links TEXT,
         rework_count INTEGER DEFAULT 0,
+        repo_link_count INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
