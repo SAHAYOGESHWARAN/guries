@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { db } from '../utils/storage';
+import { dataCache } from './useDataCache';
 
 // Use environment variable or default to relative path for production
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -159,14 +160,24 @@ const getSocket = () => {
 };
 
 export function useData<T>(collection: string) {
-    // Initialize with local storage data immediately if available (Optimistic UI)
+    // Initialize with cached data first, then local storage
     const getInitialData = () => {
+        // Try global cache first
+        const cachedData = dataCache.get<T>(collection);
+        if (cachedData && cachedData.length > 0) {
+            console.log(`[useData] Initializing ${collection} from cache with ${cachedData.length} items`);
+            return cachedData;
+        }
+
+        // Fall back to local storage
         try {
             if ((db as any)[collection]) {
-                return (db as any)[collection].getAll() || [];
+                const localData = (db as any)[collection].getAll() || [];
+                console.log(`[useData] Initializing ${collection} from localStorage with ${localData.length} items`);
+                return localData;
             }
         } catch (e) {
-            return [];
+            console.warn(`[useData] Failed to initialize ${collection} from localStorage`);
         }
         return [];
     };
@@ -178,11 +189,21 @@ export function useData<T>(collection: string) {
 
     const resource = RESOURCE_MAP[collection];
 
-    // Load data from local storage (Synchronous helper)
+    // Load data from cache or local storage (Synchronous helper)
     const loadLocal = useCallback(() => {
         try {
+            // Try cache first
+            const cachedData = dataCache.get<T>(collection);
+            if (cachedData && cachedData.length > 0) {
+                console.log(`[useData] Loading ${collection} from cache with ${cachedData.length} items`);
+                setData(cachedData);
+                return;
+            }
+
+            // Fall back to localStorage
             if ((db as any)[collection]) {
                 const localData = (db as any)[collection].getAll() || [];
+                console.log(`[useData] Loading ${collection} from localStorage with ${localData.length} items`);
                 setData(localData);
             }
         } catch (e) {
@@ -258,6 +279,10 @@ export function useData<T>(collection: string) {
                 // Always update on refresh, or if we don't have data yet
                 console.log(`[useData] Setting data for ${collection} with ${dataArray.length} items`);
                 setData(dataArray);
+
+                // Cache the data globally for persistence across routes
+                dataCache.set(collection, dataArray);
+
                 // Also save to localStorage for offline access
                 if ((db as any)[collection]) {
                     try {
@@ -443,6 +468,8 @@ export function useData<T>(collection: string) {
         setData(prev => {
             const updated = [finalItem, ...prev];
             console.log(`[useData] Updated data array length:`, updated.length);
+            // Invalidate cache when data changes
+            dataCache.invalidate(collection);
             return updated;
         });
 
@@ -483,6 +510,9 @@ export function useData<T>(collection: string) {
             return item;
         }));
 
+        // Invalidate cache when data changes
+        dataCache.invalidate(collection);
+
         return finalItem;
     };
 
@@ -512,6 +542,9 @@ export function useData<T>(collection: string) {
 
         // Immediately update state to remove the item
         setData(prev => prev.filter(item => (item as any).id !== id));
+
+        // Invalidate cache when data changes
+        dataCache.invalidate(collection);
     };
 
     // Added refresh method explicitly exposing fetch (with isRefresh flag to prevent flickering)
