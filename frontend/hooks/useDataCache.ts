@@ -18,11 +18,12 @@ interface CacheEntry<T> {
 
 class DataCache {
     private cache: Map<string, CacheEntry<any>> = new Map();
-    private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes (increased from 5)
+    private readonly CACHE_DURATION = 30 * 60 * 1000; // 30 minutes (extended from 10 to prevent data loss)
     private refreshCallbacks: Map<string, Set<() => void>> = new Map();
 
     /**
      * Get cached data for a collection
+     * Always returns data if available, marks as stale if expired
      */
     get<T>(collection: string): T[] | null {
         const entry = this.cache.get(collection);
@@ -35,12 +36,13 @@ class DataCache {
         // Check if cache is stale
         const age = Date.now() - entry.timestamp;
         if (age > this.CACHE_DURATION) {
-            console.log(`[DataCache] Cache for ${collection} is stale (${age}ms old)`);
+            console.log(`[DataCache] Cache for ${collection} is stale (${age}ms old, ${entry.data.length} items) - will refresh in background`);
             entry.isStale = true;
-            return entry.data; // Return stale data but mark as stale
+        } else {
+            console.log(`[DataCache] Cache hit for ${collection} (${age}ms old, ${entry.data.length} items)`);
         }
 
-        console.log(`[DataCache] Cache hit for ${collection} (${age}ms old, ${entry.data.length} items)`);
+        // Always return data if available, even if stale
         return entry.data;
     }
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../hooks/useData';
+import { usePersistentData } from '../hooks/usePersistentData';
 import type { Campaign, User, Project, Brand, Service } from '../types';
 
 interface CampaignsViewProps {
@@ -154,6 +155,13 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
     const { data: projects } = useData<Project>('projects');
     const { data: brands } = useData<Brand>('brands');
     const { data: services } = useData<Service>('services');
+
+    // Persist data across route changes
+    usePersistentData('campaigns', campaigns);
+    usePersistentData('users', users);
+    usePersistentData('projects', projects);
+    usePersistentData('brands', brands);
+    usePersistentData('services', services);
 
     // Safe array initialization
     const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];

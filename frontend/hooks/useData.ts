@@ -249,7 +249,8 @@ export function useData<T>(collection: string) {
                 // Silently handle 404 for optional endpoints
                 if (response.status === 404) {
                     console.warn(`[useData] Endpoint not found for ${collection} (404) - this is optional`);
-                    setData([]);
+                    // Don't clear data on 404, keep existing data
+                    loadLocal();
                     setIsOffline(false);
                     setLoading(false);
                     return;
@@ -276,6 +277,15 @@ export function useData<T>(collection: string) {
 
             // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
+                // If API returns empty array but we have cached data, keep the cached data
+                if (dataArray.length === 0 && data.length > 0) {
+                    console.log(`[useData] API returned empty array for ${collection}, keeping existing ${data.length} items`);
+                    // Don't update state, keep existing data
+                    setIsOffline(false);
+                    setLoading(false);
+                    return;
+                }
+
                 // Always update on refresh, or if we don't have data yet
                 console.log(`[useData] Setting data for ${collection} with ${dataArray.length} items`);
                 setData(dataArray);
@@ -293,6 +303,8 @@ export function useData<T>(collection: string) {
                 }
             } else {
                 console.warn(`[useData] dataArray is not an array for ${collection}:`, dataArray);
+                // Keep existing data if response is invalid
+                loadLocal();
             }
             setIsOffline(false);
         } catch (err: any) {
@@ -303,10 +315,8 @@ export function useData<T>(collection: string) {
             if (err.name !== 'AbortError') {
                 setIsOffline(true);
             }
-            // Only load local if we don't have data yet (prevents flickering)
-            if (data.length === 0) {
-                loadLocal();
-            }
+            // Load local data to preserve what we have
+            loadLocal();
         } finally {
             setLoading(false);
         }

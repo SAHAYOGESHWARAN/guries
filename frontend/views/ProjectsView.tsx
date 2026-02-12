@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../hooks/useData';
+import { usePersistentData } from '../hooks/usePersistentData';
 import type { Project, User, Brand, Service, SubServiceItem, Campaign } from '../types';
 
 interface ProjectsViewProps {
@@ -82,6 +83,14 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
     const { data: services } = useData<Service>('services');
     const { data: subServices } = useData<SubServiceItem>('subServices');
     const { data: campaigns } = useData<Campaign>('campaigns');
+
+    // Persist data across route changes
+    usePersistentData('projects', projects);
+    usePersistentData('users', users);
+    usePersistentData('brands', brands);
+    usePersistentData('services', services);
+    usePersistentData('subServices', subServices);
+    usePersistentData('campaigns', campaigns);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
