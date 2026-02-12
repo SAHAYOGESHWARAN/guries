@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './src/index.css';
 import App from './App';
+import { DataProvider } from './context/DataContext';
 
 // Suppress browser extension errors
 const originalError = console.error;
@@ -150,7 +151,11 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
 const rootElement = document.getElementById('root');
 if (rootElement) {
   const root = createRoot(rootElement);
-  root.render(<App />);
+  root.render(
+    <DataProvider>
+      <App />
+    </DataProvider>
+  );
 } else {
   console.error("Failed to find the root element");
 }

@@ -4,6 +4,7 @@ import Header from './components/Header';
 import LoginView from './views/LoginView';
 import Chatbot from './components/Chatbot';
 import { AuthUser } from './hooks/useAuth';
+import { dataCache } from './hooks/useDataCache';
 
 // Global error handler for unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
@@ -232,6 +233,8 @@ const App: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
+    // Clear all cached data on logout for security
+    dataCache.invalidateAll();
     setCurrentUser(null);
     setIsAuthenticated(false);
     setViewState({ view: 'dashboard', id: null });

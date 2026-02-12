@@ -468,8 +468,8 @@ export function useData<T>(collection: string) {
         setData(prev => {
             const updated = [finalItem, ...prev];
             console.log(`[useData] Updated data array length:`, updated.length);
-            // Invalidate cache when data changes
-            dataCache.invalidate(collection);
+            // Apply optimistic update to cache (preserve data, don't delete)
+            dataCache.applyOptimisticCreate(collection, finalItem);
             return updated;
         });
 
@@ -510,8 +510,8 @@ export function useData<T>(collection: string) {
             return item;
         }));
 
-        // Invalidate cache when data changes
-        dataCache.invalidate(collection);
+        // Apply optimistic update to cache (preserve data, don't delete)
+        dataCache.applyOptimisticUpdate(collection, finalItem);
 
         return finalItem;
     };
@@ -543,8 +543,8 @@ export function useData<T>(collection: string) {
         // Immediately update state to remove the item
         setData(prev => prev.filter(item => (item as any).id !== id));
 
-        // Invalidate cache when data changes
-        dataCache.invalidate(collection);
+        // Apply optimistic delete to cache (preserve data, don't delete)
+        dataCache.applyOptimisticDelete(collection, id);
     };
 
     // Added refresh method explicitly exposing fetch (with isRefresh flag to prevent flickering)
