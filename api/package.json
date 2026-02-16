@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Vercel API proxy for backend",
     "dependencies": {
-        "@vercel/node": "^3.0.0"
+        "@vercel/node": "^3.0.0",
+        "pg": "^8.11.3"
     }
 }
