@@ -117,9 +117,7 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
   }
 
   if (upperText.includes('INSERT INTO')) {
-    console.log('[DB] INSERT query detected. Checking type...');
-    if (upperText.includes('INTO users')) {
-      console.log('[DB] Inserting user');
+    if (upperText.includes('USERS')) {
       if (!globalForDb.nextId) globalForDb.nextId = { users: 2, assets: 1 };
       const newUser = {
         id: globalForDb.nextId.users++,
@@ -135,11 +133,9 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
         updated_at: new Date()
       };
       mockDb.users.push(newUser);
-      console.log('[DB] Mock user created with ID:', newUser.id);
       return { rows: [newUser], rowCount: 1 };
     }
-    if (upperText.includes('INTO assets')) {
-      console.log('[DB] Inserting asset');
+    if (upperText.includes('ASSETS')) {
       if (!globalForDb.nextId) globalForDb.nextId = { users: 2, assets: 1 };
       const newAsset = {
         id: globalForDb.nextId.assets++,
@@ -169,10 +165,8 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
         updated_at: new Date()
       };
       mockDb.assets.push(newAsset);
-      console.log('[DB] Mock asset created with ID:', newAsset.id, 'Asset:', JSON.stringify(newAsset));
       return { rows: [newAsset], rowCount: 1 };
     }
-    console.log('[DB] INSERT query not matched. Query:', text.substring(0, 100));
   }
 
   if (upperText.includes('UPDATE')) {
