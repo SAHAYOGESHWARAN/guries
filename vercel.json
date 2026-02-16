@@ -5,15 +5,24 @@
   "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production",
-    "VITE_API_URL": "/api/v1"
+    "VITE_API_URL": "/api/v1",
+    "USE_PG": "true"
   },
   "functions": {
+    "api/v1/*.ts": {
+      "memory": 512,
+      "maxDuration": 30
+    },
     "api/backend-proxy.ts": {
       "memory": 512,
       "maxDuration": 30
     }
   },
   "routes": [
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "/api/v1/$1.ts"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/backend-proxy.ts"
