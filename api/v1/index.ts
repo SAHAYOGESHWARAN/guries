@@ -39,19 +39,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
             try {
-                const result = await query(`SELECT id, name, email, role, status FROM users WHERE email = $1`, [email.toLowerCase()]);
+                const result = await query(`SELECT id, name, email, role, status, password_hash FROM users WHERE email = $1`, [email.toLowerCase()]);
+
                 if (result.rows.length === 0) {
                     // If no user found, create a demo user for testing
-                    console.log('[API] User not found, creating demo user');
+                    console.log('[API] User not found, creating demo user:', email);
                     try {
                         await query(
-                            `INSERT INTO users (name, email, role, status, created_at, updated_at) VALUES ($1, $2, $3, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-                            [email.split('@')[0], email.toLowerCase(), 'user']
+                            `INSERT INTO users (name, email, role, status, password_hash, created_at, updated_at) VALUES ($1, $2, $3, 'active', $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                            [email.split('@')[0], email.toLowerCase(), 'user', password]
                         );
                         const newUser = await query(`SELECT id, name, email, role, status FROM users WHERE email = $1`, [email.toLowerCase()]);
                         if (newUser.rows.length > 0) {
                             const user = newUser.rows[0];
                             await query(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
+                            console.log('[API] Demo user created and logged in:', email);
                             return res.status(200).json({
                                 success: true,
                                 data: { user: { id: user.id, name: user.name, email: user.email, role: user.role }, token: `token_${user.id}_${Date.now()}`, message: 'Login successful' }
@@ -62,11 +64,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                     return res.status(401).json({ success: false, error: 'Invalid email or password', message: 'User not found' });
                 }
+
                 const user = result.rows[0];
+
+                // Verify password if user has one stored
+                if (user.password_hash) {
+                    if (password !== user.password_hash) {
+                        console.log('[API] Password mismatch for user:', email);
+                        return res.status(401).json({ success: false, error: 'Invalid email or password', message: 'Incorrect password' });
+                    }
+                } else {
+                    // If no password stored, accept any password (for backward compatibility)
+                    console.log('[API] No password stored, accepting login for:', email);
+                }
+
                 if (user.status !== 'active') {
                     return res.status(403).json({ success: false, error: 'User account is not active', message: 'Please contact administrator' });
                 }
+
                 await query(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
+                console.log('[API] User logged in successfully:', email);
                 return res.status(200).json({
                     success: true,
                     data: { user: { id: user.id, name: user.name, email: user.email, role: user.role }, token: `token_${user.id}_${Date.now()}`, message: 'Login successful' }

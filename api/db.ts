@@ -18,8 +18,32 @@ let useMockDb = false;
 // Mock database for testing when PostgreSQL is unavailable
 const mockDb: any = {
   users: [
-    { id: 1, name: 'Admin', email: 'admin@example.com', role: 'admin', status: 'active', password_hash: null, department: null, country: null, last_login: null, created_at: new Date(), updated_at: new Date() },
-    { id: 2, name: 'Test User', email: 'test@example.com', role: 'user', status: 'active', password_hash: null, department: null, country: null, last_login: null, created_at: new Date(), updated_at: new Date() }
+    {
+      id: 1,
+      name: 'Admin User',
+      email: 'admin@example.com',
+      role: 'admin',
+      status: 'active',
+      password_hash: 'admin123',
+      department: 'Administration',
+      country: 'USA',
+      last_login: null,
+      created_at: new Date(),
+      updated_at: new Date()
+    },
+    {
+      id: 2,
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'user',
+      status: 'active',
+      password_hash: null,
+      department: null,
+      country: null,
+      last_login: null,
+      created_at: new Date(),
+      updated_at: new Date()
+    }
   ],
   assets: [],
   services: [],
