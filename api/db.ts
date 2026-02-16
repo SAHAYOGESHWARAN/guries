@@ -133,9 +133,10 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
         updated_at: new Date()
       };
       mockDb.users.push(newUser);
+      console.log('[DB] Mock user created with ID:', newUser.id);
       return { rows: [newUser], rowCount: 1 };
     }
-    if (upperText.includes('assets')) {
+    if (upperText.includes('INTO assets')) {
       if (!globalForDb.nextId) globalForDb.nextId = { users: 2, assets: 1 };
       const newAsset = {
         id: globalForDb.nextId.assets++,
@@ -165,7 +166,7 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
         updated_at: new Date()
       };
       mockDb.assets.push(newAsset);
-      console.log('[DB] Mock asset created with ID:', newAsset.id);
+      console.log('[DB] Mock asset created with ID:', newAsset.id, 'Asset:', newAsset);
       return { rows: [newAsset], rowCount: 1 };
     }
   }
