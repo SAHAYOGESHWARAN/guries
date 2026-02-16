@@ -91,6 +91,16 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
       return { rows: mockDb.users, rowCount: mockDb.users.length };
     }
     if (upperText.includes('FROM assets')) {
+      if (upperText.includes('WHERE id')) {
+        const id = params?.[0];
+        const rows = mockDb.assets.filter((a: any) => a.id === id);
+        return { rows, rowCount: rows.length };
+      }
+      if (upperText.includes('WHERE qc_status')) {
+        const status = params?.[0];
+        const rows = mockDb.assets.filter((a: any) => a.qc_status === status || a.qc_status === 'rework');
+        return { rows, rowCount: rows.length };
+      }
       return { rows: mockDb.assets, rowCount: mockDb.assets.length };
     }
     if (upperText.includes('FROM services')) {
@@ -98,6 +108,10 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
     }
     if (upperText.includes('FROM campaigns')) {
       return { rows: mockDb.campaigns, rowCount: mockDb.campaigns.length };
+    }
+    if (upperText.includes('COUNT(*)')) {
+      // Handle COUNT queries
+      return { rows: [{ count: 0 }], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
   }
@@ -158,7 +172,7 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
 
   if (upperText.includes('UPDATE')) {
     if (upperText.includes('users')) {
-      const userId = params?.[0];
+      const userId = params?.[params.length - 1];
       const user = mockDb.users.find((u: any) => u.id === userId);
       if (user) {
         user.last_login = new Date();
@@ -170,10 +184,13 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
       const assetId = params?.[params.length - 1];
       const asset = mockDb.assets.find((a: any) => a.id === assetId);
       if (asset) {
-        asset.qc_status = params?.[0] || asset.qc_status;
-        asset.status = params?.[1] || asset.status;
-        asset.qc_remarks = params?.[2] || asset.qc_remarks;
-        asset.qc_score = params?.[3] || asset.qc_score;
+        // Handle QC updates
+        if (upperText.includes('qc_status')) {
+          asset.qc_status = params?.[0] || asset.qc_status;
+          asset.status = params?.[1] || asset.status;
+          asset.qc_remarks = params?.[2] || asset.qc_remarks;
+          asset.qc_score = params?.[3] || asset.qc_score;
+        }
         asset.updated_at = new Date();
       }
       return { rows: asset ? [asset] : [], rowCount: asset ? 1 : 0 };
