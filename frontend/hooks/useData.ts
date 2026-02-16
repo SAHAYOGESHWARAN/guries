@@ -419,52 +419,58 @@ export function useData<T>(collection: string) {
                     body: JSON.stringify(item),
                 });
 
-                if (response.ok) {
-                    const responseData = await response.json();
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    console.error(`[useData] API error response:`, errorData);
 
-                    console.log(`[useData] Raw response from server:`, JSON.stringify(responseData, null, 2));
-                    console.log(`[useData] Response keys:`, Object.keys(responseData));
-                    console.log(`[useData] Response type:`, typeof responseData);
-
-                    // Extract the actual item from various response formats
-                    // Try: asset (for assets), data (for wrapped responses), or use directly
-                    let extracted = responseData.asset || responseData.data || responseData;
-
-                    // If extracted is still an array, take the first element
-                    if (Array.isArray(extracted)) {
-                        extracted = extracted[0];
+                    // Create error object with validation errors if present
+                    const error: any = new Error(errorData.message || errorData.error || 'Failed to create item');
+                    if (errorData.validationErrors) {
+                        error.validationErrors = errorData.validationErrors;
                     }
-
-                    serverItem = extracted;
-
-                    console.log(`[useData] Extracted item:`, JSON.stringify(serverItem, null, 2));
-                    console.log(`[useData] Extracted keys:`, Object.keys(serverItem || {}));
-
-                    // Validate that we got an ID back
-                    if (!serverItem || typeof serverItem !== 'object') {
-                        console.error(`[useData] Server response invalid - not an object:`, responseData);
-                        throw new Error('Server did not return valid item');
-                    }
-
-                    // Check all possible ID fields
-                    const hasId = serverItem.id || serverItem.lastID || serverItem.last_insert_rowid;
-
-                    if (!hasId) {
-                        console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full object:', JSON.stringify(serverItem, null, 2));
-                        throw new Error('Server did not return item ID');
-                    }
-
-                    // Use any available ID field
-                    if (!serverItem.id) {
-                        serverItem.id = serverItem.lastID || serverItem.last_insert_rowid;
-                    }
-
-                    console.log(`[useData] Created ${collection} item on server with ID:`, serverItem.id);
-                } else {
-                    const errorText = await response.text();
-                    console.error(`[useData] Failed to create ${collection}:`, response.status, errorText);
-                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                    throw error;
                 }
+
+                const responseData = await response.json();
+
+                console.log(`[useData] Raw response from server:`, JSON.stringify(responseData, null, 2));
+                console.log(`[useData] Response keys:`, Object.keys(responseData));
+                console.log(`[useData] Response type:`, typeof responseData);
+
+                // Extract the actual item from various response formats
+                // Try: asset (for assets), data (for wrapped responses), or use directly
+                let extracted = responseData.asset || responseData.data || responseData;
+
+                // If extracted is still an array, take the first element
+                if (Array.isArray(extracted)) {
+                    extracted = extracted[0];
+                }
+
+                serverItem = extracted;
+
+                console.log(`[useData] Extracted item:`, JSON.stringify(serverItem, null, 2));
+                console.log(`[useData] Extracted keys:`, Object.keys(serverItem || {}));
+
+                // Validate that we got an ID back
+                if (!serverItem || typeof serverItem !== 'object') {
+                    console.error(`[useData] Server response invalid - not an object:`, responseData);
+                    throw new Error('Server did not return valid item');
+                }
+
+                // Check all possible ID fields
+                const hasId = serverItem.id || serverItem.lastID || serverItem.last_insert_rowid;
+
+                if (!hasId) {
+                    console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full object:', JSON.stringify(serverItem, null, 2));
+                    throw new Error('Server did not return item ID');
+                }
+
+                // Use any available ID field
+                if (!serverItem.id) {
+                    serverItem.id = serverItem.lastID || serverItem.last_insert_rowid;
+                }
+
+                console.log(`[useData] Created ${collection} item on server with ID:`, serverItem.id);
             } catch (e: any) {
                 console.error(`[useData] Error creating ${collection}:`, e.message);
                 setIsOffline(true);

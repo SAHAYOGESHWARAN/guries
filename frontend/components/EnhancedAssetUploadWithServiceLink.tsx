@@ -142,9 +142,30 @@ const EnhancedAssetUploadWithServiceLink: React.FC<EnhancedAssetUploadWithServic
 
         try {
             setError('');
+            setValidationErrors({});
             await onUpload(formData, selectedFile);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Upload failed');
+            // Clear form on success
+            setFormData({ name: '', application_type: 'web', type: 'article', status: 'Draft' });
+            setSelectedFile(null);
+            setPreviewUrl('');
+            setLinkedServiceId(null);
+            setLinkedSubServiceIds([]);
+        } catch (err: any) {
+            console.error('[Form] Upload error:', err);
+
+            // Handle API validation errors
+            if (err.validationErrors && Array.isArray(err.validationErrors)) {
+                const errorMap: Record<string, string> = {};
+                err.validationErrors.forEach((ve: any) => {
+                    if (ve.field && ve.message) {
+                        errorMap[ve.field] = ve.message;
+                    }
+                });
+                setValidationErrors(errorMap);
+                setError('Please fix the validation errors below');
+            } else {
+                setError(err.message || 'Upload failed');
+            }
         }
     };
 

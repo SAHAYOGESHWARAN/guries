@@ -104,9 +104,9 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
 
   if (upperText.includes('INSERT INTO')) {
     if (upperText.includes('users')) {
-      const nextId = globalForDb.nextId || { users: 2 };
+      if (!globalForDb.nextId) globalForDb.nextId = { users: 2, assets: 1 };
       const newUser = {
-        id: nextId.users++,
+        id: globalForDb.nextId.users++,
         name: params?.[0] || 'User',
         email: params?.[1] || '',
         role: params?.[2] || 'user',
@@ -122,32 +122,36 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
       return { rows: [newUser], rowCount: 1 };
     }
     if (upperText.includes('assets')) {
-      const nextId = globalForDb.nextId || { assets: 1 };
+      if (!globalForDb.nextId) globalForDb.nextId = { users: 2, assets: 1 };
       const newAsset = {
-        id: nextId.assets++,
+        id: globalForDb.nextId.assets++,
         asset_name: params?.[0] || '',
         asset_type: params?.[1] || '',
-        asset_category: params?.[2] || '',
-        asset_format: params?.[3] || '',
+        asset_category: params?.[2] || null,
+        asset_format: params?.[3] || null,
+        application_type: params?.[4] || '',
         status: 'draft',
         qc_status: 'pending',
         qc_remarks: null,
         qc_score: null,
         rework_count: 0,
-        file_url: params?.[4] || '',
-        thumbnail_url: null,
-        file_size: params?.[5] || 0,
-        file_type: params?.[6] || '',
-        seo_score: null,
-        grammar_score: null,
-        keywords: null,
-        created_by: params?.[7] || null,
+        file_url: params?.[5] || null,
+        thumbnail_url: params?.[6] || null,
+        file_size: params?.[7] || null,
+        file_type: params?.[8] || null,
+        seo_score: params?.[9] || null,
+        grammar_score: params?.[10] || null,
+        keywords: params?.[11] || null,
+        created_by: params?.[12] || null,
+        linked_service_id: params?.[13] || null,
+        linked_sub_service_id: params?.[14] || null,
         submitted_by: null,
         submitted_at: null,
         created_at: new Date(),
         updated_at: new Date()
       };
       mockDb.assets.push(newAsset);
+      console.log('[DB] Mock asset created with ID:', newAsset.id);
       return { rows: [newAsset], rowCount: 1 };
     }
   }

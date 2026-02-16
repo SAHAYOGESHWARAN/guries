@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeDatabase, query } from '../db';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Set CORS headers
+    // Set CORS headers - v2
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -37,10 +37,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleRequest(req: VercelRequest, res: VercelResponse) {
-    await initializeDatabase();
-    const url = req.url || '';
+    try {
+        await initializeDatabase();
+    } catch (dbError: any) {
+        console.error('[API] Database initialization failed:', dbError.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Database connection failed',
+            message: 'Unable to connect to database. Please try again later.',
+            details: dbError.message
+        });
+    }
 
-    console.log('[API] Request:', req.method, url);
+    const url = req.url || '';
+    console.log('[API] Request:', req.method, url, 'Body:', req.body ? 'present' : 'empty');
 
     // Parse body - handle both object and string formats
     let body: any = {};
@@ -52,19 +62,17 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
                 body = JSON.parse(req.body);
             } catch (e: any) {
                 console.error('[API] JSON parse error:', e.message);
-                // Try to extract from raw body if available
-                if (req.rawBody) {
-                    try {
-                        body = JSON.parse(req.rawBody.toString());
-                    } catch (e2) {
-                        return res.status(400).json({ success: false, error: 'Invalid JSON in request body' });
-                    }
-                } else {
-                    return res.status(400).json({ success: false, error: 'Invalid JSON in request body' });
-                }
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid JSON in request body',
+                    message: 'Request body is not valid JSON',
+                    details: e.message
+                });
             }
         }
     }
+
+    console.log('[API] Parsed body:', JSON.stringify(body).substring(0, 200));
 
     // ============ AUTH ENDPOINTS ============
     if (url.includes('/debug/users') && req.method === 'GET') {
@@ -92,11 +100,9 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
             if (trimmedEmail === 'admin@example.com' && trimmedPassword === 'admin123') {
                 return res.status(200).json({
                     success: true,
-                    data: {
-                        user: { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' },
-                        token: `token_1_${Date.now()}`,
-                        message: 'Login successful'
-                    }
+                    user: { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' },
+                    token: `token_1_${Date.now()}`,
+                    message: 'Login successful'
                 });
             }
 
@@ -116,7 +122,9 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
                         await query(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
                         return res.status(200).json({
                             success: true,
-                            data: { user: { id: user.id, name: user.name, email: user.email, role: user.role }, token: `token_${user.id}_${Date.now()}`, message: 'Login successful' }
+                            user: { id: user.id, name: user.name, email: user.email, role: user.role },
+                            token: `token_${user.id}_${Date.now()}`,
+                            message: 'Login successful'
                         });
                     }
                 } catch (createErr: any) {
@@ -141,7 +149,9 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
             await query(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
             return res.status(200).json({
                 success: true,
-                data: { user: { id: user.id, name: user.name, email: user.email, role: user.role }, token: `token_${user.id}_${Date.now()}`, message: 'Login successful' }
+                user: { id: user.id, name: user.name, email: user.email, role: user.role },
+                token: `token_${user.id}_${Date.now()}`,
+                message: 'Login successful'
             });
         } catch (error: any) {
             console.error('[API] Login error:', error.message);
@@ -241,25 +251,147 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
     // ============ ASSET ENDPOINTS ============
     if (url.includes('/assets/upload-with-service') && req.method === 'POST') {
         const { asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id } = body;
-        const validationErrors: string[] = [];
-        if (!asset_name || !asset_name.trim()) validationErrors.push('Asset name is required');
-        if (!application_type) validationErrors.push('Application type is required');
-        if (!asset_type) validationErrors.push('Asset type is required');
-        if (validationErrors.length > 0) {
-            return res.status(400).json({ success: false, error: 'Validation failed', validationErrors, message: validationErrors.join('; ') });
+
+        // Comprehensive validation with detailed error messages
+        const validationErrors: { field: string; message: string }[] = [];
+
+        if (!asset_name || !asset_name.trim()) {
+            validationErrors.push({ field: 'asset_name', message: 'Asset name is required and cannot be empty' });
         }
+        if (!application_type) {
+            validationErrors.push({ field: 'application_type', message: 'Application type is required (e.g., web, mobile, print)' });
+        }
+        if (!asset_type) {
+            validationErrors.push({ field: 'asset_type', message: 'Asset type is required (e.g., image, video, document)' });
+        }
+
+        if (validationErrors.length > 0) {
+            console.error('[API] Asset validation failed:', validationErrors);
+            return res.status(400).json({
+                success: false,
+                error: 'Validation failed',
+                validationErrors: validationErrors,
+                message: `Please fill in required fields: ${validationErrors.map(e => e.field).join(', ')}`
+            });
+        }
+
         try {
+            console.log('[API] Creating asset with data:', { asset_name, asset_type, application_type });
+
             const result = await query(
-                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id, status, qc_status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'draft', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
-                [asset_name.trim(), asset_type, asset_category || null, asset_format || null, application_type, file_url || null, thumbnail_url || null, file_size || null, file_type || null, seo_score || null, grammar_score || null, keywords ? JSON.stringify(keywords) : null, created_by || null, linked_service_id || null, linked_sub_service_id || null]
+                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id, status, qc_status, created_at, updated_at) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'draft', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                 RETURNING *`,
+                [
+                    asset_name.trim(),
+                    asset_type,
+                    asset_category || null,
+                    asset_format || null,
+                    application_type,
+                    file_url || null,
+                    thumbnail_url || null,
+                    file_size || null,
+                    file_type || null,
+                    seo_score || null,
+                    grammar_score || null,
+                    keywords ? JSON.stringify(keywords) : null,
+                    created_by || null,
+                    linked_service_id || null,
+                    linked_sub_service_id || null
+                ]
             );
+
             const newAsset = result.rows[0];
-            if (!newAsset || !newAsset.id) {
-                return res.status(500).json({ success: false, error: 'Asset created but ID not returned', message: 'Failed to save asset' });
+
+            if (!newAsset) {
+                console.error('[API] Asset creation returned no rows. Result:', result);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database error',
+                    message: 'Asset was not created. Please try again.',
+                    details: 'Database returned no rows after INSERT'
+                });
             }
-            return res.status(201).json({ success: true, data: newAsset, asset: newAsset, message: 'Asset created successfully with service link' });
+
+            // Ensure ID exists
+            if (!newAsset.id) {
+                console.error('[API] Asset created but missing ID. Asset object:', newAsset);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database error',
+                    message: 'Asset was created but ID is missing. Please refresh and try again.',
+                    details: 'Asset object missing id field'
+                });
+            }
+
+            console.log('[API] Asset created successfully with ID:', newAsset.id);
+            return res.status(201).json({
+                success: true,
+                data: newAsset,
+                asset: newAsset,
+                message: 'Asset created successfully with service link'
+            });
         } catch (error: any) {
-            return res.status(500).json({ success: false, error: 'Failed to create asset', message: error.message });
+            console.error('[API] Asset creation error:', error.message, error.stack);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to create asset',
+                message: error.message || 'An unexpected error occurred while saving the asset',
+                details: error.message
+            });
+        }
+    }
+
+    // GET assets endpoint for fetching with filtering
+    if (url.includes('/assets') && req.method === 'GET' && !url.includes('/assets/upload')) {
+        try {
+            const statusFilter = req.query.status || 'all';
+            let query_text = 'SELECT * FROM assets';
+            const params: any[] = [];
+
+            if (statusFilter !== 'all') {
+                query_text += ' WHERE status = $1';
+                params.push(statusFilter);
+            }
+
+            query_text += ' ORDER BY created_at DESC LIMIT 100';
+
+            const result = await query(query_text, params);
+            return res.status(200).json({
+                success: true,
+                data: result.rows,
+                count: result.rows.length
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch assets',
+                message: error.message
+            });
+        }
+    }
+
+    // GET single asset
+    if (url.match(/\/assets\/\d+$/) && req.method === 'GET') {
+        try {
+            const assetId = url.split('/').pop();
+            const result = await query('SELECT * FROM assets WHERE id = $1', [parseInt(assetId)]);
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Asset not found'
+                });
+            }
+            return res.status(200).json({
+                success: true,
+                data: result.rows[0]
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch asset',
+                message: error.message
+            });
         }
     }
 
@@ -279,17 +411,26 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
             const approved = await query(`SELECT COUNT(*) as count FROM assets WHERE qc_status = 'approved'`);
             const rejected = await query(`SELECT COUNT(*) as count FROM assets WHERE qc_status = 'rejected'`);
             const rework = await query(`SELECT COUNT(*) as count FROM assets WHERE qc_status = 'rework'`);
+
+            const pendingCount = parseInt(pending.rows[0]?.count || 0);
+            const approvedCount = parseInt(approved.rows[0]?.count || 0);
+            const rejectedCount = parseInt(rejected.rows[0]?.count || 0);
+            const reworkCount = parseInt(rework.rows[0]?.count || 0);
+            const totalCount = pendingCount + approvedCount + rejectedCount + reworkCount;
+
             return res.status(200).json({
                 success: true,
                 data: {
-                    pending: pending.rows[0]?.count || 0,
-                    approved: approved.rows[0]?.count || 0,
-                    rejected: rejected.rows[0]?.count || 0,
-                    rework: rework.rows[0]?.count || 0,
-                    total: (pending.rows[0]?.count || 0) + (approved.rows[0]?.count || 0) + (rejected.rows[0]?.count || 0) + (rework.rows[0]?.count || 0)
+                    pending: pendingCount,
+                    approved: approvedCount,
+                    rejected: rejectedCount,
+                    rework: reworkCount,
+                    total: totalCount,
+                    approvalRate: totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
                 }
             });
         } catch (error: any) {
+            console.error('[API] QC statistics error:', error.message);
             return res.status(500).json({ success: false, error: 'Failed to fetch QC statistics', message: error.message });
         }
     }
@@ -359,20 +500,55 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
         try {
             if (campaignId) {
                 const result = await query(
-                    `SELECT c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at, COUNT(DISTINCT t.id) as tasks_total, COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) as tasks_completed, COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) as tasks_pending, COUNT(DISTINCT CASE WHEN t.status = 'in_progress' THEN t.id END) as tasks_in_progress, ROUND(CASE WHEN COUNT(DISTINCT t.id) = 0 THEN 0 ELSE (COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END)::float / COUNT(DISTINCT t.id) * 100) END) as completion_percentage FROM campaigns c LEFT JOIN tasks t ON t.campaign_id = c.id WHERE c.id = $1 GROUP BY c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at`,
+                    `SELECT c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at, 
+                     COUNT(DISTINCT t.id) as tasks_total, 
+                     COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) as tasks_completed, 
+                     COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) as tasks_pending, 
+                     COUNT(DISTINCT CASE WHEN t.status = 'in_progress' THEN t.id END) as tasks_in_progress, 
+                     ROUND(CASE WHEN COUNT(DISTINCT t.id) = 0 THEN 0 ELSE (COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END)::float / COUNT(DISTINCT t.id) * 100) END) as completion_percentage 
+                     FROM campaigns c 
+                     LEFT JOIN tasks t ON t.campaign_id = c.id 
+                     WHERE c.id = $1 
+                     GROUP BY c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at`,
                     [campaignId]
                 );
                 if (result.rows.length === 0) {
                     return res.status(404).json({ success: false, error: 'Campaign not found', message: `Campaign with ID ${campaignId} not found` });
                 }
-                return res.status(200).json({ success: true, data: result.rows[0] });
+                const campaign = result.rows[0];
+                // Ensure numeric values
+                campaign.tasks_total = parseInt(campaign.tasks_total || 0);
+                campaign.tasks_completed = parseInt(campaign.tasks_completed || 0);
+                campaign.tasks_pending = parseInt(campaign.tasks_pending || 0);
+                campaign.tasks_in_progress = parseInt(campaign.tasks_in_progress || 0);
+                campaign.completion_percentage = parseInt(campaign.completion_percentage || 0);
+                return res.status(200).json({ success: true, data: campaign });
             } else {
                 const result = await query(
-                    `SELECT c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at, COUNT(DISTINCT t.id) as tasks_total, COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) as tasks_completed, COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) as tasks_pending, COUNT(DISTINCT CASE WHEN t.status = 'in_progress' THEN t.id END) as tasks_in_progress, ROUND(CASE WHEN COUNT(DISTINCT t.id) = 0 THEN 0 ELSE (COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END)::float / COUNT(DISTINCT t.id) * 100) END) as completion_percentage FROM campaigns c LEFT JOIN tasks t ON t.campaign_id = c.id GROUP BY c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at ORDER BY c.created_at DESC`
+                    `SELECT c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at, 
+                     COUNT(DISTINCT t.id) as tasks_total, 
+                     COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) as tasks_completed, 
+                     COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) as tasks_pending, 
+                     COUNT(DISTINCT CASE WHEN t.status = 'in_progress' THEN t.id END) as tasks_in_progress, 
+                     ROUND(CASE WHEN COUNT(DISTINCT t.id) = 0 THEN 0 ELSE (COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END)::float / COUNT(DISTINCT t.id) * 100) END) as completion_percentage 
+                     FROM campaigns c 
+                     LEFT JOIN tasks t ON t.campaign_id = c.id 
+                     GROUP BY c.id, c.campaign_name, c.campaign_type, c.status, c.description, c.campaign_start_date, c.campaign_end_date, c.campaign_owner_id, c.project_id, c.brand_id, c.target_url, c.created_at, c.updated_at 
+                     ORDER BY c.created_at DESC`
                 );
-                return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+                // Ensure numeric values for all campaigns
+                const campaigns = result.rows.map(c => ({
+                    ...c,
+                    tasks_total: parseInt(c.tasks_total || 0),
+                    tasks_completed: parseInt(c.tasks_completed || 0),
+                    tasks_pending: parseInt(c.tasks_pending || 0),
+                    tasks_in_progress: parseInt(c.tasks_in_progress || 0),
+                    completion_percentage: parseInt(c.completion_percentage || 0)
+                }));
+                return res.status(200).json({ success: true, data: campaigns, count: campaigns.length });
             }
         } catch (error: any) {
+            console.error('[API] Campaign stats error:', error.message);
             return res.status(500).json({ success: false, error: 'Failed to fetch campaigns', message: error.message });
         }
     }
