@@ -17,9 +17,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const pool = getPool();
         const url = req.url || '';
 
+        console.log('[API] Request:', req.method, url);
+
+        // Parse body safely
+        let body = req.body || {};
+        if (typeof body === 'string') {
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                body = {};
+            }
+        }
+
         // ============ AUTH ENDPOINTS ============
-        if (url.includes('/auth/login') && req.method === 'POST') {
-            const { email, password } = req.body;
+        if ((url.includes('/auth/login') || url === '/auth/login') && req.method === 'POST') {
+            const { email, password } = body;
             if (!email || !password) {
                 return res.status(400).json({
                     success: false,
@@ -47,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/auth/register') && req.method === 'POST') {
-            const { name, email, password, role = 'user' } = req.body;
+            const { name, email, password, role = 'user' } = body;
             const validationErrors: string[] = [];
             if (!name || !name.trim()) validationErrors.push('Name is required');
             if (!email || !email.trim()) validationErrors.push('Email is required');
@@ -120,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/services') && req.method === 'POST') {
-            const { service_name, service_code, slug, status = 'draft', meta_title, meta_description } = req.body;
+            const { service_name, service_code, slug, status = 'draft', meta_title, meta_description } = body;
             if (!service_name || !service_name.trim()) {
                 return res.status(400).json({ success: false, error: 'Service name is required', validationErrors: ['Service name is required'] });
             }
@@ -137,7 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // ============ ASSET ENDPOINTS ============
         if (url.includes('/assets/upload-with-service') && req.method === 'POST') {
-            const { asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id } = req.body;
+            const { asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id } = body;
             const validationErrors: string[] = [];
             if (!asset_name || !asset_name.trim()) validationErrors.push('Asset name is required');
             if (!application_type) validationErrors.push('Application type is required');
@@ -192,7 +204,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/qc-review/approve') && req.method === 'POST') {
-            const { asset_id, qc_remarks, qc_score } = req.body;
+            const { asset_id, qc_remarks, qc_score } = body;
             if (!asset_id) {
                 return res.status(400).json({ success: false, error: 'asset_id is required', validationErrors: ['asset_id is required'] });
             }
@@ -211,7 +223,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/qc-review/reject') && req.method === 'POST') {
-            const { asset_id, qc_remarks, qc_score } = req.body;
+            const { asset_id, qc_remarks, qc_score } = body;
             if (!asset_id) {
                 return res.status(400).json({ success: false, error: 'asset_id is required', validationErrors: ['asset_id is required'] });
             }
@@ -230,7 +242,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/qc-review/rework') && req.method === 'POST') {
-            const { asset_id, qc_remarks, qc_score } = req.body;
+            const { asset_id, qc_remarks, qc_score } = body;
             if (!asset_id) {
                 return res.status(400).json({ success: false, error: 'asset_id is required', validationErrors: ['asset_id is required'] });
             }
@@ -296,7 +308,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/task-assignment') && req.method === 'POST') {
-            const { taskId, fromEmployeeId, toEmployeeId } = req.body;
+            const { taskId, fromEmployeeId, toEmployeeId } = body;
             if (!taskId || !toEmployeeId) {
                 return res.status(400).json({ success: false, error: 'Task ID and target employee ID are required', validationErrors: [!taskId ? 'Task ID is required' : '', !toEmployeeId ? 'Target employee ID is required' : ''].filter(Boolean) });
             }
@@ -326,7 +338,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/implement-suggestion') && req.method === 'POST') {
-            const { suggestionId } = req.body;
+            const { suggestionId } = body;
             if (!suggestionId) {
                 return res.status(400).json({ success: false, error: 'Suggestion ID is required' });
             }
@@ -346,7 +358,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (url.includes('/reward-penalty/apply') && req.method === 'POST') {
-            const { userId, ruleId, points, reason } = req.body;
+            const { userId, ruleId, points, reason } = body;
             if (!userId || !ruleId || points === undefined) {
                 return res.status(400).json({ success: false, error: 'User ID, rule ID, and points are required', validationErrors: [!userId ? 'User ID is required' : '', !ruleId ? 'Rule ID is required' : '', points === undefined ? 'Points are required' : ''].filter(Boolean) });
             }
@@ -356,7 +368,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ success: false, error: 'Endpoint not found' });
 
     } catch (error: any) {
-        console.error('[API] Unexpected error:', error.message);
+        console.error('[API] Unexpected error:', error.message, error.stack);
         return res.status(500).json({ success: false, error: 'Internal server error', message: error.message });
     }
 }
