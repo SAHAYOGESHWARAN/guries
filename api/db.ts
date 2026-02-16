@@ -373,7 +373,11 @@ export const query = async (text: string, params?: any[]): Promise<QueryResult> 
   const pool = getPool();
   await ensureSchema(pool);
 
+  console.log('[DB] Query called. useMockDb:', useMockDb, 'pool:', pool ? 'exists' : 'null');
+  console.log('[DB] Query text:', text.substring(0, 80));
+
   if (useMockDb || !pool) {
+    console.log('[DB] Using mock query');
     return mockQuery(text, params);
   }
 
