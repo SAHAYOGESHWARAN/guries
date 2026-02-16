@@ -16,9 +16,52 @@ let dbInitialized = false;
 let useMockDb = false;
 
 // Mock database for testing when PostgreSQL is unavailable
-const mockDb: any = {
-  users: [
-    {
+const getMockDb = () => {
+  if (!globalForDb.mockDb || globalForDb.mockDb.users.length === 0) {
+    globalForDb.mockDb = {
+      users: [
+        {
+          id: 1,
+          name: 'Admin User',
+          email: 'admin@example.com',
+          role: 'admin',
+          status: 'active',
+          password_hash: 'admin123',
+          department: 'Administration',
+          country: 'USA',
+          last_login: null,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ],
+      assets: [],
+      services: [],
+      sub_services: [],
+      campaigns: [],
+      tasks: []
+    };
+    globalForDb.nextId = {
+      users: 2,
+      assets: 1,
+      services: 1,
+      sub_services: 1,
+      campaigns: 1,
+      tasks: 1
+    };
+  }
+  return globalForDb.mockDb;
+};
+
+const mockDb = getMockDb();
+let nextId = globalForDb.nextId;
+
+const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => {
+  const upperText = text.toUpperCase();
+
+  // Ensure mock database has admin user
+  const mockDb = getMockDb();
+  if (mockDb.users.length === 0) {
+    mockDb.users.push({
       id: 1,
       name: 'Admin User',
       email: 'admin@example.com',
@@ -30,49 +73,14 @@ const mockDb: any = {
       last_login: null,
       created_at: new Date(),
       updated_at: new Date()
-    },
-    {
-      id: 2,
-      name: 'Test User',
-      email: 'test@example.com',
-      role: 'user',
-      status: 'active',
-      password_hash: null,
-      department: null,
-      country: null,
-      last_login: null,
-      created_at: new Date(),
-      updated_at: new Date()
-    }
-  ],
-  assets: [],
-  services: [],
-  sub_services: [],
-  campaigns: [],
-  tasks: []
-};
+    });
+  }
 
-let nextId: any = {
-  users: 3,
-  assets: 1,
-  services: 1,
-  sub_services: 1,
-  campaigns: 1,
-  tasks: 1
-};
-
-const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => {
-  console.log('[MOCK-DB] Query:', text.substring(0, 100), 'Params:', params);
-
-  // Parse the SQL query
-  const upperText = text.toUpperCase();
-
-  // SELECT queries
   if (upperText.includes('SELECT')) {
     if (upperText.includes('FROM users')) {
       if (upperText.includes('WHERE email')) {
-        const email = params?.[0]?.toLowerCase();
-        const rows = mockDb.users.filter((u: any) => u.email === email);
+        const email = params?.[0];
+        const rows = mockDb.users.filter((u: any) => u.email.toLowerCase() === email.toLowerCase());
         return { rows, rowCount: rows.length };
       }
       if (upperText.includes('WHERE id')) {
@@ -94,16 +102,16 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
     return { rows: [], rowCount: 0 };
   }
 
-  // INSERT queries
   if (upperText.includes('INSERT INTO')) {
     if (upperText.includes('users')) {
+      const nextId = globalForDb.nextId || { users: 2 };
       const newUser = {
         id: nextId.users++,
         name: params?.[0] || 'User',
         email: params?.[1] || '',
         role: params?.[2] || 'user',
-        status: 'active',
-        password_hash: null,
+        status: params?.[3] || 'active',
+        password_hash: params?.[4] || null,
         department: null,
         country: null,
         last_login: null,
@@ -114,6 +122,7 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
       return { rows: [newUser], rowCount: 1 };
     }
     if (upperText.includes('assets')) {
+      const nextId = globalForDb.nextId || { assets: 1 };
       const newAsset = {
         id: nextId.assets++,
         asset_name: params?.[0] || '',
@@ -143,18 +152,27 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
     }
   }
 
-  // UPDATE queries
   if (upperText.includes('UPDATE')) {
     if (upperText.includes('users')) {
-      if (upperText.includes('last_login')) {
-        const userId = params?.[0];
-        const user = mockDb.users.find((u: any) => u.id === userId);
-        if (user) {
-          user.last_login = new Date();
-          user.updated_at = new Date();
-        }
-        return { rows: [], rowCount: user ? 1 : 0 };
+      const userId = params?.[0];
+      const user = mockDb.users.find((u: any) => u.id === userId);
+      if (user) {
+        user.last_login = new Date();
+        user.updated_at = new Date();
       }
+      return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
+    }
+    if (upperText.includes('assets')) {
+      const assetId = params?.[params.length - 1];
+      const asset = mockDb.assets.find((a: any) => a.id === assetId);
+      if (asset) {
+        asset.qc_status = params?.[0] || asset.qc_status;
+        asset.status = params?.[1] || asset.status;
+        asset.qc_remarks = params?.[2] || asset.qc_remarks;
+        asset.qc_score = params?.[3] || asset.qc_score;
+        asset.updated_at = new Date();
+      }
+      return { rows: asset ? [asset] : [], rowCount: asset ? 1 : 0 };
     }
   }
 
@@ -162,40 +180,10 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
 };
 
 const initializePool = (): Pool | null => {
-  if (pool) return pool;
-
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    console.warn('[DB] ⚠️ DATABASE_URL not set. Using mock database for testing.');
-    console.warn('[DB] To use PostgreSQL, set DATABASE_URL in Vercel environment variables.');
-    useMockDb = true;
-    return null;
-  }
-
-  console.log('[DB] Initializing PostgreSQL connection from DATABASE_URL');
-
-  try {
-    pool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
-
-    pool.on('error', (err: any) => {
-      console.error('[DB] Unexpected error on idle client:', err);
-    });
-
-    return pool;
-  } catch (err: any) {
-    console.error('[DB] Failed to initialize PostgreSQL:', err.message);
-    console.warn('[DB] Falling back to mock database');
-    useMockDb = true;
-    pool = null;
-    return null;
-  }
+  // Always use mock database for now
+  useMockDb = true;
+  console.log('[DB] Using mock database');
+  return null;
 };
 
 const ensureSchema = async (pool: Pool | null): Promise<void> => {
@@ -228,6 +216,26 @@ const ensureSchema = async (pool: Pool | null): Promise<void> => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`);
       console.log('[DB] Users table created/verified');
+
+      // Ensure admin user exists
+      try {
+        const adminCheck = await client.query(`SELECT id FROM users WHERE email = $1`, ['admin@example.com']);
+        if (adminCheck.rows.length === 0) {
+          try {
+            await client.query(
+              `INSERT INTO users (name, email, role, status, password_hash, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+              ['Admin User', 'admin@example.com', 'admin', 'active', 'admin123']
+            );
+            console.log('[DB] ✅ Admin user created successfully');
+          } catch (insertErr: any) {
+            console.error('[DB] Failed to insert admin user:', insertErr.message.substring(0, 100));
+          }
+        } else {
+          console.log('[DB] Admin user already exists');
+        }
+      } catch (checkErr: any) {
+        console.error('[DB] Error checking admin user:', checkErr.message.substring(0, 100));
+      }
 
       // Create other tables
       const tables = [
