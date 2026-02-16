@@ -9,8 +9,8 @@
     "USE_PG": "true"
   },
   "functions": {
-    "api/v1/*.ts": {
-      "memory": 512,
+    "api/v1/index.ts": {
+      "memory": 1024,
       "maxDuration": 30
     },
     "api/backend-proxy.ts": {
@@ -21,7 +21,7 @@
   "routes": [
     {
       "src": "/api/v1/(.*)",
-      "dest": "/api/v1/$1.ts"
+      "dest": "/api/v1/index.ts"
     },
     {
       "src": "/api/(.*)",
