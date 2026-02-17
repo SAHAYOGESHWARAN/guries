@@ -17,7 +17,8 @@ let useMockDb = false;
 
 // Mock database for testing when PostgreSQL is unavailable
 const getMockDb = () => {
-  if (!globalForDb.mockDb || globalForDb.mockDb.users.length === 0) {
+  // Initialize if not exists
+  if (!globalForDb.mockDb) {
     globalForDb.mockDb = {
       users: [
         {
@@ -40,6 +41,10 @@ const getMockDb = () => {
       campaigns: [],
       tasks: []
     };
+  }
+
+  // Initialize nextId if not exists
+  if (!globalForDb.nextId) {
     globalForDb.nextId = {
       users: 2,
       assets: 1,
@@ -49,6 +54,7 @@ const getMockDb = () => {
       tasks: 1
     };
   }
+
   return globalForDb.mockDb;
 };
 
@@ -200,10 +206,47 @@ const mockQuery = async (text: string, params?: any[]): Promise<QueryResult> => 
 };
 
 const initializePool = (): Pool | null => {
-  // Always use mock database for now
-  useMockDb = true;
-  console.log('[DB] Using mock database');
-  return null;
+  // Check if DATABASE_URL is available for real PostgreSQL connection
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    useMockDb = true;
+    console.log('[DB] ⚠️  No DATABASE_URL found - using mock database (data will NOT persist across requests on Vercel)');
+    console.log('[DB] To fix this, set up Vercel Postgres: https://vercel.com/docs/storage/vercel-postgres');
+    return null;
+  }
+
+  try {
+    useMockDb = false;
+    console.log('[DB] DATABASE_URL found - initializing PostgreSQL connection');
+    const newPool = new Pool({
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false
+      },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000
+    });
+
+    // Test the connection
+    newPool.query('SELECT NOW()', (err, result) => {
+      if (err) {
+        console.error('[DB] ❌ PostgreSQL connection test failed:', err.message);
+        console.error('[DB] Falling back to mock database');
+        useMockDb = true;
+      } else {
+        console.log('[DB] ✅ PostgreSQL connection successful');
+      }
+    });
+
+    return newPool;
+  } catch (err: any) {
+    console.error('[DB] ❌ Failed to initialize PostgreSQL pool:', err.message);
+    console.error('[DB] Falling back to mock database');
+    useMockDb = true;
+    return null;
+  }
 };
 
 const ensureSchema = async (pool: Pool | null): Promise<void> => {
