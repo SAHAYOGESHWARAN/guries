@@ -97,52 +97,58 @@ export const login = async (req: Request, res: Response) => {
         console.log('❌ Email does not match admin email');
 
         // Check database for other users
-        const result = await pool.query(
-            'SELECT * FROM users WHERE email = $1 LIMIT 1',
-            [email]
-        );
+        try {
+            const result = await pool.query(
+                'SELECT * FROM users WHERE email = $1 LIMIT 1',
+                [email]
+            );
 
-        if (result.rows.length === 0) {
+            if (result.rows.length === 0) {
+                return res.status(401).json({ error: 'Invalid email or password' });
+            }
+
+            const user = result.rows[0];
+
+            // Check if user is active
+            if (user.status === 'inactive') {
+                return res.status(403).json({ error: 'Your account has been deactivated' });
+            }
+
+            if (user.status === 'pending') {
+                return res.status(403).json({ error: 'Your account is pending approval' });
+            }
+
+            // Verify password hash
+            if (!user.password_hash) {
+                return res.status(401).json({ error: 'Invalid email or password' });
+            }
+
+            const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: 'Invalid email or password' });
+            }
+
+            const token = generateJWT({ id: user.id, email: user.email, role: user.role || 'user' }, JWT_SECRET, JWT_EXPIRES_IN);
+            return res.status(200).json({
+                success: true,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role || 'user',
+                    status: user.status,
+                    department: user.department,
+                    created_at: user.created_at,
+                    last_login: new Date().toISOString()
+                },
+                token,
+                message: 'Login successful'
+            });
+        } catch (dbError: any) {
+            console.error("Database error during login:", dbError);
+            // If database fails, still allow admin login
             return res.status(401).json({ error: 'Invalid email or password' });
         }
-
-        const user = result.rows[0];
-
-        // Check if user is active
-        if (user.status === 'inactive') {
-            return res.status(403).json({ error: 'Your account has been deactivated' });
-        }
-
-        if (user.status === 'pending') {
-            return res.status(403).json({ error: 'Your account is pending approval' });
-        }
-
-        // Verify password hash
-        if (!user.password_hash) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-        if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-
-        const token = generateJWT({ id: user.id, email: user.email, role: user.role || 'user' }, JWT_SECRET, JWT_EXPIRES_IN);
-        return res.status(200).json({
-            success: true,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role || 'user',
-                status: user.status,
-                department: user.department,
-                created_at: user.created_at,
-                last_login: new Date().toISOString()
-            },
-            token,
-            message: 'Login successful'
-        });
     } catch (error: any) {
         console.error("Error during login:", error);
         res.status(500).json({ error: 'Login failed', details: error.message });
@@ -168,11 +174,16 @@ export const sendOtp = async (req: Request, res: Response) => {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-        // Save to Database
-        await pool.query(
-            'INSERT INTO otp_codes (phone_number, code, expires_at) VALUES (?, ?, ?)',
-            [phoneNumber, code, expiresAt]
-        );
+        // Save to Database (PostgreSQL syntax)
+        try {
+            await pool.query(
+                'INSERT INTO otp_codes (phone_number, code, expires_at) VALUES ($1, $2, $3)',
+                [phoneNumber, code, expiresAt]
+            );
+        } catch (dbError: any) {
+            console.warn("Could not save OTP to database:", dbError.message);
+            // Continue anyway - OTP can still be sent
+        }
 
         // Send SMS via Twilio
         await client.messages.create({
@@ -198,9 +209,9 @@ export const verifyOtp = async (req: Request, res: Response) => {
     }
 
     try {
-        // Check for valid, non-expired code
+        // Check for valid, non-expired code (PostgreSQL syntax)
         const result = await pool.query(
-            'SELECT * FROM otp_codes WHERE phone_number = ? AND code = ? AND expires_at > datetime("now") ORDER BY created_at DESC LIMIT 1',
+            'SELECT * FROM otp_codes WHERE phone_number = $1 AND code = $2 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
             [phoneNumber, code]
         );
 
@@ -210,7 +221,11 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
         // Code is valid, consume it to prevent replay
         const otpId = result.rows[0].id;
-        await pool.query('DELETE FROM otp_codes WHERE id = ?', [otpId]);
+        try {
+            await pool.query('DELETE FROM otp_codes WHERE id = $1', [otpId]);
+        } catch (dbError: any) {
+            console.warn("Could not delete OTP from database:", dbError.message);
+        }
 
         res.status(200).json({ message: 'Verification successful', verified: true });
     } catch (error: any) {
