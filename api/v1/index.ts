@@ -741,3 +741,146 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
 }
 }
 
+
+
+// ============ MASTER DATA ENDPOINTS ============
+
+// Countries endpoints
+if (url.includes('/countries') && req.method === 'GET') {
+    try {
+        const result = await query(`SELECT * FROM countries ORDER BY country_name ASC`);
+        return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to fetch countries', message: error.message });
+    }
+}
+
+if (url.includes('/countries') && req.method === 'POST') {
+    const { country_name, country_code, status = 'active' } = body;
+    if (!country_name || !country_name.trim()) {
+        return res.status(400).json({ success: false, error: 'Country name is required', validationErrors: ['Country name is required'] });
+    }
+    try {
+        const result = await query(
+            `INSERT INTO countries (country_name, country_code, status, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
+            [country_name.trim(), country_code || null, status]
+        );
+        return res.status(201).json({ success: true, data: result.rows[0], message: 'Country created successfully' });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to create country', message: error.message });
+    }
+}
+
+// Industry Sectors endpoints
+if (url.includes('/industry-sectors') && req.method === 'GET') {
+    try {
+        const result = await query(`SELECT * FROM industry_sectors ORDER BY sector_name ASC`);
+        return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to fetch industry sectors', message: error.message });
+    }
+}
+
+if (url.includes('/industry-sectors') && req.method === 'POST') {
+    const { sector_name, description, status = 'active' } = body;
+    if (!sector_name || !sector_name.trim()) {
+        return res.status(400).json({ success: false, error: 'Sector name is required', validationErrors: ['Sector name is required'] });
+    }
+    try {
+        const result = await query(
+            `INSERT INTO industry_sectors (sector_name, description, status, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
+            [sector_name.trim(), description || null, status]
+        );
+        return res.status(201).json({ success: true, data: result.rows[0], message: 'Industry sector created successfully' });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to create industry sector', message: error.message });
+    }
+}
+
+// Brands endpoints
+if (url.includes('/brands') && req.method === 'GET') {
+    try {
+        const result = await query(`SELECT * FROM brands ORDER BY brand_name ASC`);
+        return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to fetch brands', message: error.message });
+    }
+}
+
+if (url.includes('/brands') && req.method === 'POST') {
+    const { brand_name, description, status = 'active' } = body;
+    if (!brand_name || !brand_name.trim()) {
+        return res.status(400).json({ success: false, error: 'Brand name is required', validationErrors: ['Brand name is required'] });
+    }
+    try {
+        const result = await query(
+            `INSERT INTO brands (brand_name, description, status, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
+            [brand_name.trim(), description || null, status]
+        );
+        return res.status(201).json({ success: true, data: result.rows[0], message: 'Brand created successfully' });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to create brand', message: error.message });
+    }
+}
+
+// Content Types endpoints
+if (url.includes('/content-types') && req.method === 'GET') {
+    try {
+        const result = await query(`SELECT * FROM content_types ORDER BY type_name ASC`);
+        return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to fetch content types', message: error.message });
+    }
+}
+
+if (url.includes('/content-types') && req.method === 'POST') {
+    const { type_name, description, status = 'active' } = body;
+    if (!type_name || !type_name.trim()) {
+        return res.status(400).json({ success: false, error: 'Type name is required', validationErrors: ['Type name is required'] });
+    }
+    try {
+        const result = await query(
+            `INSERT INTO content_types (type_name, description, status, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
+            [type_name.trim(), description || null, status]
+        );
+        return res.status(201).json({ success: true, data: result.rows[0], message: 'Content type created successfully' });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to create content type', message: error.message });
+    }
+}
+
+// Personas endpoints
+if (url.includes('/personas') && req.method === 'GET') {
+    try {
+        const result = await query(`SELECT * FROM personas ORDER BY persona_name ASC`);
+        return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to fetch personas', message: error.message });
+    }
+}
+
+if (url.includes('/personas') && req.method === 'POST') {
+    const { persona_name, description, status = 'active' } = body;
+    if (!persona_name || !persona_name.trim()) {
+        return res.status(400).json({ success: false, error: 'Persona name is required', validationErrors: ['Persona name is required'] });
+    }
+    try {
+        const result = await query(
+            `INSERT INTO personas (persona_name, description, status, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
+            [persona_name.trim(), description || null, status]
+        );
+        return res.status(201).json({ success: true, data: result.rows[0], message: 'Persona created successfully' });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, error: 'Failed to create persona', message: error.message });
+    }
+}
+
+// Default 404 response
+return res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    message: `The endpoint ${req.method} ${url} does not exist`,
+    path: url,
+    method: req.method
+});
+}
