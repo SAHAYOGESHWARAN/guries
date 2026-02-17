@@ -343,7 +343,7 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
     }
 
     // GET assets endpoint for fetching with filtering
-    if (url.includes('/assets') && req.method === 'GET' && !url.includes('/assets/upload')) {
+    if ((url.includes('/assets') && req.method === 'GET' && !url.includes('/assets/upload')) || (url.includes('/assetLibrary') && req.method === 'GET')) {
         try {
             const statusFilter = req.query.status || 'all';
             let query_text = 'SELECT * FROM assets';
@@ -371,8 +371,109 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
         }
     }
 
+    // POST assets endpoint - handle both /assets and /assetLibrary paths
+    if ((url.includes('/assets') && req.method === 'POST' && !url.includes('/upload')) || (url.includes('/assetLibrary') && req.method === 'POST' && !url.includes('/upload'))) {
+        const { asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id, name, type, status, ...otherFields } = body;
+
+        // Support both naming conventions
+        const finalAssetName = asset_name || name;
+        const finalAssetType = asset_type || type;
+        const finalStatus = status || 'draft';
+        const finalApplicationType = application_type || 'web';
+
+        // Comprehensive validation with detailed error messages
+        const validationErrors: { field: string; message: string }[] = [];
+
+        if (!finalAssetName || !finalAssetName.trim()) {
+            validationErrors.push({ field: 'asset_name', message: 'Asset name is required and cannot be empty' });
+        }
+        if (!finalApplicationType) {
+            validationErrors.push({ field: 'application_type', message: 'Application type is required (e.g., web, mobile, print)' });
+        }
+        if (!finalAssetType) {
+            validationErrors.push({ field: 'asset_type', message: 'Asset type is required (e.g., image, video, document)' });
+        }
+
+        if (validationErrors.length > 0) {
+            console.error('[API] Asset validation failed:', validationErrors);
+            return res.status(400).json({
+                success: false,
+                error: 'Validation failed',
+                validationErrors: validationErrors,
+                message: `Please fill in required fields: ${validationErrors.map(e => e.field).join(', ')}`
+            });
+        }
+
+        try {
+            console.log('[API] Creating asset with data:', { finalAssetName, finalAssetType, finalApplicationType });
+
+            const result = await query(
+                `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, application_type, file_url, thumbnail_url, file_size, file_type, seo_score, grammar_score, keywords, created_by, linked_service_id, linked_sub_service_id, status, qc_status, created_at, updated_at) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                 RETURNING *`,
+                [
+                    finalAssetName.trim(),
+                    finalAssetType,
+                    asset_category || null,
+                    asset_format || null,
+                    finalApplicationType,
+                    file_url || null,
+                    thumbnail_url || null,
+                    file_size || null,
+                    file_type || null,
+                    seo_score || null,
+                    grammar_score || null,
+                    keywords ? JSON.stringify(keywords) : null,
+                    created_by || null,
+                    linked_service_id || null,
+                    linked_sub_service_id || null,
+                    finalStatus
+                ]
+            );
+
+            const newAsset = result.rows[0];
+
+            if (!newAsset) {
+                console.error('[API] Asset creation returned no rows. Result:', result);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database error',
+                    message: 'Asset was not created. Please try again.',
+                    details: 'Database returned no rows after INSERT'
+                });
+            }
+
+            // Ensure ID exists
+            if (!newAsset.id) {
+                console.error('[API] Asset created but missing ID. Asset object:', newAsset);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database error',
+                    message: 'Asset was created but ID is missing. Please refresh and try again.',
+                    details: 'Asset object missing id field'
+                });
+            }
+
+            console.log('[API] Asset created successfully with ID:', newAsset.id);
+            return res.status(201).json({
+                success: true,
+                data: newAsset,
+                asset: newAsset,
+                message: 'Asset created successfully'
+            });
+        } catch (error: any) {
+            console.error('[API] Asset creation error:', error.message, error.stack);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to create asset',
+                message: error.message || 'An unexpected error occurred while saving the asset',
+                details: error.message
+            });
+        }
+    }
+
     // GET single asset
-    if (url.match(/\/assets\/\d+$/) && req.method === 'GET') {
+    if ((url.match(/\/assets\/\d+$/) || url.match(/\/assetLibrary\/\d+$/)) && req.method === 'GET') {
         try {
             const assetId = url.split('/').pop();
             const result = await query('SELECT * FROM assets WHERE id = $1', [parseInt(assetId)]);

@@ -13,7 +13,7 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     tasks: { endpoint: 'tasks', event: 'task' },
     projects: { endpoint: 'projects', event: 'project' },
     campaigns: { endpoint: 'campaigns', event: 'campaign' },
-    assetLibrary: { endpoint: 'assetLibrary', event: 'assetLibrary' },
+    assetLibrary: { endpoint: 'assets', event: 'assetLibrary' },
     content: { endpoint: 'content', event: 'content' },
     smm: { endpoint: 'smm', event: 'smm_post' },
     graphics: { endpoint: 'graphics', event: 'graphic' },
