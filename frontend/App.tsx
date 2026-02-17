@@ -5,6 +5,12 @@ import LoginView from './views/LoginView';
 import Chatbot from './components/Chatbot';
 import { AuthUser } from './hooks/useAuth';
 import { dataCache } from './hooks/useDataCache';
+import { ToastProvider } from './components/ToastContainer';
+import { setupGlobalErrorHandler } from './utils/errorHandler';
+import './styles/toast.css';
+
+// Setup global error handler
+setupGlobalErrorHandler();
 
 // Global error handler for unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
@@ -433,37 +439,39 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
-      {/* Sidebar - Compact Width */}
-      <Sidebar
-        currentView={viewState.view}
-        setCurrentView={(view) => handleNavigate(view)}
-        currentUser={currentUser}
-      />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-slate-50/50 h-screen w-full">
-        <Header
-          onNavigate={(view, id) => handleNavigate(view, id)}
-          onLogout={handleLogout}
+    <ToastProvider>
+      <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+        {/* Sidebar - Compact Width */}
+        <Sidebar
+          currentView={viewState.view}
+          setCurrentView={(view) => handleNavigate(view)}
+          currentUser={currentUser}
         />
 
-        {/* Main scroll container - fills remaining space */}
-        <main className="flex-1 overflow-auto relative w-full h-full">
-          <div className="w-full h-full min-h-full">
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                {renderView()}
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </main>
-      </div>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-slate-50/50 h-screen w-full">
+          <Header
+            onNavigate={(view, id) => handleNavigate(view, id)}
+            onLogout={handleLogout}
+          />
 
-      <div className="print:hidden z-50">
-        <Chatbot />
+          {/* Main scroll container - fills remaining space */}
+          <main className="flex-1 overflow-auto relative w-full h-full">
+            <div className="w-full h-full min-h-full">
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  {renderView()}
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          </main>
+        </div>
+
+        <div className="print:hidden z-50">
+          <Chatbot />
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 };
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { AssetLibraryItem } from '../types';
 import { useAssetLibraryRefresh } from '../hooks/useAssetLibraryRefresh';
+import { useToast } from './ToastContainer';
+import { validateQCReview } from '../utils/validation';
 
 interface QCAsset extends AssetLibraryItem {
     submitted_by?: number;
@@ -33,6 +35,7 @@ const QCReviewPage: React.FC = () => {
 
     const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
     const { refreshAssetLibrary } = useAssetLibraryRefresh();
+    const { addToast } = useToast();
 
     useEffect(() => {
         fetchPendingAssets();
@@ -80,6 +83,21 @@ const QCReviewPage: React.FC = () => {
     };
 
     const handleApprove = async (assetId: number, remarks: string, score: number) => {
+        // Validate QC review
+        const validation = validateQCReview({
+            asset_id: assetId,
+            qc_score: score,
+            qc_remarks: remarks,
+            action: 'approve'
+        });
+
+        if (!validation.isValid) {
+            const errorMessages = validation.errors.map(e => e.message).join(', ');
+            addToast(errorMessages, 'error');
+            setActionError(errorMessages);
+            return;
+        }
+
         setActionLoading(true);
         setActionError(null);
         setActionSuccess(null);
@@ -101,6 +119,9 @@ const QCReviewPage: React.FC = () => {
             }
 
             const result = await response.json();
+
+            // Show success toast
+            addToast('Asset approved successfully! Status updated to Published.', 'success');
             setActionSuccess('Asset approved successfully! Status updated to Published.');
             setSelectedAsset(null);
 
@@ -124,6 +145,7 @@ const QCReviewPage: React.FC = () => {
             }, 300);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to approve asset';
+            addToast(message, 'error');
             setActionError(message);
             console.error('[QCReviewPage] Error approving asset:', err);
         } finally {
@@ -132,8 +154,18 @@ const QCReviewPage: React.FC = () => {
     };
 
     const handleReject = async (assetId: number, remarks: string, score: number) => {
-        if (!remarks.trim()) {
-            setActionError('Remarks are required for rejection');
+        // Validate QC review
+        const validation = validateQCReview({
+            asset_id: assetId,
+            qc_score: score,
+            qc_remarks: remarks,
+            action: 'reject'
+        });
+
+        if (!validation.isValid) {
+            const errorMessages = validation.errors.map(e => e.message).join(', ');
+            addToast(errorMessages, 'error');
+            setActionError(errorMessages);
             return;
         }
 
@@ -157,6 +189,8 @@ const QCReviewPage: React.FC = () => {
                 throw new Error(errorData.error || 'Failed to reject asset');
             }
 
+            // Show success toast
+            addToast('Asset rejected successfully!', 'success');
             setActionSuccess('Asset rejected successfully!');
             setSelectedAsset(null);
 
@@ -188,8 +222,18 @@ const QCReviewPage: React.FC = () => {
     };
 
     const handleRework = async (assetId: number, remarks: string, score: number) => {
-        if (!remarks.trim()) {
-            setActionError('Remarks are required for rework request');
+        // Validate QC review
+        const validation = validateQCReview({
+            asset_id: assetId,
+            qc_score: score,
+            qc_remarks: remarks,
+            action: 'rework'
+        });
+
+        if (!validation.isValid) {
+            const errorMessages = validation.errors.map(e => e.message).join(', ');
+            addToast(errorMessages, 'error');
+            setActionError(errorMessages);
             return;
         }
 
@@ -209,9 +253,12 @@ const QCReviewPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to request rework');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to request rework');
             }
 
+            // Show success toast
+            addToast('Rework requested successfully!', 'success');
             setActionSuccess('Rework requested successfully!');
             setSelectedAsset(null);
 
@@ -235,6 +282,7 @@ const QCReviewPage: React.FC = () => {
             }, 300);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to request rework';
+            addToast(message, 'error');
             setActionError(message);
             console.error('[QCReviewPage] Error requesting rework:', err);
         } finally {

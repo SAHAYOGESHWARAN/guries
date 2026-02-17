@@ -1,4 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import * as dataStore from './data-store';
+
+// Map API endpoints to data store collections
+const ENDPOINT_MAP: Record<string, string> = {
+    'assets': 'assets',
+    'keywords': 'keywords',
+    'projects': 'projects',
+    'tasks': 'tasks',
+    'campaigns': 'campaigns',
+    'services': 'services',
+    'users': 'users',
+    'asset-category-master': 'asset-category-master',
+    'asset-type-master': 'asset-type-master',
+    'sub-services': 'sub-services',
+    'brands': 'brands',
+    'content': 'content',
+    'notifications': 'notifications'
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
@@ -47,207 +65,250 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 database: 'mock',
                 timestamp: new Date().toISOString(),
                 assets: {
-                    count: 0,
+                    count: dataStore.getAll('assets').length,
                     table_exists: true
                 }
             });
         }
 
-        // Mock endpoints for services, keywords, users, etc.
+        // Parse URL to get collection and ID
+        const urlParts = req.url?.split('?')[0].split('/').filter(Boolean) || [];
+        const collection = urlParts[urlParts.length - 1];
+        const id = urlParts[urlParts.length - 2];
+        const isIdRoute = !isNaN(Number(id));
+
+        // Generic CRUD handler for all collections
+        if (ENDPOINT_MAP[collection]) {
+            const collectionName = ENDPOINT_MAP[collection];
+
+            // GET all items
+            if (req.method === 'GET' && !isIdRoute) {
+                const items = dataStore.getAll(collectionName);
+                return res.status(200).json({
+                    success: true,
+                    data: items
+                });
+            }
+
+            // GET single item by ID
+            if (req.method === 'GET' && isIdRoute) {
+                const item = dataStore.getById(collectionName, Number(id));
+                if (!item) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Item not found'
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    data: item
+                });
+            }
+
+            // POST - Create new item
+            if (req.method === 'POST') {
+                const newItem = dataStore.create(collectionName, req.body);
+                return res.status(201).json({
+                    success: true,
+                    data: newItem
+                });
+            }
+
+            // PUT - Update item
+            if (req.method === 'PUT' && isIdRoute) {
+                try {
+                    const updated = dataStore.update(collectionName, Number(id), req.body);
+                    return res.status(200).json({
+                        success: true,
+                        data: updated,
+                        message: 'Item updated successfully'
+                    });
+                } catch (error: any) {
+                    return res.status(404).json({
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            // PATCH - Partial update item
+            if (req.method === 'PATCH' && isIdRoute) {
+                try {
+                    const updated = dataStore.update(collectionName, Number(id), req.body);
+                    return res.status(200).json({
+                        success: true,
+                        data: updated,
+                        message: 'Item updated successfully'
+                    });
+                } catch (error: any) {
+                    return res.status(404).json({
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            // DELETE - Remove item
+            if (req.method === 'DELETE' && isIdRoute) {
+                const deleted = dataStore.remove(collectionName, Number(id));
+                if (!deleted) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Item not found'
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    message: 'Item deleted'
+                });
+            }
+        }
+
+        // Fallback for specific endpoints
         if (req.url?.includes('/services') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: [
-                    { id: 1, service_name: 'SEO Services', status: 'active' },
-                    { id: 2, service_name: 'Content Creation', status: 'active' }
-                ]
+                data: dataStore.getAll('services')
             });
         }
 
         if (req.url?.includes('/keywords') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: [
-                    { id: 1, keyword_name: 'digital marketing', keyword_intent: 'commercial' },
-                    { id: 2, keyword_name: 'seo strategy', keyword_intent: 'informational' }
-                ]
+                data: dataStore.getAll('keywords')
             });
         }
 
         if (req.url?.includes('/keywords') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+            const newKeyword = dataStore.create('keywords', req.body);
+            return res.status(201).json(newKeyword);
         }
 
         if (req.url?.includes('/users') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: [
-                    { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' }
-                ]
+                data: dataStore.getAll('users')
             });
         }
 
         if (req.url?.includes('/projects') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('projects')
             });
         }
 
         if (req.url?.includes('/projects') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+            const newProject = dataStore.create('projects', req.body);
+            return res.status(201).json(newProject);
         }
 
         if (req.url?.includes('/tasks') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('tasks')
             });
         }
 
         if (req.url?.includes('/tasks') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+            const newTask = dataStore.create('tasks', req.body);
+            return res.status(201).json(newTask);
         }
 
         if (req.url?.includes('/campaigns') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('campaigns')
             });
         }
 
         if (req.url?.includes('/campaigns') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+            const newCampaign = dataStore.create('campaigns', req.body);
+            return res.status(201).json(newCampaign);
         }
 
         if (req.url?.includes('/content') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('content')
             });
         }
 
         if (req.url?.includes('/content') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+            const newContent = dataStore.create('content', req.body);
+            return res.status(201).json(newContent);
+        }
+
+        if (req.url?.includes('/assets') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: dataStore.getAll('assets')
             });
+        }
+
+        if (req.url?.includes('/assets') && req.method === 'POST') {
+            const newAsset = dataStore.create('assets', req.body);
+            return res.status(201).json(newAsset);
         }
 
         if (req.url?.includes('/brands') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('brands')
             });
         }
 
         if (req.url?.includes('/brands') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+            const newBrand = dataStore.create('brands', req.body);
+            return res.status(201).json(newBrand);
         }
 
-        if (req.url?.includes('/backlinks') && req.method === 'GET') {
+        if (req.url?.includes('/sub-services') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('sub-services')
             });
         }
 
-        if (req.url?.includes('/backlinks') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+        if (req.url?.includes('/sub-services') && req.method === 'POST') {
+            const newSubService = dataStore.create('sub-services', req.body);
+            return res.status(201).json(newSubService);
         }
 
-        if (req.url?.includes('/competitors') && req.method === 'GET') {
+        if (req.url?.includes('/asset-category-master') && req.method === 'GET') {
             return res.status(200).json({
                 success: true,
-                data: []
+                data: dataStore.getAll('asset-category-master')
             });
         }
 
-        if (req.url?.includes('/competitors') && req.method === 'POST') {
-            const id = Math.floor(Math.random() * 100000) + 1;
-            return res.status(201).json({
-                id,
-                ...req.body,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+        if (req.url?.includes('/asset-category-master') && req.method === 'POST') {
+            const newCategory = dataStore.create('asset-category-master', req.body);
+            return res.status(201).json(newCategory);
+        }
+
+        if (req.url?.includes('/asset-type-master') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: dataStore.getAll('asset-type-master')
             });
         }
 
-        // Generic endpoint handler for other routes
-        if (req.url?.startsWith('/api/v1/') || req.url?.startsWith('/api/')) {
-            const endpoint = req.url.replace('/api/v1/', '').replace('/api/', '').split('?')[0].split('/')[0];
+        if (req.url?.includes('/asset-type-master') && req.method === 'POST') {
+            const newType = dataStore.create('asset-type-master', req.body);
+            return res.status(201).json(newType);
+        }
 
-            // Return empty array for GET requests to any endpoint (mock data)
-            if (req.method === 'GET') {
-                return res.status(200).json({
-                    success: true,
-                    data: []
-                });
-            }
-
-            // Return proper object for POST requests with ID
-            if (req.method === 'POST') {
-                const id = Math.floor(Math.random() * 100000) + 1;
-                return res.status(201).json({
-                    id,
-                    ...req.body,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                });
-            }
-
-            // Return success for PUT/DELETE requests
-            if (req.method === 'PUT' || req.method === 'DELETE') {
-                return res.status(200).json({
-                    success: true,
-                    message: `${req.method} request to ${endpoint} processed successfully`
-                });
-            }
-
-            return res.status(404).json({
-                success: false,
-                error: `Endpoint /${endpoint} not found`,
-                message: 'This endpoint is not yet implemented'
+        if (req.url?.includes('/notifications') && req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                data: dataStore.getAll('notifications')
             });
+        }
+
+        if (req.url?.includes('/notifications') && req.method === 'POST') {
+            const newNotification = dataStore.create('notifications', req.body);
+            return res.status(201).json(newNotification);
         }
 
         // Default response
