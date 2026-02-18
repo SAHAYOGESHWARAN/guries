@@ -226,10 +226,15 @@ export function remove(collection: string, id: number): boolean {
     return true;
 }
 
-export function getById(collection: string, id: number): any {
+export function getById(collection: string, id: number | string): any {
     if (!dataStore[collection]) {
         return null;
     }
 
-    return dataStore[collection].find(item => item.id === id) || null;
+    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+    if (isNaN(numId)) return null;
+
+    return dataStore[collection].find(
+        (item: any) => Number(item.id) === numId || String(item.id) === String(id)
+    ) || null;
 }

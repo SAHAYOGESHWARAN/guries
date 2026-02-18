@@ -53,8 +53,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // QC Review: POST /api/v1/assetLibrary/:id/qc-review (AssetQCView)
-        if (req.url?.match(/\/assetLibrary\/\d+\/qc-review$/) && req.method === 'POST') {
-            const match = req.url.match(/\/assetLibrary\/(\d+)\/qc-review$/);
+        const path = req.url?.split('?')[0] || '';
+        if (path.match(/\/assetLibrary\/\d+\/qc-review$/) && req.method === 'POST') {
+            const match = path.match(/\/assetLibrary\/(\d+)\/qc-review$/);
             const assetId = match ? parseInt(match[1], 10) : 0;
             const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, user_role } = req.body || {};
 
@@ -88,8 +89,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Submit for QC: POST /api/v1/assetLibrary/:id/submit-qc (AssetQCView)
-        if (req.url?.match(/\/assetLibrary\/\d+\/submit-qc$/) && req.method === 'POST') {
-            const match = req.url.match(/\/assetLibrary\/(\d+)\/submit-qc$/);
+        if (path.match(/\/assetLibrary\/\d+\/submit-qc$/) && req.method === 'POST') {
+            const match = path.match(/\/assetLibrary\/(\d+)\/submit-qc$/);
             const assetId = match ? parseInt(match[1], 10) : 0;
             const asset = dataStore.getById('assets', assetId);
             if (!asset) {
@@ -104,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Asset QC Reviews: GET /api/v1/assetLibrary/:id/qc-reviews (AssetDetailSidePanel)
-        if (req.url?.match(/\/assetLibrary\/\d+\/qc-reviews$/) && req.method === 'GET') {
+        if (path.match(/\/assetLibrary\/\d+\/qc-reviews$/) && req.method === 'GET') {
             return res.status(200).json({ success: true, data: [] });
         }
 
