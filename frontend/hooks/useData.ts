@@ -265,21 +265,18 @@ export function useData<T>(collection: string) {
             // API returns { success: true, data: [...] } or just [...]
             let dataArray = Array.isArray(result) ? result : (result?.data || result || []);
 
-            console.log(`[useData] Raw response for ${collection}:`, result);
-            console.log(`[useData] Extracted dataArray for ${collection}:`, dataArray);
-            console.log(`[useData] Is array?`, Array.isArray(dataArray), `Length:`, dataArray?.length);
-
-            if (isRefresh) {
-                console.log(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
-            } else {
-                console.log(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : dataArray);
+            if (process.env.NODE_ENV === 'development') {
+                if (isRefresh) {
+                    console.debug(`[useData] Refreshed ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : 'non-array');
+                } else {
+                    console.debug(`[useData] Received ${collection}:`, Array.isArray(dataArray) ? `${dataArray.length} items` : 'non-array');
+                }
             }
 
-            // Only update data if we got a valid response (prevents flickering)
+                // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
                 // If API returns empty array but we have cached data, keep the cached data
                 if (dataArray.length === 0 && data.length > 0) {
-                    console.log(`[useData] API returned empty array for ${collection}, keeping existing ${data.length} items`);
                     // Don't update state, keep existing data
                     setIsOffline(false);
                     setLoading(false);
@@ -287,7 +284,6 @@ export function useData<T>(collection: string) {
                 }
 
                 // Always update on refresh, or if we don't have data yet
-                console.log(`[useData] Setting data for ${collection} with ${dataArray.length} items`);
                 setData(dataArray);
 
                 // Cache the data globally for persistence across routes
@@ -400,7 +396,6 @@ export function useData<T>(collection: string) {
     }, [collection, resource, fetchData, loadLocal]);
 
     const create = async (item: any) => {
-        console.log(`[useData] Creating ${collection} item:`, item);
 
         // 1. Optimistic Local Update
         let newItem = item;
@@ -412,7 +407,6 @@ export function useData<T>(collection: string) {
         let serverItem = null;
         if (resource && !isOffline) {
             try {
-                console.log(`[useData] Sending POST to ${API_BASE_URL}/${resource.endpoint}`);
                 const response = await fetch(`${API_BASE_URL}/${resource.endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -433,9 +427,6 @@ export function useData<T>(collection: string) {
 
                 const responseData = await response.json();
 
-                console.log(`[useData] Raw response from server:`, JSON.stringify(responseData, null, 2));
-                console.log(`[useData] Response keys:`, Object.keys(responseData));
-                console.log(`[useData] Response type:`, typeof responseData);
 
                 // Extract the actual item from various response formats
                 // Try: asset (for assets), data (for wrapped responses), or use directly
@@ -448,8 +439,6 @@ export function useData<T>(collection: string) {
 
                 serverItem = extracted;
 
-                console.log(`[useData] Extracted item:`, JSON.stringify(serverItem, null, 2));
-                console.log(`[useData] Extracted keys:`, Object.keys(serverItem || {}));
 
                 // Validate that we got an ID back
                 if (!serverItem || typeof serverItem !== 'object') {
@@ -470,7 +459,6 @@ export function useData<T>(collection: string) {
                     serverItem.id = serverItem.lastID || serverItem.last_insert_rowid;
                 }
 
-                console.log(`[useData] Created ${collection} item on server with ID:`, serverItem.id);
             } catch (e: any) {
                 console.error(`[useData] Error creating ${collection}:`, e.message);
                 setIsOffline(true);
@@ -478,14 +466,17 @@ export function useData<T>(collection: string) {
             }
         }
 
-        // 3. Immediately update state to reflect the new item
+        // 3. Immediately update state and persist
         const finalItem = serverItem || newItem;
-        console.log(`[useData] Adding item to state:`, JSON.stringify(finalItem, null, 2));
         setData(prev => {
             const updated = [finalItem, ...prev];
-            console.log(`[useData] Updated data array length:`, updated.length);
-            // Apply optimistic update to cache (preserve data, don't delete)
             dataCache.applyOptimisticCreate(collection, finalItem);
+            // Persist to localStorage for offline/refresh
+            if ((db as any)[collection]) {
+                try {
+                    localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
+                } catch (e) { /* ignore */ }
+            }
             return updated;
         });
 
@@ -508,7 +499,8 @@ export function useData<T>(collection: string) {
                     body: JSON.stringify(updates),
                 });
                 if (response.ok) {
-                    serverItem = await response.json();
+                    const json = await response.json();
+                    serverItem = json.data ?? json.asset ?? json;
                 }
             } catch (e) {
                 setIsOffline(true);
@@ -518,16 +510,17 @@ export function useData<T>(collection: string) {
         // Use server response if available, otherwise fall back to local update
         const finalItem = serverItem || updatedItem || { ...updates, id };
 
-        // Immediately update state to reflect the changes
-        setData(prev => prev.map(item => {
-            if ((item as any).id === id) {
-                return finalItem;
+        // Immediately update state and persist
+        setData(prev => {
+            const updated = prev.map(item => ((item as any).id === id ? finalItem : item));
+            dataCache.applyOptimisticUpdate(collection, finalItem);
+            if ((db as any)[collection]) {
+                try {
+                    localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
+                } catch (e) { /* ignore */ }
             }
-            return item;
-        }));
-
-        // Apply optimistic update to cache (preserve data, don't delete)
-        dataCache.applyOptimisticUpdate(collection, finalItem);
+            return updated;
+        });
 
         return finalItem;
     };

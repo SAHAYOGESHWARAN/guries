@@ -10,6 +10,8 @@ import LinkedAssetsSelector from '../components/LinkedAssetsSelector';
 import KeywordSelector from '../components/KeywordSelector';
 import { getStatusBadge } from '../constants';
 import { useData } from '../hooks/useData';
+import { useToast } from '../components/ToastContainer';
+import { validateFields } from '../utils/validation';
 import { exportToCSV } from '../utils/csvHelper';
 import type { Service, ContentRepositoryItem, AssetLibraryItem, User, Brand, Campaign, IndustrySectorItem, CountryMasterItem, Keyword, ContentTypeItem, PersonaMasterItem, FormMasterItem, ServiceLink, ServiceImage, FAQItem } from '../types';
 
@@ -37,6 +39,7 @@ const generateServiceCode = (serviceName: string): string => {
 };
 
 const ServiceMasterView: React.FC = () => {
+    const { addToast } = useToast();
     const { data: services = [], create, update, remove, refresh: refreshServices } = useData<Service>('services');
     const { data: subServices = [] } = useData<any>('subServices');
     const { data: contentAssets = [], update: updateContentAsset, refresh: refreshContentAssets } = useData<ContentRepositoryItem>('content');
@@ -366,7 +369,15 @@ const ServiceMasterView: React.FC = () => {
     };
 
     const handleSave = async () => {
-        if (!formData.service_name) return alert("Service Name is required");
+        const validation = validateFields(
+            { service_name: formData.service_name || '' },
+            { service_name: { required: true, minLength: 1 } }
+        );
+        if (!validation.isValid) {
+            const msg = validation.errors.map(e => e.message).join('; ');
+            addToast(msg, 'error');
+            return;
+        }
         const now = new Date().toISOString();
         const payload = { ...formData, updated_at: now };
 
@@ -374,14 +385,19 @@ const ServiceMasterView: React.FC = () => {
             payload.full_url = `/services/${formData.slug}`;
         }
 
-        if (editingItem) {
-            await update(editingItem.id, payload);
-        } else {
-            // Auto-generate created_at for new items
-            payload.created_at = now;
-            await create(payload as any);
+        try {
+            if (editingItem) {
+                await update(editingItem.id, payload);
+                addToast('Service updated successfully', 'success');
+            } else {
+                payload.created_at = now;
+                await create(payload as any);
+                addToast('Service created successfully', 'success');
+            }
+            setViewMode('list');
+        } catch (e: any) {
+            addToast(e?.message || 'Failed to save service', 'error');
         }
-        setViewMode('list');
     };
 
     const handleSlugChange = (val: string) => {

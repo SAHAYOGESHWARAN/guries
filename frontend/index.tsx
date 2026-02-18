@@ -69,7 +69,7 @@ const mockApiResponses: Record<string, any> = {
   }
 };
 
-// Override fetch for API calls
+// Override fetch - only intercept login for offline/mock; pass all other API calls through to backend
 const originalFetch = window.fetch.bind(window);
 window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   try {
@@ -78,69 +78,40 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       : (input instanceof URL ? input.toString() : (input as Request).url);
 
     const isApiCall = url.includes('/api/');
+    const method = init?.method || 'GET';
 
-    if (isApiCall) {
-      const pathMatch = url.match(/\/api[^?]*/);
-      const apiPath = pathMatch ? pathMatch[0] : url;
-      const method = init?.method || 'GET';
+    // Handle login only when backend may be unavailable - pass through otherwise
+    if (isApiCall && url.includes('/auth/login') && method === 'POST') {
+      try {
+        const body = typeof init?.body === 'string' ? JSON.parse(init.body) : init?.body;
+        const { email, password } = body || {};
 
-      // Handle login
-      if (apiPath.includes('/auth/login') && method === 'POST') {
-        try {
-          const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
-          const { email, password } = body || {};
-
-          if (email === 'admin@example.com' && password === 'admin123') {
-            return new Response(JSON.stringify(mockApiResponses['/api/auth/login']), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          } else {
-            return new Response(JSON.stringify({
-              success: false,
-              error: 'Invalid email or password'
-            }), {
-              status: 401,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-        } catch (e) {
+        if (email === 'admin@example.com' && password === 'admin123') {
+          return new Response(JSON.stringify(mockApiResponses['/api/auth/login']), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
           return new Response(JSON.stringify({
             success: false,
-            error: 'Invalid request'
+            error: 'Invalid email or password'
           }), {
-            status: 400,
+            status: 401,
             headers: { 'Content-Type': 'application/json' }
           });
         }
-      }
-
-      // For GET requests, return mock responses if available
-      if (method === 'GET' && mockApiResponses[apiPath]) {
-        return new Response(JSON.stringify(mockApiResponses[apiPath]), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      // For POST/PUT/DELETE requests, pass through to actual backend
-      if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-        return originalFetch(input as any, init);
-      }
-
-      // Default GET response
-      if (method === 'GET') {
+      } catch (e) {
         return new Response(JSON.stringify({
-          success: true,
-          data: [],
-          total: 0
+          success: false,
+          error: 'Invalid request'
         }), {
-          status: 200,
+          status: 400,
           headers: { 'Content-Type': 'application/json' }
         });
       }
     }
 
+    // Pass all other API calls through to actual backend - no mock empty responses
     return originalFetch(input as any, init);
   } catch (error) {
     console.error('Fetch error:', error);
