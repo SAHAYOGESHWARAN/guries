@@ -460,7 +460,7 @@ export const getQCStatistics = async (req: Request, res: Response) => {
             FROM assets
         `);
 
-        const stats = result.rows[0];
+        const stats = result.rows && result.rows[0] ? result.rows[0] : {};
 
         res.status(200).json({
             pending: stats.pending_count || 0,
@@ -469,7 +469,7 @@ export const getQCStatistics = async (req: Request, res: Response) => {
             rework: stats.rework_count || 0,
             total: stats.total_count || 0,
             averageScore: stats.avg_qc_score || 0,
-            approvalRate: stats.total_count > 0
+            approvalRate: (stats.total_count && stats.total_count > 0)
                 ? Math.round((stats.approved_count / stats.total_count) * 100)
                 : 0
         });
