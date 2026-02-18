@@ -868,6 +868,43 @@ CREATE TABLE IF NOT EXISTS seo_error_types (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Asset Website Usage
+CREATE TABLE IF NOT EXISTS asset_website_usage (
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  website_url TEXT,
+  page_url TEXT,
+  usage_count INTEGER DEFAULT 0,
+  last_used_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Asset Social Media Usage
+CREATE TABLE IF NOT EXISTS asset_social_media_usage (
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  platform TEXT,
+  post_url TEXT,
+  usage_count INTEGER DEFAULT 0,
+  engagement_count INTEGER DEFAULT 0,
+  last_used_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Asset Backlink Usage
+CREATE TABLE IF NOT EXISTS asset_backlink_usage (
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  backlink_url TEXT,
+  source_domain TEXT,
+  usage_count INTEGER DEFAULT 0,
+  last_used_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
 CREATE INDEX IF NOT EXISTS idx_assets_qc_status ON assets(qc_status);
@@ -929,3 +966,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_brands_status ON brands(status);
+CREATE INDEX IF NOT EXISTS idx_asset_website_usage_asset_id ON asset_website_usage(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_social_media_usage_asset_id ON asset_social_media_usage(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_backlink_usage_asset_id ON asset_backlink_usage(asset_id);

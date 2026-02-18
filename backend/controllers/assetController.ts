@@ -354,11 +354,8 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
         submitted_by, workflow_stage, qc_status, resource_files
     } = req.body;
 
-    // Set default usage_status since it's removed from UI but still in DB
-    const usage_status = 'Available';
-
     try {
-        // Validate required fields for submission
+        // Validate required fields
         if (!name?.trim()) {
             return res.status(400).json({ error: 'Asset name is required' });
         }
@@ -367,12 +364,12 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Application type (WEB, SEO, SMM) is required' });
         }
 
-        // For submission, require SEO and Grammar scores
+        // Validate scores for submission
         if (status === 'Pending QC Review') {
-            if (!seo_score || seo_score < 0 || seo_score > 100) {
+            if (seo_score === undefined || seo_score === null || seo_score < 0 || seo_score > 100) {
                 return res.status(400).json({ error: 'SEO score (0-100) is required for submission' });
             }
-            if (!grammar_score || grammar_score < 0 || grammar_score > 100) {
+            if (grammar_score === undefined || grammar_score === null || grammar_score < 0 || grammar_score > 100) {
                 return res.status(400).json({ error: 'Grammar score (0-100) is required for submission' });
             }
         }
@@ -396,20 +393,20 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `INSERT INTO assets(
-        asset_name, asset_type, asset_category, asset_format, content_type, tags, status,
-        file_url, og_image_url, thumbnail_url, file_size, file_type,
-        linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
-        linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
-        designed_by, published_by, verified_by, version_number, created_at, created_by,
-        application_type, keywords, content_keywords, seo_keywords,
-        web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
-        web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-        smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
-        submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
-        workflow_log, version_history, linking_active
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) `,
+                asset_name, asset_type, asset_category, asset_format, content_type, status,
+                file_url, thumbnail_url, og_image_url, file_size, file_type,
+                linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
+                linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
+                designed_by, published_by, verified_by, version_number, created_at, created_by,
+                application_type, keywords, content_keywords, seo_keywords,
+                web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
+                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
+                smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
+                submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
+                workflow_log, version_history, linking_active, usage_status
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                name, type, asset_category, asset_format, content_type || null, repository, status || null,
+                name, type, asset_category, asset_format, content_type || null, status || 'draft',
                 file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
                 linked_service_ids ? JSON.stringify(linked_service_ids) : null,
                 linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
@@ -431,54 +428,51 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
                 status === 'Pending QC Review' ? new Date().toISOString() : null,
                 workflow_stage || 'Add', qc_status || null,
                 resource_files ? JSON.stringify(resource_files) : null,
-                JSON.stringify(workflowLog), JSON.stringify(versionHistory), 0
+                JSON.stringify(workflowLog), JSON.stringify(versionHistory), 0, 'Available'
             ]
         );
 
-        // If RETURNING didn't work, do a separate SELECT
-        if (!result.rows || result.rows.length === 0 || !result.rows[0]) {
-            // Get the last inserted asset by name and created_at (since we just created it)
-            const selectResult = await pool.query(
-                `SELECT * FROM assets WHERE asset_name = ? AND created_at >= ? ORDER BY id DESC LIMIT 1`,
-                [name, new Date(Date.now() - 5000).toISOString()] // Within last 5 seconds
-            );
+        // Get the inserted asset
+        let assetId = result.rows[0]?.id;
 
+        if (!assetId) {
+            // Fallback: fetch by name and recent creation
+            const selectResult = await pool.query(
+                `SELECT * FROM assets WHERE asset_name = ? ORDER BY id DESC LIMIT 1`,
+                [name]
+            );
             if (!selectResult.rows || selectResult.rows.length === 0) {
                 return res.status(500).json({ error: 'Asset created but could not retrieve data' });
             }
-
+            assetId = selectResult.rows[0].id;
             result.rows = selectResult.rows;
         }
 
         const rawAsset = result.rows[0];
-        const assetId = rawAsset.id;
 
-        // Create static service links if services are selected during upload
+        // Create static service links if services are selected
         if (linked_service_id || (linked_sub_service_ids && linked_sub_service_ids.length > 0)) {
             try {
-                // Link to primary service with static flag
                 if (linked_service_id) {
                     await pool.query(
-                        `INSERT OR IGNORE INTO service_asset_links 
-                         (asset_id, service_id, is_static, created_by) 
-                         VALUES (?, ?, 1, ?)`,
+                        `INSERT INTO service_asset_links
+                         (asset_id, service_id, is_static, created_by, created_at)
+                         VALUES (?, ?, 1, ?, CURRENT_TIMESTAMP)`,
                         [assetId, linked_service_id, created_by || submitted_by || null]
                     );
                 }
 
-                // Link to sub-services with static flag
                 if (linked_sub_service_ids && linked_sub_service_ids.length > 0) {
                     for (const subServiceId of linked_sub_service_ids) {
                         await pool.query(
-                            `INSERT OR IGNORE INTO subservice_asset_links 
-                             (asset_id, sub_service_id, is_static, created_by) 
-                             VALUES (?, ?, 1, ?)`,
+                            `INSERT INTO subservice_asset_links
+                             (asset_id, sub_service_id, is_static, created_by, created_at)
+                             VALUES (?, ?, 1, ?, CURRENT_TIMESTAMP)`,
                             [assetId, subServiceId, created_by || submitted_by || null]
                         );
                     }
                 }
 
-                // Update static_service_links field in assets table
                 const staticLinks = [];
                 if (linked_service_id) staticLinks.push({ service_id: linked_service_id, type: 'service' });
                 if (linked_sub_service_ids && linked_sub_service_ids.length > 0) {
@@ -491,19 +485,18 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
                 );
             } catch (linkError) {
                 console.error('Error creating static service links:', linkError);
-                // Don't fail the asset creation if linking fails
             }
         }
 
         const newAsset = {
-            id: assetId, // Ensure ID is included
+            id: assetId,
             ...rawAsset,
-            name: rawAsset.asset_name || rawAsset.name,
-            type: rawAsset.asset_type || rawAsset.type,
-            repository: rawAsset.tags || rawAsset.repository || 'Content Repository',
-            usage_status: rawAsset.usage_status || 'Available',
-            thumbnail_url: rawAsset.og_image_url || rawAsset.thumbnail_url || rawAsset.file_url,
-            date: rawAsset.created_at || rawAsset.date,
+            name: rawAsset.asset_name,
+            type: rawAsset.asset_type,
+            repository: repository || 'Content Repository',
+            usage_status: 'Available',
+            thumbnail_url: rawAsset.thumbnail_url || rawAsset.file_url,
+            date: rawAsset.created_at,
             linked_service_ids: rawAsset.linked_service_ids ? JSON.parse(rawAsset.linked_service_ids) : [],
             linked_sub_service_ids: rawAsset.linked_sub_service_ids ? JSON.parse(rawAsset.linked_sub_service_ids) : [],
             keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : [],
@@ -515,13 +508,18 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             static_service_links: rawAsset.static_service_links ? JSON.parse(rawAsset.static_service_links) : []
         };
 
-        console.log('[assetController] Created asset with ID:', assetId, 'Response:', newAsset);
-        getSocket().emit('assetLibrary_created', newAsset);
+        try {
+            getSocket().emit('assetLibrary_created', newAsset);
+        } catch (socketError) {
+            console.warn('Socket.io not available:', socketError);
+        }
+
         res.status(201).json({ asset: newAsset, id: assetId, message: 'Asset created successfully' });
     } catch (error: any) {
+        console.error('Error creating asset:', error);
         res.status(500).json({ error: error.message });
     }
-};
+}
 
 export const updateAssetLibraryItem = async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -898,10 +896,24 @@ export const submitAssetForQC = async (req: Request, res: Response) => {
     const { seo_score, grammar_score, submitted_by, rework_count } = req.body;
 
     try {
+        // Validate asset ID format
+        const assetId = parseInt(id, 10);
+        if (isNaN(assetId) || assetId <= 0) {
+            return res.status(400).json({
+                error: 'Invalid asset ID format',
+                code: 'INVALID_ASSET_ID'
+            });
+        }
+
         // Get current asset data
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [assetId]);
         if (currentAsset.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
+            console.error(`Asset not found: ID=${assetId}`);
+            return res.status(404).json({
+                error: 'Asset not found',
+                code: 'ASSET_NOT_FOUND',
+                assetId: assetId
+            });
         }
 
         const assetData = currentAsset.rows[0];
@@ -933,11 +945,11 @@ status = 'Pending QC Review',
     rework_count = ?,
     updated_at = datetime('now')
             WHERE id = ?`,
-            [seo_score || null, grammar_score || null, submitted_by, JSON.stringify(workflowLog), newReworkCount, id]
+            [seo_score || null, grammar_score || null, submitted_by, JSON.stringify(workflowLog), newReworkCount, assetId]
         );
 
         // Get the updated asset
-        const result = await pool.query('SELECT id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = ?', [id]);
+        const result = await pool.query('SELECT id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = ?', [assetId]);
 
         // Create notification for admins about new QC submission
         try {
@@ -1027,6 +1039,15 @@ export const reviewAsset = async (req: Request, res: Response) => {
     const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, checklist_completion, checklist_items, user_role } = req.body;
 
     try {
+        // Validate asset ID format
+        const assetId = parseInt(id, 10);
+        if (isNaN(assetId) || assetId <= 0) {
+            return res.status(400).json({
+                error: 'Invalid asset ID format',
+                code: 'INVALID_ASSET_ID'
+            });
+        }
+
         // Role-based access control - only admins can perform QC review
         // Accept both 'admin' and 'Admin' (case-insensitive)
         if (!user_role || user_role.toLowerCase() !== 'admin') {
@@ -1045,9 +1066,14 @@ export const reviewAsset = async (req: Request, res: Response) => {
         const finalQcScore = qc_score || 0;
 
         // Get current asset data including rework count
-        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
+        const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [assetId]);
         if (currentAsset.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
+            console.error(`Asset not found: ID=${assetId}`);
+            return res.status(404).json({
+                error: 'Asset not found',
+                code: 'ASSET_NOT_FOUND',
+                assetId: assetId
+            });
         }
 
         const assetData = currentAsset.rows[0];
@@ -1113,11 +1139,11 @@ status = ?,
     rework_count = ?,
     updated_at = datetime('now')
             WHERE id = ?`,
-            [newStatus, finalQcScore, qc_remarks || '', qc_reviewer_id, checklist_completion ? 1 : 0, qcStatus, linkingActive, JSON.stringify(workflowLog), newReworkCount, id]
+            [newStatus, finalQcScore, qc_remarks || '', qc_reviewer_id, checklist_completion ? 1 : 0, qcStatus, linkingActive, JSON.stringify(workflowLog), newReworkCount, assetId]
         );
 
         // Get the updated asset
-        const updatedAsset = await pool.query('SELECT id, asset_name as name, status, qc_score, qc_remarks, qc_reviewed_at, linking_active, rework_count, submitted_by FROM assets WHERE id = ?', [id]);
+        const updatedAsset = await pool.query('SELECT id, asset_name as name, status, qc_score, qc_remarks, qc_reviewed_at, linking_active, rework_count, submitted_by FROM assets WHERE id = ?', [assetId]);
 
         // Create QC review record with checklist items
         try {
@@ -1125,7 +1151,7 @@ status = ?,
                 `INSERT INTO asset_qc_reviews(
         asset_id, qc_reviewer_id, qc_score, checklist_completion, qc_remarks, qc_decision, checklist_items, created_at
     ) VALUES(?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-                [id, qc_reviewer_id, finalQcScore, checklist_completion ? 1 : 0, qc_remarks || '', qc_decision, JSON.stringify(checklist_items || {})]
+                [assetId, qc_reviewer_id, finalQcScore, checklist_completion ? 1 : 0, qc_remarks || '', qc_decision, JSON.stringify(checklist_items || {})]
             );
         } catch (insertError) {
             // Log but don't fail if the review record insert fails
@@ -1184,7 +1210,7 @@ status = ?,
                 try {
                     await pool.query(
                         `INSERT OR IGNORE INTO service_asset_links(service_id, asset_id) VALUES(?, ?)`,
-                        [serviceId, id]
+                        [serviceId, assetId]
                     );
                 } catch (e) {
                     // Ignore duplicate errors
@@ -1196,7 +1222,7 @@ status = ?,
                 try {
                     await pool.query(
                         `INSERT OR IGNORE INTO subservice_asset_links(sub_service_id, asset_id) VALUES(?, ?)`,
-                        [subServiceId, id]
+                        [subServiceId, assetId]
                     );
                 } catch (e) {
                     // Ignore duplicate errors
@@ -1232,7 +1258,7 @@ status = ?,
             await pool.query(
                 `INSERT INTO qc_audit_log(asset_id, user_id, action, details, created_at)
 VALUES(?, ?, ?, ?, datetime('now'))`,
-                [id, qc_reviewer_id, `qc_${qc_decision} `, JSON.stringify({
+                [assetId, qc_reviewer_id, `qc_${qc_decision} `, JSON.stringify({
                     qc_score: finalQcScore,
                     qc_remarks: qc_remarks,
                     checklist_completion: checklist_completion,

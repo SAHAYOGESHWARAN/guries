@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     const apiUrl = isProduction
         ? (env.VITE_API_URL || '/api/v1') // Use relative path in production
         : (env.VITE_API_URL || '/api/v1'); // Use relative path in dev - proxy forwards to backend
+    const backendTarget = env.VITE_BACKEND_URL || `http://localhost:${env.VITE_BACKEND_PORT || '3004'}`;
 
     return {
         plugins: [react()],
@@ -44,13 +45,13 @@ export default defineConfig(({ mode }) => {
             },
             proxy: {
                 '/api': {
-                    target: 'http://localhost:3001',
+                    target: backendTarget,
                     changeOrigin: true,
                     secure: false,
                     rewrite: (path) => path,
                 },
                 '/socket.io': {
-                    target: 'http://localhost:3001',
+                    target: backendTarget,
                     changeOrigin: true,
                     ws: true,
                 },

@@ -205,9 +205,26 @@ if (usePostgres) {
                 if (trimmedSql.startsWith('INSERT')) {
                     const stmt = db.prepare(sql);
                     const result = params ? stmt.run(...params) : stmt.run();
+                    const insertedId = Number(result.lastInsertRowid);
+
+                    // For INSERT...RETURNING or when we need the full row, fetch it
+                    if (sql.toUpperCase().includes('RETURNING')) {
+                        // SQLite doesn't support RETURNING, so we need to fetch the row
+                        const selectSql = sql.substring(0, sql.toUpperCase().indexOf('RETURNING')).trim();
+                        const tableName = selectSql.match(/INTO\s+(\w+)/i)?.[1] || '';
+                        if (tableName && insertedId) {
+                            try {
+                                const row = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(insertedId);
+                                return { rows: row ? [row] : [], lastID: insertedId, changes: result.changes, rowCount: result.changes };
+                            } catch (e) {
+                                return { rows: [{ id: insertedId }], lastID: insertedId, changes: result.changes, rowCount: result.changes };
+                            }
+                        }
+                    }
+
                     return {
-                        rows: [{ id: Number(result.lastInsertRowid) }],
-                        lastID: Number(result.lastInsertRowid),
+                        rows: [{ id: insertedId }],
+                        lastID: insertedId,
                         changes: result.changes,
                         rowCount: result.changes
                     };

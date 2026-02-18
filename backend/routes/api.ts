@@ -97,7 +97,7 @@ const loginLimiter = rateLimit({
     message: 'Too many login attempts, please try again later',
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => process.env.NODE_ENV === 'test'
+    skip: (req) => process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development'
 });
 
 const otpLimiter = rateLimit({
@@ -248,10 +248,10 @@ router.use('/ai-evaluation-engine', aiEvaluationEngineRoutes);
 router.use('/reward-penalty-automation', rewardPenaltyAutomationRoutes);
 
 // Asset QC Workflow
-router.post('/assetLibrary/:id/submit-qc', asyncHandler(assetController.submitAssetForQC));
-router.get('/assetLibrary/qc/pending', asyncHandler(assetController.getAssetsForQC));
+router.post('/assetLibrary/:id/submit-qc', verifyToken as any, asyncHandler(assetController.submitAssetForQC));
+router.get('/assetLibrary/qc/pending', verifyToken as any, asyncHandler(assetController.getAssetsForQC));
 // QC Review - Admin only (permission enforced at both middleware and controller level)
-router.post('/assetLibrary/:id/qc-review', asyncHandler(assetController.reviewAsset));
+router.post('/assetLibrary/:id/qc-review', verifyToken as any, asyncHandler(assetController.reviewAsset));
 router.post('/assetLibrary/ai-scores', asyncHandler(assetController.generateAIScores));
 
 // Admin QC Asset Review - Admin only endpoints

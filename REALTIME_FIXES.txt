@@ -1,0 +1,171 @@
+================================================================================
+                    REALTIME ERROR FIXES - IMMEDIATE ACTIONS
+================================================================================
+
+ERROR 1: 401 Unauthorized on QC Review Submit
+Location: AssetQCView.tsx:253 - POST /api/v1/assetLibrary/39/qc-review
+Issue: Token validation failing or endpoint not protected properly
+Status: CRITICAL
+
+FIX 1.1: Add Authentication Middleware to QC Review Endpoint
+File: backend/routes/api.ts (Line 254)
+
+CURRENT:
+  router.post('/assetLibrary/:id/qc-review', asyncHandler(assetController.reviewAsset));
+
+CHANGE TO:
+  router.post('/assetLibrary/:id/qc-review', verifyToken as any, asyncHandler(assetController.reviewAsset));
+
+FIX 1.2: Verify Token is Being Sent Correctly
+File: frontend/views/AssetQCView.tsx (Line 253)
+
+CURRENT CODE:
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...
+    }
+  });
+
+VERIFY:
+  ✓ Token exists in localStorage
+  ✓ Token format is correct (Bearer <token>)
+  ✓ Token is not expired
+  ✓ Authorization header is properly formatted
+
+FIX 1.3: Add Token Validation in Frontend
+Add this check before making the request:
+
+  if (!token) {
+    alert('Session expired. Please login again.');
+    // Redirect to login
+    return;
+  }
+
+================================================================================
+
+ERROR 2: Placeholder Image Loading Failures
+Location: Multiple - via.placeholder.com requests failing with ERR_NAME_NOT_RESOLVED
+Issue: DNS resolution failing for placeholder service
+Status: MEDIUM
+
+FIX 2.1: Replace Placeholder Images with Local Fallback
+File: frontend/components/AssetCard.tsx (or similar)
+
+CURRENT:
+  <img src="https://via.placeholder.com/300x300?text=Product" />
+
+CHANGE TO:
+  <img 
+    src={asset.thumbnail_url || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23ddd%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2216%22%3ENo Image%3C/text%3E%3C/svg%3E'}
+    alt="Asset"
+    onError={(e) => {
+      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23ddd%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2216%22%3ENo Image%3C/text%3E%3C/svg%3E';
+    }}
+  />
+
+FIX 2.2: Create Fallback Image Component
+Create: frontend/components/FallbackImage.tsx
+
+  export const FallbackImage = ({ src, alt, width = 300, height = 300 }) => {
+    const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22${width}%22 height=%22${height}%22%3E%3Crect fill=%22%23ddd%22 width=%22${width}%22 height=%22${height}%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2216%22%3E${alt}%3C/text%3E%3C/svg%3E`;
+    
+    return (
+      <img 
+        src={src || fallbackSvg}
+        alt={alt}
+        width={width}
+        height={height}
+        onError={(e) => {
+          e.currentTarget.src = fallbackSvg;
+        }}
+      />
+    );
+  };
+
+FIX 2.3: Update All Image References
+Replace all placeholder image URLs with:
+  - Use asset.thumbnail_url if available
+  - Use local SVG fallback if not
+  - Never rely on external placeholder services
+
+================================================================================
+
+IMPLEMENTATION STEPS:
+
+STEP 1: Fix Authentication (5 minutes)
+  1. Open backend/routes/api.ts
+  2. Find line 254: router.post('/assetLibrary/:id/qc-review'...
+  3. Add verifyToken middleware
+  4. Save and rebuild
+
+STEP 2: Fix Placeholder Images (10 minutes)
+  1. Create FallbackImage component
+  2. Find all placeholder image URLs
+  3. Replace with FallbackImage component
+  4. Test image loading
+
+STEP 3: Test Realtime (5 minutes)
+  1. Login to application
+  2. Navigate to QC Review
+  3. Submit QC review
+  4. Verify 200 response
+  5. Check images load correctly
+
+================================================================================
+
+VERIFICATION CHECKLIST:
+
+Authentication Fix:
+  ✓ Token is sent in Authorization header
+  ✓ Backend validates token
+  ✓ QC review endpoint returns 200 on success
+  ✓ 401 error no longer appears
+
+Image Fix:
+  ✓ No ERR_NAME_NOT_RESOLVED errors
+  ✓ Fallback images display correctly
+  ✓ Real images load when available
+  ✓ No console errors for images
+
+================================================================================
+
+EXPECTED RESULTS AFTER FIXES:
+
+Before:
+  ❌ POST /api/v1/assetLibrary/39/qc-review 401 (Unauthorized)
+  ❌ GET https://via.placeholder.com/... net::ERR_NAME_NOT_RESOLVED
+
+After:
+  ✅ POST /api/v1/assetLibrary/39/qc-review 200 (OK)
+  ✅ Images load from thumbnail_url or display fallback SVG
+  ✅ No console errors
+  ✅ QC review submits successfully
+
+================================================================================
+
+QUICK FIX COMMANDS:
+
+1. Add middleware to QC endpoint:
+   File: backend/routes/api.ts
+   Line: 254
+   Add: verifyToken as any,
+
+2. Rebuild backend:
+   npm run build
+
+3. Restart backend:
+   npm run dev
+
+4. Test in browser:
+   - Open DevTools (F12)
+   - Go to QC Review page
+   - Submit QC review
+   - Check Network tab for 200 response
+
+================================================================================
+
+STATUS: READY FOR IMMEDIATE IMPLEMENTATION

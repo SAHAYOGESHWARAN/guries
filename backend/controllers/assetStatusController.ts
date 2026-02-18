@@ -135,6 +135,23 @@ export const updateQCStatus = async (req: Request, res: Response) => {
             return res.status(400).json({ error: `Invalid QC status. Must be one of: ${validStatuses.join(', ')}` });
         }
 
+        // Get current asset status
+        const assetCheck = await pool.query(
+            'SELECT id, qc_status, workflow_stage FROM assets WHERE id = ?',
+            [asset_id]
+        );
+
+        if (!assetCheck.rows || assetCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const currentAsset = assetCheck.rows[0];
+
+        // Validate state transitions
+        if (currentAsset.qc_status === 'Pass' && qc_status === 'Fail') {
+            return res.status(400).json({ error: 'Cannot change from Pass to Fail. Create a new version instead.' });
+        }
+
         // Update asset
         await pool.query(
             `UPDATE assets 
@@ -143,12 +160,22 @@ export const updateQCStatus = async (req: Request, res: Response) => {
             [qc_status, qc_remarks || null, asset_id]
         );
 
-        // If Pass, activate linking
+        // If Pass, check if asset has service links before activating
+        let linkingActivated = false;
         if (qc_status === 'Pass') {
-            await pool.query(
-                `UPDATE assets SET linking_active = 1 WHERE id = ?`,
+            const linkCheck = await pool.query(
+                `SELECT COUNT(*) as link_count FROM service_asset_links WHERE asset_id = ?`,
                 [asset_id]
             );
+
+            const linkCount = linkCheck.rows[0]?.link_count || 0;
+            if (linkCount > 0) {
+                await pool.query(
+                    `UPDATE assets SET linking_active = 1 WHERE id = ?`,
+                    [asset_id]
+                );
+                linkingActivated = true;
+            }
         }
 
         // Log status change
@@ -158,7 +185,8 @@ export const updateQCStatus = async (req: Request, res: Response) => {
             message: 'QC status updated successfully',
             asset_id,
             qc_status,
-            linking_active: qc_status === 'Pass' ? 1 : 0
+            linking_active: linkingActivated ? 1 : 0,
+            note: linkingActivated ? 'Linking activated' : 'No service links found - linking not activated'
         });
     } catch (error: any) {
         console.error('Error updating QC status:', error);
@@ -182,6 +210,32 @@ export const updateWorkflowStage = async (req: Request, res: Response) => {
             return res.status(400).json({ error: `Invalid workflow stage. Must be one of: ${validStages.join(', ')}` });
         }
 
+        // Get current asset
+        const assetCheck = await pool.query(
+            'SELECT id, qc_status, workflow_stage FROM assets WHERE id = ?',
+            [asset_id]
+        );
+
+        if (!assetCheck.rows || assetCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+
+        const currentAsset = assetCheck.rows[0];
+
+        // Validate stage progression
+        const stages = ['Add', 'Submit', 'QC', 'Approve', 'Publish'];
+        const currentIndex = stages.indexOf(currentAsset.workflow_stage);
+        const newIndex = stages.indexOf(workflow_stage);
+
+        // Allow moving forward or backward, but validate requirements for Publish
+        if (workflow_stage === 'Publish') {
+            if (currentAsset.qc_status !== 'Pass') {
+                return res.status(400).json({
+                    error: 'Cannot publish asset without passing QC. Current QC status: ' + currentAsset.qc_status
+                });
+            }
+        }
+
         // Update asset
         await pool.query(
             `UPDATE assets SET workflow_stage = ? WHERE id = ?`,
@@ -194,7 +248,8 @@ export const updateWorkflowStage = async (req: Request, res: Response) => {
         res.status(200).json({
             message: 'Workflow stage updated successfully',
             asset_id,
-            workflow_stage
+            workflow_stage,
+            previousStage: currentAsset.workflow_stage
         });
     } catch (error: any) {
         console.error('Error updating workflow stage:', error);
@@ -235,21 +290,36 @@ export const updateLinkingStatus = async (req: Request, res: Response) => {
 // Get status history
 export const getStatusHistory = async (req: Request, res: Response) => {
     const { asset_id } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
 
     try {
         if (!asset_id) {
             return res.status(400).json({ error: 'asset_id is required' });
         }
 
-        const result = await pool.query(
-            `SELECT * FROM asset_status_log 
-             WHERE asset_id = ? 
-             ORDER BY changed_at DESC 
-             LIMIT 50`,
+        // Get total count
+        const countResult = await pool.query(
+            'SELECT COUNT(*) as total FROM asset_status_log WHERE asset_id = ?',
             [asset_id]
         );
+        const total = countResult.rows[0]?.total || 0;
 
-        res.status(200).json(result.rows);
+        // Get paginated history
+        const result = await pool.query(
+            `SELECT id, asset_id, status, changed_by, change_reason, created_at 
+             FROM asset_status_log 
+             WHERE asset_id = ? 
+             ORDER BY created_at DESC 
+             LIMIT ? OFFSET ?`,
+            [asset_id, limit, offset]
+        );
+
+        res.status(200).json({
+            history: result.rows,
+            pagination: { page, limit, total, pages: Math.ceil(total / limit) }
+        });
     } catch (error: any) {
         console.error('Error getting status history:', error);
         res.status(500).json({ error: error.message });
@@ -410,9 +480,9 @@ function getNextStage(currentStage: string): string {
 async function logStatusChange(assetId: number, fieldName: string, newValue: string, userId?: number) {
     try {
         await pool.query(
-            `INSERT INTO asset_status_log (asset_id, field_name, new_value, changed_by, changed_at)
+            `INSERT INTO asset_status_log (asset_id, status, changed_by, change_reason, created_at)
              VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-            [assetId, fieldName, newValue, userId || null]
+            [assetId, newValue, userId || null, fieldName]
         );
     } catch (error) {
         console.error('Error logging status change:', error);

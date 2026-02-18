@@ -57,7 +57,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
 
     // Use the useData hook for real-time data
     const { data: assetsForQC = [], loading: dataLoading, refresh: refreshAssets, update: updateAsset } = useData<AssetLibraryItem>('assetLibrary');
-    
+
     // Transform API data to match frontend interface
     const transformedAssets = useMemo(() => {
         return assetsForQC.map(asset => ({
@@ -65,7 +65,7 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
             name: asset.name || asset.asset_name || 'Untitled Asset', // Map asset_name to name with fallback
         }));
     }, [assetsForQC]);
-    
+
     const { data: users = [] } = useData<User>('users');
     const { data: services = [] } = useData<Service>('services');
     const { data: tasks = [] } = useData<Task>('tasks');
@@ -249,10 +249,12 @@ const AssetQCView: React.FC<AssetQCViewProps> = ({ onNavigate }) => {
         setSubmitting(true);
         try {
             const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+            const token = localStorage.getItem('token');
             const response = await fetch(`${apiUrl}/assetLibrary/${selectedAsset.id}/qc-review`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                     'X-User-Id': String(user.id),
                     'X-User-Role': user.role
                 },
