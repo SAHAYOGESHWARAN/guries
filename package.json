@@ -16,7 +16,8 @@
     "install:all": "npm install && cd backend && npm install --legacy-peer-deps && cd ../frontend && npm install --legacy-peer-deps && cd ..",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "cd backend && npm test",
-    "test:frontend": "cd frontend && npx vitest run"
+    "test:frontend": "cd frontend && npx vitest run",
+    "e2e:assets": "node scripts/e2e-assets-qc-local.js"
   },
   "dependencies": {
     "@vercel/node": "^3.0.0",
