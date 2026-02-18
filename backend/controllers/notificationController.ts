@@ -1,7 +1,6 @@
-
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
-import { getSocket } from '../socket';
+import { emitToUser } from '../socket';
 
 export const getNotifications = async (req: Request, res: Response) => {
     try {
@@ -89,9 +88,9 @@ export const createNotification = async (req: Request, res: Response) => {
             created_at: new Date().toISOString()
         };
 
-        // Emit socket event safely
+        // Emit socket event to specific user
         try {
-            getSocket().emit('notification_created', newItem);
+            emitToUser(user_id, 'notification_created', newItem);
         } catch (socketError) {
             console.warn('Socket.io not available for notification:', socketError);
         }
@@ -137,7 +136,7 @@ export const markAsRead = async (req: Request, res: Response) => {
         };
 
         try {
-            getSocket().emit('notification_updated', updatedItem);
+            emitToUser(userId, 'notification_updated', updatedItem);
         } catch (socketError) {
             console.warn('Socket.io not available:', socketError);
         }
@@ -164,7 +163,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
         );
 
         try {
-            getSocket().emit('notifications_all_read', { user_id: userId });
+            emitToUser(userId, 'notifications_all_read', { user_id: userId });
         } catch (socketError) {
             console.warn('Socket.io not available:', socketError);
         }
@@ -202,7 +201,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
         await pool.query('DELETE FROM notifications WHERE id = ?', [id]);
 
         try {
-            getSocket().emit('notification_deleted', { id });
+            emitToUser(userId, 'notification_deleted', { id });
         } catch (socketError) {
             console.warn('Socket.io not available:', socketError);
         }

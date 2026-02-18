@@ -82,6 +82,15 @@ app.get('/api/v1/health', (req, res) => {
 // Initialize PostgreSQL Database
 const connectDB = async () => {
     try {
+        // Initialize database schema first
+        try {
+            console.log('🔄 Initializing database...');
+            await initializeDatabase();
+            console.log('✅ Database schema initialized');
+        } catch (error: any) {
+            console.warn('⚠️  Database initialization skipped:', error.message);
+        }
+
         // Test connection - try Postgres-style first, then fall back to SQLite-compatible query
         try {
             await pool.query('SELECT NOW()');

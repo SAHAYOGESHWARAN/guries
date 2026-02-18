@@ -1,181 +1,119 @@
 /**
- * Global Data Cache
- * Persists fetched data across route changes and component remounts
- * Prevents unnecessary API calls and maintains data consistency
- * 
- * Key improvements:
- * - Smart invalidation: Only marks cache as stale instead of deleting
- * - Optimistic updates: Applies mutations immediately to cache
- * - Fallback to stale data: Returns stale data while refreshing
- * - Prevents data loss on route changes
+ * Global Data Cache for useData Hook
+ * Provides centralized caching and invalidation
  */
 
 interface CacheEntry<T> {
     data: T[];
     timestamp: number;
-    isStale: boolean;
+    ttl: number; // Time to live in milliseconds
 }
 
 class DataCache {
-    private cache: Map<string, CacheEntry<any>> = new Map();
-    private readonly CACHE_DURATION = 30 * 60 * 1000; // 30 minutes (extended from 10 to prevent data loss)
-    private refreshCallbacks: Map<string, Set<() => void>> = new Map();
+    private cache = new Map<string, CacheEntry<any>>();
+    private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
+    private invalidationListeners = new Map<string, Set<() => void>>();
 
     /**
-     * Get cached data for a collection
-     * Always returns data if available, marks as stale if expired
+     * Get cached data
      */
-    get<T>(collection: string): T[] | null {
-        const entry = this.cache.get(collection);
+    get<T>(key: string): T[] | null {
+        const entry = this.cache.get(key);
+        if (!entry) return null;
 
-        if (!entry) {
-            console.log(`[DataCache] No cache for ${collection}`);
+        // Check if cache has expired
+        if (Date.now() - entry.timestamp > entry.ttl) {
+            this.cache.delete(key);
             return null;
         }
 
-        // Check if cache is stale
-        const age = Date.now() - entry.timestamp;
-        if (age > this.CACHE_DURATION) {
-            console.log(`[DataCache] Cache for ${collection} is stale (${age}ms old, ${entry.data.length} items) - will refresh in background`);
-            entry.isStale = true;
-        } else {
-            console.log(`[DataCache] Cache hit for ${collection} (${age}ms old, ${entry.data.length} items)`);
-        }
-
-        // Always return data if available, even if stale
-        return entry.data;
+        return entry.data as T[];
     }
 
     /**
-     * Set cached data for a collection
+     * Set cached data
      */
-    set<T>(collection: string, data: T[]): void {
-        console.log(`[DataCache] Caching ${collection} with ${data.length} items`);
-        this.cache.set(collection, {
+    set<T>(key: string, data: T[], ttl = this.DEFAULT_TTL): void {
+        this.cache.set(key, {
             data,
             timestamp: Date.now(),
-            isStale: false
+            ttl
         });
     }
 
     /**
-     * Check if cache is stale
+     * Invalidate cache for a specific key
      */
-    isStale(collection: string): boolean {
-        const entry = this.cache.get(collection);
-        if (!entry) return true;
-
-        const age = Date.now() - entry.timestamp;
-        return age > this.CACHE_DURATION;
-    }
-
-    /**
-     * Mark cache as stale (instead of deleting) to preserve data
-     * This allows fallback to stale data while refreshing
-     */
-    markStale(collection: string): void {
-        const entry = this.cache.get(collection);
-        if (entry) {
-            console.log(`[DataCache] Marking ${collection} as stale (will refresh on next fetch)`);
-            entry.isStale = true;
-            // Set timestamp to trigger refresh but keep data available
-            entry.timestamp = Date.now() - this.CACHE_DURATION - 1000;
-        }
-    }
-
-    /**
-     * Invalidate cache for a collection (hard delete)
-     * Use sparingly - prefer markStale() to preserve data
-     */
-    invalidate(collection: string): void {
-        console.log(`[DataCache] Invalidating cache for ${collection}`);
-        this.cache.delete(collection);
+    invalidate(key: string): void {
+        this.cache.delete(key);
+        this.notifyListeners(key);
     }
 
     /**
      * Invalidate all caches
      */
     invalidateAll(): void {
-        console.log(`[DataCache] Invalidating all caches`);
         this.cache.clear();
-    }
-
-    /**
-     * Apply optimistic update to cached data
-     * Immediately updates cache with mutation, preventing data loss
-     */
-    applyOptimisticUpdate<T>(collection: string, item: T & { id: number | string }): void {
-        const entry = this.cache.get(collection);
-        if (!entry) return;
-
-        const index = entry.data.findIndex((d: any) => d.id === item.id);
-        if (index >= 0) {
-            entry.data[index] = item;
-            console.log(`[DataCache] Applied optimistic update to ${collection} item ${item.id}`);
+        for (const listeners of this.invalidationListeners.values()) {
+            listeners.forEach(listener => listener());
         }
     }
 
     /**
-     * Apply optimistic create to cached data
-     * Adds new item to cache immediately
+     * Subscribe to cache invalidation events
      */
-    applyOptimisticCreate<T>(collection: string, item: T): void {
-        const entry = this.cache.get(collection);
-        if (!entry) return;
-
-        entry.data.unshift(item);
-        console.log(`[DataCache] Applied optimistic create to ${collection}`);
-    }
-
-    /**
-     * Apply optimistic delete to cached data
-     * Removes item from cache immediately
-     */
-    applyOptimisticDelete(collection: string, id: number | string): void {
-        const entry = this.cache.get(collection);
-        if (!entry) return;
-
-        entry.data = entry.data.filter((d: any) => d.id !== id);
-        console.log(`[DataCache] Applied optimistic delete to ${collection} item ${id}`);
-    }
-
-    /**
-     * Register callback to be called when cache is refreshed
-     */
-    onRefresh(collection: string, callback: () => void): () => void {
-        if (!this.refreshCallbacks.has(collection)) {
-            this.refreshCallbacks.set(collection, new Set());
+    onInvalidate(key: string, callback: () => void): () => void {
+        if (!this.invalidationListeners.has(key)) {
+            this.invalidationListeners.set(key, new Set());
         }
-        this.refreshCallbacks.get(collection)!.add(callback);
+        this.invalidationListeners.get(key)!.add(callback);
 
         // Return unsubscribe function
         return () => {
-            this.refreshCallbacks.get(collection)?.delete(callback);
+            this.invalidationListeners.get(key)?.delete(callback);
         };
     }
 
     /**
-     * Notify all listeners that cache has been refreshed
+     * Notify listeners of invalidation
      */
-    notifyRefresh(collection: string): void {
-        const callbacks = this.refreshCallbacks.get(collection);
-        if (callbacks) {
-            callbacks.forEach(cb => cb());
+    private notifyListeners(key: string): void {
+        const listeners = this.invalidationListeners.get(key);
+        if (listeners) {
+            listeners.forEach(listener => listener());
         }
     }
 
     /**
      * Get cache stats
      */
-    getStats(): { collection: string; items: number; age: number; isStale: boolean }[] {
-        return Array.from(this.cache.entries()).map(([collection, entry]) => ({
-            collection,
-            items: entry.data.length,
-            age: Date.now() - entry.timestamp,
-            isStale: entry.isStale
-        }));
+    getStats(): { keys: string[]; size: number } {
+        return {
+            keys: Array.from(this.cache.keys()),
+            size: this.cache.size
+        };
+    }
+
+    /**
+     * Clear all caches and listeners
+     */
+    clear(): void {
+        this.cache.clear();
+        this.invalidationListeners.clear();
     }
 }
 
-// Global singleton instance
+// Export singleton instance
 export const dataCache = new DataCache();
+
+/**
+ * Hook to subscribe to cache invalidation
+ */
+export function useCacheInvalidation(key: string, callback: () => void) {
+    React.useEffect(() => {
+        return dataCache.onInvalidate(key, callback);
+    }, [key, callback]);
+}
+
+// Import React for the hook
+import React from 'react';

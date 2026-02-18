@@ -172,29 +172,89 @@ if (usePostgres) {
     // SQLite Configuration (for local development)
     console.log('[DB] Initializing SQLite connection...');
 
-    const dbPath = path.join(__dirname, '..', 'mcc_db.sqlite');
-    const db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
+    // Ensure database directory exists
+    const dbDir = path.join(__dirname, '..', '..');
+    if (!require('fs').existsSync(dbDir)) {
+        require('fs').mkdirSync(dbDir, { recursive: true });
+    }
+
+    const dbPath = path.join(dbDir, 'mcc_db.sqlite');
+    console.log(`[DB] SQLite database path: ${dbPath}`);
+
+    // Open database with explicit read-write flags
+    const db = new Database(dbPath, { fileMustExist: false, readonly: false, timeout: 5000 });
+    db.pragma('journal_mode = DELETE');
+    db.pragma('synchronous = FULL');
+    db.pragma('foreign_keys = ON');
+
+    // Create tables synchronously at initialization time
+    const tables = [
+        `CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            role TEXT DEFAULT 'user',
+            status TEXT DEFAULT 'active',
+            password_hash TEXT,
+            department TEXT,
+            country TEXT,
+            last_login TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            title TEXT,
+            message TEXT,
+            type TEXT,
+            is_read INTEGER DEFAULT 0,
+            link TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_name TEXT NOT NULL,
+            asset_type TEXT,
+            asset_category TEXT,
+            asset_format TEXT,
+            status TEXT DEFAULT 'draft',
+            qc_status TEXT,
+            file_url TEXT,
+            created_by INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`
+    ];
+
+    console.log('[DB] Creating tables at module initialization...');
+    for (const tableSQL of tables) {
+        try {
+            console.log(`[DB] Creating table: ${tableSQL.substring(0, 50)}...`);
+            db.prepare(tableSQL).run();
+            console.log('[DB] ✅ Table created');
+        } catch (e: any) {
+            console.error('[DB] ❌ Table creation error:', e.message);
+            if (!e.message.includes('already exists')) {
+                console.warn('[DB] Table creation warning:', e.message.substring(0, 80));
+            }
+        }
+    }
+
+    // Force a checkpoint to flush changes to disk
+    try {
+        db.pragma('wal_checkpoint(RESTART)');
+        console.log('[DB] ✅ Checkpoint completed');
+    } catch (e) {
+        console.log('[DB] Checkpoint not needed (not using WAL mode)');
+    }
+
+    console.log(`[DB] Database opened successfully at ${dbPath}`);
 
     pool = {
         query: async (sql: string, params?: any[]) => {
             try {
                 const trimmedSql = sql.trim().toUpperCase();
-
-                if (trimmedSql.startsWith('CREATE') || trimmedSql.startsWith('DROP') || trimmedSql.startsWith('ALTER')) {
-                    try {
-                        const statements = sql.split(';').filter(s => s.trim());
-                        for (const stmt of statements) {
-                            if (stmt.trim()) {
-                                db.prepare(stmt).run();
-                            }
-                        }
-                        return { rows: [], rowCount: 0 };
-                    } catch (e: any) {
-                        if (!e.message.includes('already exists')) throw e;
-                        return { rows: [], rowCount: 0 };
-                    }
-                }
 
                 if (trimmedSql.startsWith('SELECT')) {
                     const stmt = db.prepare(sql);
@@ -206,21 +266,6 @@ if (usePostgres) {
                     const stmt = db.prepare(sql);
                     const result = params ? stmt.run(...params) : stmt.run();
                     const insertedId = Number(result.lastInsertRowid);
-
-                    // For INSERT...RETURNING or when we need the full row, fetch it
-                    if (sql.toUpperCase().includes('RETURNING')) {
-                        // SQLite doesn't support RETURNING, so we need to fetch the row
-                        const selectSql = sql.substring(0, sql.toUpperCase().indexOf('RETURNING')).trim();
-                        const tableName = selectSql.match(/INTO\s+(\w+)/i)?.[1] || '';
-                        if (tableName && insertedId) {
-                            try {
-                                const row = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(insertedId);
-                                return { rows: row ? [row] : [], lastID: insertedId, changes: result.changes, rowCount: result.changes };
-                            } catch (e) {
-                                return { rows: [{ id: insertedId }], lastID: insertedId, changes: result.changes, rowCount: result.changes };
-                            }
-                        }
-                    }
 
                     return {
                         rows: [{ id: insertedId }],
@@ -240,6 +285,30 @@ if (usePostgres) {
                     const stmt = db.prepare(sql);
                     const result = params ? stmt.run(...params) : stmt.run();
                     return { rows: [], changes: result.changes, rowCount: result.changes };
+                }
+
+                // Handle CREATE/DROP/ALTER statements
+                if (trimmedSql.startsWith('CREATE') || trimmedSql.startsWith('DROP') || trimmedSql.startsWith('ALTER')) {
+                    try {
+                        const statements = sql.split(';').filter(s => s.trim());
+                        for (const stmt of statements) {
+                            if (stmt.trim()) {
+                                try {
+                                    db.prepare(stmt).run();
+                                } catch (stmtErr: any) {
+                                    if (!stmtErr.message.includes('already exists')) {
+                                        throw stmtErr;
+                                    }
+                                }
+                            }
+                        }
+                        return { rows: [], rowCount: 0 };
+                    } catch (e: any) {
+                        if (!e.message.includes('already exists')) {
+                            throw e;
+                        }
+                        return { rows: [], rowCount: 0 };
+                    }
                 }
 
                 const stmt = db.prepare(sql);

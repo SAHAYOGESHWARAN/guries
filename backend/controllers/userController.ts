@@ -16,10 +16,10 @@ export const createUser = async (req: Request, res: Response) => {
     const { name, email, role, department, country, status } = req.body;
     try {
         const result = await pool.query(
-            "INSERT INTO users (name, email, role, department, country, status, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
-            [name, email, role, department, country, status]
+            "INSERT INTO users (name, email, role, department, country, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [name, email, role, department, country, status, new Date().toISOString()]
         );
-        const newUser = result.rows[0];
+        const newUser = result.rows[0] || { id: result.lastID, name, email, role, department, country, status };
         getSocket().emit('user_created', newUser);
         res.status(201).json(newUser);
     } catch (error: any) {
