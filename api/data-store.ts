@@ -10,7 +10,9 @@ interface StoredData {
 
 // Global data store (persists during function instance lifetime)
 const dataStore: StoredData = {
-    assets: [],
+    assets: [
+        { id: 1, asset_name: 'Sample Web Asset', status: 'Draft', qc_status: 'pending', asset_type: 'image', application_type: 'web', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    ],
     keywords: [],
     projects: [],
     tasks: [],
@@ -31,7 +33,7 @@ const dataStore: StoredData = {
 };
 
 let nextId: { [key: string]: number } = {
-    assets: 1,
+    assets: 2,
     keywords: 3,
     projects: 1,
     tasks: 1,

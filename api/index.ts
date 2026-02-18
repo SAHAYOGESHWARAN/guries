@@ -52,6 +52,115 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        // QC Review: POST /api/v1/assetLibrary/:id/qc-review (AssetQCView)
+        if (req.url?.match(/\/assetLibrary\/\d+\/qc-review$/) && req.method === 'POST') {
+            const match = req.url.match(/\/assetLibrary\/(\d+)\/qc-review$/);
+            const assetId = match ? parseInt(match[1], 10) : 0;
+            const { qc_score, qc_remarks, qc_decision, qc_reviewer_id, user_role } = req.body || {};
+
+            if (!['approved', 'rejected', 'rework'].includes(qc_decision)) {
+                return res.status(400).json({ success: false, error: 'QC decision must be "approved", "rejected", or "rework"' });
+            }
+            if (user_role?.toLowerCase() !== 'admin') {
+                return res.status(403).json({ success: false, error: 'Access denied. Only administrators can perform QC reviews.' });
+            }
+
+            const asset = dataStore.getById('assets', assetId);
+            if (!asset) {
+                return res.status(404).json({ success: false, error: 'Asset not found' });
+            }
+
+            const updates: Record<string, any> = {
+                qc_score: qc_score || 0,
+                qc_remarks: qc_remarks || '',
+                qc_status: qc_decision === 'approved' ? 'Pass' : qc_decision === 'rejected' ? 'Fail' : 'Rework',
+                status: qc_decision === 'approved' ? 'QC Approved' : qc_decision === 'rejected' ? 'QC Rejected' : 'Rework Required',
+                qc_reviewer_id: qc_reviewer_id || null,
+                linking_active: qc_decision === 'approved' ? 1 : 0,
+                updated_at: new Date().toISOString()
+            };
+            if (qc_decision === 'rework') {
+                updates.rework_count = (asset.rework_count || 0) + 1;
+            }
+
+            const updated = dataStore.update('assets', assetId, updates);
+            return res.status(200).json({ success: true, data: updated, message: 'QC review submitted successfully' });
+        }
+
+        // Submit for QC: POST /api/v1/assetLibrary/:id/submit-qc (AssetQCView)
+        if (req.url?.match(/\/assetLibrary\/\d+\/submit-qc$/) && req.method === 'POST') {
+            const match = req.url.match(/\/assetLibrary\/(\d+)\/submit-qc$/);
+            const assetId = match ? parseInt(match[1], 10) : 0;
+            const asset = dataStore.getById('assets', assetId);
+            if (!asset) {
+                return res.status(404).json({ success: false, error: 'Asset not found' });
+            }
+            const updated = dataStore.update('assets', assetId, {
+                qc_status: 'pending',
+                status: 'Pending QC',
+                updated_at: new Date().toISOString()
+            });
+            return res.status(200).json({ success: true, data: updated, message: 'Asset submitted for QC review' });
+        }
+
+        // Asset QC Reviews: GET /api/v1/assetLibrary/:id/qc-reviews (AssetDetailSidePanel)
+        if (req.url?.match(/\/assetLibrary\/\d+\/qc-reviews$/) && req.method === 'GET') {
+            return res.status(200).json({ success: true, data: [] });
+        }
+
+        // QCReviewPage: GET /api/v1/qc-review/pending
+        if (req.url?.includes('/qc-review/pending') && req.method === 'GET') {
+            const assets = dataStore.getAll('assets').filter((a: any) => (a.qc_status === 'pending' || a.qc_status === 'rework'));
+            return res.status(200).json({ success: true, data: assets, count: assets.length });
+        }
+
+        // QCReviewPage: GET /api/v1/qc-review/statistics
+        if (req.url?.includes('/qc-review/statistics') && req.method === 'GET') {
+            const all = dataStore.getAll('assets');
+            const pending = all.filter((a: any) => a.qc_status === 'pending' || a.qc_status === 'rework').length;
+            const approved = all.filter((a: any) => a.qc_status === 'Pass' || a.status === 'QC Approved').length;
+            const rejected = all.filter((a: any) => a.qc_status === 'Fail' || a.status === 'QC Rejected').length;
+            const rework = all.filter((a: any) => a.qc_status === 'rework').length;
+            const total = all.length;
+            return res.status(200).json({
+                success: true,
+                data: { pending, approved, rejected, rework, total, approvalRate: total ? Math.round((approved / total) * 100) : 0 }
+            });
+        }
+
+        // QCReviewPage: POST /api/v1/qc-review/approve | reject | rework
+        if (req.url?.includes('/qc-review/approve') && req.method === 'POST') {
+            const { asset_id, qc_remarks, qc_score } = req.body || {};
+            if (!asset_id) return res.status(400).json({ success: false, error: 'asset_id is required' });
+            const asset = dataStore.getById('assets', parseInt(String(asset_id), 10));
+            if (!asset) return res.status(404).json({ success: false, error: 'Asset not found' });
+            const updated = dataStore.update('assets', parseInt(String(asset_id), 10), {
+                qc_status: 'Pass', status: 'Published', qc_score: qc_score || 0, qc_remarks: qc_remarks || '', updated_at: new Date().toISOString()
+            });
+            return res.status(200).json({ success: true, data: updated, message: 'Asset approved successfully' });
+        }
+        if (req.url?.includes('/qc-review/reject') && req.method === 'POST') {
+            const { asset_id, qc_remarks, qc_score } = req.body || {};
+            if (!asset_id) return res.status(400).json({ success: false, error: 'asset_id is required' });
+            const asset = dataStore.getById('assets', parseInt(String(asset_id), 10));
+            if (!asset) return res.status(404).json({ success: false, error: 'Asset not found' });
+            const updated = dataStore.update('assets', parseInt(String(asset_id), 10), {
+                qc_status: 'Fail', status: 'QC Rejected', qc_score: qc_score || 0, qc_remarks: qc_remarks || '', updated_at: new Date().toISOString()
+            });
+            return res.status(200).json({ success: true, data: updated, message: 'Asset rejected successfully' });
+        }
+        if (req.url?.includes('/qc-review/rework') && req.method === 'POST') {
+            const { asset_id, qc_remarks, qc_score } = req.body || {};
+            if (!asset_id) return res.status(400).json({ success: false, error: 'asset_id is required' });
+            const asset = dataStore.getById('assets', parseInt(String(asset_id), 10));
+            if (!asset) return res.status(404).json({ success: false, error: 'Asset not found' });
+            const newReworkCount = (asset.rework_count || 0) + 1;
+            const updated = dataStore.update('assets', parseInt(String(asset_id), 10), {
+                qc_status: 'rework', status: 'In Rework', qc_score: qc_score || 0, qc_remarks: qc_remarks || '', rework_count: newReworkCount, updated_at: new Date().toISOString()
+            });
+            return res.status(200).json({ success: true, data: updated, message: 'Rework requested successfully' });
+        }
+
         // Health check endpoint
         if (req.url?.includes('/health') && req.method === 'GET') {
             return res.status(200).json({
