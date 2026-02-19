@@ -27,11 +27,18 @@ app.get('/api/v1/health', (req, res) => {
 // In-memory storage
 const projects: any[] = [];
 const tasks: any[] = [];
+// Load admin credentials from environment variables
+const getAdminCredentials = () => {
+    const email = process.env.ADMIN_EMAIL || 'admin@example.com';
+    const password = process.env.ADMIN_PASSWORD || 'admin123';
+    return { email, password };
+};
+
 const users: any[] = [
     {
         id: 1,
-        email: 'admin@example.com',
-        password: 'admin123',
+        email: getAdminCredentials().email,
+        password: getAdminCredentials().password,
         name: 'Admin User',
         role: 'admin',
         status: 'active'
