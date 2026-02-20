@@ -85,6 +85,32 @@ class DataCache {
     }
 
     /**
+     * Apply optimistic create operation
+     */
+    applyOptimisticCreate<T extends { id: any }>(key: string, item: T): void {
+        const current = this.get<T>(key) || [];
+        this.set(key, [item, ...current]);
+    }
+
+    /**
+     * Apply optimistic update operation
+     */
+    applyOptimisticUpdate<T extends { id: any }>(key: string, item: T): void {
+        const current = this.get<T>(key) || [];
+        const updated = current.map(existing => existing.id === item.id ? item : existing);
+        this.set(key, updated);
+    }
+
+    /**
+     * Apply optimistic delete operation
+     */
+    applyOptimisticDelete<T extends { id: any }>(key: string, id: any): void {
+        const current = this.get<T>(key) || [];
+        const updated = current.filter(item => item.id !== id);
+        this.set(key, updated);
+    }
+
+    /**
      * Get cache stats
      */
     getStats(): { keys: string[]; size: number } {

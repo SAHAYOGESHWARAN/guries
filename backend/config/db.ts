@@ -57,6 +57,17 @@ if (usePostgres) {
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )`,
+                        `CREATE TABLE IF NOT EXISTS industry_sectors (
+                            id SERIAL PRIMARY KEY,
+                            sector VARCHAR(255) NOT NULL,
+                            industry VARCHAR(255) NOT NULL,
+                            application VARCHAR(255),
+                            country VARCHAR(100),
+                            description TEXT,
+                            status VARCHAR(50) DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
                         `CREATE TABLE IF NOT EXISTS brands (
                             id SERIAL PRIMARY KEY,
                             name TEXT UNIQUE NOT NULL,
@@ -141,6 +152,95 @@ if (usePostgres) {
                             repo_link_count INTEGER DEFAULT 0,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS notifications (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL REFERENCES users(id),
+                            title TEXT,
+                            message TEXT,
+                            type TEXT,
+                            is_read INTEGER DEFAULT 0,
+                            link TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS content_types (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS asset_types (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS asset_categories (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS asset_formats (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS platforms (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS countries (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT UNIQUE NOT NULL,
+                            code TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS keywords (
+                            id SERIAL PRIMARY KEY,
+                            keyword TEXT NOT NULL,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS backlink_sources (
+                            id SERIAL PRIMARY KEY,
+                            source_name TEXT NOT NULL,
+                            url TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS personas (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS forms (
+                            id SERIAL PRIMARY KEY,
+                            name TEXT NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )`
                     ];
 
@@ -154,6 +254,14 @@ if (usePostgres) {
                         }
                     }
                     console.log('[DB] ✅ Schema initialized successfully');
+
+                    // Seed data after schema creation
+                    try {
+                        const { seedVercelDatabase } = require('./seed-vercel-db');
+                        await seedVercelDatabase();
+                    } catch (seedErr: any) {
+                        console.warn('[DB] Seeding warning:', seedErr.message.substring(0, 80));
+                    }
                 } finally {
                     client.release();
                 }

@@ -5,60 +5,7 @@ import path from 'path';
 const router = express.Router();
 const dbPath = path.join(__dirname, '../mcc_db.sqlite');
 
-// Get all industry/sectors
-router.get('/', (req, res) => {
-    try {
-        const db = new Database(dbPath);
-        const items = db.prepare(`
-            SELECT * FROM industry_sectors 
-            WHERE status != 'deleted' 
-            ORDER BY industry, sector, application
-        `).all();
-        db.close();
-        res.json(items);
-    } catch (error) {
-        console.error('Error fetching industry/sectors:', error);
-        res.status(500).json({ error: 'Failed to fetch industry/sectors' });
-    }
-});
-
-// Get by industry
-router.get('/industry/:industry', (req, res) => {
-    try {
-        const { industry } = req.params;
-        const db = new Database(dbPath);
-        const items = db.prepare(`
-            SELECT * FROM industry_sectors 
-            WHERE industry = ? AND status != 'deleted'
-            ORDER BY sector, application
-        `).all(industry);
-        db.close();
-        res.json(items);
-    } catch (error) {
-        console.error('Error fetching by industry:', error);
-        res.status(500).json({ error: 'Failed to fetch by industry' });
-    }
-});
-
-// Get by country
-router.get('/country/:country', (req, res) => {
-    try {
-        const { country } = req.params;
-        const db = new Database(dbPath);
-        const items = db.prepare(`
-            SELECT * FROM industry_sectors 
-            WHERE country = ? AND status != 'deleted'
-            ORDER BY industry, sector
-        `).all(country);
-        db.close();
-        res.json(items);
-    } catch (error) {
-        console.error('Error fetching by country:', error);
-        res.status(500).json({ error: 'Failed to fetch by country' });
-    }
-});
-
-// Get unique industries
+// Get unique industries (must come before parameterized routes)
 router.get('/master/industries', (req, res) => {
     try {
         const db = new Database(dbPath);
@@ -125,6 +72,59 @@ router.get('/master/countries', (req, res) => {
     } catch (error) {
         console.error('Error fetching countries:', error);
         res.status(500).json({ error: 'Failed to fetch countries' });
+    }
+});
+
+// Get all industry/sectors
+router.get('/', (req, res) => {
+    try {
+        const db = new Database(dbPath);
+        const items = db.prepare(`
+            SELECT * FROM industry_sectors 
+            WHERE status != 'deleted' 
+            ORDER BY industry, sector, application
+        `).all();
+        db.close();
+        res.json(items);
+    } catch (error) {
+        console.error('Error fetching industry/sectors:', error);
+        res.status(500).json({ error: 'Failed to fetch industry/sectors' });
+    }
+});
+
+// Get by industry
+router.get('/industry/:industry', (req, res) => {
+    try {
+        const { industry } = req.params;
+        const db = new Database(dbPath);
+        const items = db.prepare(`
+            SELECT * FROM industry_sectors 
+            WHERE industry = ? AND status != 'deleted'
+            ORDER BY sector, application
+        `).all(industry);
+        db.close();
+        res.json(items);
+    } catch (error) {
+        console.error('Error fetching by industry:', error);
+        res.status(500).json({ error: 'Failed to fetch by industry' });
+    }
+});
+
+// Get by country
+router.get('/country/:country', (req, res) => {
+    try {
+        const { country } = req.params;
+        const db = new Database(dbPath);
+        const items = db.prepare(`
+            SELECT * FROM industry_sectors 
+            WHERE country = ? AND status != 'deleted'
+            ORDER BY industry, sector
+        `).all(country);
+        db.close();
+        res.json(items);
+    } catch (error) {
+        console.error('Error fetching by country:', error);
+        res.status(500).json({ error: 'Failed to fetch by country' });
     }
 });
 

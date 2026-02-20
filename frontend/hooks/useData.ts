@@ -273,7 +273,7 @@ export function useData<T>(collection: string) {
                 }
             }
 
-                // Only update data if we got a valid response (prevents flickering)
+            // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
                 // If API returns empty array but we have cached data, keep the cached data
                 if (dataArray.length === 0 && data.length > 0) {
@@ -468,9 +468,12 @@ export function useData<T>(collection: string) {
 
         // 3. Immediately update state and persist
         const finalItem = serverItem || newItem;
+
+        // Update cache first
+        dataCache.applyOptimisticCreate(collection, finalItem);
+
         setData(prev => {
             const updated = [finalItem, ...prev];
-            dataCache.applyOptimisticCreate(collection, finalItem);
             // Persist to localStorage for offline/refresh
             if ((db as any)[collection]) {
                 try {
@@ -510,10 +513,12 @@ export function useData<T>(collection: string) {
         // Use server response if available, otherwise fall back to local update
         const finalItem = serverItem || updatedItem || { ...updates, id };
 
+        // Update cache first
+        dataCache.applyOptimisticUpdate(collection, finalItem);
+
         // Immediately update state and persist
         setData(prev => {
             const updated = prev.map(item => ((item as any).id === id ? finalItem : item));
-            dataCache.applyOptimisticUpdate(collection, finalItem);
             if ((db as any)[collection]) {
                 try {
                     localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
@@ -549,11 +554,11 @@ export function useData<T>(collection: string) {
             }
         }
 
+        // Apply optimistic delete to cache first
+        dataCache.applyOptimisticDelete(collection, id);
+
         // Immediately update state to remove the item
         setData(prev => prev.filter(item => (item as any).id !== id));
-
-        // Apply optimistic delete to cache (preserve data, don't delete)
-        dataCache.applyOptimisticDelete(collection, id);
     };
 
     // Added refresh method explicitly exposing fetch (with isRefresh flag to prevent flickering)
