@@ -147,8 +147,24 @@ const dataStore: StoredData = {
         { id: 1, format_name: 'PNG', mime_type: 'image/png', status: 'active', created_at: now, updated_at: now },
         { id: 2, format_name: 'JPG', mime_type: 'image/jpeg', status: 'active', created_at: now, updated_at: now }
     ],
-    'asset-types': [],
-    'asset-categories': [],
+    'asset-types': [
+        { id: 1, asset_type_name: 'Image', description: 'Images and graphics', status: 'active', created_at: now, updated_at: now },
+        { id: 2, asset_type_name: 'Video', description: 'Video content', status: 'active', created_at: now, updated_at: now },
+        { id: 3, asset_type_name: 'Document', description: 'Documents and PDFs', status: 'active', created_at: now, updated_at: now },
+        { id: 4, asset_type_name: 'Audio', description: 'Audio files', status: 'active', created_at: now, updated_at: now },
+        { id: 5, asset_type_name: 'Archive', description: 'Compressed files', status: 'active', created_at: now, updated_at: now },
+        { id: 6, asset_type_name: 'Code', description: 'Source code files', status: 'active', created_at: now, updated_at: now },
+        { id: 7, asset_type_name: 'Design', description: 'Design files', status: 'active', created_at: now, updated_at: now }
+    ],
+    'asset-categories': [
+        { id: 1, category_name: 'Marketing', description: 'Marketing materials', status: 'active', created_at: now, updated_at: now },
+        { id: 2, category_name: 'Sales', description: 'Sales collateral', status: 'active', created_at: now, updated_at: now },
+        { id: 3, category_name: 'Support', description: 'Support documentation', status: 'active', created_at: now, updated_at: now },
+        { id: 4, category_name: 'Product', description: 'Product assets', status: 'active', created_at: now, updated_at: now },
+        { id: 5, category_name: 'Brand', description: 'Brand assets', status: 'active', created_at: now, updated_at: now },
+        { id: 6, category_name: 'Social Media', description: 'Social media content', status: 'active', created_at: now, updated_at: now },
+        { id: 7, category_name: 'Email', description: 'Email templates', status: 'active', created_at: now, updated_at: now }
+    ],
     'seo-errors': [],
     'qc-checklists': [],
     'qc-versions': [],
