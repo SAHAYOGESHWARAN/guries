@@ -12,7 +12,14 @@ export const getCampaigns = async (req: Request, res: Response) => {
             LEFT JOIN users u ON c.campaign_owner_id = u.id
             ORDER BY c.created_at DESC
         `);
-        res.status(200).json(result.rows);
+
+        // Normalize response to include campaign_status for frontend compatibility
+        const normalizedCampaigns = result.rows.map((campaign: any) => ({
+            ...campaign,
+            campaign_status: campaign.status || campaign.campaign_status || 'planning'
+        }));
+
+        res.status(200).json(normalizedCampaigns);
     } catch (error: any) {
         console.error('Error fetching campaigns:', error);
         res.status(500).json({ error: 'Failed to fetch campaigns' });
@@ -26,7 +33,15 @@ export const getCampaignById = async (req: Request, res: Response) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
-        res.status(200).json(result.rows[0]);
+
+        // Normalize response to include campaign_status for frontend compatibility
+        const campaign = result.rows[0];
+        const normalizedCampaign = {
+            ...campaign,
+            campaign_status: campaign.status || campaign.campaign_status || 'planning'
+        };
+
+        res.status(200).json(normalizedCampaign);
     } catch (error: any) {
         res.status(500).json({ error: 'Database error' });
     }
@@ -130,9 +145,14 @@ export const createCampaign = async (req: Request, res: Response) => {
 
         if (createdCampaign.rows && createdCampaign.rows.length > 0) {
             const campaign = createdCampaign.rows[0];
-            console.log('[createCampaign] Returning campaign from SELECT:', JSON.stringify(campaign, null, 2));
-            getSocket().emit('campaign_created', campaign);
-            return res.status(201).json(campaign);
+            // Normalize response to include campaign_status for frontend compatibility
+            const normalizedCampaign = {
+                ...campaign,
+                campaign_status: campaign.status || campaign.campaign_status || 'planning'
+            };
+            console.log('[createCampaign] Returning campaign from SELECT:', JSON.stringify(normalizedCampaign, null, 2));
+            getSocket().emit('campaign_created', normalizedCampaign);
+            return res.status(201).json(normalizedCampaign);
         } else {
             console.log('[createCampaign] SELECT returned no rows, using fallback');
             // Fallback: return the data we just inserted with the ID
@@ -141,6 +161,7 @@ export const createCampaign = async (req: Request, res: Response) => {
                 campaign_name,
                 campaign_type: campaign_type || 'Content',
                 status: status || campaign_status || 'planning',
+                campaign_status: status || campaign_status || 'planning',
                 description: description || null,
                 campaign_start_date: campaign_start_date || null,
                 campaign_end_date: campaign_end_date || null,
@@ -186,7 +207,8 @@ export const updateCampaign = async (req: Request, res: Response) => {
                 kpi_score = COALESCE(?, kpi_score),
                 linked_service_ids = COALESCE(?, linked_service_ids),
                 tasks_completed = COALESCE(?, tasks_completed),
-                tasks_total = COALESCE(?, tasks_total)
+                tasks_total = COALESCE(?, tasks_total),
+                updated_at = datetime('now')
             WHERE id = ?`,
             [
                 campaign_name, status, backlinks_completed, kpi_score,
@@ -195,14 +217,24 @@ export const updateCampaign = async (req: Request, res: Response) => {
             ]
         );
 
-        if (result.rows.length === 0) {
+        // Fetch the updated campaign
+        const updatedResult = await pool.query('SELECT * FROM campaigns WHERE id = ?', [id]);
+
+        if (updatedResult.rows.length === 0) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
 
-        const updatedCampaign = result.rows[0];
-        getSocket().emit('campaign_updated', updatedCampaign);
-        res.status(200).json(updatedCampaign);
+        const updatedCampaign = updatedResult.rows[0];
+        // Normalize response to include campaign_status for frontend compatibility
+        const normalizedCampaign = {
+            ...updatedCampaign,
+            campaign_status: updatedCampaign.status || updatedCampaign.campaign_status || 'planning'
+        };
+
+        getSocket().emit('campaign_updated', normalizedCampaign);
+        res.status(200).json(normalizedCampaign);
     } catch (error: any) {
+        console.error('[updateCampaign] Error:', error);
         res.status(500).json({ error: 'Update failed' });
     }
 };

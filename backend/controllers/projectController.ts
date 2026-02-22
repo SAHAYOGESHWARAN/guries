@@ -38,10 +38,14 @@ export const getProjectById = async (req: Request, res: Response) => {
         `, [id]);
 
         if (result.rows.length === 0) {
+            console.warn(`[getProjectById] Project not found: ID=${id}`);
             return res.status(404).json({ error: 'Project not found' });
         }
-        res.status(200).json(result.rows[0]);
+
+        const project = result.rows[0];
+        res.status(200).json(project);
     } catch (error: any) {
+        console.error('[getProjectById] Error:', error);
         res.status(500).json({ error: 'Database error', details: error.message });
     }
 };
@@ -97,8 +101,16 @@ export const createProject = async (req: Request, res: Response) => {
             weekly_report !== undefined ? (weekly_report ? 1 : 0) : 1
         ];
 
+        console.log('[createProject] Inserting project:', { project_name, project_code });
         const insertResult = await pool.query(query, values);
         const projectId = insertResult.rows[0]?.id || insertResult.lastID;
+
+        if (!projectId) {
+            console.error('[createProject] Failed to get project ID from insert result');
+            return res.status(500).json({ error: 'Failed to create project - no ID returned' });
+        }
+
+        console.log('[createProject] Project inserted with ID:', projectId);
 
         // Fetch the complete project record with related data
         const selectResult = await pool.query(`
@@ -111,12 +123,42 @@ export const createProject = async (req: Request, res: Response) => {
             WHERE p.id = ?
         `, [projectId]);
 
+        if (selectResult.rows.length === 0) {
+            console.error('[createProject] Failed to fetch created project');
+            // Return fallback response with inserted data
+            const fallbackProject = {
+                id: projectId,
+                project_name,
+                project_code: project_code || `PRJ-${Date.now()}`,
+                description: description || null,
+                status: status || 'Planned',
+                start_date: start_date || null,
+                end_date: end_date || null,
+                budget: budget || null,
+                owner_id: owner_id || null,
+                brand_id: brand_id || null,
+                linked_service_id: linked_service_id || null,
+                priority: priority || 'Medium',
+                sub_services: sub_services || null,
+                outcome_kpis: outcome_kpis || null,
+                expected_outcome: expected_outcome || null,
+                team_members: team_members || null,
+                weekly_report: weekly_report !== undefined ? (weekly_report ? 1 : 0) : 1,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            console.log('[createProject] Returning fallback project:', fallbackProject);
+            getSocket().emit('project_created', fallbackProject);
+            return res.status(201).json(fallbackProject);
+        }
+
         const newProject = selectResult.rows[0];
+        console.log('[createProject] Project created successfully:', { id: newProject.id, name: newProject.project_name });
 
         getSocket().emit('project_created', newProject);
         res.status(201).json(newProject);
     } catch (error: any) {
-        console.error('Error creating project:', error);
+        console.error('[createProject] Error creating project:', error);
         res.status(500).json({ error: 'Failed to create project', details: error.message });
     }
 };
@@ -131,7 +173,7 @@ export const updateProject = async (req: Request, res: Response) => {
     } = req.body;
 
     try {
-        const result = await pool.query(
+        await pool.query(
             `UPDATE projects SET 
                 project_name = COALESCE(?, project_name), 
                 description = COALESCE(?, description), 
@@ -158,15 +200,29 @@ export const updateProject = async (req: Request, res: Response) => {
             ]
         );
 
+        // Fetch the updated project
+        const result = await pool.query(`
+            SELECT p.*, 
+                u.name as owner_name,
+                b.name as brand_name
+            FROM projects p
+            LEFT JOIN users u ON p.owner_id = u.id
+            LEFT JOIN brands b ON p.brand_id = b.id
+            WHERE p.id = ?
+        `, [id]);
+
         if (result.rows.length === 0) {
+            console.error('[updateProject] Project not found after update:', id);
             return res.status(404).json({ error: 'Project not found' });
         }
 
         const updatedProject = result.rows[0];
+        console.log('[updateProject] Project updated successfully:', { id: updatedProject.id, name: updatedProject.project_name });
+
         getSocket().emit('project_updated', updatedProject);
         res.status(200).json(updatedProject);
     } catch (error: any) {
-        console.error('Error updating project:', error);
+        console.error('[updateProject] Error updating project:', error);
         res.status(500).json({ error: 'Update failed', details: error.message });
     }
 };

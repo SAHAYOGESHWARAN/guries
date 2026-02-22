@@ -56,6 +56,7 @@ import * as rewardPenaltyController from '../controllers/rewardPenaltyController
 import * as workloadPredictionController from '../controllers/workloadPredictionController';
 import * as adminController from '../controllers/adminController';
 import * as urlController from '../controllers/urlController';
+import * as assetServiceLinkingController from '../controllers/assetServiceLinkingController';
 
 import { verifyToken, requireAdmin as requireAdminJWT } from '../middleware/authMiddleware';
 import { requirePermission, requireQCPermission } from '../middleware/roleAuth';
@@ -187,6 +188,10 @@ router.get('/services/:serviceId/assets', asyncHandler(assetController.getServic
 router.get('/sub-services/:subServiceId/assets', asyncHandler(assetController.getSubServiceAssets));
 router.post('/assets/link-to-service', asyncHandler(assetController.linkAssetToService));
 router.post('/assets/unlink-from-service', asyncHandler(assetController.unlinkAssetFromService));
+
+// --- Linked Assets (for service detail view) ---
+router.get('/services/:service_id/linked-assets', asyncHandler(assetServiceLinkingController.getServiceLinkedAssets));
+router.get('/sub-services/:sub_service_id/linked-assets', asyncHandler(assetServiceLinkingController.getSubServiceLinkedAssets));
 
 // --- Asset Library ---
 router.get('/assetLibrary', asyncHandler(assetController.getAssetLibrary));

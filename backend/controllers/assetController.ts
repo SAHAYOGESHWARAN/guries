@@ -128,17 +128,12 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 a.asset_type as type,
                 a.asset_category,
                 a.asset_format,
-                a.content_type,
-                a.tags as repository,
-                a.usage_status,
                 a.status,
-                a.workflow_stage,
                 a.qc_status,
                 a.file_url,
-                COALESCE(a.og_image_url, a.thumbnail_url, a.file_url) as thumbnail_url,
+                a.thumbnail_url,
                 a.file_size,
                 a.file_type,
-                a.dimensions,
                 a.created_at as date,
                 a.created_at,
                 a.updated_at,
@@ -158,7 +153,6 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 a.grammar_score,
                 a.ai_plagiarism_score,
                 a.qc_score,
-                a.qc_checklist_items,
                 a.submitted_by,
                 a.submitted_at,
                 a.qc_reviewer_id,
@@ -171,9 +165,7 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 a.designed_by,
                 a.published_by,
                 a.verified_by,
-                a.published_at,
                 a.created_by,
-                a.updated_by,
                 a.web_title,
                 a.web_description,
                 a.web_meta_description,
@@ -194,9 +186,8 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 a.smm_hashtags,
                 a.smm_media_url,
                 a.smm_media_type,
-                COALESCE((SELECT COUNT(*) FROM asset_website_usage WHERE asset_id = a.id), 0) +
-                COALESCE((SELECT COUNT(*) FROM asset_social_media_usage WHERE asset_id = a.id), 0) +
-                COALESCE((SELECT COUNT(*) FROM asset_backlink_usage WHERE asset_id = a.id), 0) as usage_count
+                a.usage_status,
+                0 as usage_count
             FROM assets a
             WHERE a.application_type IS NOT NULL AND a.application_type != ''
             ORDER BY a.created_at DESC
@@ -205,7 +196,7 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
         // Parse JSON arrays for linked IDs and map application_type to repository
         const parsed = result.rows.map((row: any) => {
             // Map application_type to repository name
-            let repository = row.repository || 'Content Repository';
+            let repository = 'Content Repository';
             if (row.application_type === 'web') repository = 'Web';
             else if (row.application_type === 'seo') repository = 'SEO';
             else if (row.application_type === 'smm') repository = 'SMM';
@@ -215,8 +206,8 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
                 repository,
                 usage_status: row.usage_status || 'Available',
                 workflow_stage: row.workflow_stage || 'Add',
-                usage_count: parseInt(row.usage_count) || 0,
-                thumbnail_url: row.thumbnail_url || null, // Ensure null instead of undefined
+                usage_count: 0,
+                thumbnail_url: row.thumbnail_url || null,
                 linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
                 linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : [],
                 keywords: row.keywords ? JSON.parse(row.keywords) : [],
@@ -238,79 +229,74 @@ export const getAssetLibraryItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const result = await pool.query(`
-SELECT
-id,
-    asset_name as name,
-    asset_type as type,
-    asset_category,
-    asset_format,
-    content_type,
-    tags as repository,
-    usage_status,
-    status,
-    workflow_stage,
-    qc_status,
-    file_url,
-    COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
-    file_size,
-    file_type,
-    created_at as date,
-    created_at,
-    updated_at,
-    linked_service_ids,
-    linked_sub_service_ids,
-    linked_task_id,
-    linked_campaign_id,
-    linked_project_id,
-    linked_service_id,
-    linked_sub_service_id,
-    linked_repository_item_id,
-    application_type,
-    keywords,
-    content_keywords,
-    seo_keywords,
-    seo_score,
-    grammar_score,
-    ai_plagiarism_score,
-    qc_score,
-    qc_checklist_items,
-    submitted_by,
-    submitted_at,
-    qc_reviewer_id,
-    qc_reviewed_at,
-    qc_remarks,
-    linking_active,
-    rework_count,
-    version_number,
-    version_history,
-    designed_by,
-    published_by,
-    verified_by,
-    published_at,
-    created_by,
-    web_title,
-    web_description,
-    web_meta_description,
-    web_keywords,
-    web_url,
-    web_h1,
-    web_h2_1,
-    web_h2_2,
-    web_h3_tags,
-    web_thumbnail,
-    web_body_content,
-    resource_files,
-    smm_platform,
-    smm_title,
-    smm_tag,
-    smm_url,
-    smm_description,
-    smm_hashtags,
-    smm_media_url,
-    smm_media_type
+            SELECT
+                id,
+                asset_name as name,
+                asset_type as type,
+                asset_category,
+                asset_format,
+                status,
+                qc_status,
+                file_url,
+                thumbnail_url,
+                file_size,
+                file_type,
+                created_at as date,
+                created_at,
+                updated_at,
+                linked_service_ids,
+                linked_sub_service_ids,
+                linked_task_id,
+                linked_campaign_id,
+                linked_project_id,
+                linked_service_id,
+                linked_sub_service_id,
+                linked_repository_item_id,
+                application_type,
+                keywords,
+                content_keywords,
+                seo_keywords,
+                seo_score,
+                grammar_score,
+                ai_plagiarism_score,
+                qc_score,
+                submitted_by,
+                submitted_at,
+                qc_reviewer_id,
+                qc_reviewed_at,
+                qc_remarks,
+                linking_active,
+                rework_count,
+                version_number,
+                version_history,
+                designed_by,
+                published_by,
+                verified_by,
+                created_by,
+                web_title,
+                web_description,
+                web_meta_description,
+                web_keywords,
+                web_url,
+                web_h1,
+                web_h2_1,
+                web_h2_2,
+                web_h3_tags,
+                web_thumbnail,
+                web_body_content,
+                resource_files,
+                smm_platform,
+                smm_title,
+                smm_tag,
+                smm_url,
+                smm_description,
+                smm_hashtags,
+                smm_media_url,
+                smm_media_type,
+                usage_status
             FROM assets 
             WHERE id = ?
-    `, [id]);
+        `, [id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Asset not found' });
@@ -321,10 +307,10 @@ id,
         // Parse JSON fields
         const parsed = {
             ...asset,
-            repository: asset.repository || 'Content Repository',
+            repository: 'Content Repository',
             usage_status: asset.usage_status || 'Available',
-            workflow_stage: asset.workflow_stage || 'Add',
-            thumbnail_url: asset.thumbnail_url || null, // Ensure null instead of undefined
+            workflow_stage: 'Add',
+            thumbnail_url: asset.thumbnail_url || null,
             linked_service_ids: asset.linked_service_ids ? JSON.parse(asset.linked_service_ids) : [],
             linked_sub_service_ids: asset.linked_sub_service_ids ? JSON.parse(asset.linked_sub_service_ids) : [],
             keywords: asset.keywords ? JSON.parse(asset.keywords) : [],
@@ -360,8 +346,10 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Asset name is required' });
         }
 
-        if (!application_type) {
-            return res.status(400).json({ error: 'Application type (WEB, SEO, SMM) is required' });
+        // Normalize and validate application_type
+        const normalizedAppType = application_type?.toLowerCase().trim();
+        if (!normalizedAppType || !['web', 'seo', 'smm'].includes(normalizedAppType)) {
+            return res.status(400).json({ error: 'Application type must be one of: web, seo, smm' });
         }
 
         // Validate scores for submission
@@ -393,42 +381,16 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
 
         const result = await pool.query(
             `INSERT INTO assets(
-                asset_name, asset_type, asset_category, asset_format, content_type, status,
-                file_url, thumbnail_url, og_image_url, file_size, file_type,
-                linked_service_ids, linked_sub_service_ids, linked_task_id, linked_campaign_id,
-                linked_project_id, linked_service_id, linked_sub_service_id, linked_repository_item_id,
-                designed_by, published_by, verified_by, version_number, created_at, created_by,
-                application_type, keywords, content_keywords, seo_keywords,
-                web_title, web_description, web_meta_description, web_keywords, web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags,
-                web_thumbnail, web_body_content, smm_platform, smm_title, smm_tag, smm_url, smm_description,
-                smm_hashtags, smm_media_url, smm_media_type, seo_score, grammar_score, ai_plagiarism_score,
-                submitted_by, submitted_at, workflow_stage, qc_status, resource_files,
-                workflow_log, version_history, linking_active, usage_status
-            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                asset_name, asset_type, asset_category, asset_format, status,
+                file_url, created_by, created_at, application_type,
+                seo_score, grammar_score, submitted_by, qc_status
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                name, type, asset_category, asset_format, content_type || null, status || 'draft',
-                file_url || null, thumbnail_url || null, thumbnail_url || null, file_size || null, file_type || null,
-                linked_service_ids ? JSON.stringify(linked_service_ids) : null,
-                linked_sub_service_ids ? JSON.stringify(linked_sub_service_ids) : null,
-                linked_task_id || null, linked_campaign_id || null, linked_project_id || null,
-                linked_service_id || null, linked_sub_service_id || null, linked_repository_item_id || null,
-                designed_by || null, published_by || null, verified_by || null, version_number || 'v1.0',
-                date || new Date().toISOString(), created_by || submitted_by || null,
-                application_type || null, keywords ? JSON.stringify(keywords) : null,
-                content_keywords ? JSON.stringify(content_keywords) : null,
-                seo_keywords ? JSON.stringify(seo_keywords) : null,
-                web_title || null, web_description || null, web_meta_description || null, web_keywords || null,
-                web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
-                web_h3_tags ? JSON.stringify(web_h3_tags) : null,
-                web_thumbnail || null, web_body_content || null, smm_platform || null, smm_title || null,
-                smm_tag || null, smm_url || null, smm_description || null,
-                smm_hashtags || null, smm_media_url || null, smm_media_type || null,
-                seo_score || null, grammar_score || null, ai_plagiarism_score || null,
-                submitted_by || null,
-                status === 'Pending QC Review' ? new Date().toISOString() : null,
-                workflow_stage || 'Add', qc_status || null,
-                resource_files ? JSON.stringify(resource_files) : null,
-                JSON.stringify(workflowLog), JSON.stringify(versionHistory), 0, 'Available'
+                name, type, asset_category, asset_format, status || 'draft',
+                file_url || null, created_by || submitted_by || null,
+                date || new Date().toISOString(), normalizedAppType,
+                seo_score || null, grammar_score || null, submitted_by || null,
+                status === 'Pending QC Review' ? 'Pending' : null
             ]
         );
 
@@ -497,16 +459,24 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             usage_status: 'Available',
             thumbnail_url: rawAsset.thumbnail_url || rawAsset.file_url,
             date: rawAsset.created_at,
-            linked_service_ids: rawAsset.linked_service_ids ? JSON.parse(rawAsset.linked_service_ids) : [],
-            linked_sub_service_ids: rawAsset.linked_sub_service_ids ? JSON.parse(rawAsset.linked_sub_service_ids) : [],
-            keywords: rawAsset.keywords ? JSON.parse(rawAsset.keywords) : [],
-            content_keywords: rawAsset.content_keywords ? JSON.parse(rawAsset.content_keywords) : [],
-            seo_keywords: rawAsset.seo_keywords ? JSON.parse(rawAsset.seo_keywords) : [],
-            web_h3_tags: rawAsset.web_h3_tags ? JSON.parse(rawAsset.web_h3_tags) : [],
-            resource_files: rawAsset.resource_files ? JSON.parse(rawAsset.resource_files) : [],
-            version_history: rawAsset.version_history ? JSON.parse(rawAsset.version_history) : [],
-            static_service_links: rawAsset.static_service_links ? JSON.parse(rawAsset.static_service_links) : []
+            application_type: normalizedAppType,
+            linked_service_ids: [],
+            linked_sub_service_ids: [],
+            keywords: [],
+            content_keywords: [],
+            seo_keywords: [],
+            web_h3_tags: [],
+            resource_files: [],
+            version_history: [],
+            static_service_links: []
         };
+
+        console.log('[createAssetLibraryItem] Asset created successfully:', {
+            id: assetId,
+            name: newAsset.name,
+            application_type: newAsset.application_type,
+            status: newAsset.status
+        });
 
         try {
             getSocket().emit('assetLibrary_created', newAsset);
@@ -905,6 +875,14 @@ export const submitAssetForQC = async (req: Request, res: Response) => {
             });
         }
 
+        // Validate scores
+        if (seo_score === undefined || seo_score === null || seo_score < 0 || seo_score > 100) {
+            return res.status(400).json({ error: 'SEO score (0-100) is required for submission' });
+        }
+        if (grammar_score === undefined || grammar_score === null || grammar_score < 0 || grammar_score > 100) {
+            return res.status(400).json({ error: 'Grammar score (0-100) is required for submission' });
+        }
+
         // Get current asset data
         const currentAsset = await pool.query('SELECT * FROM assets WHERE id = ?', [assetId]);
         if (currentAsset.rows.length === 0) {
@@ -917,6 +895,16 @@ export const submitAssetForQC = async (req: Request, res: Response) => {
         }
 
         const assetData = currentAsset.rows[0];
+
+        // Verify application_type is set
+        if (!assetData.application_type) {
+            console.error(`Asset missing application_type: ID=${assetId}`);
+            return res.status(400).json({
+                error: 'Asset must have an application type (web, seo, or smm) before submission',
+                code: 'MISSING_APPLICATION_TYPE'
+            });
+        }
+
         let workflowLog = [];
         try {
             workflowLog = assetData.workflow_log ? JSON.parse(assetData.workflow_log) : [];
@@ -949,7 +937,14 @@ status = 'Pending QC Review',
         );
 
         // Get the updated asset
-        const result = await pool.query('SELECT id, asset_name as name, status, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = ?', [assetId]);
+        const result = await pool.query('SELECT id, asset_name as name, status, application_type, seo_score, grammar_score, submitted_at, rework_count FROM assets WHERE id = ?', [assetId]);
+
+        console.log('[submitAssetForQC] Asset submitted successfully:', {
+            id: assetId,
+            name: assetData.asset_name,
+            application_type: assetData.application_type,
+            status: 'Pending QC Review'
+        });
 
         // Create notification for admins about new QC submission
         try {
@@ -981,38 +976,37 @@ export const getAssetsForQC = async (req: Request, res: Response) => {
         const result = await pool.query(`
             SELECT 
                 id,
-        asset_name as name,
-        asset_type as type,
-        asset_category,
-        asset_format,
-        tags as repository,
-        usage_status,
-        status,
-        file_url,
-        COALESCE(og_image_url, thumbnail_url, file_url) as thumbnail_url,
-        application_type,
-        web_title,
-        web_description,
-        web_keywords,
-        web_url,
-        web_h1,
-        web_h2_1,
-        web_h2_2,
-        web_body_content,
-        smm_platform,
-        smm_description,
-        smm_hashtags,
-        smm_media_url,
-        seo_score,
-        grammar_score,
-        submitted_by,
-        submitted_at,
-        qc_score,
-        qc_remarks,
-        rework_count,
-        linked_service_ids,
-        linked_sub_service_ids,
-        created_at as date
+                asset_name as name,
+                asset_type as type,
+                asset_category,
+                asset_format,
+                usage_status,
+                status,
+                file_url,
+                thumbnail_url,
+                application_type,
+                web_title,
+                web_description,
+                web_keywords,
+                web_url,
+                web_h1,
+                web_h2_1,
+                web_h2_2,
+                web_body_content,
+                smm_platform,
+                smm_description,
+                smm_hashtags,
+                smm_media_url,
+                seo_score,
+                grammar_score,
+                submitted_by,
+                submitted_at,
+                qc_score,
+                qc_remarks,
+                rework_count,
+                linked_service_ids,
+                linked_sub_service_ids,
+                created_at as date
             FROM assets 
             WHERE status IN('Pending QC Review', 'Rework Required')
             ORDER BY submitted_at ASC
@@ -1021,8 +1015,9 @@ export const getAssetsForQC = async (req: Request, res: Response) => {
         // Parse JSON arrays for linked IDs
         const parsed = result.rows.map(row => ({
             ...row,
+            repository: 'Content Repository',
             rework_count: row.rework_count || 0,
-            thumbnail_url: row.thumbnail_url || null, // Ensure null instead of undefined
+            thumbnail_url: row.thumbnail_url || null,
             linked_service_ids: row.linked_service_ids ? JSON.parse(row.linked_service_ids) : [],
             linked_sub_service_ids: row.linked_sub_service_ids ? JSON.parse(row.linked_sub_service_ids) : []
         }));

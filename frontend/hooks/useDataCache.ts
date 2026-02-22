@@ -11,7 +11,13 @@ interface CacheEntry<T> {
 
 class DataCache {
     private cache = new Map<string, CacheEntry<any>>();
-    private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
+    private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes
+    private readonly COLLECTION_TTL: Record<string, number> = {
+        'campaigns': 60 * 60 * 1000, // 1 hour for campaigns
+        'projects': 60 * 60 * 1000, // 1 hour for projects
+        'tasks': 30 * 60 * 1000, // 30 minutes for tasks
+        'content': 30 * 60 * 1000, // 30 minutes for content
+    };
     private invalidationListeners = new Map<string, Set<() => void>>();
 
     /**
@@ -33,11 +39,13 @@ class DataCache {
     /**
      * Set cached data
      */
-    set<T>(key: string, data: T[], ttl = this.DEFAULT_TTL): void {
+    set<T>(key: string, data: T[], ttl?: number): void {
+        // Use collection-specific TTL if available, otherwise use provided TTL or default
+        const finalTtl = ttl ?? (this.COLLECTION_TTL[key] || this.DEFAULT_TTL);
         this.cache.set(key, {
             data,
             timestamp: Date.now(),
-            ttl
+            ttl: finalTtl
         });
     }
 

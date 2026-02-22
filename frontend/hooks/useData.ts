@@ -324,7 +324,15 @@ export function useData<T>(collection: string) {
             console.log(`[useData] Initializing data for ${collection}`);
             await checkBackendAvailability();
             console.log(`[useData] Backend available: ${backendAvailable}`);
-            fetchData();
+
+            // Check if cache has expired - if so, refresh from backend
+            const cachedData = dataCache.get<T>(collection);
+            if (!cachedData) {
+                console.log(`[useData] Cache expired for ${collection}, refreshing from backend`);
+                fetchData(true); // Force refresh
+            } else {
+                fetchData();
+            }
         };
 
         initializeData();

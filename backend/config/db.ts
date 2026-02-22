@@ -296,44 +296,8 @@ if (usePostgres) {
     db.pragma('foreign_keys = ON');
 
     // Create tables synchronously at initialization time
-    const tables = [
-        `CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            role TEXT DEFAULT 'user',
-            status TEXT DEFAULT 'active',
-            password_hash TEXT,
-            department TEXT,
-            country TEXT,
-            last_login TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TABLE IF NOT EXISTS notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL REFERENCES users(id),
-            title TEXT,
-            message TEXT,
-            type TEXT,
-            is_read INTEGER DEFAULT 0,
-            link TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TABLE IF NOT EXISTS assets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            asset_name TEXT NOT NULL,
-            asset_type TEXT,
-            asset_category TEXT,
-            asset_format TEXT,
-            status TEXT DEFAULT 'draft',
-            qc_status TEXT,
-            file_url TEXT,
-            created_by INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`
-    ];
+    // Tables are created by init.ts, not here
+    const tables: string[] = [];
 
     console.log('[DB] Creating tables at module initialization...');
     for (const tableSQL of tables) {
