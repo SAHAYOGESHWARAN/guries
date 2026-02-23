@@ -92,7 +92,19 @@ export const createCampaign = async (req: Request, res: Response) => {
             }
         }
 
-        const query = `
+        // Use RETURNING for PostgreSQL, fallback to standard INSERT for SQLite
+        const isPostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true';
+        const query = isPostgres ? `
+            INSERT INTO campaigns (
+                campaign_name, campaign_type, status, description,
+                campaign_start_date, campaign_end_date, campaign_owner_id,
+                sub_campaigns, linked_service_ids, target_url,
+                project_id, brand_id, backlinks_planned, backlinks_completed,
+                tasks_completed, tasks_total, kpi_score, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0, $14, $15, $16, NOW(), NOW())
+            RETURNING *;
+        ` : `
             INSERT INTO campaigns (
                 campaign_name, campaign_type, status, description,
                 campaign_start_date, campaign_end_date, campaign_owner_id,
@@ -126,63 +138,32 @@ export const createCampaign = async (req: Request, res: Response) => {
 
         console.log('[createCampaign] INSERT result:', JSON.stringify(result, null, 2));
 
-        // Extract the ID from the result
-        const campaignId = result.rows?.[0]?.id || result.lastID;
+        // Extract the campaign from the result
+        // PostgreSQL RETURNING returns the row directly in rows[0]
+        // SQLite returns { rows: [{ id: insertedId }], lastID: insertedId }
+        let campaign = result.rows?.[0];
 
-        console.log('[createCampaign] Extracted campaignId:', campaignId);
-
-        if (!campaignId) {
-            console.error('[createCampaign] Failed to extract ID from result');
-            return res.status(500).json({ error: 'Failed to get campaign ID after creation' });
+        if (!campaign) {
+            console.error('[createCampaign] Failed to extract campaign from result');
+            return res.status(500).json({ error: 'Failed to get campaign after creation' });
         }
 
-        // Fetch the created campaign with all fields
-        const selectQuery = `SELECT * FROM campaigns WHERE id = ?`;
-        console.log('[createCampaign] Executing SELECT with ID:', campaignId);
-        const createdCampaign = await pool.query(selectQuery, [campaignId]);
-
-        console.log('[createCampaign] SELECT result:', JSON.stringify(createdCampaign, null, 2));
-
-        if (createdCampaign.rows && createdCampaign.rows.length > 0) {
-            const campaign = createdCampaign.rows[0];
-            // Normalize response to include campaign_status for frontend compatibility
-            const normalizedCampaign = {
-                ...campaign,
-                campaign_status: campaign.status || campaign.campaign_status || 'planning'
-            };
-            console.log('[createCampaign] Returning campaign from SELECT:', JSON.stringify(normalizedCampaign, null, 2));
-            getSocket().emit('campaign_created', normalizedCampaign);
-            return res.status(201).json(normalizedCampaign);
-        } else {
-            console.log('[createCampaign] SELECT returned no rows, using fallback');
-            // Fallback: return the data we just inserted with the ID
-            const fallbackCampaign = {
-                id: campaignId,
-                campaign_name,
-                campaign_type: campaign_type || 'Content',
-                status: status || campaign_status || 'planning',
-                campaign_status: status || campaign_status || 'planning',
-                description: description || null,
-                campaign_start_date: campaign_start_date || null,
-                campaign_end_date: campaign_end_date || null,
-                campaign_owner_id: campaign_owner_id || null,
-                sub_campaigns: sub_campaigns || null,
-                linked_service_ids: linked_service_ids ? JSON.stringify(linked_service_ids) : null,
-                target_url: target_url || null,
-                project_id: project_id || null,
-                brand_id: brand_id || null,
-                backlinks_planned: backlinks_planned || 0,
-                backlinks_completed: 0,
-                tasks_completed: tasks_completed || 0,
-                tasks_total: tasks_total || 0,
-                kpi_score: kpi_score || 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-            console.log('[createCampaign] Returning fallback campaign:', JSON.stringify(fallbackCampaign, null, 2));
-            getSocket().emit('campaign_created', fallbackCampaign);
-            return res.status(201).json(fallbackCampaign);
+        // Ensure we have an ID
+        if (!campaign.id) {
+            console.error('[createCampaign] Campaign missing ID:', campaign);
+            return res.status(500).json({ error: 'Failed to create campaign - no ID returned' });
         }
+
+        console.log('[createCampaign] Campaign created with ID:', campaign.id);
+
+        // Normalize response to include campaign_status for frontend compatibility
+        const normalizedCampaign = {
+            ...campaign,
+            campaign_status: campaign.status || campaign.campaign_status || 'planning'
+        };
+        console.log('[createCampaign] Returning campaign:', JSON.stringify(normalizedCampaign, null, 2));
+        getSocket().emit('campaign_created', normalizedCampaign);
+        return res.status(201).json(normalizedCampaign);
     } catch (error: any) {
         console.error('[createCampaign] Error creating campaign:', error);
         console.error('[createCampaign] Error message:', error.message);

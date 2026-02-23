@@ -110,6 +110,7 @@ export const getServiceLinkedAssets = async (req: Request, res: Response) => {
     const { sub_service_id } = req.query;
 
     try {
+        // First try to get assets from service_asset_links table
         let query = `
             SELECT DISTINCT a.* FROM assets a
             INNER JOIN service_asset_links sal ON a.id = sal.asset_id
@@ -124,7 +125,23 @@ export const getServiceLinkedAssets = async (req: Request, res: Response) => {
 
         query += ` ORDER BY a.created_at DESC`;
 
-        const result = await pool.query(query, params);
+        let result = await pool.query(query, params);
+
+        // If no results from service_asset_links, try fallback: check static_service_links JSON field
+        if (result.rows.length === 0) {
+            console.log(`[getServiceLinkedAssets] No results from service_asset_links, trying fallback with static_service_links JSON`);
+
+            // Query assets that have this service in their static_service_links JSON
+            const fallbackQuery = `
+                SELECT DISTINCT a.* FROM assets a
+                WHERE a.static_service_links LIKE ?
+                ORDER BY a.created_at DESC
+            `;
+
+            // Search for service_id in the JSON field
+            const searchPattern = `%"service_id":${service_id}%`;
+            result = await pool.query(fallbackQuery, [searchPattern]);
+        }
 
         // Parse JSON fields
         const assets = result.rows.map((asset: any) => ({

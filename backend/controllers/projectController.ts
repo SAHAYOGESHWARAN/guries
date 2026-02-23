@@ -72,7 +72,18 @@ export const createProject = async (req: Request, res: Response) => {
     } = req.body;
 
     try {
-        const query = `
+        const isPostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true';
+        const query = isPostgres ? `
+            INSERT INTO projects (
+                project_name, project_code, description, status, 
+                start_date, end_date, budget, owner_id, brand_id,
+                linked_service_id, priority, sub_services, outcome_kpis,
+                expected_outcome, team_members, weekly_report,
+                created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+            RETURNING *;
+        ` : `
             INSERT INTO projects (
                 project_name, project_code, description, status, 
                 start_date, end_date, budget, owner_id, brand_id,
@@ -103,56 +114,22 @@ export const createProject = async (req: Request, res: Response) => {
 
         console.log('[createProject] Inserting project:', { project_name, project_code });
         const insertResult = await pool.query(query, values);
-        const projectId = insertResult.rows[0]?.id || insertResult.lastID;
 
-        if (!projectId) {
-            console.error('[createProject] Failed to get project ID from insert result');
+        // Extract the project from the result
+        // PostgreSQL RETURNING returns the row directly in rows[0]
+        // SQLite returns { rows: [{ id: insertedId }], lastID: insertedId }
+        let newProject = insertResult.rows?.[0];
+
+        if (!newProject) {
+            console.error('[createProject] Failed to extract project from result');
+            return res.status(500).json({ error: 'Failed to create project - no data returned' });
+        }
+
+        if (!newProject.id) {
+            console.error('[createProject] Project missing ID:', newProject);
             return res.status(500).json({ error: 'Failed to create project - no ID returned' });
         }
 
-        console.log('[createProject] Project inserted with ID:', projectId);
-
-        // Fetch the complete project record with related data
-        const selectResult = await pool.query(`
-            SELECT p.*, 
-                u.name as owner_name,
-                b.name as brand_name
-            FROM projects p
-            LEFT JOIN users u ON p.owner_id = u.id
-            LEFT JOIN brands b ON p.brand_id = b.id
-            WHERE p.id = ?
-        `, [projectId]);
-
-        if (selectResult.rows.length === 0) {
-            console.error('[createProject] Failed to fetch created project');
-            // Return fallback response with inserted data
-            const fallbackProject = {
-                id: projectId,
-                project_name,
-                project_code: project_code || `PRJ-${Date.now()}`,
-                description: description || null,
-                status: status || 'Planned',
-                start_date: start_date || null,
-                end_date: end_date || null,
-                budget: budget || null,
-                owner_id: owner_id || null,
-                brand_id: brand_id || null,
-                linked_service_id: linked_service_id || null,
-                priority: priority || 'Medium',
-                sub_services: sub_services || null,
-                outcome_kpis: outcome_kpis || null,
-                expected_outcome: expected_outcome || null,
-                team_members: team_members || null,
-                weekly_report: weekly_report !== undefined ? (weekly_report ? 1 : 0) : 1,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-            console.log('[createProject] Returning fallback project:', fallbackProject);
-            getSocket().emit('project_created', fallbackProject);
-            return res.status(201).json(fallbackProject);
-        }
-
-        const newProject = selectResult.rows[0];
         console.log('[createProject] Project created successfully:', { id: newProject.id, name: newProject.project_name });
 
         getSocket().emit('project_created', newProject);

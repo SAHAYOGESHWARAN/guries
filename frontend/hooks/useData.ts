@@ -325,14 +325,10 @@ export function useData<T>(collection: string) {
             await checkBackendAvailability();
             console.log(`[useData] Backend available: ${backendAvailable}`);
 
-            // Check if cache has expired - if so, refresh from backend
-            const cachedData = dataCache.get<T>(collection);
-            if (!cachedData) {
-                console.log(`[useData] Cache expired for ${collection}, refreshing from backend`);
-                fetchData(true); // Force refresh
-            } else {
-                fetchData();
-            }
+            // Always attempt to refresh from backend on component mount
+            // This ensures fresh data when navigating back to a view
+            console.log(`[useData] Fetching fresh data for ${collection} on mount`);
+            fetchData(false); // Soft refresh - keeps existing data while loading
         };
 
         initializeData();
@@ -362,15 +358,30 @@ export function useData<T>(collection: string) {
             }
 
             const handleCreate = (newItem: T) => {
-                setData(prev => [newItem, ...prev]);
+                setData(prev => {
+                    const updated = [newItem, ...prev];
+                    // Update global cache when new item is created
+                    dataCache.set(collection, updated);
+                    return updated;
+                });
             };
 
             const handleUpdate = (updatedItem: T & { id: number | string }) => {
-                setData(prev => prev.map(item => (item as any).id === updatedItem.id ? updatedItem : item));
+                setData(prev => {
+                    const updated = prev.map(item => (item as any).id === updatedItem.id ? updatedItem : item);
+                    // Update global cache when item is updated
+                    dataCache.set(collection, updated);
+                    return updated;
+                });
             };
 
             const handleDelete = ({ id }: { id: number | string }) => {
-                setData(prev => prev.filter(item => (item as any).id !== id));
+                setData(prev => {
+                    const updated = prev.filter(item => (item as any).id !== id);
+                    // Update global cache when item is deleted
+                    dataCache.set(collection, updated);
+                    return updated;
+                });
             };
 
             socket.on(`${resource.event}_created`, handleCreate);

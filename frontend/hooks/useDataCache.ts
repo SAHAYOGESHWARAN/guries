@@ -11,12 +11,13 @@ interface CacheEntry<T> {
 
 class DataCache {
     private cache = new Map<string, CacheEntry<any>>();
-    private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes
+    private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes (reduced from 30)
     private readonly COLLECTION_TTL: Record<string, number> = {
-        'campaigns': 60 * 60 * 1000, // 1 hour for campaigns
-        'projects': 60 * 60 * 1000, // 1 hour for projects
-        'tasks': 30 * 60 * 1000, // 30 minutes for tasks
-        'content': 30 * 60 * 1000, // 30 minutes for content
+        'campaigns': 5 * 60 * 1000, // 5 minutes (reduced from 1 hour)
+        'projects': 5 * 60 * 1000, // 5 minutes (reduced from 1 hour)
+        'tasks': 5 * 60 * 1000, // 5 minutes (reduced from 30 minutes)
+        'content': 5 * 60 * 1000, // 5 minutes (reduced from 30 minutes)
+        'assetLibrary': 5 * 60 * 1000, // 5 minutes for assets
     };
     private invalidationListeners = new Map<string, Set<() => void>>();
 

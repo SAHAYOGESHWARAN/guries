@@ -379,12 +379,24 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             user_id: created_by || submitted_by
         }];
 
-        const result = await pool.query(
-            `INSERT INTO assets(
+        const isPostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true';
+        const query = isPostgres ? `
+            INSERT INTO assets(
                 asset_name, asset_type, asset_category, asset_format, status,
                 file_url, created_by, created_at, application_type,
                 seo_score, grammar_score, submitted_by, qc_status
-            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING *;
+        ` : `
+            INSERT INTO assets(
+                asset_name, asset_type, asset_category, asset_format, status,
+                file_url, created_by, created_at, application_type,
+                seo_score, grammar_score, submitted_by, qc_status
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const result = await pool.query(
+            query,
             [
                 name, type, asset_category, asset_format, status || 'draft',
                 file_url || null, created_by || submitted_by || null,

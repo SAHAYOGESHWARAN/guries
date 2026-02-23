@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { AssetLibraryItem } from '../types';
+import { dataCache } from '../hooks/useDataCache';
 
 interface ServiceLinkedAssetsDisplayProps {
     serviceId: number;
@@ -30,19 +31,44 @@ const ServiceLinkedAssetsDisplay: React.FC<ServiceLinkedAssetsDisplayProps> = ({
             try {
                 const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
                 let endpoint = `/asset-service-linking/services/${serviceId}/linked-assets`;
+                let cacheKey = `service_${serviceId}_linked_assets`;
 
                 if (subServiceId) {
                     endpoint = `/asset-service-linking/sub-services/${subServiceId}/linked-assets`;
+                    cacheKey = `subservice_${subServiceId}_linked_assets`;
                 }
 
-                const response = await fetch(`${apiUrl}${endpoint}`);
-
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch linked assets: ${response.statusText}`);
+                // Try to get from cache first
+                const cachedAssets = dataCache.get<LinkedAsset>(cacheKey);
+                if (cachedAssets && cachedAssets.length > 0) {
+                    console.log(`[ServiceLinkedAssetsDisplay] Using cached linked assets for ${cacheKey}`);
+                    setAssets(cachedAssets);
+                    setLoading(false);
+                    // Still fetch fresh data in background
+                    fetchFresh();
+                    return;
                 }
 
-                const data = await response.json();
-                setAssets(Array.isArray(data) ? data : []);
+                // Fetch fresh data
+                fetchFresh();
+
+                async function fetchFresh() {
+                    const response = await fetch(`${apiUrl}${endpoint}`);
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch linked assets: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const assetList = Array.isArray(data) ? data : [];
+
+                    // Cache the results
+                    if (assetList.length > 0) {
+                        dataCache.set(cacheKey, assetList, 5 * 60 * 1000); // 5 minute TTL
+                    }
+
+                    setAssets(assetList);
+                }
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Failed to load linked assets';
                 setError(message);
