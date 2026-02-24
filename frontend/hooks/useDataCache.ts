@@ -11,13 +11,13 @@ interface CacheEntry<T> {
 
 class DataCache {
     private cache = new Map<string, CacheEntry<any>>();
-    private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes (reduced from 30)
+    private readonly DEFAULT_TTL = 2 * 60 * 1000; // 2 minutes
     private readonly COLLECTION_TTL: Record<string, number> = {
-        'campaigns': 5 * 60 * 1000, // 5 minutes (reduced from 1 hour)
-        'projects': 5 * 60 * 1000, // 5 minutes (reduced from 1 hour)
-        'tasks': 5 * 60 * 1000, // 5 minutes (reduced from 30 minutes)
-        'content': 5 * 60 * 1000, // 5 minutes (reduced from 30 minutes)
-        'assetLibrary': 5 * 60 * 1000, // 5 minutes for assets
+        'campaigns': 2 * 60 * 1000, // 2 minutes
+        'projects': 2 * 60 * 1000, // 2 minutes
+        'tasks': 2 * 60 * 1000, // 2 minutes
+        'content': 2 * 60 * 1000, // 2 minutes
+        'assetLibrary': 2 * 60 * 1000, // 2 minutes for assets
     };
     private invalidationListeners = new Map<string, Set<() => void>>();
 
@@ -91,6 +91,26 @@ class DataCache {
         if (listeners) {
             listeners.forEach(listener => listener());
         }
+    }
+
+    /**
+     * Mark cache as stale (needs refresh)
+     */
+    markStale(key: string): void {
+        const entry = this.cache.get(key);
+        if (entry) {
+            // Set timestamp to past to force refresh on next get
+            entry.timestamp = Date.now() - entry.ttl - 1;
+        }
+    }
+
+    /**
+     * Check if cache is stale
+     */
+    isStale(key: string): boolean {
+        const entry = this.cache.get(key);
+        if (!entry) return true;
+        return Date.now() - entry.timestamp > entry.ttl;
     }
 
     /**

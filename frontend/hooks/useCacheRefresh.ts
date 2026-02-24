@@ -1,111 +1,38 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { dataCache } from './useDataCache';
 
 /**
- * Hook for managing cache refresh and monitoring
- * Provides utilities for components to refresh specific collections
- * and monitor cache staleness
+ * Hook to refresh data when cache becomes stale
+ * Triggers a refresh when navigating to a page if cache is stale
  */
-
-interface UseCacheRefreshOptions {
-    collection: string;
-    autoRefreshInterval?: number; // ms, 0 to disable
+export function useCacheRefresh(collection: string, onRefresh: () => void) {
+    useEffect(() => {
+        // Check if cache is stale and trigger refresh if needed
+        if (dataCache.isStale(collection)) {
+            console.log(`[useCacheRefresh] Cache is stale for ${collection}, triggering refresh`);
+            onRefresh();
+        }
+    }, [collection, onRefresh]);
 }
 
-export const useCacheRefresh = (options: UseCacheRefreshOptions) => {
-    const { collection, autoRefreshInterval = 0 } = options;
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isCacheStale, setIsCacheStale] = useState(false);
-
-    // Check if cache is stale
-    useEffect(() => {
-        const checkStale = () => {
-            setIsCacheStale(dataCache.isStale(collection));
-        };
-
-        checkStale();
-
-        // Check periodically
-        const interval = setInterval(checkStale, 5000); // Check every 5 seconds
-        return () => clearInterval(interval);
-    }, [collection]);
-
-    // Auto-refresh if interval is set
-    useEffect(() => {
-        if (autoRefreshInterval <= 0) return;
-
-        const interval = setInterval(() => {
-            if (dataCache.isStale(collection)) {
-                dataCache.markStale(collection);
-            }
-        }, autoRefreshInterval);
-
-        return () => clearInterval(interval);
-    }, [collection, autoRefreshInterval]);
-
-    // Manual refresh trigger
-    const refresh = useCallback(async () => {
-        setIsRefreshing(true);
-        try {
-            dataCache.markStale(collection);
-            // Give time for background refresh to start
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [collection]);
-
-    // Get cache stats for this collection
-    const getCacheStats = useCallback(() => {
-        const stats = dataCache.getStats();
-        return stats.find(s => s.collection === collection);
-    }, [collection]);
-
-    return {
-        isCacheStale,
-        isRefreshing,
-        refresh,
-        getCacheStats,
+/**
+ * Hook to invalidate cache for a collection
+ * Useful when you know data has changed and need to force a refresh
+ */
+export function useInvalidateCache(collection: string) {
+    return () => {
+        console.log(`[useInvalidateCache] Invalidating cache for ${collection}`);
+        dataCache.invalidate(collection);
     };
-};
+}
 
 /**
- * Hook for monitoring multiple collections
+ * Hook to subscribe to cache invalidation events
+ * Useful for components that need to react to cache changes
  */
-export const useMultipleCacheRefresh = (collections: string[]) => {
-    const [staleCollections, setStaleCollections] = useState<Set<string>>(new Set());
-
+export function useOnCacheInvalidate(collection: string, callback: () => void) {
     useEffect(() => {
-        const checkStale = () => {
-            const stale = new Set<string>();
-            collections.forEach(collection => {
-                if (dataCache.isStale(collection)) {
-                    stale.add(collection);
-                }
-            });
-            setStaleCollections(stale);
-        };
-
-        checkStale();
-        const interval = setInterval(checkStale, 5000);
-        return () => clearInterval(interval);
-    }, [collections]);
-
-    const refreshAll = useCallback(async () => {
-        collections.forEach(collection => {
-            dataCache.markStale(collection);
-        });
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }, [collections]);
-
-    const refreshCollection = useCallback((collection: string) => {
-        dataCache.markStale(collection);
-    }, []);
-
-    return {
-        staleCollections,
-        refreshAll,
-        refreshCollection,
-        hasStaleData: staleCollections.size > 0,
-    };
-};
+        const unsubscribe = dataCache.onInvalidate(collection, callback);
+        return unsubscribe;
+    }, [collection, callback]);
+}

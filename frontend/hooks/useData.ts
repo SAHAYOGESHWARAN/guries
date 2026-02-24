@@ -275,15 +275,8 @@ export function useData<T>(collection: string) {
 
             // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
-                // If API returns empty array but we have cached data, keep the cached data
-                if (dataArray.length === 0 && data.length > 0) {
-                    // Don't update state, keep existing data
-                    setIsOffline(false);
-                    setLoading(false);
-                    return;
-                }
-
-                // Always update on refresh, or if we don't have data yet
+                // Always update state with fresh API data (even if empty)
+                // This ensures we don't keep stale data when API returns empty
                 setData(dataArray);
 
                 // Cache the data globally for persistence across routes
@@ -397,6 +390,7 @@ export function useData<T>(collection: string) {
                 socket.off(`${resource.event}_created`, handleCreate);
                 socket.off(`${resource.event}_updated`, handleUpdate);
                 socket.off(`${resource.event}_deleted`, handleDelete);
+                socket.off('connect_error');
             };
         }
 
@@ -412,10 +406,9 @@ export function useData<T>(collection: string) {
         window.addEventListener('local-storage-update', handleStorageChange);
         return () => window.removeEventListener('local-storage-update', handleStorageChange);
 
-    }, [collection, resource, fetchData, loadLocal]);
+    }, [collection, resource, fetchData, loadLocal, data]);
 
     const create = async (item: any) => {
-
         // 1. Optimistic Local Update
         let newItem = item;
         if ((db as any)[collection]) {
@@ -446,7 +439,6 @@ export function useData<T>(collection: string) {
 
                 const responseData = await response.json();
 
-
                 // Extract the actual item from various response formats
                 // Try: asset (for assets), data (for wrapped responses), or use directly
                 let extracted = responseData.asset || responseData.data || responseData;
@@ -457,7 +449,6 @@ export function useData<T>(collection: string) {
                 }
 
                 serverItem = extracted;
-
 
                 // Validate that we got an ID back
                 if (!serverItem || typeof serverItem !== 'object') {
@@ -499,6 +490,8 @@ export function useData<T>(collection: string) {
                     localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
                 } catch (e) { /* ignore */ }
             }
+            // Also persist to global cache
+            dataCache.set(collection, updated);
             return updated;
         });
 
@@ -543,6 +536,8 @@ export function useData<T>(collection: string) {
                     localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
                 } catch (e) { /* ignore */ }
             }
+            // Also persist to global cache
+            dataCache.set(collection, updated);
             return updated;
         });
 
@@ -577,7 +572,17 @@ export function useData<T>(collection: string) {
         dataCache.applyOptimisticDelete(collection, id);
 
         // Immediately update state to remove the item
-        setData(prev => prev.filter(item => (item as any).id !== id));
+        setData(prev => {
+            const updated = prev.filter(item => (item as any).id !== id);
+            if ((db as any)[collection]) {
+                try {
+                    localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
+                } catch (e) { /* ignore */ }
+            }
+            // Also persist to global cache
+            dataCache.set(collection, updated);
+            return updated;
+        });
     };
 
     // Added refresh method explicitly exposing fetch (with isRefresh flag to prevent flickering)

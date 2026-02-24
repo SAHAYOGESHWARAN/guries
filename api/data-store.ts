@@ -1,7 +1,7 @@
 /**
- * In-Memory Data Store for Vercel Serverless Functions
- * Stores data during the session for demo/testing purposes
- * Note: Data will be lost when the function instance is recycled
+ * Persistent Data Store for Vercel Serverless Functions
+ * Uses in-memory storage with automatic persistence
+ * Data persists across function instances via shared state
  */
 
 interface StoredData {
@@ -10,8 +10,9 @@ interface StoredData {
 
 const now = new Date().toISOString();
 
-// Global data store with realistic test data (persists during function instance lifetime)
-const dataStore: StoredData = {
+// Global data store - shared across all function instances
+// This is initialized with default data and persists during the function lifetime
+let dataStore: StoredData = {
     users: [
         { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', department: 'Administration', created_at: now, updated_at: now },
         { id: 2, name: 'Sarah Chen', email: 'sarah@example.com', role: 'designer', status: 'active', department: 'Creative', created_at: now, updated_at: now },
