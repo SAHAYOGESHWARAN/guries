@@ -80,7 +80,10 @@ const RESOURCE_MAP: Record<string, { endpoint: string, event: string }> = {
     complianceRules: { endpoint: 'compliance/rules', event: 'compliance_rule' },
     complianceAudits: { endpoint: 'compliance/audits', event: 'compliance_audit' },
     // Notifications
-    notifications: { endpoint: 'notifications', event: 'notification' }
+    notifications: { endpoint: 'notifications', event: 'notification' },
+    // Analytics & Performance
+    campaignPerformance: { endpoint: 'campaign-performance', event: 'campaign_performance' },
+    campaignEffort: { endpoint: 'campaign-effort', event: 'campaign_effort' }
 };
 
 // Singleton socket instance to manage connection
@@ -277,18 +280,23 @@ export function useData<T>(collection: string) {
             if (Array.isArray(dataArray)) {
                 // Always update state with fresh API data (even if empty)
                 // This ensures we don't keep stale data when API returns empty
+                console.log(`[useData] Setting ${collection} state with ${dataArray.length} items`);
                 setData(dataArray);
 
                 // Cache the data globally for persistence across routes
                 dataCache.set(collection, dataArray);
+                console.log(`[useData] Cached ${collection} with ${dataArray.length} items`);
 
                 // Also save to localStorage for offline access
                 if ((db as any)[collection]) {
                     try {
                         localStorage.setItem((db as any)[collection].key, JSON.stringify(dataArray));
+                        console.log(`[useData] Saved ${collection} to localStorage with ${dataArray.length} items`);
                     } catch (e) {
-                        // Ignore localStorage errors
+                        console.warn(`[useData] Failed to save ${collection} to localStorage:`, e);
                     }
+                } else {
+                    console.warn(`[useData] No storage service found for ${collection}`);
                 }
             } else {
                 console.warn(`[useData] dataArray is not an array for ${collection}:`, dataArray);
