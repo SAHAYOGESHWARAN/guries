@@ -59,6 +59,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        // Dashboard stats endpoint
+        if (req.url?.includes('/dashboard/stats') && req.method === 'GET') {
+            const campaigns = dataStore.campaigns || [];
+            const tasks = dataStore.tasks || [];
+            const users = dataStore.users || [];
+            const assets = dataStore.assets || [];
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    activeCampaigns: campaigns.filter((c: any) => c.status === 'Active' || c.campaign_status === 'active').length,
+                    campaignsTrendPercent: 12,
+                    contentPublished: assets.filter((a: any) => a.status === 'QC Approved').length,
+                    contentTrendPercent: 8,
+                    tasksCompleted: tasks.filter((t: any) => t.status === 'completed').length,
+                    tasksTrendPercent: -3,
+                    teamMembers: users.length,
+                    teamMembersTrendPercent: 2,
+                    pendingTasks: tasks.filter((t: any) => t.status === 'pending' || t.status === 'in_progress').length
+                }
+            });
+        }
+
         // Parse URL - /api/v1/{collection} or /api/v1/{collection}/{id}
         const urlParts = req.url?.split('?')[0].split('/').filter(Boolean) || [];
         const isV1Path = urlParts[0] === 'api' && urlParts[1] === 'v1';
