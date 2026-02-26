@@ -1,7 +1,6 @@
 /**
  * Persistent Data Store for Vercel Serverless Functions
- * Uses in-memory storage with automatic persistence
- * Data persists across function instances via shared state
+ * Uses in-memory storage with file-based persistence
  */
 
 interface StoredData {
@@ -10,8 +9,7 @@ interface StoredData {
 
 const now = new Date().toISOString();
 
-// Global data store - shared across all function instances
-// This is initialized with default data and persists during the function lifetime
+// Global data store - persists in memory during function lifetime
 let dataStore: StoredData = {
     users: [
         { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active', department: 'Administration', created_at: now, updated_at: now },

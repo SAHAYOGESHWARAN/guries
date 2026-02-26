@@ -71,30 +71,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // GET all items
             if (req.method === 'GET' && !isIdRoute) {
                 const items = dataStore.getAll(collection);
-                return res.status(200).json({ success: true, data: items });
+                console.log(`[API] GET ${collection}: returning ${items.length} items`);
+                return res.status(200).json({
+                    success: true,
+                    data: items,
+                    count: items.length
+                });
             }
 
             // GET single item by ID
             if (req.method === 'GET' && isIdRoute) {
                 const item = dataStore.getById(collection, Number(id));
                 if (!item) {
+                    console.log(`[API] GET ${collection}/${id}: not found`);
                     return res.status(404).json({ success: false, error: 'Item not found' });
                 }
+                console.log(`[API] GET ${collection}/${id}: found`);
                 return res.status(200).json({ success: true, data: item });
             }
 
             // POST - Create
             if (req.method === 'POST' && !isIdRoute) {
                 const newItem = dataStore.create(collection, req.body || {});
-                return res.status(201).json({ success: true, data: newItem });
+                console.log(`[API] POST ${collection}: created item ${newItem.id}`);
+                return res.status(201).json({
+                    success: true,
+                    data: newItem,
+                    message: 'Item created successfully'
+                });
             }
 
             // PUT / PATCH - Update
             if ((req.method === 'PUT' || req.method === 'PATCH') && isIdRoute) {
                 try {
                     const updated = dataStore.update(collection, Number(id), req.body || {});
-                    return res.status(200).json({ success: true, data: updated, message: 'Item updated successfully' });
+                    console.log(`[API] PUT ${collection}/${id}: updated`);
+                    return res.status(200).json({
+                        success: true,
+                        data: updated,
+                        message: 'Item updated successfully'
+                    });
                 } catch (error: any) {
+                    console.log(`[API] PUT ${collection}/${id}: error - ${error.message}`);
                     return res.status(404).json({ success: false, error: error.message });
                 }
             }
@@ -103,13 +121,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (req.method === 'DELETE' && isIdRoute) {
                 const deleted = dataStore.remove(collection, Number(id));
                 if (!deleted) {
+                    console.log(`[API] DELETE ${collection}/${id}: not found`);
                     return res.status(404).json({ success: false, error: 'Item not found' });
                 }
-                return res.status(200).json({ success: true, message: 'Item deleted' });
+                console.log(`[API] DELETE ${collection}/${id}: deleted`);
+                return res.status(200).json({ success: true, message: 'Item deleted successfully' });
             }
         }
 
         // Unknown route
+        console.log(`[API] Unknown route: ${req.method} ${req.url}`);
         return res.status(404).json({
             success: false,
             error: 'Endpoint not found',
