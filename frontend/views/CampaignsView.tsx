@@ -204,9 +204,28 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onCampaignSelect }) => {
         if (!item) return false;
         const matchesSearch = (item.campaign_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = typeFilter === 'All Types' || item.campaign_type === typeFilter;
-        const matchesStatus = statusFilter === 'All Statuses' ||
-            item.campaign_status === statusFilter ||
-            (statusFilter === 'active' && item.campaign_status === 'in_progress');
+
+        // Handle status filtering - normalize status values
+        let itemStatus = (item.campaign_status || item.status || 'planning').toLowerCase();
+        let filterStatus = statusFilter.toLowerCase();
+
+        // Map status values for comparison
+        const statusMap: Record<string, string> = {
+            'active': 'active',
+            'in_progress': 'active',
+            'in progress': 'active',
+            'planning': 'planning',
+            'planned': 'planning',
+            'completed': 'completed',
+            'on_hold': 'on_hold',
+            'on hold': 'on_hold',
+        };
+
+        const normalizedItemStatus = statusMap[itemStatus] || itemStatus;
+        const normalizedFilterStatus = statusMap[filterStatus] || filterStatus;
+
+        const matchesStatus = filterStatus === 'all statuses' || normalizedItemStatus === normalizedFilterStatus;
+
         return matchesSearch && matchesType && matchesStatus;
     });
 

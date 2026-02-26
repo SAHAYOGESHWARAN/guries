@@ -309,17 +309,40 @@ export function useData<T>(collection: string) {
         } finally {
             setLoading(false);
         }
-    }, [collection, resource, loadLocal, data.length]);
+    }, [collection, resource, loadLocal]);
 
     useEffect(() => {
         // Check backend availability first, then fetch data
         const initializeData = async () => {
             console.log(`[useData] Initializing data for ${collection}`);
+
+            // FIRST: Load from cache/localStorage immediately to show data
+            const cachedData = dataCache.get<T>(collection);
+            if (cachedData && cachedData.length > 0) {
+                console.log(`[useData] Loaded ${collection} from cache with ${cachedData.length} items`);
+                setData(cachedData);
+                setLoading(false);
+            } else {
+                // Try localStorage as fallback
+                try {
+                    if ((db as any)[collection]) {
+                        const localData = (db as any)[collection].getAll() || [];
+                        if (localData.length > 0) {
+                            console.log(`[useData] Loaded ${collection} from localStorage with ${localData.length} items`);
+                            setData(localData);
+                            setLoading(false);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`[useData] Failed to load ${collection} from localStorage`);
+                }
+            }
+
+            // SECOND: Check backend availability
             await checkBackendAvailability();
             console.log(`[useData] Backend available: ${backendAvailable}`);
 
-            // Always attempt to refresh from backend on component mount
-            // This ensures fresh data when navigating back to a view
+            // THIRD: Fetch fresh data from backend (in background, won't clear UI)
             console.log(`[useData] Fetching fresh data for ${collection} on mount`);
             fetchData(false); // Soft refresh - keeps existing data while loading
         };
@@ -406,7 +429,7 @@ export function useData<T>(collection: string) {
         window.addEventListener('local-storage-update', handleStorageChange);
         return () => window.removeEventListener('local-storage-update', handleStorageChange);
 
-    }, [collection, resource, fetchData, loadLocal, data]);
+    }, [collection, resource, fetchData, loadLocal]);
 
     const create = async (item: any) => {
         // 1. Optimistic Local Update
