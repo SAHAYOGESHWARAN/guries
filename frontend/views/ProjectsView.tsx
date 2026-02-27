@@ -223,7 +223,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
     // Create Project Modal
     const renderCreateModal = () => (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-visible flex flex-col">
                 {/* Header */}
                 <div className="flex items-center gap-4 p-6 border-b border-slate-200">
                     <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
@@ -264,7 +264,7 @@ const ProjectsView: React.FC<ProjectsViewProps> = ({ onProjectSelect }) => {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="p-6 overflow-y-auto max-h-[60vh] flex-1">
                     {createStep === 'basic' && (
                         <div className="space-y-5">
                             <div>

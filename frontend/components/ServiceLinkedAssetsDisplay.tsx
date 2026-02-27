@@ -30,11 +30,11 @@ const ServiceLinkedAssetsDisplay: React.FC<ServiceLinkedAssetsDisplayProps> = ({
 
             try {
                 const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
-                let endpoint = `/asset-service-linking/services/${serviceId}/linked-assets`;
+                let endpoint = `/services/${serviceId}/linked-assets`;
                 let cacheKey = `service_${serviceId}_linked_assets`;
 
                 if (subServiceId) {
-                    endpoint = `/asset-service-linking/sub-services/${subServiceId}/linked-assets`;
+                    endpoint = `/sub-services/${subServiceId}/linked-assets`;
                     cacheKey = `subservice_${subServiceId}_linked_assets`;
                 }
 

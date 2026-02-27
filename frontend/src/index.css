@@ -14,6 +14,18 @@ select option:hover {
   background-color: #e0e7ff !important;
 }
 
+/* Allow select dropdowns to overflow in modals */
+select {
+  position: relative;
+  z-index: 50;
+}
+
+/* Modal select dropdown fix */
+.modal-content select {
+  position: relative;
+  z-index: 50;
+}
+
 /* Global Reset & Base Styles */
 html {
   font-size: 16px;

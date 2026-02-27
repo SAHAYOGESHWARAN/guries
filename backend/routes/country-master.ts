@@ -6,15 +6,17 @@ const router = express.Router();
 // Get all countries
 router.get('/', async (req: Request, res: Response) => {
     try {
+        console.log('[Country Master] GET all countries request');
         const result = await pool.query(`
       SELECT * FROM country_master
       ORDER BY country_name
     `);
 
+        console.log('[Country Master] Found', result.rows.length, 'countries');
         res.json(result.rows);
     } catch (error) {
-        console.error('Error fetching countries:', error);
-        res.status(500).json({ error: 'Failed to fetch countries' });
+        console.error('[Country Master] Error fetching countries:', error);
+        res.status(500).json({ error: 'Failed to fetch countries', details: (error as any).message });
     }
 });
 
@@ -54,8 +56,20 @@ router.post('/', async (req: Request, res: Response) => {
             status
         } = req.body;
 
+        console.log('[Country Master] POST request received:', {
+            country_name,
+            iso_code,
+            region,
+            default_language,
+            allowed_for_backlinks,
+            allowed_for_content_targeting,
+            allowed_for_smm_targeting,
+            status
+        });
+
         // Validation
         if (!country_name || !iso_code || !region) {
+            console.log('[Country Master] Validation failed - missing required fields');
             return res.status(400).json({
                 error: 'Country name, ISO code, and region are required'
             });
@@ -86,6 +100,8 @@ router.post('/', async (req: Request, res: Response) => {
             status || 'active'
         ]);
 
+        console.log('[Country Master] Country created successfully with ID:', result.rows[0].id);
+
         res.status(201).json({
             id: result.rows[0].id,
             country_name,
@@ -99,13 +115,13 @@ router.post('/', async (req: Request, res: Response) => {
             message: 'Country created successfully'
         });
     } catch (error: any) {
-        console.error('Error creating country:', error);
+        console.error('[Country Master] Error creating country:', error);
         if (error.code === '23505' || error.message.includes('unique constraint')) {
             return res.status(400).json({
                 error: 'Country name or ISO code already exists'
             });
         }
-        res.status(500).json({ error: 'Failed to create country' });
+        res.status(500).json({ error: 'Failed to create country', details: error.message });
     }
 });
 

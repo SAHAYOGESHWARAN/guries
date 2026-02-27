@@ -382,27 +382,51 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
         const isPostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true';
         const query = isPostgres ? `
             INSERT INTO assets(
-                asset_name, asset_type, asset_category, asset_format, status,
-                file_url, created_by, created_at, application_type,
-                seo_score, grammar_score, submitted_by, qc_status
-            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                asset_name, name, type, asset_type, asset_category, asset_format, content_type, repository,
+                status, workflow_stage, qc_status, submitted_by, submitted_at, file_url, thumbnail_url,
+                file_size, file_type, date, linked_task_id, linked_campaign_id, linked_project_id,
+                linked_service_id, linked_sub_service_id, linked_repository_item_id, created_by, updated_by,
+                designed_by, published_by, verified_by, version_number, application_type,
+                keywords, content_keywords, seo_keywords, resource_files, seo_score, grammar_score,
+                ai_plagiarism_score, web_title, web_description, web_meta_description, web_keywords,
+                web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags, web_thumbnail, web_body_content,
+                smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags,
+                smm_media_url, smm_media_type, created_at, updated_at
+            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60)
             RETURNING *;
         ` : `
             INSERT INTO assets(
-                asset_name, asset_type, asset_category, asset_format, status,
-                file_url, created_by, created_at, application_type,
-                seo_score, grammar_score, submitted_by, qc_status
-            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                asset_name, name, type, asset_type, asset_category, asset_format, content_type, repository,
+                status, workflow_stage, qc_status, submitted_by, submitted_at, file_url, thumbnail_url,
+                file_size, file_type, date, linked_task_id, linked_campaign_id, linked_project_id,
+                linked_service_id, linked_sub_service_id, linked_repository_item_id, created_by, updated_by,
+                designed_by, published_by, verified_by, version_number, application_type,
+                keywords, content_keywords, seo_keywords, resource_files, seo_score, grammar_score,
+                ai_plagiarism_score, web_title, web_description, web_meta_description, web_keywords,
+                web_url, web_h1, web_h2_1, web_h2_2, web_h3_tags, web_thumbnail, web_body_content,
+                smm_platform, smm_title, smm_tag, smm_url, smm_description, smm_hashtags,
+                smm_media_url, smm_media_type, created_at, updated_at
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
+        const now = new Date().toISOString();
         const result = await pool.query(
             query,
             [
-                name, type, asset_category, asset_format, status || 'draft',
-                file_url || null, created_by || submitted_by || null,
-                date || new Date().toISOString(), normalizedAppType,
-                seo_score || null, grammar_score || null, submitted_by || null,
-                status === 'Pending QC Review' ? 'Pending' : null
+                name, name, type, type, asset_category, asset_format, content_type, repository || 'Content Repository',
+                status || 'draft', workflow_stage || 'Add', status === 'Pending QC Review' ? 'Pending' : null,
+                submitted_by || null, status === 'Pending QC Review' ? now : null, file_url || null, thumbnail_url || null,
+                file_size || null, file_type || null, date || now, linked_task_id || null, linked_campaign_id || null,
+                linked_project_id || null, linked_service_id || null, linked_sub_service_id || null,
+                linked_repository_item_id || null, created_by || submitted_by || null, null,
+                designed_by || null, published_by || null, verified_by || null, version_number || 'v1.0', normalizedAppType,
+                JSON.stringify(keywords || []), JSON.stringify(content_keywords || []), JSON.stringify(seo_keywords || []),
+                JSON.stringify(resource_files || []), seo_score || null, grammar_score || null,
+                ai_plagiarism_score || null, web_title || null, web_description || null, web_meta_description || null,
+                web_keywords || null, web_url || null, web_h1 || null, web_h2_1 || null, web_h2_2 || null,
+                JSON.stringify(web_h3_tags || []), web_thumbnail || null, web_body_content || null,
+                smm_platform || null, smm_title || null, smm_tag || null, smm_url || null, smm_description || null,
+                smm_hashtags || null, smm_media_url || null, smm_media_type || null, now, now
             ]
         );
 

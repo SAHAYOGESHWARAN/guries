@@ -12,6 +12,8 @@ export const linkAssetToServiceStatic = async (req: Request, res: Response) => {
     const created_by = (req as any).user?.id;
 
     try {
+        console.log('[linkAssetToServiceStatic] Linking asset:', asset_id, 'to service:', service_id, 'sub_service:', sub_service_id);
+
         if (!asset_id || !service_id) {
             return res.status(400).json({ error: 'asset_id and service_id are required' });
         }
@@ -44,6 +46,8 @@ export const linkAssetToServiceStatic = async (req: Request, res: Response) => {
             [asset_id, service_id, sub_service_id || null, created_by]
         );
 
+        console.log('[linkAssetToServiceStatic] Created link in service_asset_links');
+
         // If sub_service_id provided, also create link in subservice_asset_links
         if (sub_service_id) {
             await pool.query(
@@ -52,6 +56,7 @@ export const linkAssetToServiceStatic = async (req: Request, res: Response) => {
                  ON CONFLICT(asset_id, sub_service_id) DO UPDATE SET is_static = 1`,
                 [asset_id, sub_service_id, created_by]
             );
+            console.log('[linkAssetToServiceStatic] Created link in subservice_asset_links');
         }
 
         // Update asset's static_service_links JSON field
@@ -89,6 +94,8 @@ export const linkAssetToServiceStatic = async (req: Request, res: Response) => {
             [JSON.stringify(staticLinks), asset_id]
         );
 
+        console.log('[linkAssetToServiceStatic] Updated asset static_service_links JSON field');
+
         res.status(201).json({
             message: 'Asset linked to service successfully',
             link: {
@@ -110,6 +117,8 @@ export const getServiceLinkedAssets = async (req: Request, res: Response) => {
     const { sub_service_id } = req.query;
 
     try {
+        console.log('[getServiceLinkedAssets] Fetching linked assets for service:', service_id, 'sub_service:', sub_service_id);
+
         // First try to get assets from service_asset_links table
         let query = `
             SELECT DISTINCT a.* FROM assets a
@@ -126,6 +135,7 @@ export const getServiceLinkedAssets = async (req: Request, res: Response) => {
         query += ` ORDER BY a.created_at DESC`;
 
         let result = await pool.query(query, params);
+        console.log('[getServiceLinkedAssets] Found', result.rows.length, 'assets from service_asset_links table');
 
         // If no results from service_asset_links, try fallback: check static_service_links JSON field
         if (result.rows.length === 0) {
@@ -141,6 +151,7 @@ export const getServiceLinkedAssets = async (req: Request, res: Response) => {
             // Search for service_id in the JSON field
             const searchPattern = `%"service_id":${service_id}%`;
             result = await pool.query(fallbackQuery, [searchPattern]);
+            console.log('[getServiceLinkedAssets] Found', result.rows.length, 'assets from static_service_links fallback');
         }
 
         // Parse JSON fields
@@ -152,9 +163,10 @@ export const getServiceLinkedAssets = async (req: Request, res: Response) => {
             static_service_links: asset.static_service_links ? JSON.parse(asset.static_service_links) : []
         }));
 
+        console.log('[getServiceLinkedAssets] Returning', assets.length, 'assets');
         res.status(200).json(assets);
     } catch (error: any) {
-        console.error('Error fetching service linked assets:', error);
+        console.error('[getServiceLinkedAssets] Error fetching service linked assets:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -164,6 +176,8 @@ export const getSubServiceLinkedAssets = async (req: Request, res: Response) => 
     const { sub_service_id } = req.params;
 
     try {
+        console.log('[getSubServiceLinkedAssets] Fetching linked assets for sub-service:', sub_service_id);
+
         const result = await pool.query(
             `SELECT DISTINCT a.* FROM assets a
              INNER JOIN subservice_asset_links sal ON a.id = sal.asset_id
@@ -171,6 +185,8 @@ export const getSubServiceLinkedAssets = async (req: Request, res: Response) => 
              ORDER BY a.created_at DESC`,
             [sub_service_id]
         );
+
+        console.log('[getSubServiceLinkedAssets] Found', result.rows.length, 'assets');
 
         // Parse JSON fields
         const assets = result.rows.map((asset: any) => ({
@@ -183,7 +199,7 @@ export const getSubServiceLinkedAssets = async (req: Request, res: Response) => 
 
         res.status(200).json(assets);
     } catch (error: any) {
-        console.error('Error fetching sub-service linked assets:', error);
+        console.error('[getSubServiceLinkedAssets] Error fetching sub-service linked assets:', error);
         res.status(500).json({ error: error.message });
     }
 };

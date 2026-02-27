@@ -78,12 +78,21 @@ export default function CountryMaster() {
     const handleDeleteCountry = async (id: number) => {
         if (confirm('Are you sure you want to delete this country?')) {
             try {
-                await fetch(`${API_BASE_URL}/country-master/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/country-master/${id}`, {
                     method: 'DELETE'
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error deleting country:', errorData);
+                    alert(`Error: ${errorData.error || 'Failed to delete country'}`);
+                    return;
+                }
+
                 fetchCountries();
             } catch (error) {
                 console.error('Error deleting country:', error);
+                alert('Error deleting country. Please check the console for details.');
             }
         }
     };
@@ -95,16 +104,29 @@ export default function CountryMaster() {
                 ? `${API_BASE_URL}/country-master/${editingCountry.id}`
                 : `${API_BASE_URL}/country-master`;
 
-            await fetch(url, {
+            console.log('Saving country data:', countryData);
+
+            const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(countryData)
             });
 
+            console.log('Response status:', response.status);
+            const responseData = await response.json();
+            console.log('Response data:', responseData);
+
+            if (!response.ok) {
+                console.error('Error saving country:', responseData);
+                alert(`Error: ${responseData.error || 'Failed to save country'}`);
+                return;
+            }
+
             setShowModal(false);
             fetchCountries();
         } catch (error) {
             console.error('Error saving country:', error);
+            alert('Error saving country. Please check the console for details.');
         }
     };
 

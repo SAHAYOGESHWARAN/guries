@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../hooks/useData';
 import { exportToCSV } from '../utils/csvHelper';
+import ContentDetailView from '../components/ContentDetailView';
 import type { ContentRepositoryItem, User, Service, SubServiceItem } from '../types';
 
 // Pipeline stages matching the design
@@ -107,6 +108,9 @@ const ContentRepositoryView: React.FC = () => {
         status: 'idea',
         auto_outline: false,
     });
+
+    const [selectedContent, setSelectedContent] = useState<ContentRepositoryItem | null>(null);
+    const [showDetailView, setShowDetailView] = useState(false);
 
     const getStageCount = (stage: string) => {
         if (stage === 'All') return content.length;
@@ -464,7 +468,14 @@ const ContentRepositoryView: React.FC = () => {
                                     const keywords = item.keywords || item.focus_keywords || [];
 
                                     return (
-                                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                        <tr
+                                            key={item.id}
+                                            className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                            onClick={() => {
+                                                setSelectedContent(item);
+                                                setShowDetailView(true);
+                                            }}
+                                        >
                                             <td className="px-4 py-3">
                                                 <div className="font-medium text-slate-900 text-sm">{item.content_title_clean}</div>
                                             </td>
@@ -514,11 +525,27 @@ const ContentRepositoryView: React.FC = () => {
                                                 {formatDate(item.updated_at || item.last_status_update_at)}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-700">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                                    </svg>
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedContent(item);
+                                                            setShowDetailView(true);
+                                                        }}
+                                                        className="p-1.5 hover:bg-blue-100 rounded-lg text-blue-600 hover:text-blue-700 transition-colors"
+                                                        title="View content"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-700">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -551,6 +578,20 @@ const ContentRepositoryView: React.FC = () => {
                     ))}
                 </div>
             </div>
+
+            {/* Content Detail View */}
+            <ContentDetailView
+                content={selectedContent}
+                isOpen={showDetailView}
+                onClose={() => {
+                    setShowDetailView(false);
+                    setSelectedContent(null);
+                }}
+                onSave={async (data) => {
+                    await updateContent(data.id, data);
+                    refresh();
+                }}
+            />
         </div>
     );
 };
