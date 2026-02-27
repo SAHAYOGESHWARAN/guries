@@ -253,13 +253,6 @@ const App: React.FC = () => {
     if (view === 'logout') {
       handleLogout();
     } else {
-      // Mark cache as stale when navigating to force fresh data fetch
-      dataCache.markStale('campaigns');
-      dataCache.markStale('projects');
-      dataCache.markStale('tasks');
-      dataCache.markStale('content');
-      dataCache.markStale('assetLibrary');
-
       setViewState({ view, id });
       const nextHash = id !== null && id !== undefined ? `${view}/${id}` : view;
       if (window.location.hash.slice(1) !== nextHash) {

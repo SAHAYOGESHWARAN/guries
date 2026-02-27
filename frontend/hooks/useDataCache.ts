@@ -27,13 +27,10 @@ class DataCache {
     get<T>(key: string): T[] | null {
         const entry = this.cache.get(key);
         if (!entry) return null;
-
-        // Check if cache has expired
-        if (Date.now() - entry.timestamp > entry.ttl) {
-            this.cache.delete(key);
-            return null;
-        }
-
+        // NOTE: We intentionally return cached data even if it's stale/expired.
+        // Staleness is tracked separately via `isStale()` so callers (like `useData`)
+        // can show cached data while fetching a refresh, which prevents "data disappears
+        // on navigation" and supports optimistic updates on stale caches.
         return entry.data as T[];
     }
 
@@ -101,6 +98,13 @@ class DataCache {
         if (entry) {
             // Set timestamp to past to force refresh on next get
             entry.timestamp = Date.now() - entry.ttl - 1;
+        } else {
+            // If cache doesn't exist, create a stale entry to force fetch
+            this.cache.set(key, {
+                data: [],
+                timestamp: Date.now() - (this.COLLECTION_TTL[key] || this.DEFAULT_TTL) - 1,
+                ttl: this.COLLECTION_TTL[key] || this.DEFAULT_TTL
+            });
         }
     }
 
@@ -147,6 +151,14 @@ class DataCache {
             keys: Array.from(this.cache.keys()),
             size: this.cache.size
         };
+    }
+
+    /**
+     * Force refresh a collection by marking it stale and clearing it
+     */
+    forceRefresh(key: string): void {
+        this.cache.delete(key);
+        this.notifyListeners(key);
     }
 
     /**

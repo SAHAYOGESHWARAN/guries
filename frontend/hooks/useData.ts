@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { db } from '../utils/storage';
 import { dataCache } from './useDataCache';
+import { dataSyncManager } from '../utils/dataSyncManager';
 
 // Use environment variable or default to relative path for production
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -204,13 +205,21 @@ export function useData<T>(collection: string) {
             }
 
             // Fall back to localStorage
-            if ((db as any)[collection]) {
-                const localData = (db as any)[collection].getAll() || [];
+            const service = (db as any)[collection];
+            if (service) {
+                const localData = service.getAll() || [];
                 console.log(`[useData] Loading ${collection} from localStorage with ${localData.length} items`);
                 setData(localData);
+                // Also sync to global cache for future access
+                if (localData.length > 0) {
+                    dataCache.set(collection, localData);
+                    console.log(`[useData] Synced ${collection} to global cache from localStorage`);
+                }
+            } else {
+                console.warn(`[useData] No DataService found for collection: ${collection}`);
             }
         } catch (e) {
-            console.warn(`Local load failed for ${collection}`);
+            console.warn(`Local load failed for ${collection}:`, e);
         }
     }, [collection]);
 
@@ -288,10 +297,13 @@ export function useData<T>(collection: string) {
                 console.log(`[useData] Cached ${collection} with ${dataArray.length} items`);
 
                 // Also save to localStorage for offline access
-                if ((db as any)[collection]) {
+                const service = (db as any)[collection];
+                if (service) {
                     try {
-                        localStorage.setItem((db as any)[collection].key, JSON.stringify(dataArray));
+                        localStorage.setItem(service.key, JSON.stringify(dataArray));
                         console.log(`[useData] Saved ${collection} to localStorage with ${dataArray.length} items`);
+                        // Dispatch custom event to notify other listeners
+                        window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: service.key } }));
                     } catch (e) {
                         console.warn(`[useData] Failed to save ${collection} to localStorage:`, e);
                     }
@@ -324,48 +336,98 @@ export function useData<T>(collection: string) {
         const initializeData = async () => {
             console.log(`[useData] Initializing data for ${collection}`);
 
-            // FIRST: Load from cache/localStorage immediately to show data
-            const cachedData = dataCache.get<T>(collection);
-            if (cachedData && cachedData.length > 0) {
-                console.log(`[useData] Loaded ${collection} from cache with ${cachedData.length} items`);
-                setData(cachedData);
+            // On Vercel production we run in local-only mode (no backend / websockets).
+            // Still keep cache/localStorage in sync so navigation works.
+            if (isVercelProduction) {
+                loadLocal();
                 setLoading(false);
-            } else {
-                // Try localStorage as fallback
-                try {
-                    if ((db as any)[collection]) {
-                        const localData = (db as any)[collection].getAll() || [];
-                        if (localData.length > 0) {
-                            console.log(`[useData] Loaded ${collection} from localStorage with ${localData.length} items`);
-                            setData(localData);
-                            setLoading(false);
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`[useData] Failed to load ${collection} from localStorage`);
+                return;
+            }
+
+            // FIRST: Check if cache is stale
+            const isCacheStale = dataCache.isStale(collection);
+            console.log(`[useData] Cache stale for ${collection}: ${isCacheStale}`);
+
+            // SECOND: Load from cache/localStorage if cache is fresh
+            if (!isCacheStale) {
+                const cachedData = dataCache.get<T>(collection);
+                if (cachedData && cachedData.length > 0) {
+                    console.log(`[useData] Loaded ${collection} from fresh cache with ${cachedData.length} items`);
+                    setData(cachedData);
+                    setLoading(false);
+                    return; // Skip API fetch if cache is fresh
                 }
             }
 
-            // SECOND: Check backend availability
+            // THIRD: Load from localStorage as fallback while fetching
+            try {
+                const service = (db as any)[collection];
+                if (service) {
+                    const localData = service.getAll() || [];
+                    if (localData.length > 0) {
+                        console.log(`[useData] Loaded ${collection} from localStorage with ${localData.length} items`);
+                        setData(localData);
+                        // Also sync to global cache for future access
+                        dataCache.set(collection, localData);
+                        console.log(`[useData] Synced ${collection} to global cache from localStorage`);
+                    }
+                } else {
+                    console.warn(`[useData] No DataService found for collection: ${collection}`);
+                }
+            } catch (e) {
+                console.warn(`[useData] Failed to load ${collection} from localStorage:`, e);
+            }
+
+            // FOURTH: Check backend availability
             await checkBackendAvailability();
             console.log(`[useData] Backend available: ${backendAvailable}`);
 
-            // THIRD: Fetch fresh data from backend (in background, won't clear UI)
+            if (!backendAvailable) {
+                setIsOffline(true);
+                loadLocal();
+                setLoading(false);
+                return;
+            }
+
+            // FIFTH: Always fetch fresh data from backend (in background)
             console.log(`[useData] Fetching fresh data for ${collection} on mount`);
             fetchData(false); // Soft refresh - keeps existing data while loading
         };
 
         initializeData();
 
-        // Skip socket connection on Vercel production
+        // Always listen to local storage events for optimistic UI / offline updates
+        const handleStorageChange = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const targetKey = (db as any)[collection]?.key;
+
+            if (targetKey && customEvent.detail?.key === targetKey) {
+                loadLocal();
+            }
+        };
+        window.addEventListener('local-storage-update', handleStorageChange);
+
+        // Subscribe to sync manager updates for cross-tab synchronization
+        const unsubscribe = dataSyncManager.subscribe(collection, (syncedData) => {
+            console.log(`[useData] Received sync update for ${collection} with ${syncedData.length} items`);
+            setData(syncedData);
+        });
+
+        // Skip socket connection on Vercel production (WebSocket unsupported), but keep local sync alive
         if (isVercelProduction) {
-            return;
+            return () => {
+                window.removeEventListener('local-storage-update', handleStorageChange);
+                unsubscribe();
+            };
         }
 
         // Only attempt socket connection if backend is available
         if (!backendAvailable) {
             setIsOffline(true);
-            return;
+            return () => {
+                window.removeEventListener('local-storage-update', handleStorageChange);
+                unsubscribe();
+            };
         }
 
         const socket = getSocket();
@@ -418,6 +480,8 @@ export function useData<T>(collection: string) {
             });
 
             return () => {
+                window.removeEventListener('local-storage-update', handleStorageChange);
+                unsubscribe();
                 socket.off(`${resource.event}_created`, handleCreate);
                 socket.off(`${resource.event}_updated`, handleUpdate);
                 socket.off(`${resource.event}_deleted`, handleDelete);
@@ -425,17 +489,10 @@ export function useData<T>(collection: string) {
             };
         }
 
-        // Always listen to local storage events for optimistic UI / offline updates
-        const handleStorageChange = (e: Event) => {
-            const customEvent = e as CustomEvent;
-            const targetKey = (db as any)[collection]?.key;
-
-            if (targetKey && customEvent.detail?.key === targetKey) {
-                loadLocal();
-            }
+        return () => {
+            window.removeEventListener('local-storage-update', handleStorageChange);
+            unsubscribe();
         };
-        window.addEventListener('local-storage-update', handleStorageChange);
-        return () => window.removeEventListener('local-storage-update', handleStorageChange);
 
     }, [collection, resource, fetchData, loadLocal]);
 
@@ -457,53 +514,39 @@ export function useData<T>(collection: string) {
                 });
 
                 if (!response.ok) {
+                    // If backend rejects/doesn't exist, fall back to local create without failing the UI.
+                    // This is critical for Vercel/local-only deployments.
                     const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    console.error(`[useData] API error response:`, errorData);
+                    console.warn(`[useData] API create failed for ${collection} (${response.status}). Falling back to local.`, errorData);
+                    setIsOffline(true);
+                } else {
+                    const responseData = await response.json();
 
-                    // Create error object with validation errors if present
-                    const error: any = new Error(errorData.message || errorData.error || 'Failed to create item');
-                    if (errorData.validationErrors) {
-                        error.validationErrors = errorData.validationErrors;
+                    // Extract the actual item from various response formats
+                    // Try: asset (for assets), data (for wrapped responses), or use directly
+                    let extracted = responseData.asset || responseData.data || responseData;
+
+                    // If extracted is still an array, take the first element
+                    if (Array.isArray(extracted)) {
+                        extracted = extracted[0];
                     }
-                    throw error;
-                }
 
-                const responseData = await response.json();
-
-                // Extract the actual item from various response formats
-                // Try: asset (for assets), data (for wrapped responses), or use directly
-                let extracted = responseData.asset || responseData.data || responseData;
-
-                // If extracted is still an array, take the first element
-                if (Array.isArray(extracted)) {
-                    extracted = extracted[0];
-                }
-
-                serverItem = extracted;
-
-                // Validate that we got an ID back
-                if (!serverItem || typeof serverItem !== 'object') {
-                    console.error(`[useData] Server response invalid - not an object:`, responseData);
-                    throw new Error('Server did not return valid item');
-                }
-
-                // Check all possible ID fields
-                const hasId = serverItem.id || serverItem.lastID || serverItem.last_insert_rowid;
-
-                if (!hasId) {
-                    console.error(`[useData] Server response missing ID - object keys:`, Object.keys(serverItem), 'Full object:', JSON.stringify(serverItem, null, 2));
-                    throw new Error('Server did not return item ID');
-                }
-
-                // Use any available ID field
-                if (!serverItem.id) {
-                    serverItem.id = serverItem.lastID || serverItem.last_insert_rowid;
+                    // Validate that we got an object back; otherwise keep local
+                    if (extracted && typeof extracted === 'object') {
+                        // Normalize ID field if needed
+                        if (!(extracted as any).id) {
+                            (extracted as any).id = (extracted as any).lastID || (extracted as any).last_insert_rowid;
+                        }
+                        serverItem = extracted;
+                    } else {
+                        console.warn(`[useData] Server create response invalid for ${collection}. Using local item.`);
+                        serverItem = null;
+                    }
                 }
 
             } catch (e: any) {
-                console.error(`[useData] Error creating ${collection}:`, e.message);
+                console.warn(`[useData] Error creating ${collection}. Falling back to local.`, e?.message || e);
                 setIsOffline(true);
-                throw e; // Re-throw so caller knows creation failed
             }
         }
 
@@ -518,7 +561,9 @@ export function useData<T>(collection: string) {
             // Persist to localStorage for offline/refresh
             if ((db as any)[collection]) {
                 try {
-                    localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
+                    const key = (db as any)[collection].key;
+                    localStorage.setItem(key, JSON.stringify(updated));
+                    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key } }));
                 } catch (e) { /* ignore */ }
             }
             // Also persist to global cache
@@ -526,6 +571,8 @@ export function useData<T>(collection: string) {
             return updated;
         });
 
+        // Force refresh related collections if needed
+        console.log(`[useData] Item created in ${collection}, refreshing cache`);
         return finalItem;
     };
 
@@ -564,7 +611,9 @@ export function useData<T>(collection: string) {
             const updated = prev.map(item => ((item as any).id === id ? finalItem : item));
             if ((db as any)[collection]) {
                 try {
-                    localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
+                    const key = (db as any)[collection].key;
+                    localStorage.setItem(key, JSON.stringify(updated));
+                    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key } }));
                 } catch (e) { /* ignore */ }
             }
             // Also persist to global cache
@@ -572,6 +621,7 @@ export function useData<T>(collection: string) {
             return updated;
         });
 
+        console.log(`[useData] Item updated in ${collection}`);
         return finalItem;
     };
 
@@ -607,13 +657,17 @@ export function useData<T>(collection: string) {
             const updated = prev.filter(item => (item as any).id !== id);
             if ((db as any)[collection]) {
                 try {
-                    localStorage.setItem((db as any)[collection].key, JSON.stringify(updated));
+                    const key = (db as any)[collection].key;
+                    localStorage.setItem(key, JSON.stringify(updated));
+                    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key } }));
                 } catch (e) { /* ignore */ }
             }
             // Also persist to global cache
             dataCache.set(collection, updated);
             return updated;
         });
+
+        console.log(`[useData] Item deleted from ${collection}`);
     };
 
     // Added refresh method explicitly exposing fetch (with isRefresh flag to prevent flickering)

@@ -13,7 +13,7 @@ const COMPETITIONS = ['All Competition', 'High', 'Medium', 'Low'];
 const KeywordsView: React.FC = () => {
     const { data: keywords, create, update, remove } = useData<Keyword>('keywords');
     const { data: services = [] } = useData<Service>('services');
-    const { data: subServices = [] } = useData<SubServiceItem>('sub-services');
+    const { data: subServices = [] } = useData<SubServiceItem>('subServices');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [intentFilter, setIntentFilter] = useState('All Intent');
