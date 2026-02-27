@@ -496,11 +496,303 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
         }
     }
 
+    // ============ ASSET TYPE MASTER ENDPOINTS ============
+    // NOTE: These power the Asset Type dropdowns and Asset Type Master screen
+
+    // GET all asset types
+    if (url.includes('/asset-type-master') && !url.match(/\/asset-type-master\/\d+$/) && req.method === 'GET') {
+        try {
+            const result = await query(
+                `SELECT id,
+                        asset_type,
+                        dimension,
+                        file_formats,
+                        description,
+                        status,
+                        platforms_count,
+                        graphic_status,
+                        created_at,
+                        updated_at
+                 FROM asset_type_master
+                 ORDER BY asset_type ASC`
+            );
+
+            // Ensure file_formats is always an array on the API response
+            const rows = result.rows.map((row: any) => ({
+                ...row,
+                file_formats: Array.isArray(row.file_formats)
+                    ? row.file_formats
+                    : (typeof row.file_formats === 'string'
+                        ? row.file_formats.split(',').map((s: string) => s.trim()).filter(Boolean)
+                        : [])
+            }));
+
+            return res.status(200).json({
+                success: true,
+                data: rows,
+                count: rows.length
+            });
+        } catch (error: any) {
+            console.error('[API] Failed to fetch asset types:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch asset types',
+                message: error.message
+            });
+        }
+    }
+
+    // CREATE new asset type
+    if (url.includes('/asset-type-master') && !url.match(/\/asset-type-master\/\d+$/) && req.method === 'POST') {
+        const {
+            asset_type,
+            dimension,
+            file_formats,
+            description = 'Optional',
+            status = 'active',
+            platforms_count = 0,
+            graphic_status = 'linked'
+        } = body || {};
+
+        if (!asset_type || !asset_type.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Validation failed',
+                message: 'Asset type name is required',
+                validationErrors: ['asset_type is required']
+            });
+        }
+
+        try {
+            const result = await query(
+                `INSERT INTO asset_type_master
+                    (asset_type, dimension, file_formats, description, status, platforms_count, graphic_status, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                 RETURNING *`,
+                [
+                    asset_type.trim(),
+                    dimension || '',
+                    Array.isArray(file_formats) ? file_formats : [],
+                    description,
+                    status,
+                    platforms_count,
+                    graphic_status
+                ]
+            );
+
+            return res.status(201).json({
+                success: true,
+                data: result.rows[0],
+                message: 'Asset type created successfully'
+            });
+        } catch (error: any) {
+            console.error('[API] Failed to create asset type:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to create asset type',
+                message: error.message
+            });
+        }
+    }
+
+    // UPDATE asset type
+    if (url.match(/\/asset-type-master\/\d+$/) && (req.method === 'PUT' || req.method === 'PATCH')) {
+        const idMatch = url.match(/\/asset-type-master\/(\d+)$/);
+        const id = idMatch ? Number(idMatch[1]) : null;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid asset type ID',
+                message: 'Invalid asset type ID in URL'
+            });
+        }
+
+        const {
+            asset_type,
+            dimension,
+            file_formats,
+            description,
+            status,
+            platforms_count,
+            graphic_status
+        } = body || {};
+
+        try {
+            const result = await query(
+                `UPDATE asset_type_master
+                 SET asset_type = COALESCE($1, asset_type),
+                     dimension = COALESCE($2, dimension),
+                     file_formats = COALESCE($3, file_formats),
+                     description = COALESCE($4, description),
+                     status = COALESCE($5, status),
+                     platforms_count = COALESCE($6, platforms_count),
+                     graphic_status = COALESCE($7, graphic_status),
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $8
+                 RETURNING *`,
+                [
+                    asset_type,
+                    dimension,
+                    Array.isArray(file_formats) ? file_formats : file_formats,
+                    description,
+                    status,
+                    platforms_count,
+                    graphic_status,
+                    id
+                ]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Asset type not found',
+                    message: `Asset type with ID ${id} not found`
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: result.rows[0],
+                message: 'Asset type updated successfully'
+            });
+        } catch (error: any) {
+            console.error('[API] Failed to update asset type:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to update asset type',
+                message: error.message
+            });
+        }
+    }
+
+    // DELETE asset type
+    if (url.match(/\/asset-type-master\/\d+$/) && req.method === 'DELETE') {
+        const idMatch = url.match(/\/asset-type-master\/(\d+)$/);
+        const id = idMatch ? Number(idMatch[1]) : null;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid asset type ID',
+                message: 'Invalid asset type ID in URL'
+            });
+        }
+
+        try {
+            const result = await query(`DELETE FROM asset_type_master WHERE id = $1 RETURNING id`, [id]);
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Asset type not found',
+                    message: `Asset type with ID ${id} not found`
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'Asset type deleted successfully'
+            });
+        } catch (error: any) {
+            console.error('[API] Failed to delete asset type:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to delete asset type',
+                message: error.message
+            });
+        }
+    }
+
+    // --- Asset QC workflow (Asset Library endpoints) ---
+    // Submit an asset for QC review
+    if (url.match(/\/assetLibrary\/\d+\/submit-qc$/) && req.method === 'POST') {
+        const assetId = Number((url.match(/\/assetLibrary\/(\d+)\/submit-qc$/) || [])[1]);
+        const submittedBy = body?.submitted_by ?? body?.user_id ?? null;
+        if (!assetId) {
+            return res.status(400).json({ success: false, error: 'Invalid asset ID', message: 'Invalid asset ID in URL' });
+        }
+
+        try {
+            const result = await query(
+                `UPDATE assets
+                 SET qc_status = $1,
+                     status = $2,
+                     qc_remarks = $3,
+                     qc_score = $4,
+                     submitted_by = $5,
+                     submitted_at = CURRENT_TIMESTAMP,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $6
+                 RETURNING *`,
+                ['pending', 'Pending QC Review', null, null, submittedBy, assetId]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ success: false, error: 'Asset not found', message: `Asset with ID ${assetId} not found` });
+            }
+
+            return res.status(200).json({ success: true, data: result.rows[0], message: 'Asset submitted for QC review' });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: 'Failed to submit asset for QC', message: error.message });
+        }
+    }
+
+    // Get QC reviews for an asset (used by side panel) - minimal implementation
+    if (url.match(/\/assetLibrary\/\d+\/qc-reviews$/) && req.method === 'GET') {
+        return res.status(200).json({ success: true, data: [], reviews: [], message: 'QC reviews retrieved' });
+    }
+
+    // Submit QC decision for an asset (approve/reject/rework)
+    if (url.match(/\/assetLibrary\/\d+\/qc-review$/) && req.method === 'POST') {
+        const assetId = Number((url.match(/\/assetLibrary\/(\d+)\/qc-review$/) || [])[1]);
+        const decision = (body?.qc_decision || body?.decision || '').toString().toLowerCase();
+        const qcRemarks = body?.qc_remarks ?? body?.remarks ?? null;
+        const qcScore = body?.qc_score ?? body?.score ?? null;
+
+        if (!assetId) {
+            return res.status(400).json({ success: false, error: 'Invalid asset ID', message: 'Invalid asset ID in URL' });
+        }
+        if (!['approved', 'rejected', 'rework'].includes(decision)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid QC decision',
+                message: 'qc_decision must be one of: approved, rejected, rework'
+            });
+        }
+
+        const qcStatus = decision === 'approved' ? 'approved' : decision === 'rejected' ? 'rejected' : 'rework';
+        const status = decision === 'approved' ? 'Published' : decision === 'rejected' ? 'QC Rejected' : 'In Rework';
+
+        try {
+            const result = await query(
+                `UPDATE assets
+                 SET qc_status = $1,
+                     status = $2,
+                     qc_remarks = $3,
+                     qc_score = $4,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $5
+                 RETURNING *`,
+                [qcStatus, status, qcRemarks, qcScore, assetId]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ success: false, error: 'Asset not found', message: `Asset with ID ${assetId} not found` });
+            }
+
+            return res.status(200).json({ success: true, data: result.rows[0], message: `QC review submitted (${decision})` });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: 'Failed to submit QC review', message: error.message });
+        }
+    }
+
     // ============ QC REVIEW ENDPOINTS ============
     if (url.includes('/qc-review/pending') && req.method === 'GET') {
         try {
             const result = await query(`SELECT * FROM assets WHERE qc_status = 'pending' OR qc_status = 'rework' ORDER BY created_at DESC`);
-            return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+            // Support both response shapes: some clients expect `assets`, others expect `data`
+            return res.status(200).json({ success: true, data: result.rows, assets: result.rows, count: result.rows.length });
         } catch (error: any) {
             return res.status(500).json({ success: false, error: 'Failed to fetch pending assets', message: error.message });
         }
@@ -521,6 +813,13 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
 
             return res.status(200).json({
                 success: true,
+                // Also expose at top-level for clients that do `setStatistics(json)`
+                pending: pendingCount,
+                approved: approvedCount,
+                rejected: rejectedCount,
+                rework: reworkCount,
+                total: totalCount,
+                approvalRate: totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0,
                 data: {
                     pending: pendingCount,
                     approved: approvedCount,
@@ -791,7 +1090,7 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
 
     if (url.includes('/content-types') && req.method === 'GET') {
         try {
-            const result = await query(`SELECT * FROM content_types ORDER BY type_name ASC`);
+            const result = await query(`SELECT id, content_type, category, status, created_at, updated_at FROM content_types ORDER BY content_type ASC`);
             return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
         } catch (error: any) {
             return res.status(500).json({ success: false, error: 'Failed to fetch content types', message: error.message });
@@ -799,18 +1098,30 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
     }
 
     if (url.includes('/content-types') && req.method === 'POST') {
-        const { type_name, description, status = 'active' } = body;
-        if (!type_name || !type_name.trim()) {
-            return res.status(400).json({ success: false, error: 'Type name is required', validationErrors: ['Type name is required'] });
+        const { content_type, category, description, status = 'active' } = body;
+        if (!content_type || !content_type.trim()) {
+            return res.status(400).json({ success: false, error: 'Content type is required', validationErrors: ['content_type is required'] });
         }
         try {
             const result = await query(
-                `INSERT INTO content_types (type_name, description, status, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
-                [type_name.trim(), description || null, status]
+                `INSERT INTO content_types (content_type, category, description, status, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                 RETURNING id, content_type, category, description, status, created_at, updated_at`,
+                [content_type.trim(), category || null, description || null, status]
             );
             return res.status(201).json({ success: true, data: result.rows[0], message: 'Content type created successfully' });
         } catch (error: any) {
             return res.status(500).json({ success: false, error: 'Failed to create content type', message: error.message });
+        }
+    }
+
+    // Simple asset-types endpoint for Platform Master (separate from asset-type-master)
+    if (url.includes('/asset-types') && req.method === 'GET') {
+        try {
+            const result = await query(`SELECT id, asset_type, dimension FROM asset_types ORDER BY asset_type ASC`);
+            return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: 'Failed to fetch asset types', message: error.message });
         }
     }
 
