@@ -286,43 +286,43 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
             // Campaign Type filter
             if (campaignTypeFilter !== 'All') {
                 const linkedCampaignId = a.linked_campaign_id;
-                if (!linkedCampaignId || linkedCampaignId.toString() !== campaignTypeFilter) return false;
+                if (!linkedCampaignId || linkedCampaignId?.toString?.() !== campaignTypeFilter) return false;
             }
 
             // Linked Service filter
             if (linkedServiceFilter !== 'All') {
                 const serviceId = a.linked_service_id || (a.linked_service_ids && a.linked_service_ids[0]);
-                if (!serviceId || serviceId.toString() !== linkedServiceFilter) return false;
+                if (!serviceId || serviceId?.toString?.() !== linkedServiceFilter) return false;
             }
 
             // Linked Sub-Service filter
             if (linkedSubServiceFilter !== 'All') {
                 const subServiceId = a.linked_sub_service_id || (a.linked_sub_service_ids && a.linked_sub_service_ids[0]);
-                if (!subServiceId || subServiceId.toString() !== linkedSubServiceFilter) return false;
+                if (!subServiceId || subServiceId?.toString?.() !== linkedSubServiceFilter) return false;
             }
 
             // Project filter
             if (projectFilter !== 'All') {
                 const projectId = a.linked_project_id;
-                if (!projectId || projectId.toString() !== projectFilter) return false;
+                if (!projectId || projectId?.toString?.() !== projectFilter) return false;
             }
 
             // Linked Task filter
             if (linkedTaskFilter !== 'All') {
                 const taskId = a.linked_task_id || a.linked_task;
-                if (!taskId || taskId.toString() !== linkedTaskFilter) return false;
+                if (!taskId || taskId?.toString?.() !== linkedTaskFilter) return false;
             }
 
             // Linked Repository Item filter
             if (linkedRepositoryFilter !== 'All') {
                 const repoId = a.linked_repository_item_id;
-                if (!repoId || repoId.toString() !== linkedRepositoryFilter) return false;
+                if (!repoId || repoId?.toString?.() !== linkedRepositoryFilter) return false;
             }
 
             // Created By filter
             if (createdByFilter !== 'All') {
                 const creatorId = a.created_by || a.submitted_by;
-                if (!creatorId || creatorId.toString() !== createdByFilter) return false;
+                if (!creatorId || creatorId?.toString?.() !== createdByFilter) return false;
             }
 
             // Date Range filter
@@ -6267,7 +6267,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Campaigns</option>
                                             {campaigns.map(campaign => (
-                                                <option key={campaign.id} value={campaign.id.toString()}>{campaign.campaign_name}</option>
+                                                <option key={campaign.id} value={campaign.id?.toString() || ''}>{campaign.campaign_name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6285,7 +6285,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Services</option>
                                             {services.map(service => (
-                                                <option key={service.id} value={service.id.toString()}>{service.service_name}</option>
+                                                <option key={service.id} value={service.id?.toString() || ''}>{service.service_name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6303,7 +6303,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Sub-services</option>
                                             {filteredSubServicesForFilter.map(subService => (
-                                                <option key={subService.id} value={subService.id.toString()}>{subService.sub_service_name}</option>
+                                                <option key={subService.id} value={subService.id?.toString() || ''}>{subService.sub_service_name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6318,7 +6318,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Projects</option>
                                             {projects.map(project => (
-                                                <option key={project.id} value={project.id.toString()}>{project.project_name}</option>
+                                                <option key={project.id} value={project.id?.toString() || ''}>{project.project_name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6333,7 +6333,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Tasks</option>
                                             {tasks.map(task => (
-                                                <option key={task.id} value={task.id.toString()}>{task.name || task.task_name || `Task #${task.id}`}</option>
+                                                <option key={task.id} value={task.id?.toString() || ''}>{task.name || task.task_name || `Task #${task.id}`}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6348,7 +6348,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Repository Items</option>
                                             {repositoryItems.map(item => (
-                                                <option key={item.id} value={item.id.toString()}>{item.content_title_clean}</option>
+                                                <option key={item.id} value={item.id?.toString() || ''}>{item.content_title_clean}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -6363,7 +6363,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                         >
                                             <option value="All">All Users</option>
                                             {users.map(user => (
-                                                <option key={user.id} value={user.id.toString()}>{user.name}</option>
+                                                <option key={user.id} value={user.id?.toString() || ''}>{user.name}</option>
                                             ))}
                                         </select>
                                     </div>

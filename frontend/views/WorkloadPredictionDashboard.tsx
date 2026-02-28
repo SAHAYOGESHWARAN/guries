@@ -388,7 +388,7 @@ const WorkloadPredictionDashboard: React.FC<WorkloadPredictionDashboardProps> = 
                                         <div className="flex justify-between items-center">
                                             <div className="text-xs text-slate-500">Timeline: {suggestion.timeline}</div>
                                             <button
-                                                onClick={() => implementSuggestion(suggestion.id.toString())}
+                                                onClick={() => implementSuggestion(suggestion.id?.toString() || '')}
                                                 className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
                                             >
                                                 Implement

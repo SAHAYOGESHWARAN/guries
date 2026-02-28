@@ -350,13 +350,13 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
 
                                                 <div className="flex justify-end gap-2">
                                                     <button
-                                                        onClick={() => updateApprovalStatus(recommendation.id.toString(), 'rejected', 'Not approved')}
+                                                        onClick={() => updateApprovalStatus(recommendation.id?.toString() || '', 'rejected', 'Not approved')}
                                                         className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                                                     >
                                                         Reject
                                                     </button>
                                                     <button
-                                                        onClick={() => updateApprovalStatus(recommendation.id.toString(), 'approved', 'Approved for payment')}
+                                                        onClick={() => updateApprovalStatus(recommendation.id?.toString() || '', 'approved', 'Approved for payment')}
                                                         className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors"
                                                     >
                                                         Approve
@@ -545,13 +545,13 @@ const RewardPenaltyDashboard: React.FC<RewardPenaltyDashboardProps> = ({ onNavig
                                                     {item.status.includes('pending') && (
                                                         <div className="flex justify-center gap-1">
                                                             <button
-                                                                onClick={() => updateApprovalStatus(item.id.toString(), 'approved', 'Approved')}
+                                                                onClick={() => updateApprovalStatus(item.id?.toString() || '', 'approved', 'Approved')}
                                                                 className="p-1 text-emerald-600 hover:bg-emerald-100 rounded"
                                                             >
                                                                 <CheckCircle className="w-4 h-4" />
                                                             </button>
                                                             <button
-                                                                onClick={() => updateApprovalStatus(item.id.toString(), 'rejected', 'Rejected')}
+                                                                onClick={() => updateApprovalStatus(item.id?.toString() || '', 'rejected', 'Rejected')}
                                                                 className="p-1 text-red-600 hover:bg-red-100 rounded"
                                                             >
                                                                 <XCircle className="w-4 h-4" />

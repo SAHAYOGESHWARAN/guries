@@ -130,8 +130,8 @@ const EmployeeScorecardDashboard: React.FC<EmployeeScorecardDashboardProps> = ({
                                     {employeeList.map((employee) => (
                                         <button
                                             key={employee.id}
-                                            onClick={() => setSelectedEmployee(employee.id.toString())}
-                                            className={`w-full text-left p-3 rounded-lg transition-colors ${selectedEmployee === employee.id.toString()
+                                            onClick={() => setSelectedEmployee(employee.id?.toString() || '')}
+                                            className={`w-full text-left p-3 rounded-lg transition-colors ${selectedEmployee === employee.id?.toString() || ''
                                                 ? 'bg-blue-100 border border-blue-200'
                                                 : 'hover:bg-slate-100'
                                                 }`}
