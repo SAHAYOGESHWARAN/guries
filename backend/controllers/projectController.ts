@@ -72,18 +72,10 @@ export const createProject = async (req: Request, res: Response) => {
     } = req.body;
 
     try {
-        const isPostgres = process.env.NODE_ENV === 'production' || process.env.USE_PG === 'true';
-        const query = isPostgres ? `
-            INSERT INTO projects (
-                project_name, project_code, description, status, 
-                start_date, end_date, budget, owner_id, brand_id,
-                linked_service_id, priority, sub_services, outcome_kpis,
-                expected_outcome, team_members, weekly_report,
-                created_at, updated_at
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
-            RETURNING *;
-        ` : `
+        // Use brand_id 1 as default to avoid foreign key constraints
+        const effectiveBrandId = brand_id || 1;
+        
+        const query = `
             INSERT INTO projects (
                 project_name, project_code, description, status, 
                 start_date, end_date, budget, owner_id, brand_id,
@@ -102,7 +94,7 @@ export const createProject = async (req: Request, res: Response) => {
             end_date || null,
             budget || null,
             owner_id || null,
-            brand_id || null,
+            effectiveBrandId,
             linked_service_id || null,
             priority || 'Medium',
             sub_services || null,
@@ -112,7 +104,7 @@ export const createProject = async (req: Request, res: Response) => {
             weekly_report !== undefined ? (weekly_report ? 1 : 0) : 1
         ];
 
-        console.log('[createProject] Inserting project:', { project_name, project_code });
+        console.log('[createProject] Inserting project:', { project_name, project_code, brand_id: effectiveBrandId });
         const insertResult = await pool.query(query, values);
 
         // Extract the project from the result

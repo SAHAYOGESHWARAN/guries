@@ -179,6 +179,7 @@ router.delete('/tasks/:id', taskController.deleteTask);
 
 // --- Assets ---
 router.get('/assets', assetController.getAssets);
+router.get('/assets/:id', assetController.getAsset);
 router.post('/assets', assetController.createAsset);
 router.put('/assets/:id', assetController.updateAsset);
 router.delete('/assets/:id', assetController.deleteAsset);
@@ -475,6 +476,7 @@ router.delete('/submissions/:id', backlinkSubmissionController.deleteSubmission)
 
 // --- Users & Roles ---
 router.get('/users', userController.getUsers);
+router.get('/users/:id', userController.getUser as any);
 router.post('/users', userController.createUser);
 router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);

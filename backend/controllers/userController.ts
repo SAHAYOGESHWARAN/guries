@@ -12,6 +12,19 @@ export const getUsers = async (req: Request, res: Response) => {
     }
 };
 
+export const getUser = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+        if (!result.rows || result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.status(200).json(result.rows[0]);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const createUser = async (req: Request, res: Response) => {
     const { name, email, role, department, country, status } = req.body;
     try {
@@ -31,11 +44,40 @@ export const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, email, role, department, country, status } = req.body;
     try {
-        const result = await pool.query(
-            'UPDATE users SET name=?, email=?, role=?, department=?, country=?, status=? WHERE id=?',
-            [name, email, role, department, country, status, id]
-        );
-        const updatedUser = result.rows[0];
+        // Build SQL dynamically to handle optional fields
+        const updates: string[] = [];
+        const values: any[] = [];
+        
+        if (name) { updates.push('name=?'); values.push(name); }
+        if (email) { updates.push('email=?'); values.push(email); }
+        if (role) { updates.push('role=?'); values.push(role); }
+        if (department) { updates.push('department=?'); values.push(department); }
+        if (country) { updates.push('country=?'); values.push(country); }
+        if (status) { updates.push('status=?'); values.push(status); }
+        
+        if (updates.length === 0) {
+            // No fields to update, just return current user
+            const getResult = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+            const user = getResult.rows?.[0];
+            if (!user) return res.status(404).json({ error: 'User not found' });
+            return res.status(200).json(user);
+        }
+        
+        // Use parameterized query without the datetime function in the string
+        const sql = `UPDATE users SET ${updates.join(', ')}, updated_at = ? WHERE id = ?`;
+        values.push(new Date().toISOString());
+        values.push(id);
+        
+        const result = await pool.query(sql, values);
+        
+        // Fetch the updated user
+        const getResult = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+        const updatedUser = getResult.rows?.[0];
+        
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
         getSocket().emit('user_updated', updatedUser);
         res.status(200).json(updatedUser);
     } catch (error: any) {

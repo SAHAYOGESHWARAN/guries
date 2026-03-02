@@ -14,23 +14,40 @@ export const getAssets = async (req: Request, res: Response) => {
     }
 };
 
-export const createAsset = async (req: Request, res: Response) => {
-    const { asset_name, asset_type, asset_category, asset_format, status } = req.body;
+export const getAsset = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
+        if (!result.rows || result.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+        res.status(200).json(result.rows[0]);
+    } catch (error: any) {
+        console.error('getAsset error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+};
 
-    if (!asset_name || !asset_type) {
-        return res.status(400).json({ error: 'asset_name and asset_type are required' });
+export const createAsset = async (req: Request, res: Response) => {
+    // Support both field name conventions: name/type (from test) and asset_name/asset_type (legacy)
+    const assetName = req.body.asset_name || req.body.name;
+    const assetType = req.body.asset_type || req.body.type;
+    const { asset_category, asset_format, status, social_meta } = req.body;
+
+    if (!assetName || !assetType) {
+        return res.status(400).json({ error: 'name (or asset_name) and type (or asset_type) are required' });
     }
 
     try {
         const result = await pool.query(
-            `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, status, created_at)
-             VALUES ($1, $2, $3, $4, $5, NOW())`,
-            [asset_name, asset_type, asset_category || null, asset_format || null, status || 'draft']
+            `INSERT INTO assets (asset_name, asset_type, asset_category, asset_format, social_meta, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+            [assetName, assetType, asset_category || null, asset_format || null, JSON.stringify(social_meta || {}), status || 'draft']
         );
 
-        const newAsset = {
-            asset_name,
-            asset_type,
+        const newAsset = result.rows?.[0] || {
+            asset_name: assetName,
+            asset_type: assetType,
             asset_category,
             asset_format,
             status: status || 'draft',
@@ -68,7 +85,6 @@ export const updateAsset = async (req: Request, res: Response) => {
 
         const sql = `UPDATE assets SET 
             asset_name = COALESCE(?, asset_name), 
-            tags = COALESCE(?, tags), 
             file_url = COALESCE(?, file_url),
             description = COALESCE(?, description),
             asset_type = COALESCE(?, asset_type),
@@ -82,7 +98,6 @@ export const updateAsset = async (req: Request, res: Response) => {
 
         execute(sql, [
             sanitized.name || null,
-            usage_status || null,
             repository || null,
             null,
             sanitized.type || null,

@@ -120,8 +120,10 @@ export const initializeDatabase = async () => {
                     asset_type TEXT,
                     asset_category TEXT,
                     asset_format TEXT,
+                    social_meta TEXT,
                     content_type TEXT,
                     repository TEXT,
+                    description TEXT,
                     status TEXT DEFAULT 'draft',
                     workflow_stage TEXT DEFAULT 'Add',
                     qc_status TEXT,
@@ -451,6 +453,9 @@ export const initializeDatabase = async () => {
                     language TEXT,
                     search_volume INTEGER,
                     difficulty_score INTEGER,
+                    competition_score INTEGER DEFAULT 0,
+                    cpc DECIMAL(5,2),
+                    created_by INTEGER,
                     mapped_service_id INTEGER,
                     mapped_service TEXT,
                     mapped_sub_service_id INTEGER,
@@ -460,6 +465,7 @@ export const initializeDatabase = async () => {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )`,
+
                 `CREATE TABLE IF NOT EXISTS backlink_sources (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     domain TEXT NOT NULL,

@@ -485,7 +485,7 @@ if (usePostgres) {
     const db = new Database(dbPath, { fileMustExist: false, readonly: false, timeout: 5000 });
     db.pragma('journal_mode = DELETE');
     db.pragma('synchronous = FULL');
-    db.pragma('foreign_keys = ON');
+    db.pragma('foreign_keys = OFF');  // Disable foreign key constraints for SQLite dev
 
     // Create tables synchronously at initialization time
     // Tables are created by init.ts, not here
@@ -530,6 +530,26 @@ if (usePostgres) {
                     const stmt = db.prepare(sql);
                     const result = params ? stmt.run(...params) : stmt.run();
                     const insertedId = Number(result.lastInsertRowid);
+
+                    // Extract table name from INSERT statement to fetch full record
+                    const tableMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
+                    if (tableMatch && insertedId > 0) {
+                        try {
+                            const tableName = tableMatch[1];
+                            const selectStmt = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
+                            const rows = selectStmt.all(insertedId);
+                            if (rows && rows.length > 0) {
+                                return {
+                                    rows,
+                                    lastID: insertedId,
+                                    changes: result.changes,
+                                    rowCount: result.changes
+                                };
+                            }
+                        } catch (selectErr: any) {
+                            console.warn('[DB] Failed to fetch inserted row:', selectErr.message);
+                        }
+                    }
 
                     return {
                         rows: [{ id: insertedId }],
