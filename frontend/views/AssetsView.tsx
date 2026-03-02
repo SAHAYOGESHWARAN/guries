@@ -6018,7 +6018,7 @@ const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                                     </button>
 
                                     {/* Quick Content Type Dropdown */}
-                                    <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                    <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
                                         <div className="p-4">
                                             <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                                                 <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

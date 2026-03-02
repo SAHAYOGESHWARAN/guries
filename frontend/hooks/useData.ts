@@ -170,7 +170,14 @@ export function useData<T>(collection: string) {
         const cachedData = dataCache.get<T>(collection);
         if (cachedData && cachedData.length > 0) {
             console.log(`[useData] Initializing ${collection} from cache with ${cachedData.length} items`);
-            return cachedData;
+            // Deduplicate
+            const seen = new Set<string | number>();
+            return cachedData.filter(item => {
+                const id = (item as any).id;
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+            });
         }
 
         // Fall back to local storage
@@ -178,7 +185,14 @@ export function useData<T>(collection: string) {
             if ((db as any)[collection]) {
                 const localData = (db as any)[collection].getAll() || [];
                 console.log(`[useData] Initializing ${collection} from localStorage with ${localData.length} items`);
-                return localData;
+                // Deduplicate
+                const seen = new Set<string | number>();
+                return localData.filter(item => {
+                    const id = (item as any).id;
+                    if (seen.has(id)) return false;
+                    seen.add(id);
+                    return true;
+                });
             }
         } catch (e) {
             console.warn(`[useData] Failed to initialize ${collection} from localStorage`);
@@ -200,7 +214,15 @@ export function useData<T>(collection: string) {
             const cachedData = dataCache.get<T>(collection);
             if (cachedData && cachedData.length > 0) {
                 console.log(`[useData] Loading ${collection} from cache with ${cachedData.length} items`);
-                setData(cachedData);
+                // Deduplicate before setting
+                const seen = new Set<string | number>();
+                const deduped = cachedData.filter(item => {
+                    const id = (item as any).id;
+                    if (seen.has(id)) return false;
+                    seen.add(id);
+                    return true;
+                });
+                setData(deduped);
                 return;
             }
 
@@ -209,10 +231,18 @@ export function useData<T>(collection: string) {
             if (service) {
                 const localData = service.getAll() || [];
                 console.log(`[useData] Loading ${collection} from localStorage with ${localData.length} items`);
-                setData(localData);
+                // Deduplicate before setting
+                const seen = new Set<string | number>();
+                const deduped = localData.filter(item => {
+                    const id = (item as any).id;
+                    if (seen.has(id)) return false;
+                    seen.add(id);
+                    return true;
+                });
+                setData(deduped);
                 // Also sync to global cache for future access
-                if (localData.length > 0) {
-                    dataCache.set(collection, localData);
+                if (deduped.length > 0) {
+                    dataCache.set(collection, deduped);
                     console.log(`[useData] Synced ${collection} to global cache from localStorage`);
                 }
             } else {
@@ -287,21 +317,33 @@ export function useData<T>(collection: string) {
 
             // Only update data if we got a valid response (prevents flickering)
             if (Array.isArray(dataArray)) {
+                // Deduplicate data by ID to prevent duplicates
+                const seen = new Set<string | number>();
+                const deduplicatedArray = dataArray.filter(item => {
+                    const id = (item as any).id;
+                    if (seen.has(id)) {
+                        console.warn(`[useData] Duplicate item found in ${collection} with ID ${id}, filtering out`);
+                        return false;
+                    }
+                    seen.add(id);
+                    return true;
+                });
+
                 // Always update state with fresh API data (even if empty)
                 // This ensures we don't keep stale data when API returns empty
-                console.log(`[useData] Setting ${collection} state with ${dataArray.length} items`);
-                setData(dataArray);
+                console.log(`[useData] Setting ${collection} state with ${deduplicatedArray.length} items (deduplicated from ${dataArray.length})`);
+                setData(deduplicatedArray);
 
                 // Cache the data globally for persistence across routes
-                dataCache.set(collection, dataArray);
-                console.log(`[useData] Cached ${collection} with ${dataArray.length} items`);
+                dataCache.set(collection, deduplicatedArray);
+                console.log(`[useData] Cached ${collection} with ${deduplicatedArray.length} items`);
 
                 // Also save to localStorage for offline access
                 const service = (db as any)[collection];
                 if (service) {
                     try {
-                        localStorage.setItem(service.key, JSON.stringify(dataArray));
-                        console.log(`[useData] Saved ${collection} to localStorage with ${dataArray.length} items`);
+                        localStorage.setItem(service.key, JSON.stringify(deduplicatedArray));
+                        console.log(`[useData] Saved ${collection} to localStorage with ${deduplicatedArray.length} items`);
                         // Dispatch custom event to notify other listeners
                         window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: service.key } }));
                     } catch (e) {
@@ -360,6 +402,7 @@ export function useData<T>(collection: string) {
             }
 
             // THIRD: Load from localStorage as fallback while fetching
+            let hasLocalData = false;
             try {
                 const service = (db as any)[collection];
                 if (service) {
@@ -370,6 +413,7 @@ export function useData<T>(collection: string) {
                         // Also sync to global cache for future access
                         dataCache.set(collection, localData);
                         console.log(`[useData] Synced ${collection} to global cache from localStorage`);
+                        hasLocalData = true;
                     }
                 } else {
                     console.warn(`[useData] No DataService found for collection: ${collection}`);
@@ -384,7 +428,10 @@ export function useData<T>(collection: string) {
 
             if (!backendAvailable) {
                 setIsOffline(true);
-                loadLocal();
+                // Only load local if we haven't already loaded it in step 3
+                if (!hasLocalData) {
+                    loadLocal();
+                }
                 setLoading(false);
                 return;
             }

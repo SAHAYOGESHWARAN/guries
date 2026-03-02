@@ -426,6 +426,13 @@ if (usePostgres) {
                             status TEXT DEFAULT 'active',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )`,
+                        `CREATE TABLE IF NOT EXISTS otp_codes (
+                            id SERIAL PRIMARY KEY,
+                            phone_number TEXT NOT NULL,
+                            code TEXT NOT NULL,
+                            expires_at TIMESTAMP NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )`
                     ];
 

@@ -212,8 +212,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
     try {
         // Check for valid, non-expired code (use ? placeholder for SQLite compatibility)
         const result = await pool.query(
-            'SELECT * FROM otp_codes WHERE phone_number = ? AND code = ? AND expires_at > datetime(\'now\') ORDER BY created_at DESC LIMIT 1',
-            [phoneNumber, code]
+            'SELECT * FROM otp_codes WHERE phone_number = ? AND code = ? AND expires_at > ? ORDER BY created_at DESC LIMIT 1',
+            [phoneNumber, code, new Date().toISOString()]
         );
 
         if (result.rows.length === 0) {
