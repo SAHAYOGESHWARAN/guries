@@ -193,3 +193,51 @@ export const db = {
     logs: new DataService<IntegrationLog>(STORAGE_KEYS.LOGS),
     integrations: new DataService<Integration>(STORAGE_KEYS.INTEGRATIONS),
 };
+
+
+/**
+ * Utility function to clean up duplicates from all localStorage collections
+ * This should be called once on app initialization to clean up old test data
+ */
+export function cleanupDuplicatesFromStorage() {
+    const collections = Object.entries(STORAGE_KEYS);
+    let totalCleaned = 0;
+
+    for (const [collectionName, storageKey] of collections) {
+        try {
+            const data = localStorage.getItem(storageKey);
+            if (!data) continue;
+
+            const items = JSON.parse(data);
+            if (!Array.isArray(items) || items.length === 0) continue;
+
+            // Deduplicate by ID
+            const seen = new Set<string | number>();
+            const deduplicated = items.filter((item: any) => {
+                const id = item?.id;
+                if (seen.has(id)) {
+                    console.warn(`[Storage Cleanup] Removing duplicate from ${collectionName}: id=${id}`);
+                    return false;
+                }
+                seen.add(id);
+                return true;
+            });
+
+            if (deduplicated.length < items.length) {
+                const removed = items.length - deduplicated.length;
+                console.log(`[Storage Cleanup] Cleaned ${collectionName}: removed ${removed} duplicates (${items.length} → ${deduplicated.length})`);
+                localStorage.setItem(storageKey, JSON.stringify(deduplicated));
+                totalCleaned += removed;
+            }
+        } catch (e) {
+            console.warn(`[Storage Cleanup] Error cleaning ${collectionName}:`, e);
+        }
+    }
+
+    if (totalCleaned > 0) {
+        console.log(`[Storage Cleanup] Total duplicates removed: ${totalCleaned}`);
+        window.dispatchEvent(new CustomEvent('storage-cleanup-complete', { detail: { removed: totalCleaned } }));
+    }
+
+    return totalCleaned;
+}

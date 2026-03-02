@@ -7,6 +7,7 @@ import { AuthUser } from './hooks/useAuth';
 import { dataCache } from './hooks/useDataCache';
 import { ToastProvider } from './components/ToastContainer';
 import { setupGlobalErrorHandler } from './utils/errorHandler';
+import { cleanupDuplicatesFromStorage } from './utils/storage';
 import './styles/toast.css';
 
 // Setup global error handler
@@ -216,6 +217,9 @@ const App: React.FC = () => {
 
   // Initialize app state on mount
   useEffect(() => {
+    // Clean up duplicates from localStorage on app initialization
+    cleanupDuplicatesFromStorage();
+
     // Always require login - no auto-login
     setCurrentUser(null);
     setIsAuthenticated(false);
