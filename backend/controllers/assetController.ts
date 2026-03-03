@@ -7,7 +7,37 @@ import { getSocket } from '../socket';
 
 export const getAssets = async (req: Request, res: Response) => {
     try {
-        res.status(200).json({ message: 'Assets endpoint working', test: 'success' });
+        const result = await query(
+            `SELECT 
+                id,
+                asset_name as name,
+                asset_type as type,
+                asset_category,
+                asset_format,
+                content_type,
+                tags as repository,
+                status,
+                workflow_stage,
+                qc_status,
+                created_at,
+                updated_at,
+                linked_service_id,
+                linked_sub_service_id,
+                linked_service_ids,
+                linked_sub_service_ids,
+                COALESCE(og_image_url, web_thumbnail, file_url) as thumbnail_url,
+                web_url as url,
+                file_url,
+                og_image_url,
+                application_type,
+                linking_active,
+                seo_score,
+                grammar_score,
+                ai_plagiarism_score
+            FROM assets
+            ORDER BY created_at DESC`
+        );
+        res.status(200).json(result);
     } catch (error: any) {
         console.error('getAssets error:', error);
         res.status(500).json({ error: error.message });
