@@ -15,7 +15,7 @@ export const getAssets = async (req: Request, res: Response) => {
                 asset_category,
                 asset_format,
                 content_type,
-                tags as repository,
+                repository,
                 status,
                 workflow_stage,
                 qc_status,

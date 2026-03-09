@@ -273,7 +273,7 @@ describe('Error Handling', () => {
     });
 
     it('should validate required fields before insertion', async () => {
-        const invalidCampaign = {
+        const invalidCampaign: { campaign_type: string; campaign_name?: string } = {
             campaign_type: 'Content',
             // Missing campaign_name
         };

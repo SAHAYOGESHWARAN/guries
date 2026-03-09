@@ -1,6 +1,7 @@
 # 🚀 DEPLOYMENT QUICK REFERENCE CARD
 
 ## Your Supabase Project
+
 ```
 URL: https://dsglniwrrkylniphwygc.supabase.co
 Project Ref: dsglniwrrkylniphwygc
@@ -12,6 +13,7 @@ API Key (Anon): sb_publishable_G5k3L_T1hrX1ZEvH3Dh5VA_QYvjcUkr
 ## QUICK STEPS (5 MINUTES)
 
 ### 1️⃣ Run Database Migrations (Supabase)
+
 ```
 1. https://app.supabase.com → Select project
 2. SQL Editor → New Query
@@ -21,6 +23,7 @@ API Key (Anon): sb_publishable_G5k3L_T1hrX1ZEvH3Dh5VA_QYvjcUkr
 ```
 
 ### 2️⃣ Get Supabase Credentials
+
 ```
 Connection String:
 - Go to Settings → Database → PostgreSQL
@@ -32,6 +35,7 @@ Service Role Key:
 ```
 
 ### 3️⃣ Import & Deploy to Vercel
+
 ```
 1. https://vercel.com/new
 2. Import: guires-marketing-control-center (your GitHub repo)
@@ -39,6 +43,7 @@ Service Role Key:
 ```
 
 ### 4️⃣ Set Environment Variables in Vercel
+
 ```
 Settings → Environment Variables → Add these:
 
@@ -60,11 +65,13 @@ FRONTEND_URL          = https://your-vercel-url.vercel.app
 ```
 
 **Generate JWT_SECRET:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 5️⃣ Deploy & Test
+
 ```
 1. Vercel: Click Deploy
 2. Wait 2-3 minutes
@@ -74,6 +81,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 6️⃣ Verify Deployment
+
 ```bash
 # Test health endpoint
 curl https://your-url.vercel.app/api/v1/health
@@ -89,6 +97,7 @@ curl -X POST https://your-url.vercel.app/api/v1/auth/login \
 ## DEFAULT CREDENTIALS
 
 Login with:
+
 ```
 Email: admin@example.com
 Password: admin123
@@ -100,18 +109,19 @@ Password: admin123
 
 ## IMPORTANT FILES
 
-| File | Purpose |
-|------|---------|
+| File                                              | Purpose                           |
+| ------------------------------------------------- | --------------------------------- |
 | `backend/migrations/postgres-complete-schema.sql` | Database schema (run in Supabase) |
-| `backend/.env.production` | Production environment template |
-| `vercel.json` | Vercel configuration |
-| `DEPLOYMENT_GUIDE_SUPABASE_VERCEL.md` | Full deployment guide |
+| `backend/.env.production`                         | Production environment template   |
+| `vercel.json`                                     | Vercel configuration              |
+| `DEPLOYMENT_GUIDE_SUPABASE_VERCEL.md`             | Full deployment guide             |
 
 ---
 
 ## TROUBLESHOOTING
 
 ### ❌ "Database Connection Failed"
+
 ```
 ✅ Check DATABASE_URL in Vercel env vars
 ✅ Verify Supabase project is active
@@ -119,12 +129,14 @@ Password: admin123
 ```
 
 ### ❌ "CORS Error"
+
 ```
 ✅ Update CORS_ORIGIN and CORS_ORIGINS with your actual Vercel URL
 ✅ Redeploy after changing env vars
 ```
 
 ### ❌ "Tables don't exist"
+
 ```
 ✅ Verify SQL migration ran successfully
 ✅ Check Supabase SQL Editor for errors
@@ -137,18 +149,18 @@ Password: admin123
 
 20+ Tables created including:
 
-| Table | Rows | Purpose |
-|-------|------|---------|
-| users | 1 | Admin user |
-| campaigns | - | Marketing campaigns |
-| projects | - | Projects under campaigns |
-| assets | 5 | Digital assets |
-| asset_category_master | 5 | Asset categories |
-| asset_types | 8 | Asset type definitions |
-| content_types | 8 | Content type definitions |
-| keywords | - | SEO keywords |
-| tasks | - | Project tasks |
-| + 10 more | - | Services, backlinks, roles, etc. |
+| Table                 | Rows | Purpose                          |
+| --------------------- | ---- | -------------------------------- |
+| users                 | 1    | Admin user                       |
+| campaigns             | -    | Marketing campaigns              |
+| projects              | -    | Projects under campaigns         |
+| assets                | 5    | Digital assets                   |
+| asset_category_master | 5    | Asset categories                 |
+| asset_types           | 8    | Asset type definitions           |
+| content_types         | 8    | Content type definitions         |
+| keywords              | -    | SEO keywords                     |
+| tasks                 | -    | Project tasks                    |
+| + 10 more             | -    | Services, backlinks, roles, etc. |
 
 ---
 
@@ -176,11 +188,13 @@ POST   /api/v1/projects                - Create project
 ## PERFORMANCE MONITORING
 
 Vercel Dashboard:
+
 - **Analytics** → Request latency, error rates
 - **Logs** → View application logs
 - **Deployments** → Rollback if needed
 
 Supabase Dashboard:
+
 - **Database** → Connection health
 - **Logs** → SQL query logs
 - **Backups** → Configure automatic backups

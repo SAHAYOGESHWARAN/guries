@@ -687,6 +687,34 @@ export const initializeDatabase = async () => {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )`,
+                `CREATE TABLE IF NOT EXISTS asset_types (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    asset_type TEXT NOT NULL,
+                    dimension TEXT,
+                    file_formats TEXT,
+                    description TEXT,
+                    status TEXT DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`,
+                `CREATE TABLE IF NOT EXISTS content_types (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    content_type TEXT NOT NULL,
+                    category TEXT,
+                    description TEXT,
+                    default_wordcount_min INTEGER DEFAULT 500,
+                    default_wordcount_max INTEGER DEFAULT 2000,
+                    default_graphic_requirements TEXT,
+                    default_qc_checklist TEXT,
+                    seo_focus_keywords_required INTEGER DEFAULT 1,
+                    social_media_applicable INTEGER DEFAULT 1,
+                    estimated_creation_hours INTEGER DEFAULT 4,
+                    content_owner_role TEXT,
+                    use_in_campaigns INTEGER DEFAULT 1,
+                    status TEXT DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`,
                 `CREATE TABLE IF NOT EXISTS platforms (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     platform_name TEXT UNIQUE NOT NULL,
