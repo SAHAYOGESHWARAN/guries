@@ -264,9 +264,19 @@ export const getAssetLibrary = async (req: Request, res: Response) => {
             };
         });
 
-        res.status(200).json(parsed);
+        res.status(200).json({
+            success: true,
+            data: parsed,
+            count: parsed.length,
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        console.error('getAssetLibrary error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
     }
 };
 
@@ -344,7 +354,11 @@ export const getAssetLibraryItem = async (req: Request, res: Response) => {
         `, [id]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Asset not found',
+                timestamp: new Date().toISOString()
+            });
         }
 
         const asset = result.rows[0];
@@ -366,9 +380,18 @@ export const getAssetLibraryItem = async (req: Request, res: Response) => {
             version_history: asset.version_history ? JSON.parse(asset.version_history) : []
         };
 
-        res.status(200).json(parsed);
+        res.status(200).json({
+            success: true,
+            data: parsed,
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        console.error('getAssetLibraryItem error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
     }
 };
 
@@ -565,10 +588,20 @@ export const createAssetLibraryItem = async (req: Request, res: Response) => {
             console.warn('Socket.io not available:', socketError);
         }
 
-        res.status(201).json({ asset: newAsset, id: assetId, message: 'Asset created successfully' });
+        res.status(201).json({ 
+            success: true,
+            data: newAsset,
+            message: 'Asset created successfully',
+            id: assetId,
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
         console.error('Error creating asset:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
     }
 }
 
@@ -712,7 +745,11 @@ id,
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Asset not found',
+                timestamp: new Date().toISOString()
+            });
         }
 
         const rawAsset = result.rows[0];
@@ -736,9 +773,20 @@ id,
         };
 
         getSocket().emit('assetLibrary_updated', updatedAsset);
-        res.status(200).json(updatedAsset);
+        res.status(200).json({
+            success: true,
+            data: updatedAsset,
+            message: 'Asset updated successfully',
+            id: updatedAsset.id,
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        console.error('Update asset error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
     }
 };
 
@@ -747,14 +795,22 @@ export const deleteAssetLibraryItem = async (req: Request, res: Response) => {
     const numericId = parseInt(id, 10);
 
     if (isNaN(numericId)) {
-        return res.status(400).json({ error: 'Invalid asset ID' });
+        return res.status(400).json({ 
+            success: false,
+            error: 'Invalid asset ID',
+            timestamp: new Date().toISOString()
+        });
     }
 
     try {
         // Check if asset exists first
         const existingAsset = await pool.query('SELECT id FROM assets WHERE id = ?', [numericId]);
         if (existingAsset.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Asset not found',
+                timestamp: new Date().toISOString()
+            });
         }
 
         // Delete related records first to avoid foreign key constraint errors
@@ -771,10 +827,20 @@ export const deleteAssetLibraryItem = async (req: Request, res: Response) => {
         // Now delete the asset itself
         await pool.query('DELETE FROM assets WHERE id = ?', [numericId]);
         getSocket().emit('assetLibrary_deleted', { id: numericId });
-        res.status(204).send();
+        
+        res.status(200).json({
+            success: true,
+            message: 'Asset deleted successfully',
+            data: { id: numericId },
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
         console.error('Delete asset error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
     }
 };
 
